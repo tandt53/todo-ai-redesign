@@ -1,40 +1,74 @@
-# BRIEFING — T-017
+# BRIEFING — T-052: closing spec revision for F-002 talk-back
 
-- **Task:** T-017 — Gate 5, final product review re-verify for F-001 voice-assistant-view
-- **Module:** assistant · **Feature:** F-001 · **Agent:** product-agent · **Date:** 2026-08-16
+## Task
+Revise `specs/assistant/F-002-talk-back.md` from **Gate 1 round 2**. This is the
+**closing revision**. The round cap is 2 and it is reached: nothing re-reviews your output.
+Write accordingly — where you are unsure, say so in the spec rather than leaving a reader to
+discover it.
 
-## Context
+## Read these, in this order
+1. `.claude/agents/_ethos.md`
+2. `.claude/agents/_completion-protocol.md`
+3. `specs/_shared/LEARNINGS.md`
+4. `reports/gate1-review-F-002.md` — **the `# Round 2` section is your work order.** Clusters
+   D1–D10, the MEDIUM/LOW table, and `§R-rec`'s five recovered round-1 findings.
+5. `specs/assistant/F-002-talk-back.md` — the artifact you are revising (rev 2 → rev 3)
+6. `specs/assistant/data-model.md` — D1 and product M-1 both land partly here
+7. `design/_shared/components.md` — AC-22's frame catalogue lives here; D3 widens its slots
 
-This is your second `review-final` pass. Your first (`reports/product-review-F-001-final-2026-08-16.md`) found CHANGES REQUESTED: 2 HIGH (H1 locale mismatch — Vietnamese design system vs English shipped UI; H2 WCAG 4.1.3 missing) and 4 MEDIUM. All of it is now addressed:
+Per-lens returns are on disk at `reports/gate1-lenses/F-002/round{1,2}-{lens}.md` if you need
+a finding's full reasoning. Do not re-read all fourteen; open one when the report's summary of
+it is not enough.
 
-- **H1:** the entire product — server confirm-chip labels, all web UI copy, all 3 mockups — is now Vietnamese. `npm run test:all` is 217/217 real, `npm run test:e2e` is 36/36 real (both independently re-run by the orchestrator).
-- **H2:** `ConversationPane.tsx` now has `role="log"` + `aria-live="polite"` (outcome messages) and `role="alert"` (errors). Two new TCs (TC-033/034) prove this via mutation-testing (removing the roles makes the tests fail). **Not yet done:** a manual screen-reader pass (NVDA/VoiceOver) — the automation proves the plumbing, not the lived experience; AC-19 explicitly asks for the latter ("verified against a real screen reader, not inferred from markup"). Judge whether this open item blocks sign-off or is acceptable as a documented follow-up.
-- **M1 (leaked "turn" word):** fixed.
-- **M2 (listening-state Undo affordance):** fixed — and design-agent found + fixed the identical gap in the `mic-hidden` state too (same underlying rule, not in your original finding).
-- **M3 (boundary hairline):** fixed.
-- **M4 (clarify caption):** fixed, and design-agent found the same caption was truncated on iOS/Android too, fixed there as well.
+## Order of work (architect's cost ranking, follow it)
+**D1 first** — it disarms the fix every silence AC now depends on. Then **D2**, then **D3**,
+then D4–D10, then the MEDIUM/LOW table, then §R-rec's five recovered findings.
 
-**One new, small, non-blocking item surfaced during the fix work — your call on whether it matters:** qa-web-agent found spelling/wording drift between layers — the web-generated question headline says "Xóa {n} việc?" while the server-generated confirm chip says "Xoá {n} việc" (both valid Vietnamese, different orthography for the same word, one screen apart); the mockups say "Đang nghĩ" where the app says "Đang xử lý" for the thinking state. No AC is violated either way. Structural root cause: confirm-chip copy is server-generated while everything else is client-generated, so localization is split across two layers — worth an architect note for when a second locale exists, not necessarily a blocker now.
+## The one thing to understand before you start
+Every one of round 2's 25 HIGH findings sits in the four ACs **revision 2 newly wrote**
+(AC-18, AC-19, AC-21, AC-22). The shape is identical in all four: the AC was written to make
+something falsifiable, and it asserts on a surface that does not exist — a log field not
+declared in `## Data`, a module topology the shipped ports forbid, a lookup that must always
+miss, a slot vocabulary narrower than the kind vocabulary opened in the same revision.
 
-## Read these files first
+So the discipline for this revision is: **every assertion an AC makes must name a field that
+`## Data` declares, or a seam the code has, or a slot `components.md` carries.** If it does
+not, either add the field/seam/slot in this revision or delete the assertion. Do not write a
+third layer of prose obligation over a surface that cannot carry it.
 
-1. `reports/product-review-F-001-final-2026-08-16.md` — your own first pass, the checklist you're re-verifying
-2. `specs/assistant/F-001-voice-assistant-view.md` — `## Acceptance Criteria` AC-19 (now names 4.1.3) and the new `## Naming convention` paragraph (clarifies concept-names-vs-shipped-copy)
-3. `design/_shared/components.md` — the Vietnamese strings you'll compare screenshots against
-4. `qa/assistant/runs/2026-08-16-web-execute-v2.md` + `2026-08-16-api-execute-v2.md` — the re-execution run records
+## Scope boundaries
+- **No new server contract.** D2 is fixable entirely from fields already on the wire
+  (`deleted_titles`, `created_titles`, `UndoResult`'s inline `{task_id, title}`).
+- **D4 requires you to carve F-003 seam edits into `## Out of Scope`** — currently it forbids
+  exactly the edits AC-19 needs. Name the three seams explicitly (`NativeSpeechModule` gains a
+  category operation; `releaseAudioSession` moves to the arbiter; `controller.ts:101-103`'s
+  subscription moves with it). The spec already did this in the opposite direction for the
+  recognizer's language alignment — follow that precedent.
+- **AC ids are never renumbered.** AC-8 stays retired-in-place. Round-1 and round-2 findings
+  both cite ids; a renumber breaks every reference in two reports and fourteen lens returns.
+- `design/_shared/components.md` — you may add rows for D3's widened slot vocabulary. Flag in
+  your return that design-agent owns the frame wording so the orchestrator can route it.
 
-## Look at the screens again
+## Three things you must NOT decide — leave them open, marked, and routed to the human
+These are escalated and are **not yours to close**. Where an AC currently ships an answer to
+one, mark it explicitly as pending an owner decision rather than silently keeping it:
 
-```bash
-bash .claude/tools/design-check/run-design-check.sh --screenshots .claude/eval/design-shots
-```
+1. **Is talk-back content or incidental sound?** (AC-7 + OQ1.) AC-7 currently suppresses on
+   Android vibrate/silent/DND and picks iOS categories the ring/silent switch kills. Nobody
+   chose that; round 1 asked only that the states be enumerated. Mark AC-7's suppression set
+   as **interim, pending owner decision**, the way AC-4's answer to OQ1 is already marked.
+2. **iOS Safari `gesture_required`: surface it or accept a silent failure?** Today the spec
+   claims it is "surfaced rather than silent" and no AC carries that promise. Either way it
+   resolves, **strike the unsupported word now** — do not leave a promise in prose that no AC
+   carries. Record the open choice.
+3. **May a spoken destructive confirmation omit the task titles?** Under AC-22's current slots
+   "Xoá 3 việc?" names nothing, and F-001 AC-10/13 let the user answer by voice. Widen the
+   slot vocabulary so the titled version is *expressible* (D3), but do not decide whether it
+   is *required* — mark it pending.
 
-The mockups are now Vietnamese — re-screenshot rather than reusing your first pass's images. If you want to see the real running app (not just mockups), `npm run dev:web` + `npm run dev:assistant` are both real and working.
-
-## Write to
-
-- `{reports}/product-review-F-001-final-{date}-v2.md` (new file — keep the first as history)
-
-## Success criteria
-
-Re-verify all four lenses at Phase 2 depth against what's actually shipped now. Rate `Result: APPROVED | CHANGES REQUESTED`. If you find the screen-reader gap alone should not block sign-off (your judgment call, with reasoning), say so explicitly rather than leaving it ambiguous. Return ends with `---METRICS---`.
+## Return
+Follow `_completion-protocol.md`. In the `---METRICS---` block, list under `links_to_record:`
+any path you wrote — the orchestrator writes `## Links`, you do not. Also state in prose:
+- which of D1–D10 you closed, and for any you could not, why
+- any place you had to add a field to `## Data` or a slot to `components.md`
+- anything you found that the seven lenses missed

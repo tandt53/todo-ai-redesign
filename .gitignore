@@ -4,3 +4,6 @@ dist/
 
 # playwright-cli scratch: console logs, screenshots, the published flow page
 .playwright-cli/
+
+# Playwright run output — regenerated per run
+test-results/
