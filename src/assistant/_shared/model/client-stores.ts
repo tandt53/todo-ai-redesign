@@ -15,6 +15,22 @@
 import type { DurableStore } from '../ports/durable-store.ts'
 import type { TaskView, TurnRequestBody } from '../types.ts'
 
+/** `client.interface_language` — data-model.md §Client-side stores; F-002 AC-23.
+ *
+ * THE one declared source for the interface language: a BCP-47 tag read by both
+ * the synthesiser and the recognizer, on both clients. A **build-time constant**
+ * this phase — no settings surface is a deliverable of any feature in flight
+ * (F-002 product M-1) — set to the language of the shipped copy in
+ * `design/_shared/components.md` (English, ADR-008; the value moved from
+ * `vi-VN`, nothing else about this contract did).
+ *
+ * Never `navigator.language`, and never a second per-port constant: AC-23's
+ * defect is the *second source*, not the value in it, so a port hardcoding
+ * `'en-US'` violates it exactly as much as one hardcoding `'vi-VN'`. Every
+ * consumer imports this symbol; a grep for it should return every reader.
+ * A user-facing setting can replace the constant later without touching them. */
+export const INTERFACE_LANGUAGE = 'en-US'
+
 export interface PendingInput {
   text: string
   updated_at: string

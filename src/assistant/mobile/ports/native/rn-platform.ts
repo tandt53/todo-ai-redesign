@@ -16,6 +16,7 @@ import type {
   AppLifecycle,
   AudioInterruptionEvent,
   Connectivity,
+  ReduceMotion,
   Unsubscribe,
 } from '../app-lifecycle.ts'
 
@@ -111,6 +112,47 @@ export class RNConnectivity implements Connectivity {
 
   dispose(): void {
     this.unsubscribe?.()
+    this.listeners.clear()
+  }
+}
+
+/**
+ * F-001 AC-30(g): the OS reduce-motion switch, read from RN core.
+ *
+ * `isReduceMotionEnabled()` is a Promise, so the value is primed once at boot
+ * and kept current by the `reduceMotionChanged` event — `scrollAnimated()` is
+ * called synchronously on the scroll path and cannot await. Before `prime()`
+ * resolves the answer is "not enabled", which is the pre-existing behaviour for
+ * every app that never asked; the window is one boot tick and the change event
+ * closes it.
+ */
+export class RNReduceMotion implements ReduceMotion {
+  private enabled = false
+  private readonly listeners = new Set<(enabled: boolean) => void>()
+  private readonly subscription = AccessibilityInfo.addEventListener(
+    'reduceMotionChanged',
+    (next: boolean) => {
+      if (next === this.enabled) return
+      this.enabled = next
+      for (const cb of this.listeners) cb(next)
+    },
+  )
+
+  async prime(): Promise<void> {
+    this.enabled = await AccessibilityInfo.isReduceMotionEnabled()
+  }
+
+  isEnabled(): boolean {
+    return this.enabled
+  }
+
+  onChange(cb: (enabled: boolean) => void): Unsubscribe {
+    this.listeners.add(cb)
+    return () => this.listeners.delete(cb)
+  }
+
+  dispose(): void {
+    this.subscription.remove()
     this.listeners.clear()
   }
 }

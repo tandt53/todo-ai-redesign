@@ -41,36 +41,78 @@ const IOS_MATRIX: { name: string; perms: PermissionState; names: string[] }[] = 
   {
     name: 'iOS 2/4 — microphone denied',
     perms: { microphone: 'denied', speech_recognition: 'granted' },
-    names: ['Micro'],
+    names: ['Microphone'],
   },
   {
     name: 'iOS 3/4 — speech recognition denied',
     perms: { microphone: 'granted', speech_recognition: 'denied' },
-    names: ['Nhận dạng giọng nói'],
+    names: ['Speech Recognition'],
   },
   {
     name: 'iOS 4/4 — both denied',
     perms: { microphone: 'denied', speech_recognition: 'denied' },
-    names: ['Micro', 'Nhận dạng giọng nói'],
+    names: ['Microphone', 'Speech Recognition'],
   },
 ]
+
+/** The level of a markdown ATX heading, or 0 when the line is not a heading. */
+function headingLevel(line: string): number {
+  const m = /^(#{1,6})\s/.exec(line)
+  return m === null ? 0 : (m[1] as string).length
+}
+
+/**
+ * The lines of the section this file reads — from its heading to the next
+ * heading of the same or higher level. Scoping is not cosmetic: the permission
+ * table is not the only `| **ID** | … |` table in `components.md` (§ Spoken
+ * frames, owned by F-002, has one whose escaped `\|` splits into the same four
+ * cells), so a whole-file scan silently adopts whatever a later section adds.
+ * Cutting at the next heading puts every future section out of scope by
+ * construction rather than by an exclusion list that has to be maintained.
+ *
+ * Throws rather than returning nothing if the heading moves or is ambiguous: a
+ * parser that matches nothing is green exactly like one that works (L-007).
+ */
+function sectionLines(md: string, heading: RegExp): string[] {
+  const lines = md.split('\n')
+  const starts = lines.flatMap((l, i) => (heading.test(l) && headingLevel(l) > 0 ? [i] : []))
+  if (starts.length !== 1) {
+    throw new Error(
+      `${CATALOGUE_FILE}: expected exactly one heading matching ${heading} — found ${starts.length}`,
+    )
+  }
+  const start = starts[0] as number
+  const level = headingLevel(lines[start] as string)
+  const rest = lines.slice(start + 1)
+  const end = rest.findIndex((l) => {
+    const lvl = headingLevel(l)
+    return lvl > 0 && lvl <= level
+  })
+  return end === -1 ? rest : rest.slice(0, end)
+}
 
 /**
  * The published catalogue, PARSED — never hand-copied (L-002: a hand-copied
  * expectation turns a contract check into a self-agreement check). Design owns
- * these strings in `design/_shared/components.md` § MicControl; if this file
- * retyped them, the two copies could drift and every test would still pass.
+ * these strings in `design/_shared/components.md` § MicControl →
+ * "Permission copy"; if this file retyped them, the two copies could drift and
+ * every test would still pass. Only that section is read — see `sectionLines`.
  */
 function publishedRows(): Map<string, { head: string; body: string; cta: string | null }> {
   const md = readFileSync(CATALOGUE_FILE, 'utf8')
   const rows = new Map<string, { head: string; body: string; cta: string | null }>()
-  for (const line of md.split('\n')) {
+  for (const line of sectionLines(md, /^#{1,6}\s+Permission copy\b/)) {
     const m = /^\|\s*\*\*([A-Z-]+)\*\*\s*\|(.*)\|\s*$/.exec(line)
     if (m === null) continue
     const cells = (m[2] as string).split('|').map((c) => c.trim())
     if (cells.length !== 4) continue // not the permission table's shape
     const [, head, body, cta] = cells as [string, string, string, string]
     rows.set(m[1] as string, { head, body, cta: cta === '—' ? null : cta })
+  }
+  if (rows.size === 0) {
+    throw new Error(
+      `${CATALOGUE_FILE}: the Permission copy section parsed to zero rows — the table's shape moved`,
+    )
   }
   return rows
 }
@@ -118,7 +160,7 @@ describe('permission copy is design\'s, cited by row ID — this file owns only 
     // one closer for denial rows and one for request rows.
     for (const id of ['IOS-ASK', 'AND-ASK'] as PermissionCopyRow[]) {
       expect(permissionCopyRow(id).body[1]).toBe(
-        'Gõ tay vẫn dùng bình thường nếu bạn không muốn cấp quyền.',
+        'Typing still works as usual if you would rather not grant it.',
       )
     }
     for (const id of [
@@ -129,18 +171,18 @@ describe('permission copy is design\'s, cited by row ID — this file owns only 
       'AND-DENIED',
       'AND-PERMANENT',
     ] as PermissionCopyRow[]) {
-      expect(permissionCopyRow(id).body[1]).toBe('Gõ tay vẫn dùng bình thường.')
+      expect(permissionCopyRow(id).body[1]).toBe('Typing still works as usual.')
     }
   })
 
   it('IOS-MIC-UNASKED does NOT promise that the mic alone restores the feature', () => {
-    // Every other denial row closes on "là micro sáng lại ngay". Here that
+    // Every other denial row closes on "the mic lights up again". Here that
     // would be a lie: enabling the microphone leaves speech recognition still
     // unanswered, so the row promises the remaining question instead.
     const row = permissionCopyRow('IOS-MIC-UNASKED')
-    expect(row.body[0]).not.toContain('là micro sáng lại ngay')
+    expect(row.body[0]).not.toContain('the mic lights up again')
     for (const id of ['IOS-MIC', 'IOS-SPEECH', 'IOS-BOTH'] as PermissionCopyRow[]) {
-      expect(permissionCopyRow(id).body[0]).toContain('là micro sáng lại ngay')
+      expect(permissionCopyRow(id).body[0]).toContain('the mic lights up again')
     }
   })
 
@@ -181,7 +223,7 @@ describe('permission copy is design\'s, cited by row ID — this file owns only 
         PUBLISHED.get(row)?.cta,
       )
     }
-    // The rule the catalogue states in words: "Cấp quyền micro" promises a
+    // The rule the catalogue states in words: "Allow microphone" promises a
     // prompt, so it appears on AND-DENIED and nowhere else.
     const promising = cases.filter(
       ([p, perms]) => permissionCtaLabel(p, perms) === PUBLISHED.get('AND-DENIED')?.cta,
@@ -205,14 +247,14 @@ describe('permission copy is design\'s, cited by row ID — this file owns only 
     expect(msg?.kind === 'info' && msg.body[0]).toBe(PUBLISHED.get('IOS-MIC-UNASKED')?.body)
     // It must not borrow IOS-MIC's parenthetical, which asserts the speech
     // grant was given.
-    expect(msg?.kind === 'info' && msg.body.join(' ')).not.toContain('đã được cho phép')
+    expect(msg?.kind === 'info' && msg.body.join(' ')).not.toContain('is already allowed')
   })
 
   /**
    * The CTA rule, stated as selection rather than copy: on iOS ANY denial
    * routes to Settings. Deriving it from "is some grant still askable"
    * (`canRequest`) is true in the IOS-MIC-UNASKED tuple and yields
-   * "Cấp quyền micro" — a button promising a microphone prompt iOS will never
+   * "Allow microphone" — a button promising a microphone prompt iOS will never
    * show, spending its one remaining dialog on a capability that is inert
    * without the grant just declined.
    */
@@ -225,7 +267,7 @@ describe('permission copy is design\'s, cited by row ID — this file owns only 
     ]
     for (const perms of tuples) {
       expect(ctaTarget('ios', perms), JSON.stringify(perms)).toBe('settings')
-      expect(permissionCtaLabel('ios', perms)).toBe('Mở Cài đặt')
+      expect(permissionCtaLabel('ios', perms)).toBe('Open Settings')
     }
     // …even though iOS would still show the speech dialog in that one tuple:
     // "askable" is a true fact about the OS and the wrong basis for the button.
@@ -263,7 +305,9 @@ describe('permission copy is design\'s, cited by row ID — this file owns only 
 
     const infos = infoMessages(h)
     // Only the explanation that precedes the request — no denial after it.
-    expect(infos.map((m) => (m.kind === 'info' ? m.head : ''))).toEqual(['Xin phép dùng micro'])
+    expect(infos.map((m) => (m.kind === 'info' ? m.head : ''))).toEqual([
+      'Asking for microphone access',
+    ])
     expect(micMode(h.controller.state)).not.toBe('dimmed-permission')
   })
 
@@ -297,9 +341,9 @@ describe('AC-2 — iOS requires two grants, asked once, before the first talk at
 
     // One explanation covering both, then one OS request covering both.
     const explanation = infoMessages(h)[0]
-    expect(explanation?.kind === 'info' && explanation.head).toBe('Xin phép dùng micro')
+    expect(explanation?.kind === 'info' && explanation.head).toBe('Asking for microphone access')
     expect(explanation?.kind === 'info' && explanation.body.join(' ')).toContain(
-      'Nhận dạng giọng nói',
+      'Speech Recognition',
     )
     expect(h.speech.log.prompts).toBe(1)
     expect(h.controller.permissions()).toEqual({
@@ -357,7 +401,7 @@ describe('AC-2 — iOS requires two grants, asked once, before the first talk at
       }
       // iOS never re-asks once the user has answered: the CTA opens Settings.
       expect(ctaTarget('ios', row.perms)).toBe('settings')
-      expect(permissionCtaLabel('ios', row.perms)).toBe('Mở Cài đặt')
+      expect(permissionCtaLabel('ios', row.perms)).toBe('Open Settings')
       expect(h.speech.log.prompts).toBe(0)
     })
   }
@@ -408,7 +452,7 @@ describe('AC-3 — Android needs one grant, and permanently-denied is its own pa
     await h.controller.init()
     expect(micMode(h.controller.state)).toBe('dimmed-permission')
     expect(ctaTarget('android', { microphone: 'denied' })).toBe('request')
-    expect(permissionCtaLabel('android', { microphone: 'denied' })).toBe('Cấp quyền micro')
+    expect(permissionCtaLabel('android', { microphone: 'denied' })).toBe('Allow microphone')
 
     h.controller.tapMic()
     await settle()
@@ -432,9 +476,9 @@ describe('AC-3 — Android needs one grant, and permanently-denied is its own pa
     expect(h.speech.log.prompts).toBe(0)
     const msg = lastInfo(h)
     expect(msg?.kind === 'info' && msg.cta).toBe('permission')
-    expect(msg?.kind === 'info' && msg.body.join(' ')).toContain('Thông tin ứng dụng → Quyền')
+    expect(msg?.kind === 'info' && msg.body.join(' ')).toContain('App info → Permissions')
     expect(permissionCtaLabel('android', { microphone: 'permanently_denied' })).toBe(
-      'Mở cài đặt ứng dụng',
+      'Open app settings',
     )
 
     h.controller.permissionCta()
@@ -530,7 +574,7 @@ describe('AC-4 + F-001 AC-20/AC-22 — capability, not connectivity, decides the
     h.controller.tapMic()
     await settle()
     const msg = lastInfo(h)
-    expect(msg?.kind === 'info' && msg.head).toBe('Chưa có gói ngôn ngữ cho giọng nói')
+    expect(msg?.kind === 'info' && msg.head).toBe('No speech language pack yet')
     expect(msg?.kind === 'info' && msg.cta).toBe(null) // nothing to grant
     expect(h.speech.log.prompts).toBe(0)
 

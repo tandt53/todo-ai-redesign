@@ -125,7 +125,7 @@ export function ctaTarget(
 // Copy — NOT owned by this file.
 //
 // Every string below is quoted verbatim from the catalogue at
-// `design/_shared/components.md` § MicControl → "Permission copy — the seven
+// `design/_shared/components.md` § MicControl → "Permission copy — the eight
 // combinations", cited by its row ID. Design owns the strings; this file owns
 // only the SELECTION — which permission tuple maps to which row, combinatorics
 // driven by AC-2 / AC-3 rather than by wording.
@@ -160,77 +160,80 @@ interface CopyRow {
   cta: string | null
 }
 
-const DENIAL_CLOSER = 'Gõ tay vẫn dùng bình thường.'
-const REQUEST_CLOSER = 'Gõ tay vẫn dùng bình thường nếu bạn không muốn cấp quyền.'
+const DENIAL_CLOSER = 'Typing still works as usual.'
+const REQUEST_CLOSER = 'Typing still works as usual if you would rather not grant it.'
 
 const CATALOGUE: Record<PermissionCopyRow, CopyRow> = {
   'IOS-ASK': {
-    head: 'Xin phép dùng micro',
+    head: 'Asking for microphone access',
     body: [
-      'todo-ai cần quyền Micro và Nhận dạng giọng nói để nghe và ghi lại lời bạn nói. Lời nói được chuyển thành chữ ngay trên máy.',
+      'todo-ai needs Microphone and Speech Recognition to hear what you say and write it down. Your words become text on the device itself.',
       REQUEST_CLOSER,
     ],
     cta: null,
   },
   'IOS-MIC': {
-    head: 'Micro cần quyền truy cập',
+    head: 'Microphone needs permission',
     body: [
-      'Quyền Micro đang tắt (Nhận dạng giọng nói đã được cho phép). Bật Micro trong Cài đặt là micro sáng lại ngay.',
+      'Microphone is off (Speech Recognition is already allowed). Turn Microphone on in Settings and the mic lights up again.',
       DENIAL_CLOSER,
     ],
-    cta: 'Mở Cài đặt',
+    cta: 'Open Settings',
   },
-  // The one row that deliberately does NOT close on "là micro sáng lại ngay":
+  // The one row that deliberately does NOT close on "the mic lights up again":
   // enabling the microphone alone does not restore the feature here, so the row
   // promises the remaining question instead — which is what actually happens on
   // the next talk attempt.
   'IOS-MIC-UNASKED': {
-    head: 'Micro cần quyền truy cập',
+    head: 'Microphone needs permission',
     body: [
-      'Quyền Micro đang tắt — không có micro thì không nghe được gì, nên todo-ai chưa hỏi đến Nhận dạng giọng nói. Bật Micro trong Cài đặt, lần nói tiếp theo sẽ hỏi nốt quyền còn lại.',
+      'Microphone is off — with no microphone there is nothing to hear, so todo-ai never got as far as asking about Speech Recognition. Turn Microphone on in Settings and the next time you talk it will ask for the one that is left.',
       DENIAL_CLOSER,
     ],
-    cta: 'Mở Cài đặt',
+    cta: 'Open Settings',
   },
   'IOS-SPEECH': {
-    head: 'Micro cần quyền truy cập',
+    head: 'Microphone needs permission',
     body: [
-      'Quyền Nhận dạng giọng nói đang tắt (Micro đã được cho phép). Bật Nhận dạng giọng nói trong Cài đặt là micro sáng lại ngay.',
+      'Speech Recognition is off (Microphone is already allowed). Turn Speech Recognition on in Settings and the mic lights up again.',
       DENIAL_CLOSER,
     ],
-    cta: 'Mở Cài đặt',
+    cta: 'Open Settings',
   },
   'IOS-BOTH': {
-    head: 'Micro cần quyền truy cập',
+    head: 'Microphone needs permission',
     body: [
-      'Cả quyền Micro và Nhận dạng giọng nói đều đang tắt. Bật cả hai trong Cài đặt là micro sáng lại ngay.',
+      'Both Microphone and Speech Recognition are off. Turn both on in Settings and the mic lights up again.',
       DENIAL_CLOSER,
     ],
-    cta: 'Mở Cài đặt',
+    cta: 'Open Settings',
   },
   'AND-ASK': {
-    head: 'Xin phép dùng micro',
+    head: 'Asking for microphone access',
     body: [
-      'todo-ai cần quyền Micro để nghe và ghi lại lời bạn nói. Lời nói được chuyển thành chữ ngay trên máy.',
+      'todo-ai needs Microphone to hear what you say and write it down. Your words become text on the device itself.',
       REQUEST_CLOSER,
     ],
     cta: null,
   },
   'AND-DENIED': {
-    head: 'Micro cần quyền truy cập',
+    head: 'Microphone needs permission',
     body: [
-      'Quyền Micro của todo-ai đang tắt. Chạm “Cấp quyền micro” rồi chọn Cho phép là micro sáng lại ngay.',
+      // Double-quoted so the apostrophe needs no escape: the "no message body
+      // is derived" test reads this file as TEXT and requires the published
+      // body to appear literally, which `todo-ai\'s` would defeat.
+      "todo-ai's Microphone permission is off. Tap “Allow microphone”, choose Allow, and the mic lights up again.",
       DENIAL_CLOSER,
     ],
-    cta: 'Cấp quyền micro',
+    cta: 'Allow microphone',
   },
   'AND-PERMANENT': {
-    head: 'Micro cần quyền truy cập',
+    head: 'Microphone needs permission',
     body: [
-      'Quyền Micro của todo-ai đang tắt và Android sẽ không hỏi lại nữa. Bật trong Thông tin ứng dụng → Quyền là micro sáng lại ngay.',
+      "todo-ai's Microphone permission is off and Android will not ask again. Turn it on in App info → Permissions and the mic lights up again.",
       DENIAL_CLOSER,
     ],
-    cta: 'Mở cài đặt ứng dụng',
+    cta: 'Open app settings',
   },
 }
 
@@ -322,7 +325,7 @@ export function permissionDeniedMessageFor(
  */
 export function permissionCtaLabel(platform: MobilePlatform, perms: PermissionState): string {
   // The rows these three labels are read from are the rows they belong to:
-  // "Cấp quyền micro" exists only on AND-DENIED (the one row where the OS will
+  // "Allow microphone" exists only on AND-DENIED (the one row where the OS will
   // still prompt), and the two settings labels on their platforms' rows.
   if (ctaTarget(platform, perms) === 'request') return ctaOf('AND-DENIED')
   return platform === 'ios' ? ctaOf('IOS-BOTH') : ctaOf('AND-PERMANENT')
@@ -339,16 +342,16 @@ function ctaOf(row: PermissionCopyRow): string {
  * language (AC-4's explicit carve-out: transient, not no-capability).
  *
  * Same ownership, same catalogue: the adjacent row published directly below the
- * table ("Chưa có gói ngôn ngữ cho giọng nói"). It is deliberately not one of
- * the rows — it is not a permission combination — so design left it unnamed and
- * this file does not mint an ID for it.
+ * table ("No speech language pack yet"). It is deliberately not one of the rows
+ * — it is not a permission combination — so design left it unnamed and this
+ * file does not mint an ID for it.
  */
 export function languagePackMessage(at: string): NewMsg {
   return {
     kind: 'info',
-    head: 'Chưa có gói ngôn ngữ cho giọng nói',
+    head: 'No speech language pack yet',
     body: [
-      'Máy có nhận dạng giọng nói nhưng chưa tải gói tiếng Việt, nên tạm thời chưa nghe được. Tải gói trong cài đặt hệ thống là micro sáng lại.',
+      'This device can recognise speech but has not downloaded the English pack, so it cannot listen for now. Download the pack in system settings and the mic lights up again.',
       DENIAL_CLOSER,
     ],
     cta: null,
@@ -367,7 +370,7 @@ export function languagePackMessage(at: string): NewMsg {
 // refused — spending the one dialog iOS has left on speech recognition, which
 // is inert without a microphone, would change nothing the user can perceive.
 // So the tuple is a legitimate resting state and gets copy, and the row's body
-// deliberately breaks the other rows' "là micro sáng lại ngay" ending: enabling
+// deliberately breaks the other rows' "the mic lights up again" ending: enabling
 // the microphone alone does not restore the feature, so the row promises the
 // remaining question instead, which is what the next talk attempt does.
 //

@@ -23,12 +23,23 @@ import { tokens } from '../model/theme.ts'
 import { touchProps } from '../model/touch.ts'
 import { useStyles } from './styles.ts'
 
+/** The orb's accessible name follows mode/state — the three published names are
+ * `components.md` § MicControl A11y ("Tap to speak" / "Listening — tap to stop"
+ * / "Microphone needs permission"). `dimmed-transient` has no published name:
+ * the catalogue gives that mode a visible *message* naming the cause and says
+ * only that the orb dims, so this one is implementation-authored and reported
+ * as a gap for design to ratify. */
 const MIC_LABEL: Record<string, string> = {
-  listening: 'Đang nghe — chạm để dừng',
-  'dimmed-permission': 'Micro cần quyền truy cập',
-  'dimmed-transient': 'Micro tạm thời không dùng được',
-  available: 'Chạm để nói',
+  listening: 'Listening — tap to stop',
+  'dimmed-permission': 'Microphone needs permission',
+  'dimmed-transient': 'Microphone temporarily unavailable',
+  available: 'Tap to speak',
 }
+
+/** Composer placeholder, `components.md` § Composer "empty". The accessible
+ * name is the same string so the visible label and the accessible name agree
+ * (AC-19 / WCAG 2.5.3). */
+const COMPOSER_PLACEHOLDER = 'Say or type what needs doing…'
 
 export function Composer({
   state,
@@ -56,10 +67,10 @@ export function Composer({
   return (
     <View style={styles.composer}>
       <TextInput
-        {...a11yProps(A11Y_IDS.composerInput, { label: 'Nói hoặc nhập việc cần làm' })}
+        {...a11yProps(A11Y_IDS.composerInput, { label: COMPOSER_PLACEHOLDER })}
         hitSlop={inputTouch.hitSlop}
         style={[styles.composerInput, listening ? styles.composerInputListening : null]}
-        placeholder="Nói hoặc nhập việc cần làm…"
+        placeholder={COMPOSER_PLACEHOLDER}
         placeholderTextColor={colors.text.muted}
         value={state.composer}
         onChangeText={(text) => controller.composerChange(text)}
@@ -100,7 +111,7 @@ export function Composer({
       )}
       <Pressable
         {...a11yProps(A11Y_IDS.composerSend, {
-          label: 'Gửi',
+          label: 'Send',
           role: 'button',
           state: { disabled: !canSend },
         })}

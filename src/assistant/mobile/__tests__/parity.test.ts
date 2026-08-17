@@ -65,7 +65,7 @@ describe('F-001 AC-1 / AC-4 — applied changes land in the list, attributed, sa
     await settle()
 
     const applied = h.controller.state.messages.find((m) => m.kind === 'applied')
-    expect(applied?.kind === 'applied' && applied.head).toContain('Đã sửa 1 việc')
+    expect(applied?.kind === 'applied' && applied.head).toContain('Edited 1 task')
     expect(h.controller.state.marks?.byTask['task-1']?.label).toBe('edit')
     expect(h.controller.state.tasks[0]?.due_at).toBe('2026-08-16T16:00:00.000Z')
   })
@@ -85,7 +85,7 @@ describe('F-001 AC-1 / AC-4 — applied changes land in the list, attributed, sa
     await settle()
 
     const q = h.controller.state.messages.find((m) => m.kind === 'question')
-    expect(q?.kind === 'question' && q.head).toBe('Xóa 3 việc?')
+    expect(q?.kind === 'question' && q.head).toBe('Delete 3 tasks?')
     expect(h.controller.state.messages.some((m) => m.kind === 'applied')).toBe(false)
     expect(h.controller.undoable()).toBe(null)
   })
@@ -158,7 +158,7 @@ describe('F-001 AC-5..AC-8 — the undo contract, unchanged on mobile', () => {
     await settle()
 
     const reverted = h.controller.state.messages.find((m) => m.kind === 'reverted')
-    expect(reverted?.kind === 'reverted' && reverted.head).toBe('Đã hoàn tác')
+    expect(reverted?.kind === 'reverted' && reverted.head).toBe('Undone')
     expect(h.controller.undoable()).toBe(null) // the affordance visibly leaves
   })
 
@@ -184,7 +184,7 @@ describe('F-001 AC-5..AC-8 — the undo contract, unchanged on mobile', () => {
     await settle()
 
     const reverted = h.controller.state.messages.find((m) => m.kind === 'reverted')
-    expect(reverted?.kind === 'reverted' && reverted.head).toBe('Không hoàn tác được gì')
+    expect(reverted?.kind === 'reverted' && reverted.head).toBe('Nothing was undone')
     expect(reverted?.kind === 'reverted' && reverted.body.join(' ')).toContain('Duyệt ngân sách Q3')
   })
 
@@ -271,7 +271,7 @@ describe('F-001 AC-9..AC-13 — questions, resolutions and clarification', () =>
     await settle()
 
     const kept = h.controller.state.messages.find(
-      (m) => m.kind === 'outcome' && m.head === 'Đã giữ nguyên 2 việc',
+      (m) => m.kind === 'outcome' && m.head === 'Kept all 2 tasks',
     )
     expect(kept).toBeDefined()
     const q = h.controller.state.messages.find((m) => m.kind === 'question')

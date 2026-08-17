@@ -34,18 +34,18 @@ export function VoiceSurface({
               <i />
               <i />
             </span>
-            <span className="state-word">Đang nghe…</span>
+            <span className="state-word">Listening…</span>
           </span>
         ) : (
           <span className="si-thinking">
-            <span className="state-word">Đang xử lý…</span>
+            <span className="state-word">Thinking…</span>
             <button
               className="cancel-btn"
               data-testid="assistant-cancel-button"
-              aria-label="Hủy — lời bạn vừa nói vẫn còn trong ô nhập"
+              aria-label="Cancel — your words stay in the box"
               onClick={() => controller.cancelThinking()}
             >
-              Hủy
+              Cancel
             </button>
           </span>
         )}

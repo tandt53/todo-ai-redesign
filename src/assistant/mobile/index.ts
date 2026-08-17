@@ -15,6 +15,7 @@ export { MobileAssistantController } from './controller.ts'
 export type { MobileControllerDeps, MobileCounters } from './controller.ts'
 export * from './model/a11y.ts'
 export * from './model/announce.ts'
+export * from './model/follow.ts'
 export * from './model/lifecycle.ts'
 export * from './model/permissions.ts'
 export * from './model/surface.ts'
@@ -39,9 +40,15 @@ import type { MobilePlatform } from './model/permissions.ts'
 import {
   FakeAppLifecycle,
   FakeConnectivity,
+  FakeReduceMotion,
   RecordingAnnouncer,
 } from './ports/app-lifecycle.ts'
-import type { Announcer, AppLifecycle, Connectivity } from './ports/app-lifecycle.ts'
+import type {
+  Announcer,
+  AppLifecycle,
+  Connectivity,
+  ReduceMotion,
+} from './ports/app-lifecycle.ts'
 import { FakeMobileTranscriptSource } from './ports/transcript-source.ts'
 import type { MobileTranscriptSource } from './ports/transcript-source.ts'
 
@@ -93,6 +100,12 @@ export function makeAnnouncer(): RecordingAnnouncer {
   return new RecordingAnnouncer()
 }
 
+/** F-001 AC-30(g)'s OS switch, drivable: `set(true)` is the user turning
+ * reduce-motion on mid-session. */
+export function makeReduceMotion(enabled = false): FakeReduceMotion {
+  return new FakeReduceMotion(enabled)
+}
+
 // ---------------------------------------------------------------------------
 // The surface facade
 // ---------------------------------------------------------------------------
@@ -103,6 +116,8 @@ export interface SurfaceDeps {
   lifecycle?: AppLifecycle
   connectivity?: Connectivity
   announcer?: Announcer
+  /** F-001 AC-30(g). */
+  reduceMotion?: ReduceMotion
   /** A ready client, or the pieces to build one. `fetchFn` is the API seam —
    * no live server needed. */
   api?: AssistantApi | { fetchFn?: FetchLike; baseUrl?: string; userId?: string }
@@ -125,6 +140,7 @@ export class Surface {
   readonly lifecycle: AppLifecycle
   readonly connectivity: Connectivity
   readonly announcer: Announcer
+  readonly reduceMotion: ReduceMotion
 
   constructor(deps: SurfaceDeps = {}) {
     const platform = deps.platform ?? deps.transcript?.platform ?? 'ios'
@@ -134,6 +150,7 @@ export class Surface {
     this.lifecycle = deps.lifecycle ?? makeAppLifecycle()
     this.connectivity = deps.connectivity ?? makeConnectivity()
     this.announcer = deps.announcer ?? makeAnnouncer()
+    this.reduceMotion = deps.reduceMotion ?? makeReduceMotion()
     const api =
       deps.api instanceof AssistantApi
         ? deps.api
@@ -149,6 +166,7 @@ export class Surface {
       lifecycle: this.lifecycle,
       connectivity: this.connectivity,
       announcer: this.announcer,
+      reduceMotion: this.reduceMotion,
       ...(deps.uuid === undefined ? {} : { uuid: deps.uuid }),
       ...(deps.now === undefined ? {} : { now: deps.now }),
       ...(deps.timezone === undefined ? {} : { timezone: deps.timezone }),
@@ -209,11 +227,19 @@ export class Surface {
     return undoableTurnId(this.controller.state)
   }
 
-  /** Every accessibility id the surface renders right now (AC-12). */
-  a11yIds(ctx: { tasksVisible?: boolean; hasTasks?: boolean } = {}): Set<A11yId> {
+  /** Every accessibility id the surface renders right now (AC-12).
+   *
+   * `unseenBelowFold` is F-001 AC-30's viewport fact — how many messages
+   * arrived while the user was away from the bottom. It defaults to 0
+   * (NMA-HIDDEN), because a headless surface has no viewport and the AC's own
+   * default is "the newest message is on screen". */
+  a11yIds(
+    ctx: { tasksVisible?: boolean; hasTasks?: boolean; unseenBelowFold?: number } = {},
+  ): Set<A11yId> {
     return expectedIds(this.controller.state, {
       tasksVisible: ctx.tasksVisible ?? true,
       hasTasks: ctx.hasTasks ?? this.controller.state.tasks.length > 0,
+      unseenBelowFold: ctx.unseenBelowFold ?? 0,
     })
   }
 

@@ -8,7 +8,7 @@ import * as Toggle from '@radix-ui/react-toggle'
 import type { AssistantController } from '../../_shared/controller.ts'
 import type { AppState } from '../../_shared/model/reducer.ts'
 import type { DiffLine, TaskView } from '../../_shared/types.ts'
-import { formatDue } from '../../_shared/model/format.ts'
+import { formatDue, tasksWord } from '../../_shared/model/format.ts'
 import { CheckIcon, PencilIcon, PlusIcon, TrashIcon } from './icons.tsx'
 
 export type ListFilter = 'all' | 'today' | 'done'
@@ -51,10 +51,10 @@ function groupTasks(tasks: TaskView[], now: Date): Group[] {
   const tmr = new Date(now)
   tmr.setDate(tmr.getDate() + 1)
   const groups: Group[] = []
-  if (today.length > 0) groups.push({ label: `Hôm nay · ${dayLabel(now)}`, tasks: today })
-  if (tomorrow.length > 0) groups.push({ label: `Ngày mai · ${dayLabel(tmr)}`, tasks: tomorrow })
-  if (later.length > 0) groups.push({ label: 'Sau này', tasks: later })
-  if (anytime.length > 0) groups.push({ label: 'Lúc nào cũng được', tasks: anytime })
+  if (today.length > 0) groups.push({ label: `Today · ${dayLabel(now)}`, tasks: today })
+  if (tomorrow.length > 0) groups.push({ label: `Tomorrow · ${dayLabel(tmr)}`, tasks: tomorrow })
+  if (later.length > 0) groups.push({ label: 'Later', tasks: later })
+  if (anytime.length > 0) groups.push({ label: 'Anytime', tasks: anytime })
   return groups
 }
 
@@ -95,7 +95,11 @@ function TaskRow({
   const [draft, setDraft] = useState(task.title)
   const done = task.status === 'done'
   const meta =
-    task.due_at !== null ? formatDue(task.due_at) : task.local === true ? 'đã lưu tại máy' : null
+    task.due_at !== null
+      ? formatDue(task.due_at)
+      : task.local === true
+        ? 'saved on this device'
+        : null
   return (
     <li
       className={`task-row${done ? ' done' : ''}${mark !== null ? ' flashing' : ''}`}
@@ -106,7 +110,7 @@ function TaskRow({
         data-testid="assistant-task-checkbox"
         pressed={done}
         onPressedChange={() => void controller.toggleTask(task.id)}
-        aria-label={`Đánh dấu “${task.title}” là ${done ? 'chưa xong' : 'đã xong'}`}
+        aria-label={`Mark “${task.title}” ${done ? 'not done' : 'done'}`}
       >
         {done ? <CheckIcon /> : null}
       </Toggle.Root>
@@ -114,7 +118,7 @@ function TaskRow({
         {editing ? (
           <input
             className="task-edit-input"
-            aria-label={`Sửa “${task.title}”`}
+            aria-label={`Edit “${task.title}”`}
             value={draft}
             autoFocus
             onChange={(e) => setDraft(e.target.value)}
@@ -141,7 +145,7 @@ function TaskRow({
                 className={`badge show ${mark.label === 'new' ? 'badge-new' : 'badge-edited'}`}
                 data-testid="assistant-row-badge"
               >
-                {mark.label === 'new' ? 'Mới' : 'Đã sửa'}
+                {mark.label === 'new' ? 'NEW' : 'EDITED'}
               </span>
             )}
             {meta !== null && <span className="task-meta">{meta}</span>}
@@ -152,7 +156,7 @@ function TaskRow({
       <span className="row-actions">
         <button
           className="row-action"
-          aria-label={`Sửa “${task.title}”`}
+          aria-label={`Edit “${task.title}”`}
           onClick={() => {
             setDraft(task.title)
             setEditing(true)
@@ -162,7 +166,7 @@ function TaskRow({
         </button>
         <button
           className="row-action"
-          aria-label={`Xóa “${task.title}”`}
+          aria-label={`Delete “${task.title}”`}
           onClick={() => void controller.removeTask(task.id)}
         >
           <TrashIcon />
@@ -201,21 +205,25 @@ export function TaskListPane({
   }
 
   return (
-    <aside className="list-pane" aria-label="Danh sách việc của bạn">
+    <aside className="list-pane" aria-label="Your tasks">
       <div className="list-head">
-        <h2>Danh sách của bạn</h2>
-        {all.length > 0 && <span className="count">còn {open} việc</span>}
+        <h2>Your list</h2>
+        {all.length > 0 && (
+          <span className="count">
+            {open} {tasksWord(open)} left
+          </span>
+        )}
         <button className="add-btn" data-testid="assistant-add-task-button" onClick={() => setAdding(true)}>
           <PlusIcon />
-          Thêm việc
+          Add task
         </button>
       </div>
       {adding && (
         <div className="add-form">
           <input
             className="add-input"
-            aria-label="Tên việc mới"
-            placeholder="Tên việc…"
+            aria-label="New task name"
+            placeholder="Task name…"
             autoFocus
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
@@ -228,14 +236,14 @@ export function TaskListPane({
             }}
           />
           <button className="add-save" onClick={commitAdd}>
-            Lưu
+            Save
           </button>
         </div>
       )}
       {tasks.length === 0 ? (
         <div className="list-empty">
-          <strong>Chưa có việc nào — nói đi.</strong>
-          Nói một câu là việc hiện ngay ở đây — hoặc tự thêm bằng tay.
+          <strong>No tasks yet — say one.</strong>
+          Say one sentence and it lands right here — or add it by hand.
         </div>
       ) : (
         <div className="list-scroll">

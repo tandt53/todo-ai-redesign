@@ -12,9 +12,9 @@ import { formatTopDate } from '../../_shared/model/format.ts'
 import { MenuIcon, WifiOffIcon } from './icons.tsx'
 
 const FILTERS: { id: ListFilter; label: string }[] = [
-  { id: 'all', label: 'Tất cả' },
-  { id: 'today', label: 'Hôm nay' },
-  { id: 'done', label: 'Đã xong' },
+  { id: 'all', label: 'All' },
+  { id: 'today', label: 'Today' },
+  { id: 'done', label: 'Done' },
 ]
 
 export function TopBar({
@@ -29,7 +29,7 @@ export function TopBar({
       <button
         className="icon-btn"
         data-testid="assistant-drawer-button"
-        aria-label="Mở danh sách"
+        aria-label="Open lists"
         aria-expanded={drawerOpen}
         onClick={onToggleDrawer}
       >
@@ -49,7 +49,7 @@ export function Drawer({
   onPick: (f: ListFilter) => void
 }) {
   return (
-    <nav className="drawer" aria-label="Danh sách">
+    <nav className="drawer" aria-label="Lists">
       {FILTERS.map((f) => (
         <button
           key={f.id}
@@ -73,8 +73,8 @@ export function OfflineBanner({ state }: { state: AppState }) {
   return (
     <div className="offline-banner" data-testid="assistant-offline-banner" role="status">
       <WifiOffIcon />
-      Mất mạng — danh sách vẫn dùng được, việc nhập sẽ lưu tại máy.
-      {queued > 0 && <span className="queued-count">{queued} câu đang chờ gửi</span>}
+      No connection — the list still works, and what you type is saved on the device.
+      {queued > 0 && <span className="queued-count">{queued} waiting to send</span>}
     </div>
   )
 }

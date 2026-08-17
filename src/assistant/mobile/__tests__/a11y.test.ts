@@ -1,7 +1,7 @@
 // F-003 AC-12 — accessibility identity and screen-reader announcements.
 //
 // Two halves, both node-testable:
-//   the CATALOGUE — the 22 ids are parsed out of both mobile mockups and
+//   the CATALOGUE — the 23 ids are parsed out of both mobile mockups and
 //   compared with the constants the components render from, in BOTH directions
 //   (nothing missing, nothing invented). Parsing rather than hand-listing is
 //   L-002's lesson: a hand-copied list turns a contract check into a
@@ -24,7 +24,7 @@ import type { AppState } from '../../_shared/model/reducer.ts'
 import type { Message } from '../../_shared/types.ts'
 import { announcementFor, announcementsFor } from '../model/announce.ts'
 import { A11Y_IDS, ALL_A11Y_IDS, a11yProps, expectedIds, identityAttribute } from '../model/a11y.ts'
-import type { A11yId } from '../model/a11y.ts'
+import type { A11yId, SurfaceContext } from '../model/a11y.ts'
 import { appliedTurn, mobileHarness, settle, task, turnResponse } from './_helpers.ts'
 
 const ROOT = resolve(import.meta.dirname, '../../../..')
@@ -58,8 +58,13 @@ describe('AC-12 — one catalogue, three attribute spellings', () => {
   )
   const web = catalogueOf('design/assistant/screens/voice-assistant-view.html', 'data-testid')
 
-  it('the mockups declare 22 ids and both mobile platforms carry the same values', () => {
-    expect(sorted(ios)).toHaveLength(22)
+  // 23 since F-001 AC-30 / BUG-004 published `assistant-new-message-affordance`
+  // (design/_shared/components.md § NewMessageAffordance, "one id on the control
+  // in all three mockups"). The literal is here on purpose: it is the tripwire
+  // that makes a catalogue change arrive as a decision rather than as a silent
+  // widening of every set comparison below.
+  it('the mockups declare 23 ids and both mobile platforms carry the same values', () => {
+    expect(sorted(ios)).toHaveLength(23)
     expect(sorted(android)).toEqual(sorted(ios))
   })
 
@@ -102,27 +107,27 @@ function msg<T extends Message>(m: Omit<T, 'id'>): T {
 
 const AT = '2026-08-16T14:04:00.000Z'
 
-const STATES: { name: string; state: AppState; ctx: { tasksVisible: boolean; hasTasks: boolean } }[] =
+const STATES: { name: string; state: AppState; ctx: SurfaceContext }[] =
   [
     {
       name: 'idle-empty',
       state: stateWith([]),
-      ctx: { tasksVisible: true, hasTasks: false },
+      ctx: { tasksVisible: true, hasTasks: false, unseenBelowFold: 0 },
     },
     {
       name: 'idle-with-tasks',
       state: stateWith([], { tasks: [task()] }),
-      ctx: { tasksVisible: true, hasTasks: true },
+      ctx: { tasksVisible: true, hasTasks: true, unseenBelowFold: 0 },
     },
     {
       name: 'listening',
       state: stateWith([], { surface: 'listening' }),
-      ctx: { tasksVisible: true, hasTasks: false },
+      ctx: { tasksVisible: true, hasTasks: false, unseenBelowFold: 0 },
     },
     {
       name: 'thinking',
       state: stateWith([], { surface: 'thinking' }),
-      ctx: { tasksVisible: true, hasTasks: false },
+      ctx: { tasksVisible: true, hasTasks: false, unseenBelowFold: 0 },
     },
     {
       name: 'applied-with-diff-and-undo',
@@ -161,7 +166,7 @@ const STATES: { name: string; state: AppState; ctx: { tasksVisible: boolean; has
           },
         },
       ),
-      ctx: { tasksVisible: true, hasTasks: true },
+      ctx: { tasksVisible: true, hasTasks: true, unseenBelowFold: 0 },
     },
     {
       name: 'question-confirm',
@@ -178,7 +183,7 @@ const STATES: { name: string; state: AppState; ctx: { tasksVisible: boolean; has
           at: AT,
         }),
       ]),
-      ctx: { tasksVisible: true, hasTasks: false },
+      ctx: { tasksVisible: true, hasTasks: false, unseenBelowFold: 0 },
     },
     {
       name: 'question-clarify',
@@ -195,7 +200,7 @@ const STATES: { name: string; state: AppState; ctx: { tasksVisible: boolean; has
           at: AT,
         }),
       ]),
-      ctx: { tasksVisible: true, hasTasks: false },
+      ctx: { tasksVisible: true, hasTasks: false, unseenBelowFold: 0 },
     },
     {
       name: 'error-with-retry',
@@ -211,7 +216,7 @@ const STATES: { name: string; state: AppState; ctx: { tasksVisible: boolean; has
         ],
         { surface: 'error' },
       ),
-      ctx: { tasksVisible: true, hasTasks: false },
+      ctx: { tasksVisible: true, hasTasks: false, unseenBelowFold: 0 },
     },
     {
       name: 'offline-queued',
@@ -228,7 +233,7 @@ const STATES: { name: string; state: AppState; ctx: { tasksVisible: boolean; has
         ],
         { offline: true, queuedTurnId: 'cid-9' },
       ),
-      ctx: { tasksVisible: true, hasTasks: false },
+      ctx: { tasksVisible: true, hasTasks: false, unseenBelowFold: 0 },
     },
     {
       name: 'boundary',
@@ -243,7 +248,7 @@ const STATES: { name: string; state: AppState; ctx: { tasksVisible: boolean; has
         ],
         { sessionId: null },
       ),
-      ctx: { tasksVisible: true, hasTasks: false },
+      ctx: { tasksVisible: true, hasTasks: false, unseenBelowFold: 0 },
     },
     {
       name: 'mic-permission',
@@ -259,17 +264,64 @@ const STATES: { name: string; state: AppState; ctx: { tasksVisible: boolean; has
         ],
         { capability: 'permission-denied' },
       ),
-      ctx: { tasksVisible: true, hasTasks: false },
+      ctx: { tasksVisible: true, hasTasks: false, unseenBelowFold: 0 },
     },
     {
       name: 'mic-hidden',
       state: stateWith([], { capability: 'none' }),
-      ctx: { tasksVisible: true, hasTasks: false },
+      ctx: { tasksVisible: true, hasTasks: false, unseenBelowFold: 0 },
+    },
+    // The two F-001 AC-30 states, named after the mockup states that depict
+    // them (`nma-new` / `nma-waiting` — the state names ARE the row IDs). Both
+    // are the same conversation seen from a viewport that is not at the bottom:
+    // the difference is what arrived below the fold, which is the whole of
+    // clause (e).
+    {
+      name: 'nma-new',
+      state: stateWith([
+        msg<Extract<Message, { kind: 'outcome' }>>({
+          kind: 'outcome',
+          head: null,
+          body: ['Deleted 1 task: Order the cake.'],
+          at: AT,
+        }),
+        msg<Extract<Message, { kind: 'no-match' }>>({
+          kind: 'no-match',
+          heard: 'call the dentist',
+          at: AT,
+        }),
+      ]),
+      ctx: { tasksVisible: true, hasTasks: false, unseenBelowFold: 2 },
+    },
+    {
+      name: 'nma-waiting',
+      state: stateWith([
+        msg<Extract<Message, { kind: 'question' }>>({
+          kind: 'question',
+          turnId: 'turn-30',
+          qkind: 'bulk_delete',
+          head: 'Delete 3 tasks?',
+          body: 'Will delete: Buy milk, Order the cake, Collect the parcel.',
+          options: ['Delete 3 tasks', 'Keep them'],
+          taskTitles: ['Buy milk', 'Order the cake', 'Collect the parcel'],
+          resolved: false,
+          at: AT,
+        }),
+      ]),
+      ctx: { tasksVisible: true, hasTasks: false, unseenBelowFold: 1 },
     },
   ]
 
+// The two AC-30 counts must match the fixtures they describe — the below-fold
+// set is the TAIL of the message list, so an off-by-one would silently read as
+// NMA-NEW when a question was pending. Derived rather than typed twice.
+for (const name of ['nma-new', 'nma-waiting']) {
+  const s = STATES.find((x) => x.name === name)!
+  s.ctx = { ...s.ctx, unseenBelowFold: s.state.messages.length }
+}
+
 describe('AC-12 — every catalogue id is reachable, and the surface invents none', () => {
-  it('the enumerated surface states between them show all 22 ids', () => {
+  it('the enumerated surface states between them show every catalogue id', () => {
     const seen = new Set<A11yId>()
     for (const { state, ctx } of STATES) {
       for (const id of expectedIds(state, ctx)) seen.add(id)
@@ -336,7 +388,7 @@ describe('AC-12 — every catalogue id is actually wired into a component', () =
     .map((f) => readFileSync(resolve(ROOT, 'src/assistant/mobile/components', f), 'utf8'))
     .join('\n')
 
-  it('each of the 22 ids is referenced by name from a component', () => {
+  it('each catalogue id is referenced by name from a component', () => {
     const unwired = Object.entries(A11Y_IDS)
       .filter(([key]) => !sources.includes(`A11Y_IDS.${key}`))
       .map(([, id]) => id)
@@ -363,7 +415,7 @@ describe('AC-12 — announcements carry the content, not the state word', () => 
     expect(a?.text).toContain('Duyệt ngân sách Q3')
     expect(a?.text).toContain('14:00')
     expect(a?.text).toContain('16:00')
-    expect(a?.text).toContain('Hoàn tác')
+    expect(a?.text).toContain('Undo')
     expect(a?.assertive).toBe(false)
   })
 
@@ -371,7 +423,7 @@ describe('AC-12 — announcements carry the content, not the state word', () => 
     const applied = STATES.find((s) => s.name === 'applied-with-diff-and-undo')!.state
       .messages[0] as Message
     const a = announcementFor(applied, { undoAvailable: false })
-    expect(a?.text).toContain('không hoàn tác được nữa')
+    expect(a?.text).toContain('The undo window for this change has passed.')
   })
 
   it('a question announces its count, its titles and its options', () => {
@@ -414,7 +466,7 @@ describe('AC-12 — announcements carry the content, not the state word', () => 
   it('a queued turn announces the wait — it is news, unlike an ordinary echo', () => {
     const queued = STATES.find((s) => s.name === 'offline-queued')!.state.messages[0] as Message
     const a = announcementFor(queued, { undoAvailable: false })
-    expect(a?.text).toContain('Đang chờ mạng')
+    expect(a?.text).toContain('Waiting for the network')
   })
 })
 
@@ -429,7 +481,7 @@ describe('AC-12 — the controller announces as messages arrive', () => {
     await h.controller.send('typed')
     await settle()
 
-    expect(h.announcer.texts().join(' ')).toContain('Đã sửa 1 việc')
+    expect(h.announcer.texts().join(' ')).toContain('Edited 1 task')
     const afterTurn = h.announcer.announcements.length
 
     // resume: the same history is re-rendered from the server read…
@@ -453,6 +505,6 @@ describe('AC-12 — the controller announces as messages arrive', () => {
 
     const assertive = h.announcer.announcements.filter((a) => a.assertive)
     expect(assertive).toHaveLength(1)
-    expect(assertive[0]?.text).toContain('Chưa gửi được')
+    expect(assertive[0]?.text).toContain("Couldn't send")
   })
 })

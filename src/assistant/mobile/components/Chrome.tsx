@@ -27,7 +27,7 @@ export function TopBar({
     <View style={styles.topBar}>
       <Pressable
         {...a11yProps(A11Y_IDS.drawerButton, {
-          label: 'Mở danh sách',
+          label: 'Open list',
           role: 'button',
           state: { selected: drawerOpen },
         })}
@@ -52,9 +52,12 @@ export function OfflineBanner({ state }: { state: AppState }) {
   return (
     <View {...a11yProps(A11Y_IDS.offlineBanner)} style={styles.offlineBanner} accessible>
       <WifiOff size={tokens.icon.size.sm} color={colors.question} strokeWidth={tokens.icon.stroke} />
+      {/* Banner copy is `components.md` § OfflineBanner, verbatim. The
+          queued-turn count is only described there ("Shows queued-turn count
+          when one is in flight"), not worded — reported as a copy gap. */}
       <Text style={styles.offlineText}>
-        Mất mạng — danh sách vẫn dùng được, việc nhập sẽ lưu tại máy.
-        {queued > 0 ? ` ${queued} câu đang chờ gửi.` : ''}
+        No connection — the list still works, and what you type is saved on the device.
+        {queued > 0 ? ` ${queued} waiting to send.` : ''}
       </Text>
     </View>
   )

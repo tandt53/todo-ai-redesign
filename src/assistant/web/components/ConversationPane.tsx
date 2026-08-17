@@ -15,9 +15,10 @@
 // bubbles carry `role="alert"`: for an added node the nearest live ancestor
 // wins, so an error announces once (assertively) and never twice.
 //
-// Copy is Vietnamese per design/_shared/components.md.
+// Copy is English (ADR-008), transcribed from design/_shared/components.md and
+// the mockup it points at — never composed here.
 
-import type { ReactNode } from 'react'
+import type { ReactNode, RefObject } from 'react'
 import type { AssistantController } from '../../_shared/controller.ts'
 import type { AppState } from '../../_shared/model/reducer.ts'
 import type { DiffLine, Message } from '../../_shared/types.ts'
@@ -64,7 +65,7 @@ function DiffRow({ line }: { line: DiffLine }) {
         </span>
       ))}
       <span className={`mini-label ${line.label === 'new' ? 'add' : 'edit'}`}>
-        {line.label === 'new' ? 'Mới' : 'Đã sửa'}
+        {line.label === 'new' ? 'NEW' : 'EDITED'}
       </span>
     </div>
   )
@@ -92,7 +93,7 @@ function AppliedBubble({
       {m.deletedTitles.length > 0 && (
         <div className="diff-row">
           <span className="diff-task">{m.deletedTitles.join(', ')}</span>
-          <span className="mini-label edit">Đã xóa</span>
+          <span className="mini-label edit">DELETED</span>
         </div>
       )}
       {showUndo && (
@@ -102,12 +103,12 @@ function AppliedBubble({
           onClick={() => void controller.undoTap(m.turnId)}
         >
           <UndoIcon />
-          Hoàn tác
+          Undo
         </button>
       )}
-      {m.undone && <span className="undone-tag">Đã hoàn tác</span>}
+      {m.undone && <span className="undone-tag">Undone</span>}
       {!m.undone && !showUndo && m.mutated && (
-        <span className="past-tag">Đã qua — không hoàn tác được nữa.</span>
+        <span className="past-tag">Undo window passed</span>
       )}
     </AiMsg>
   )
@@ -155,7 +156,7 @@ function QuestionBubble({
         {formatClock(m.at)}
         {m.resolved
           ? ''
-          : ' · trả lời bằng cách chạm, nói hoặc gõ — danh sách vẫn dùng được như thường'}
+          : ' · answer by tapping, speaking or typing — the list still works'}
       </span>
     </div>
   )
@@ -178,12 +179,12 @@ function MessageView({
           {m.queued && (
             <span className="queued-note" data-testid="assistant-queued-notice">
               <span className="dot-pulse" />
-              Đang chờ mạng — sẽ gửi lại
+              Waiting for the network — will send again
             </span>
           )}
           <span className="msg-meta">
-            Bạn · {formatClock(m.at)}
-            {m.via === 'voice' ? ' · giọng nói' : ''}
+            You · {formatClock(m.at)}
+            {m.via === 'voice' ? ' · voice' : ''}
           </span>
         </div>
       )
@@ -220,10 +221,9 @@ function MessageView({
       return (
         <AiMsg meta={formatClock(m.at)}>
           <p>
-            Tôi nghe được <span className="quote">“{m.heard}”</span> — không có việc nào trong danh
-            sách khớp với câu đó.
+            I heard <span className="quote">“{m.heard}”</span> — nothing in your list matches.
           </p>
-          <p>Chưa có gì thay đổi. Nếu tôi nghe nhầm, bạn nói lại hoặc gõ vào giúp tôi nhé.</p>
+          <p>Nothing changed. If I misheard, say it again or type it.</p>
         </AiMsg>
       )
 
@@ -231,8 +231,8 @@ function MessageView({
       // AC-15: honest "can't do that yet" naming the working alternative.
       return (
         <AiMsg meta={formatClock(m.at)}>
-          <p>Tôi chưa trả lời được câu hỏi về danh sách — chưa có gì thay đổi.</p>
-          <p>Bạn dùng {m.alternative} thay cho việc hỏi nhé.</p>
+          <p>I can't answer questions about the list yet — nothing changed.</p>
+          <p>Use {m.alternative} instead.</p>
         </AiMsg>
       )
 
@@ -257,13 +257,11 @@ function MessageView({
                 data-testid="assistant-retry-button"
                 onClick={() => void controller.retry(retryId)}
               >
-                Thử lại
+                Retry
               </button>
             )}
           </div>
-          <span className="msg-meta">
-            {formatClock(m.at)} · danh sách vẫn dùng được bằng tay
-          </span>
+          <span className="msg-meta">{formatClock(m.at)} · the list still works by hand</span>
         </div>
       )
     }
@@ -296,7 +294,7 @@ function MessageView({
               data-testid="assistant-permission-cta"
               onClick={() => controller.permissionCta()}
             >
-              Chỉ tôi chỗ bật
+              Show me where
             </button>
           )}
         </AiMsg>
@@ -308,23 +306,30 @@ export function ConversationPane({
   state,
   controller,
   undoableTurnId,
+  scrollerRef,
+  onScroll,
 }: {
   state: AppState
   controller: AssistantController
   undoableTurnId: string | null
+  /** AC-30: the scroll viewport every clause of that AC measures. Owned by
+   * `useFollowNewMessages` in App, because the affordance it drives docks
+   * outside this pane, just above the Composer. */
+  scrollerRef?: RefObject<HTMLDivElement | null>
+  onScroll?: () => void
 }) {
   const empty = state.messages.length === 0
   return (
-    <div className="conv-scroll">
+    <div className="conv-scroll" ref={scrollerRef} onScroll={onScroll}>
       {empty && (
         <div className="invite">
           <h3>
-            Nói đi,
+            Say it.
             <br />
-            tôi ghi.
+            I'll write it down.
           </h3>
-          <p>Chạm vào micro và thử nói “họp nhóm ngày mai lúc 2 giờ”.</p>
-          <p>Gõ chữ cũng dùng được y như vậy.</p>
+          <p>Tap the mic and try saying “team meeting tomorrow at 2”.</p>
+          <p>Typing does exactly the same.</p>
         </div>
       )}
       {/* Always mounted, even while empty: a live region only announces what
@@ -335,7 +340,7 @@ export function ConversationPane({
         role="log"
         aria-live="polite"
         aria-relevant="additions"
-        aria-label="Cuộc trò chuyện với trợ lý"
+        aria-label="Conversation with the assistant"
       >
         {state.messages.map((m) => (
           <MessageView key={m.id} m={m} undoableTurnId={undoableTurnId} controller={controller} />
@@ -343,7 +348,7 @@ export function ConversationPane({
         {state.surface === 'thinking' && (
           <div className="msg ai">
             <div className="bubble thinking-msg">
-              {/* decorative: the state indicator already announces "Đang xử lý…" */}
+              {/* decorative: the state indicator already announces "Thinking…" */}
               <span className="tdots" aria-hidden="true">
                 <i />
                 <i />

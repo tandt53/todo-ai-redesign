@@ -21,6 +21,7 @@ import type { MobilePlatform } from '../model/permissions.ts'
 import {
   FakeAppLifecycle,
   FakeConnectivity,
+  FakeReduceMotion,
   RecordingAnnouncer,
 } from '../ports/app-lifecycle.ts'
 import { HydratedDurableStore, MemoryAsyncBackend } from '../ports/durable-store.ts'
@@ -46,6 +47,9 @@ export interface MobileHarness {
   lifecycle: FakeAppLifecycle
   connectivity: FakeConnectivity
   announcer: RecordingAnnouncer
+  /** F-001 AC-30(g)'s OS switch — `reduceMotion.set(true)` is the user turning
+   * it on. */
+  reduceMotion: FakeReduceMotion
   backend: MemoryAsyncBackend
   store: HydratedDurableStore
   stores: ClientStores
@@ -69,6 +73,8 @@ export interface HarnessOptions {
    * `BackgroundedConnectivity` in lifecycle.test.ts. Defaults to a plain
    * `FakeConnectivity(online)`. */
   connectivity: FakeConnectivity
+  /** F-001 AC-30(g). Defaults to off, the OS default. */
+  reduceMotion: boolean
 }
 
 let uuidSeq = 0
@@ -103,6 +109,7 @@ export async function mobileHarness(opts: Partial<HarnessOptions> = {}): Promise
   const lifecycle = new FakeAppLifecycle()
   const connectivity = opts.connectivity ?? new FakeConnectivity(opts.online ?? true)
   const announcer = new RecordingAnnouncer()
+  const reduceMotion = new FakeReduceMotion(opts.reduceMotion ?? false)
   const store = await HydratedDurableStore.open(backend)
   const stores = new ClientStores(store, userId)
   const ids: string[] = []
@@ -114,6 +121,7 @@ export async function mobileHarness(opts: Partial<HarnessOptions> = {}): Promise
     lifecycle,
     connectivity,
     announcer,
+    reduceMotion,
     uuid: () => {
       uuidSeq += 1
       const id = `cid-${uuidSeq}`
@@ -131,6 +139,7 @@ export async function mobileHarness(opts: Partial<HarnessOptions> = {}): Promise
     lifecycle,
     connectivity,
     announcer,
+    reduceMotion,
     backend,
     store,
     stores,
@@ -142,6 +151,7 @@ export async function mobileHarness(opts: Partial<HarnessOptions> = {}): Promise
         recognizerAvailable: speech.recognizerAvailable(),
         languagePackAvailable: speech.languagePackAvailable(),
         online: connectivity.isOnline(),
+        reduceMotion: reduceMotion.isEnabled(),
         server,
         backend,
         userId,

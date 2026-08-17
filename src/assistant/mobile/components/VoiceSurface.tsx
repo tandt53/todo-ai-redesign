@@ -54,23 +54,23 @@ export function VoiceSurface({
       <AuroraBand listening={listening} />
       <View
         {...a11yProps(A11Y_IDS.stateIndicator, {
-          label: listening ? 'Đang nghe…' : 'Đang xử lý…',
+          label: listening ? 'Listening…' : 'Thinking…',
         })}
         accessible
         style={styles.stateIndicator}
       >
-        <Text style={styles.stateWord}>{listening ? 'Đang nghe…' : 'Đang xử lý…'}</Text>
+        <Text style={styles.stateWord}>{listening ? 'Listening…' : 'Thinking…'}</Text>
         {showCancel(state) && (
           <Pressable
             {...a11yProps(A11Y_IDS.cancelButton, {
-              label: 'Hủy — lời bạn vừa nói vẫn còn trong ô nhập',
+              label: 'Cancel — your words stay in the composer',
               role: 'button',
             })}
             hitSlop={cancelTouch.hitSlop}
             style={styles.cancelButton}
             onPress={() => controller.cancelThinking()}
           >
-            <Text style={styles.cancelButtonText}>Hủy</Text>
+            <Text style={styles.cancelButtonText}>Cancel</Text>
           </Pressable>
         )}
       </View>

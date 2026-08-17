@@ -41,22 +41,27 @@ function diffSentence(m: Extract<Message, { kind: 'applied' }>): string[] {
         .filter((v): v is string => v !== null)
       parts.push(
         chips.length === 0
-          ? `Thêm việc ${line.title}.`
-          : `Thêm việc ${line.title}, ${chips.join(', ')}.`,
+          ? `Added task ${line.title}.`
+          : `Added task ${line.title}, ${chips.join(', ')}.`,
       )
       continue
     }
     const changes = line.chips
       .map((c) => {
-        if (c.old !== null && c.new !== null) return `${c.field} từ ${c.old} thành ${c.new}`
-        if (c.new !== null) return `${c.field} thành ${c.new}`
-        return `bỏ ${c.field}`
+        if (c.old !== null && c.new !== null) return `${c.field} from ${c.old} to ${c.new}`
+        if (c.new !== null) return `${c.field} to ${c.new}`
+        // The resulting state, not a verb: "clear"/"remove" are both on the
+        // catalogue's never-list (§ Buttons, one word per concept), and this
+        // phrasing sidesteps them without reaching for "delete", which is
+        // reserved for deleting a task.
+        return `no ${c.field}`
       })
       .join('; ')
-    parts.push(changes === '' ? `Sửa việc ${line.title}.` : `Sửa việc ${line.title}: ${changes}.`)
+    parts.push(changes === '' ? `Edited task ${line.title}.` : `Edited task ${line.title}: ${changes}.`)
   }
   if (m.deletedTitles.length > 0) {
-    parts.push(`Xóa ${m.deletedTitles.length} việc: ${m.deletedTitles.join(', ')}.`)
+    const n = m.deletedTitles.length
+    parts.push(`Deleted ${n} ${n === 1 ? 'task' : 'tasks'}: ${m.deletedTitles.join(', ')}.`)
   }
   return parts
 }
@@ -75,14 +80,17 @@ export function announcementFor(m: Message, ctx: AnnounceContext): Announcement 
   switch (m.kind) {
     case 'user':
       return m.queued
-        ? { text: `Đang chờ mạng — câu “${m.text}” sẽ được gửi lại khi có mạng.`, assertive: false }
+        ? {
+            text: `Waiting for the network — “${m.text}” will be sent again when the network is back.`,
+            assertive: false,
+          }
         : null
 
     case 'applied': {
       const parts = [m.head + '.', ...diffSentence(m)]
-      if (m.undone) parts.push('Thay đổi này đã được hoàn tác.')
-      else if (ctx.undoAvailable) parts.push('Có nút Hoàn tác cho thay đổi này.')
-      else parts.push('Thay đổi này đã qua, không hoàn tác được nữa.')
+      if (m.undone) parts.push('This change has been undone.')
+      else if (ctx.undoAvailable) parts.push('There is an Undo button for this change.')
+      else parts.push('The undo window for this change has passed.')
       return { text: parts.join(' '), assertive: false }
     }
 
@@ -90,13 +98,14 @@ export function announcementFor(m: Message, ctx: AnnounceContext): Announcement 
       const parts = [m.head]
       if (m.body !== null) parts.push(m.body)
       if (m.taskTitles.length > 0) {
-        parts.push(`${m.taskTitles.length} việc liên quan: ${m.taskTitles.join(', ')}.`)
+        const n = m.taskTitles.length
+        parts.push(`${n} ${n === 1 ? 'task' : 'tasks'} involved: ${m.taskTitles.join(', ')}.`)
       }
-      if (m.options.length > 0) parts.push(`Lựa chọn: ${m.options.join('; ')}.`)
+      if (m.options.length > 0) parts.push(`Options: ${m.options.join('; ')}.`)
       parts.push(
         m.resolved
-          ? 'Câu hỏi này đã xử lý xong.'
-          : 'Trả lời bằng cách chạm, nói hoặc gõ — danh sách vẫn dùng được.',
+          ? 'This question is already resolved.'
+          : 'Answer by tapping, speaking or typing — the list keeps working either way.',
       )
       return { text: parts.join(' '), assertive: false }
     }
@@ -110,15 +119,18 @@ export function announcementFor(m: Message, ctx: AnnounceContext): Announcement 
     case 'reverted':
       return { text: [m.head, ...m.body].join(' '), assertive: false }
 
+    // These two mirror `components/ConversationList.tsx` sentence for sentence
+    // — the announced text and the visible text are the same words, which is
+    // the whole point of this module.
     case 'no-match':
       return {
-        text: `Tôi nghe được “${m.heard}” — không có việc nào trong danh sách khớp với câu đó. Chưa có gì thay đổi.`,
+        text: `I heard “${m.heard}” — no task on the list matches that. Nothing has changed.`,
         assertive: false,
       }
 
     case 'unsupported':
       return {
-        text: `Tôi chưa trả lời được câu hỏi về danh sách — chưa có gì thay đổi. Bạn dùng ${m.alternative} thay cho việc hỏi nhé.`,
+        text: `I cannot answer questions about the list yet — nothing has changed. Use ${m.alternative} instead.`,
         assertive: false,
       }
 
@@ -126,7 +138,7 @@ export function announcementFor(m: Message, ctx: AnnounceContext): Announcement 
       // The one interrupting announcement (AC-12: "an error message is
       // announced immediately rather than queued").
       return {
-        text: [m.head, ...m.body, m.retryTurnId !== null ? 'Có nút Thử lại.' : '']
+        text: [m.head, ...m.body, m.retryTurnId !== null ? 'There is a Retry button.' : '']
           .filter((s) => s !== '')
           .join(' '),
         assertive: true,
@@ -162,4 +174,27 @@ export function announcementsFor(
   const errors = out.filter((a) => a.assertive)
   if (errors.length === 0) return out
   return [...errors, ...out.filter((a) => !a.assertive)]
+}
+
+/**
+ * F-001 AC-30(e) — the NewMessageAffordance's announcement.
+ *
+ * `components.md` § NewMessageAffordance calls the dock "a `polite` live
+ * region, so a screen-reader user hears the control arrive **and** hears it
+ * change from NMA-NEW to NMA-WAITING". React Native has no live region (this
+ * module's whole reason for existing), so that is an imperative announcement —
+ * and, exactly per this file's contract, it is BUILT from the same value the
+ * control renders rather than authored at the call site.
+ *
+ * The announced string is the control's accessible name, so what a screen
+ * reader hears when it arrives is what a screen reader reads when focused on
+ * it. `polite`, never assertive: this control reports that something is
+ * waiting, and interrupting the message that is currently being read in order
+ * to say so would bury the content the user is already receiving.
+ */
+export function affordanceAnnouncement(
+  view: { accessibleName: string } | null,
+): Announcement | null {
+  if (view === null) return null
+  return { text: view.accessibleName, assertive: false }
 }

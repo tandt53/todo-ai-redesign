@@ -15,13 +15,14 @@ import type { AppState } from '../../_shared/model/reducer.ts'
 import { micMode } from '../../_shared/model/reducer.ts'
 import { MicIcon, SendIcon } from './icons.tsx'
 
-// Copy is Vietnamese (design/_shared/components.md — the mic's accessible names
-// and the composer placeholder are named verbatim there).
+// Copy is English (ADR-008). design/_shared/components.md §MicControl names the
+// mic's accessible names and the composer placeholder verbatim; the mockup's
+// state machine carries the dimmed-transient one.
 const MIC_LABEL: Record<string, string> = {
-  listening: 'Đang nghe — nhấn để dừng',
-  'dimmed-permission': 'Micro cần quyền truy cập',
-  'dimmed-transient': 'Micro tạm thời không dùng được',
-  available: 'Nhấn để nói',
+  listening: 'Listening — tap to stop',
+  'dimmed-permission': 'Microphone needs permission',
+  'dimmed-transient': 'Microphone is temporarily unavailable',
+  available: 'Tap to speak',
 }
 
 export function Composer({
@@ -48,8 +49,8 @@ export function Composer({
           className="composer-input"
           data-testid="assistant-composer-input"
           type="text"
-          placeholder="Nói hoặc nhập việc cần làm…"
-          aria-label="Nói hoặc nhập việc cần làm"
+          placeholder="Say or type what needs doing…"
+          aria-label="Say or type what needs doing"
           value={state.composer}
           onChange={(e) => controller.composerChange(e.target.value)}
           onKeyDown={(e) => {
@@ -80,7 +81,7 @@ export function Composer({
         <button
           className="send"
           data-testid="assistant-composer-send"
-          aria-label="Gửi"
+          aria-label="Send"
           aria-disabled={!canSend}
           onClick={submit}
         >

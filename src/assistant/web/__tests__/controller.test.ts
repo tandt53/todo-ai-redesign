@@ -2,7 +2,7 @@
 // Harness). These are the wire-level contracts: what the client sends, what it
 // does with each documented response, and what it never sends.
 
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import {
   appliedTurn,
   askedTurn,
@@ -19,7 +19,10 @@ import {
 } from './_helpers.ts'
 import { AssistantApi } from '../../_shared/api/client.ts'
 import type { FetchLike } from '../../_shared/api/client.ts'
-import { AssistantController } from '../../_shared/controller.ts'
+import { AssistantController, defaultUuid } from '../../_shared/controller.ts'
+import { ClientStores } from '../../_shared/model/client-stores.ts'
+import { MemoryDurableStore } from '../../_shared/ports/durable-store.ts'
+import { ScriptedTranscriptSource } from '../../_shared/ports/transcript-source.ts'
 import { micMode, undoableTurnId } from '../../_shared/model/reducer.ts'
 
 const TURN = 'POST /assistant/turn'
@@ -278,7 +281,7 @@ describe('failure paths (AC-16, AC-23, AC-24)', () => {
     await h.controller.send('typed')
     const last = h.controller.state.messages.at(-1)
     if (last?.kind !== 'outcome') throw new Error('unreachable')
-    expect(last.body.join(' ')).toMatch(/không có gì để hoàn tác/i)
+    expect(last.body.join(' ')).toMatch(/nothing to undo/i)
     // and it never became a task
     expect(h.controller.state.tasks.some((t) => t.title.toLowerCase() === 'undo')).toBe(false)
   })
@@ -309,7 +312,7 @@ describe('undo (AC-5, AC-6, AC-7, AC-8)', () => {
     expect(listReadsAfter).toBeGreaterThan(listReadsBefore)
   })
 
-  it('all-skipped renders “Không hoàn tác được gì” and does not re-read the list', async () => {
+  it('all-skipped renders “Nothing was undone” and does not re-read the list', async () => {
     const s = server()
       .always(TURN, 200, ok({ turn: appliedTurn() }))
       .always(
@@ -329,7 +332,7 @@ describe('undo (AC-5, AC-6, AC-7, AC-8)', () => {
 
     const m = h.controller.state.messages.at(-1)
     if (m?.kind !== 'reverted') throw new Error('unreachable')
-    expect(m.head).toBe('Không hoàn tác được gì')
+    expect(m.head).toBe('Nothing was undone')
   })
 
   it('double activation runs the revert once (AC-5)', async () => {
@@ -357,7 +360,7 @@ describe('undo (AC-5, AC-6, AC-7, AC-8)', () => {
 
     const m = h.controller.state.messages.at(-1)
     if (m?.kind !== 'outcome') throw new Error('unreachable')
-    expect(m.body.join(' ')).toMatch(/thay đổi mới hơn/i)
+    expect(m.body.join(' ')).toMatch(/a newer change came after it/i)
   })
 
   it('an undo that never reached the server says so instead of claiming success', async () => {
@@ -371,7 +374,7 @@ describe('undo (AC-5, AC-6, AC-7, AC-8)', () => {
 
     const m = h.controller.state.messages.at(-1)
     if (m?.kind !== 'outcome') throw new Error('unreachable')
-    expect(m.body.join(' ')).toMatch(/chưa có gì thay đổi/i)
+    expect(m.body.join(' ')).toMatch(/nothing changed/i)
     expect(h.controller.state.messages.some((x) => x.kind === 'reverted')).toBe(false)
   })
 
@@ -759,7 +762,7 @@ describe('speech capability (AC-20, AC-21, AC-22)', () => {
     const msg = h.controller.state.messages.at(-1)
     if (msg?.kind !== 'info') throw new Error('unreachable')
     expect(msg.cta).toBeNull()
-    expect(msg.head).toMatch(/đang bận/i)
+    expect(msg.head).toMatch(/is busy/i)
 
     h.speech.setCapability('available')
     expect(micMode(h.controller.state)).toBe('available')
@@ -807,5 +810,128 @@ describe('session read (AC-28)', () => {
     const first = h.controller.state.messages.length
     await h.controller.syncSession()
     expect(h.controller.state.messages).toHaveLength(first)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// BUG-003 — the PRODUCTION `uuid` default, on a runtime with no `crypto`
+// ---------------------------------------------------------------------------
+//
+// Read this before editing it. `harness()` — and every other harness in this
+// repo, web and mobile — injects its own `uuid` for determinism, so the default
+// in the controller's constructor is the one line that ships and the one line
+// no test executed. 469 green tests said nothing about `ReferenceError:
+// Property 'crypto' doesn't exist`, which killed the first turn of every
+// session on an iOS Simulator: Hermes, the engine React Native runs on device,
+// has no `crypto` global, while vitest/Node, browsers on localhost, and
+// react-native-web all do.
+//
+// So these tests do two things no other test here does: they build the
+// controller with **no `uuid` dep**, and they take `globalThis.crypto` away.
+// A version of this suite that passes a `uuid` proves nothing — it exercises
+// the injection seam, which was never broken. `mobile/boot.ts` constructs
+// `MobileAssistantController` without a `uuid`, so this default is literally
+// the device path.
+
+describe('BUG-003 — turn ids on a runtime without `crypto` (Hermes)', () => {
+  const V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+
+  const realCrypto = Object.getOwnPropertyDescriptor(globalThis, 'crypto')
+
+  /** Install a stand-in `crypto` (a partial polyfill, or an explicit
+   * `undefined` binding). */
+  function setCrypto(value: unknown): void {
+    Object.defineProperty(globalThis, 'crypto', {
+      value,
+      configurable: true,
+      writable: true,
+    })
+  }
+
+  /** Reproduce Hermes exactly: there is no `crypto` property at all, so a bare
+   * `crypto.randomUUID()` is a ReferenceError rather than a TypeError. */
+  function removeCrypto(): void {
+    delete (globalThis as { crypto?: unknown }).crypto
+    expect('crypto' in globalThis).toBe(false)
+  }
+
+  afterEach(() => {
+    // Put the real global back, or every later suite runs crypto-less.
+    if (realCrypto === undefined) delete (globalThis as { crypto?: unknown }).crypto
+    else Object.defineProperty(globalThis, 'crypto', realCrypto)
+  })
+
+  /** A controller with NO `uuid` dep — the shape `mobile/boot.ts` builds. */
+  function bare(s: FakeServer): AssistantController {
+    return new AssistantController({
+      api: new AssistantApi({ userId: 'user-1', fetchFn: s.fetchFn }),
+      speech: new ScriptedTranscriptSource('available'),
+      stores: new ClientStores(new MemoryDurableStore(), 'user-1'),
+      now: () => T0,
+      timezone: 'Asia/Ho_Chi_Minh',
+      onlineNow: () => true,
+    })
+  }
+
+  it('sends a turn with a well-formed client_turn_id when `crypto` is absent', async () => {
+    const s = server().always(TURN, 200, ok({ turn: appliedTurn() }))
+    removeCrypto()
+    const c = bare(s)
+    await c.init()
+    c.composerChange('push the budget review to 4pm')
+    await c.send('typed')
+
+    // The user-visible failure was that this request never left the client.
+    expect(s.turnBodies()).toHaveLength(1)
+    expect(s.turnBodies()[0]?.['client_turn_id']).toMatch(V4)
+  })
+
+  it('creates an offline task with an id when `crypto` is absent', async () => {
+    // The other `this.uuid()` call site (createLocalTask) — offline is exactly
+    // when a handset is most likely to be the runtime.
+    const s = server()
+    removeCrypto()
+    const c = new AssistantController({
+      api: new AssistantApi({ userId: 'user-1', fetchFn: s.fetchFn }),
+      speech: new ScriptedTranscriptSource('available'),
+      stores: new ClientStores(new MemoryDurableStore(), 'user-1'),
+      now: () => T0,
+      timezone: 'Asia/Ho_Chi_Minh',
+      onlineNow: () => false,
+    })
+    await c.init()
+    c.composerChange('water the plants')
+    await c.send('typed')
+
+    const local = c.state.tasks.filter((t) => t.local === true)
+    expect(local).toHaveLength(1)
+    expect(local[0]?.id).toMatch(V4)
+  })
+
+  it('uses the platform generator when the runtime has one', async () => {
+    // Browsers and Node keep their own implementation — the fallback is a
+    // fallback, not a replacement.
+    const s = server().always(TURN, 200, ok({ turn: appliedTurn() }))
+    setCrypto({ randomUUID: () => 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee' })
+    const c = bare(s)
+    await c.init()
+    c.composerChange('remind me on friday')
+    await c.send('typed')
+
+    expect(s.turnBodies()[0]?.['client_turn_id']).toBe('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee')
+  })
+
+  it('composes distinct v4 ids with no `crypto` at all', () => {
+    removeCrypto()
+    const ids = Array.from({ length: 500 }, () => defaultUuid())
+    for (const id of ids) expect(id).toMatch(V4)
+    expect(new Set(ids).size).toBe(ids.length)
+  })
+
+  it('survives a runtime that has `crypto` but not `randomUUID`', () => {
+    // Older RN polyfills expose a partial `crypto` (getRandomValues only);
+    // `crypto.randomUUID()` there is a TypeError rather than a ReferenceError.
+    setCrypto({ getRandomValues: () => undefined })
+    expect(defaultUuid()).toMatch(V4)
   })
 })

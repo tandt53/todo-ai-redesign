@@ -15,8 +15,10 @@ import type { MobileAssistantController } from '../controller.ts'
 import { OfflineBanner, TopBar } from './Chrome.tsx'
 import { Composer } from './Composer.tsx'
 import { ConversationList } from './ConversationList.tsx'
+import { NewMessageAffordance } from './NewMessageAffordance.tsx'
 import { TaskList } from './TaskList.tsx'
 import { VoiceSurface } from './VoiceSurface.tsx'
+import { useNewMessageFollow } from './useNewMessageFollow.ts'
 import { useStyles } from './styles.ts'
 
 export function AssistantScreen({ controller }: { controller: MobileAssistantController }) {
@@ -31,6 +33,11 @@ export function AssistantScreen({ controller }: { controller: MobileAssistantCon
   // button collapses it rather than the list living behind navigation.
   const [listOpen, setListOpen] = useState(true)
   const platform = controller.platform
+  // F-001 AC-30 / BUG-004. The follow state lives here rather than inside
+  // `ConversationList` because the affordance is docked above the Composer
+  // (and above the OfflineBanner when that is showing) while the scroll it
+  // measures belongs to the conversation — one hook, two consumers.
+  const follow = useNewMessageFollow(controller, state)
 
   return (
     <View style={styles.screen}>
@@ -49,8 +56,17 @@ export function AssistantScreen({ controller }: { controller: MobileAssistantCon
           controller={controller}
           undoableTurnId={undoableTurnId(state)}
           platform={platform}
+          scrollProps={follow.scrollProps}
         />
         <VoiceSurface state={state} controller={controller} platform={platform} />
+        {/* Zero-height dock, so this sits between the voice surface and the
+            banner without reflowing either — the pill floats over the last line
+            of the conversation instead of pushing history upward. */}
+        <NewMessageAffordance
+          view={follow.affordance}
+          platform={platform}
+          onPress={follow.activateAffordance}
+        />
         <OfflineBanner state={state} />
         <Composer state={state} controller={controller} platform={platform} />
       </KeyboardAvoidingView>

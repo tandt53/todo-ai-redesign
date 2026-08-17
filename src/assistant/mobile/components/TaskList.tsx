@@ -32,7 +32,12 @@ function TaskRow({
 }) {
   const { styles, colors } = useStyles()
   const done = task.status === 'done'
-  const meta = task.due_at !== null ? formatDue(task.due_at) : task.local === true ? 'đã lưu tại máy' : null
+  const meta =
+    task.due_at !== null
+      ? formatDue(task.due_at)
+      : task.local === true
+        ? 'saved on the device'
+        : null
   const rowTouch = touchProps(A11Y_IDS.taskRow, platform)
   const boxTouch = touchProps(A11Y_IDS.taskCheckbox, platform)
 
@@ -40,7 +45,7 @@ function TaskRow({
     <View {...a11yProps(A11Y_IDS.taskRow)} style={styles.taskRow} hitSlop={rowTouch.hitSlop}>
       <Pressable
         {...a11yProps(A11Y_IDS.taskCheckbox, {
-          label: `Đánh dấu “${task.title}” là ${done ? 'chưa xong' : 'đã xong'}`,
+          label: `Mark “${task.title}” as ${done ? 'not done' : 'done'}`,
           role: 'checkbox',
           state: { checked: done },
         })}
@@ -60,7 +65,7 @@ function TaskRow({
             {...a11yProps(A11Y_IDS.rowBadge)}
             style={[styles.badge, mark.label === 'new' ? styles.badgeNew : styles.badgeEdited]}
           >
-            {mark.label === 'new' ? 'Mới' : 'Đã sửa'}
+            {mark.label === 'new' ? 'NEW' : 'EDITED'}
           </Text>
         )}
         {meta !== null && <Text style={styles.taskMeta}>{meta}</Text>}
@@ -93,10 +98,14 @@ export function TaskList({
   return (
     <View style={styles.listPane}>
       <View style={styles.listHead}>
-        <Text style={styles.listTitle}>Danh sách của bạn</Text>
-        {state.tasks.length > 0 && <Text style={styles.listCount}>còn {open} việc</Text>}
+        <Text style={styles.listTitle}>Your list</Text>
+        {state.tasks.length > 0 && (
+          <Text style={styles.listCount}>
+            {open} {open === 1 ? 'task' : 'tasks'} left
+          </Text>
+        )}
         <Pressable
-          {...a11yProps(A11Y_IDS.addTaskButton, { label: 'Thêm việc', role: 'button' })}
+          {...a11yProps(A11Y_IDS.addTaskButton, { label: 'Add task', role: 'button' })}
           hitSlop={addTouch.hitSlop}
           style={styles.addButton}
           onPress={() => setAdding(true)}
@@ -106,8 +115,8 @@ export function TaskList({
       </View>
       {adding && (
         <TextInput
-          accessibilityLabel="Tên việc mới"
-          placeholder="Tên việc…"
+          accessibilityLabel="New task name"
+          placeholder="Task name…"
           placeholderTextColor={colors.text.muted}
           style={[styles.composerInput, { marginHorizontal: tokens.spacing.gutter_mobile }]}
           value={draft}
@@ -120,7 +129,7 @@ export function TaskList({
       <ScrollView keyboardShouldPersistTaps="handled">
         {state.tasks.length === 0 ? (
           <Text style={[styles.taskMeta, { paddingHorizontal: tokens.spacing.gutter_mobile }]}>
-            Chưa có việc nào — nói đi. Nói một câu là việc hiện ngay ở đây.
+            No tasks yet — say one. Say a sentence and it lands here.
           </Text>
         ) : (
           state.tasks.map((t) => (

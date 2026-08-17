@@ -34,6 +34,15 @@ export function SendIcon() {
   )
 }
 
+export function ArrowDownIcon() {
+  return (
+    <Ic>
+      <path d="M12 5v14" />
+      <path d="m19 12-7 7-7-7" />
+    </Ic>
+  )
+}
+
 export function UndoIcon() {
   return (
     <Ic>

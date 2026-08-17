@@ -50,9 +50,11 @@ export const font = {
   lineHeight: tokens.font.lineHeight,
 }
 
-/** Body line-height 1.5 is a hard floor: Vietnamese stacked diacritics
- * (ề ệ ỗ) clip below it (tokens.json font.note). RN takes line height in
- * absolute units, so it is computed from the size rather than declared. */
+/** Body line-height 1.5 is a hard floor declared by `tokens.json` font.note —
+ * design's number, not a local choice, and unchanged by ADR-008 (the note still
+ * states its original stacked-diacritic rationale; that is design's to revisit,
+ * not this file's to restate). RN takes line height in absolute units, so it is
+ * computed from the size rather than declared. */
 export function lineHeightFor(size: number, kind: keyof typeof tokens.font.lineHeight = 'body'): number {
   return Math.round(size * tokens.font.lineHeight[kind])
 }

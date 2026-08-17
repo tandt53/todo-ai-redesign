@@ -11,6 +11,7 @@ import type {
   SpeechCapability,
   TranscriptSource,
 } from '../../_shared/ports/transcript-source.ts'
+import { INTERFACE_LANGUAGE } from '../../_shared/model/client-stores.ts'
 
 
 interface SpeechRecognitionLike {
@@ -47,7 +48,13 @@ export class WebSpeechTranscriptSource implements TranscriptSource {
   private stopping = false
   private readonly listeners = new Set<(c: SpeechCapability) => void>()
 
-  constructor(lang = navigator.language || 'en-US') {
+  /** AC-23: the recognizer declares its language from the ONE declared source
+   * (`client.interface_language`), never from `navigator.language` and never
+   * from a literal of its own — on a Vietnamese-locale machine the old
+   * `navigator.language` read handed an English sentence to a Vietnamese
+   * recognizer, which is the failure this AC exists to stop, and correcting
+   * the literal instead of the mechanism would leave it just as violated. */
+  constructor(lang: string = INTERFACE_LANGUAGE) {
     this.lang = lang
     this.ctor = detectCtor()
     this.cap = this.ctor === null ? 'none' : 'available'

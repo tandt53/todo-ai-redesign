@@ -65,6 +65,42 @@ export interface ControllerDeps {
 const IN_FLIGHT_RETRY_MS = 400
 const IN_FLIGHT_MAX_ATTEMPTS = 5
 
+/** Random lowercase hex, `n` nibbles wide, zero-padded. */
+function hex(n: number): string {
+  return Math.floor(Math.random() * 16 ** n)
+    .toString(16)
+    .padStart(n, '0')
+}
+
+/**
+ * The id generator used when the host injects none (`ControllerDeps.uuid`).
+ *
+ * `crypto` is a Web/Node global. It does **not** exist in Hermes, the engine
+ * React Native runs on device, so the previous one-liner
+ * (`() => crypto.randomUUID()`) threw `ReferenceError: Property 'crypto'
+ * doesn't exist` on the first turn of every handset session — before the turn
+ * was composed, so the user got a dead screen with no error bubble and no
+ * retry (BUG-003). Feature-detect the platform generator, then compose the
+ * same shape by hand.
+ *
+ * The fallback uses `Math.random()` **deliberately**. This value is a
+ * per-client correlation handle: it labels a turn so a retry re-sends the same
+ * one (AC-16) and so an offline create replays exactly once. It is not a
+ * secret, a token or a capability — the server authorises on `X-User-Id` and
+ * treats this as an opaque key it only has to parse. Do not "harden" it by
+ * adding a crypto dependency: `_shared/` is imported by web, mobile and every
+ * test, and staying dependency-free is what lets all three run it.
+ *
+ * Output is RFC-4122 v4 shaped (8-4-4-4-12, version nibble `4`, variant nibble
+ * `8`–`b`), which is what `api/app.ts`'s `UUID_RE` accepts.
+ */
+export function defaultUuid(): string {
+  const native = globalThis.crypto?.randomUUID?.()
+  if (typeof native === 'string') return native
+  const variant = '89ab'.charAt(Math.floor(Math.random() * 4))
+  return `${hex(8)}-${hex(4)}-4${hex(3)}-${variant}${hex(3)}-${hex(12)}`
+}
+
 /** Drop the device-only marker — the field is removed, not set false, so a
  * synced task is indistinguishable from one that was never local. */
 function unmarkLocal(t: TaskView): TaskView {
@@ -94,7 +130,9 @@ export class AssistantController {
     this.api = deps.api
     this.speech = deps.speech
     this.stores = deps.stores
-    this.uuid = deps.uuid ?? (() => crypto.randomUUID())
+    // Injection seam unchanged — every harness relies on it for determinism.
+    // The default is `defaultUuid`, not `crypto.randomUUID`: see BUG-003.
+    this.uuid = deps.uuid ?? defaultUuid
     this.now = deps.now ?? (() => new Date().toISOString())
     this.timezone =
       deps.timezone !== undefined
@@ -473,7 +511,7 @@ export class AssistantController {
           kind: 'outcome',
           head: null,
           body: [
-            'Yêu cầu hoàn tác chưa tới được máy chủ — chưa có gì thay đổi. Bạn kiểm tra kết nối rồi thử lại nhé.',
+            "The undo request didn't reach the server — nothing changed. Check your connection and try again.",
           ],
           at,
         },
@@ -495,9 +533,9 @@ export class AssistantController {
       messages: [
         {
           kind: 'outcome',
-          head: 'Cách bật lại micro',
+          head: 'How to turn the microphone back on',
           body: [
-            'Mở phần cài đặt trang của trình duyệt cho trang này (biểu tượng cạnh thanh địa chỉ), đặt Micro thành Cho phép, rồi chạm lại vào micro.',
+            "Open your browser's site settings for this page (the icon next to the address bar), set Microphone to Allow, then tap the mic again.",
           ],
           at: this.now(),
         },

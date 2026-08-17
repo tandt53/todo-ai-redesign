@@ -462,6 +462,41 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 .waveform i:nth-child(6) { height: 9px; animation-delay: 600ms; }
 @keyframes wave { 0%, 100% { transform: scaleY(0.5); } 50% { transform: scaleY(1); } }
 
+/* ============ new-message affordance — BUG-004 / owner decision 2026-08-17 ============ */
+/* components.md §NewMessageAffordance. ONE control, however many messages arrived.
+   The dock has zero height so the pill OVERLAYS the last line of the conversation
+   instead of reflowing it — an affordance that appears by pushing history upward
+   moves the sentence the user is reading, which is the defect it exists to prevent. */
+.nm-dock { flex: none; position: relative; height: 0; z-index: 6; }
+.nm-wrap { display: flex; position: absolute; left: var(--gutter); right: var(--gutter); bottom: var(--sp-sm); justify-content: center; }
+.nm-pill {
+  display: inline-flex; align-items: center; gap: var(--sp-sm); max-width: 100%;
+  padding: var(--sp-sm) var(--sp-lg); border-radius: var(--r-pill);
+  background: var(--bg-raised); border: 1px solid var(--hairline); color: var(--tx);
+  box-shadow: var(--shadow-card);
+  font-family: var(--font-family-body); font-size: var(--fs-body); font-weight: var(--font-weight-emphasis);
+  cursor: pointer;
+  transition: transform var(--dur-micro) var(--motion-easing-spring), background var(--dur-micro) var(--motion-easing-standard);
+}
+.nm-pill:hover { background: var(--primary-tint); }
+.nm-pill:active { transform: scale(0.96); }
+.nm-pill svg.ic { width: var(--icon-sm); height: var(--icon-sm); color: var(--tx-2); flex: none; }
+/* One line where it fits, TWO where it does not. The question is the half that
+   matters: at 375px a single nowrap line ellipsises exactly it away, leaving
+   "Waiting for your answer — Delete …", which says something is pending and
+   withholds what. Wrapping to a second line keeps the question; the accessible
+   name carries the whole string either way. */
+.nm-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nm-waiting .nm-label {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  white-space: normal; line-height: var(--font-lineHeight-meta);
+}
+/* NMA-WAITING — the amber that already means "open question" everywhere else here.
+   Colour never carries this alone: the words change too (components.md §NewMessageAffordance). */
+.nm-waiting .nm-pill { background: var(--question-tint); border-color: var(--question); color: var(--question); }
+.nm-waiting .nm-pill:hover { background: var(--question-tint); }
+.nm-waiting .nm-pill svg.ic { color: var(--question); }
+
 /* ============ offline banner ============ */
 .offline-banner {
   display: flex; align-items: center; gap: var(--sp-sm); flex: none;

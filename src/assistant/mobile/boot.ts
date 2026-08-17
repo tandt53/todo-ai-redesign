@@ -12,7 +12,12 @@ import { ClientStores } from '../_shared/model/client-stores.ts'
 import { MobileAssistantController } from './controller.ts'
 import type { AsyncKeyValueBackend } from './ports/durable-store.ts'
 import { HydratedDurableStore } from './ports/durable-store.ts'
-import { RNAnnouncer, RNAppLifecycle, RNConnectivity } from './ports/native/rn-platform.ts'
+import {
+  RNAnnouncer,
+  RNAppLifecycle,
+  RNConnectivity,
+  RNReduceMotion,
+} from './ports/native/rn-platform.ts'
 import type { NativeAudioEvents, NetInfoLike } from './ports/native/rn-platform.ts'
 import { RNTranscriptSource } from './ports/native/rn-transcript-source.ts'
 import type { NativeSpeechModule } from './ports/native/rn-transcript-source.ts'
@@ -33,7 +38,11 @@ export interface BootOptions {
   /** NetInfo-shaped reachability (AC-4). Absent = assume online and discover
    * the truth through a failed request, which is F-001 AC-25's path anyway. */
   netInfo?: NetInfoLike | null
-  locale?: string
+  // No `locale` here on purpose (F-002 AC-23): the interface language has
+  // exactly one declared source, `client.interface_language`, which the
+  // transcript source reads directly. A shell-supplied locale would be the
+  // second source the AC exists to stop — the same defect as the per-port
+  // literal it replaced, just moved one layer out.
 }
 
 export interface BootResult {
@@ -49,10 +58,7 @@ export interface BootResult {
  * which performs AC-8's session read.
  */
 export async function boot(opts: BootOptions): Promise<BootResult> {
-  const speech = new RNTranscriptSource({
-    native: opts.speech ?? null,
-    ...(opts.locale === undefined ? {} : { locale: opts.locale }),
-  })
+  const speech = new RNTranscriptSource({ native: opts.speech ?? null })
   await speech.prime()
 
   const connectivity = new RNConnectivity(opts.netInfo ?? null)
@@ -61,6 +67,12 @@ export async function boot(opts: BootOptions): Promise<BootResult> {
   const store = await HydratedDurableStore.open(opts.storage)
   const lifecycle = new RNAppLifecycle({ audio: opts.audio ?? null })
 
+  // F-001 AC-30(g): read before the first render, so the very first scroll the
+  // app performs already honours the setting rather than animating once and
+  // then behaving.
+  const reduceMotion = new RNReduceMotion()
+  await reduceMotion.prime()
+
   const controller = new MobileAssistantController({
     api: new AssistantApi({ baseUrl: opts.baseUrl, userId: opts.userId }),
     speech,
@@ -68,6 +80,7 @@ export async function boot(opts: BootOptions): Promise<BootResult> {
     lifecycle,
     connectivity,
     announcer: new RNAnnouncer(),
+    reduceMotion,
   })
 
   await controller.init()
@@ -77,6 +90,7 @@ export async function boot(opts: BootOptions): Promise<BootResult> {
     dispose: () => {
       controller.dispose()
       connectivity.dispose()
+      reduceMotion.dispose()
       speech.dispose()
     },
   }

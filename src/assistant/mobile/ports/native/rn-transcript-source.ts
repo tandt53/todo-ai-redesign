@@ -22,6 +22,7 @@
 import { Linking, PermissionsAndroid, Platform } from 'react-native'
 import type { CaptureHandlers, SpeechCapability } from '../../../_shared/ports/transcript-source.ts'
 import type { PermissionState, PermissionStatus } from '../../../_shared/model/client-stores.ts'
+import { INTERFACE_LANGUAGE } from '../../../_shared/model/client-stores.ts'
 import type { CaptureSignals, MobilePlatform } from '../../model/permissions.ts'
 import { canRequest, speechCapabilityFrom } from '../../model/permissions.ts'
 import type { MobileTranscriptSource, PermissionRequestResult } from '../transcript-source.ts'
@@ -65,10 +66,19 @@ export class RNTranscriptSource implements MobileTranscriptSource {
   private readonly listeners = new Set<(c: SpeechCapability) => void>()
   private readonly unsubscribes: (() => void)[] = []
 
+  /**
+   * `locale` is a test seam, not a second source. AC-23: the recognizer
+   * declares its language from the ONE declared value
+   * (`client.interface_language`), never from a constant of its own — this port
+   * used to hardcode `'vi-VN'`, and correcting that literal to `'en-US'` would
+   * have left the AC just as violated, because the defect is the second source
+   * rather than the value in it. The app shell no longer supplies a locale at
+   * all (see `boot.ts`), so in production this is always the declared value.
+   */
   constructor(opts: { native?: NativeSpeechModule | null; locale?: string } = {}) {
     this.platform = Platform.OS === 'ios' ? 'ios' : 'android'
     this.native = opts.native ?? null
-    this.locale = opts.locale ?? 'vi-VN'
+    this.locale = opts.locale ?? INTERFACE_LANGUAGE
     this.perms =
       this.platform === 'ios'
         ? { microphone: 'undetermined', speech_recognition: 'undetermined' }
@@ -161,10 +171,14 @@ export class RNTranscriptSource implements MobileTranscriptSource {
       const result = await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
         {
-          title: 'Micro cho todo-ai',
-          message: 'todo-ai cần quyền Micro để nghe và ghi lại lời bạn nói.',
-          buttonPositive: 'Cho phép',
-          buttonNegative: 'Để sau',
+          // The rationale text is AND-ASK's published body (components.md
+          // § Permission copy); `buttonPositive` must stay "Allow", because
+          // AND-DENIED's body tells the user to "choose Allow" by name.
+          title: 'Microphone for todo-ai',
+          message:
+            'todo-ai needs Microphone to hear what you say and write it down. Your words become text on the device itself.',
+          buttonPositive: 'Allow',
+          buttonNegative: 'Not now',
         },
       )
       this.perms = { microphone: androidStatus(result) }

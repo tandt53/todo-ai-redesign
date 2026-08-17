@@ -30,8 +30,9 @@ describe('bulk-delete confirmation (AC-9)', () => {
     expect(turn.question.kind).toBe('bulk_delete')
     expect(turn.question.task_titles).toEqual(['Buy milk', 'Buy eggs', 'Buy bread'])
     expect(turn.question.task_ids).toHaveLength(3)
-    // human-readable chip labels, not protocol tokens (T-006d); Vietnamese copy (T-015b)
-    expect(turn.question.options).toEqual(['Xoá 3 việc', 'Giữ lại'])
+    // human-readable chip labels, not protocol tokens (T-006d); English copy
+    // transcribed from the mockups' assistant-chip-affirm / -negative (T-069)
+    expect(turn.question.options).toEqual(['Delete 3 tasks', 'Keep them'])
     // an asking turn applies nothing (AC-1 carve-out)
     expect(turn.changed_task_ids).toEqual([])
     expect(await listTasks(h, user)).toHaveLength(3)
@@ -124,7 +125,7 @@ describe('bulk-delete confirmation (AC-9)', () => {
     await sendTurn(h, user, 'no') // resolves the question: declined
     const calls = h.interpreter.calls.length
     // a tap answer carries an explicit binding to the question's turn
-    const late = await sendTurn(h, user, 'Xoá 3 việc', {
+    const late = await sendTurn(h, user, 'Delete 3 tasks', {
       source: 'tap',
       answer_to: asked.id,
     })
@@ -181,7 +182,7 @@ describe('confirm-chip labels — literal-text round trip (T-006d, AC-9/AC-10, W
     for (const t of ['Buy milk', 'Buy eggs']) await createTask(h, user, t)
     const asked = (await sendTurn(h, user, 'delete the shopping tasks')).body.turn
     expect(asked.question.task_ids).toHaveLength(2)
-    expect(asked.question.options).toEqual(['Xoá 2 việc', 'Giữ lại'])
+    expect(asked.question.options).toEqual(['Delete 2 tasks', 'Keep them'])
     // the label matches the titles the message names (AC-9)
     expect(asked.question.task_titles).toEqual(['Buy milk', 'Buy eggs'])
   })
@@ -191,34 +192,34 @@ describe('confirm-chip labels — literal-text round trip (T-006d, AC-9/AC-10, W
     const user = uid()
     const asked = await seedShoppingQuestion(h, user)
     const label = asked.question.options[0] as string
-    expect(label).toBe('Xoá 3 việc')
+    expect(label).toBe('Delete 3 tasks')
     const tap = await sendTurn(h, user, label, { source: 'tap', answer_to: asked.id })
     // the user's own bubble reads the chip label, never "Yes" (WCAG 2.5.3)
-    expect(tap.body.turn.transcript_raw).toBe('Xoá 3 việc')
+    expect(tap.body.turn.transcript_raw).toBe('Delete 3 tasks')
     expect(tap.body.turn.outcome.result).toBe('executed')
     expect(tap.body.turn.outcome.executed.deleted_titles).toHaveLength(3)
     expect(await listTasks(h, user)).toHaveLength(0)
   })
 
-  it('tapping the negative chip ("Giữ lại") declines and keeps every task', async () => {
+  it('tapping the negative chip ("Keep them") declines and keeps every task', async () => {
     const h = await buildHarness()
     const user = uid()
     const asked = await seedShoppingQuestion(h, user)
     const label = asked.question.options[1] as string
-    expect(label).toBe('Giữ lại')
+    expect(label).toBe('Keep them')
     const tap = await sendTurn(h, user, label, { source: 'tap', answer_to: asked.id })
-    expect(tap.body.turn.transcript_raw).toBe('Giữ lại')
+    expect(tap.body.turn.transcript_raw).toBe('Keep them')
     expect(tap.body.turn.outcome.result).toBe('declined')
     expect(await listTasks(h, user)).toHaveLength(3)
   })
 
-  it('spoken answers still classify alongside the labels — yes/ok/ừ execute, no/không decline', async () => {
+  it('spoken answers still classify alongside the labels — yes/ok/yeah execute, no/nope decline', async () => {
     for (const [utterance, expected] of [
       ['yes', 'executed'],
       ['ok', 'executed'],
-      ['ừ', 'executed'],
+      ['yeah', 'executed'],
       ['no', 'declined'],
-      ['không', 'declined'],
+      ['nope', 'declined'],
     ] as const) {
       const h = await buildHarness()
       const user = uid()

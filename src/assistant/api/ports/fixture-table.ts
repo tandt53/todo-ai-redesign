@@ -1,9 +1,9 @@
 // Canonical utterance → intent fixture table (spec ## Test strategy: one
 // table, shared by QA and implementers; QA may extend it with their own rows
 // via the FixtureInterpreter constructor). Rows QA's suite depends on:
-//   - the undo-phrase tripwire rows: if the voice-undo guard (ADR-006) ever
-//     let "undo" / "hoàn tác" reach interpretation, these rows would create the
-//     AC-5-forbidden task — tests assert zero interpreter calls AND no such task
+//   - the undo-phrase tripwire row: if the voice-undo guard (ADR-006) ever let
+//     "undo" reach interpretation, this row would create the AC-5-forbidden
+//     task — tests assert zero interpreter calls AND no such task
 //   - ambiguous-answer rows asserting zero deletion (AC-10)
 //   - failure/delay injection rows (AC-16, IN_FLIGHT, serial ordering)
 
@@ -57,22 +57,32 @@ export const FIXTURE_TABLE: FixtureRow[] = [
   },
   // --- list question → unsupported (AC-15) ---
   { utterance: "what's on sunday", result: { kind: 'query' } },
-  // --- undo-phrase TRIPWIRES: must never be reached (guard short-circuits, AC-5) ---
+  // --- undo-phrase TRIPWIRE: must never be reached (guard short-circuits, AC-5) ---
+  // The "hoàn tác" tripwire row left with the Vietnamese undo phrase (ADR-008 /
+  // owner decision 2026-08-17: AC-5's undo vocabulary becomes "undo" only).
+  // NOTE: `engine/normalize.ts` UNDO_PHRASES still lists 'hoàn tác' — that edit
+  // is atomic with the ADR-006 amendment and belongs to the spec task, so the
+  // phrase is currently guarded without a tripwire behind it.
   { utterance: 'undo', result: { kind: 'create', tasks: [{ title: 'undo' }] } },
-  { utterance: 'hoàn tác', result: { kind: 'create', tasks: [{ title: 'hoàn tác' }] } },
   // longer than the closed phrase list → a normal turn for the model (ADR-006)
   { utterance: 'undo the last thing', result: { kind: 'no_match' } },
   // --- failure injection (AC-23, AC-24) ---
   { utterance: 'cause an ai error', result: { kind: 'fail', message: 'model exploded' } },
   // --- answer classification (fixture-owned per spec Test strategy) ---
-  // Confirm-chip LABELS ("Delete 3 tasks" / "Keep them") are classified by the
-  // stub against the question's own options — they carry a live count, so they
-  // are not enumerable here. These rows cover SPOKEN/typed answers.
+  // Confirm-chip LABELS ("Delete 3 tasks" / "Keep them", engine/turns.ts) are
+  // classified by the stub against the question's own options — they carry a
+  // live count, so they are not enumerable here. These rows cover SPOKEN/typed
+  // answers, which are recognizer INPUT rather than shipped copy: each branch
+  // keeps one canonical form and one colloquial form, so a classifier that only
+  // matched the dictionary word still fails. T-069 (ADR-008) replaced the two
+  // colloquial Vietnamese forms with English ones ('ừ' → 'yeah',
+  // 'không' → 'nope') rather than deleting them, which would have collapsed
+  // both branches to a single form.
   { utterance: 'yes', when: 'question', result: { kind: 'answer', answer: { type: 'affirmative' } } },
   { utterance: 'ok', when: 'question', result: { kind: 'answer', answer: { type: 'affirmative' } } },
-  { utterance: 'ừ', when: 'question', result: { kind: 'answer', answer: { type: 'affirmative' } } },
+  { utterance: 'yeah', when: 'question', result: { kind: 'answer', answer: { type: 'affirmative' } } },
   { utterance: 'no', when: 'question', result: { kind: 'answer', answer: { type: 'negative' } } },
-  { utterance: 'không', when: 'question', result: { kind: 'answer', answer: { type: 'negative' } } },
+  { utterance: 'nope', when: 'question', result: { kind: 'answer', answer: { type: 'negative' } } },
   // ambiguous answer — not affirmative, not negative, not a command (AC-10: zero deletion)
   {
     utterance: 'the weather is nice',

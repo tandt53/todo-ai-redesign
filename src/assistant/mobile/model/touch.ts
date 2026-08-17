@@ -47,23 +47,40 @@ function textControlHeight(fontSize: number, verticalPadding: number, kind: 'bod
  * text-sized controls are their minimum content width; a wider label only ever
  * increases the hit area, so the minimum is the case worth asserting.
  *
- * Four of those content-width floors have no mockup measurement to read and are
- * published instead in `design/_shared/components.md` § "Touch — minimum
- * content widths": add-task 96, task-row 320, undo 108, retry 80. They are
- * measured from the rendered mockup and rounded DOWN, and the direction is
- * load-bearing: a floor that over-states makes `hitSlopFor` believe the box is
- * wider than it is and under-compute the slop, which on a genuinely narrow
- * control yields a hit area below the platform minimum while every test stays
- * green. `retryButton` carried 96 for exactly that reason — the same number as
- * `addTaskButton`, which is the signature of a copied constant rather than a
- * measured one; the mockup renders 81.9, so the floor is 80.
+ * The content-width floors that cannot simply be read off a CSS rule are
+ * published in `design/_shared/components.md` § "Touch — minimum content
+ * widths": add-task 92, task-row 320, undo 80, retry 68, permission CTA 136.
+ * A floor is a multiple of 4 at or below the rendered width — not the tightest
+ * such multiple, because these are measured in an HTML mockup while the control
+ * ships through React Native's text shaping, and the slack absorbs a difference
+ * that is real. Under-stating is the safe direction: a floor that over-states
+ * makes `hitSlopFor` believe the box is wider than it is and under-compute the
+ * slop, which on a genuinely narrow control yields a hit area below the
+ * platform minimum while every test stays green.
+ *
+ * **Re-measured 2026-08-17 (T-062) for the English copy — every floor moved,
+ * because every label did.** Three shrank and one GREW: the permission CTA went
+ * 112 → 136, because its shortest label is now "Open Settings" (renders 138.3)
+ * where the superseded catalogue's shortest rendered 114.3. That direction is
+ * the one worth naming: a carried-over floor would have under-sized a tap
+ * target rather
+ * than merely mis-describing it, which is the accessibility failure the floors
+ * exist to prevent. Where a label varies by state, the floor comes from the
+ * shortest label the control can carry — for the CTA that is "Open Settings",
+ * against 166.8 for "Allow microphone" and 169.3 for "Open app settings".
+ *
+ * Both corrections this file took BEFORE that re-measure were over-statements,
+ * and both had the same tell — a number that belonged to a different string.
+ * `retryButton` carried `addTaskButton`'s 96, and `permissionCta` carried 140,
+ * which sat between its shortest and longest label rather than at either.
  */
 export const PAINTED: Record<InteractiveId, Size> = {
   // .icon-btn { width: 40px; height: 40px }
   [A11Y_IDS.drawerButton]: { width: 40, height: 40 },
-  // .add-btn { padding: xs sm } around meta-size text
+  // .add-btn { padding: xs sm } around meta-size text — icon + "Add task",
+  // floor published in components.md (renders 94.2)
   [A11Y_IDS.addTaskButton]: {
-    width: 96,
+    width: 92,
     height: textControlHeight(font.size.meta, spacing.xs, 'meta'),
   },
   // .task-row { padding: sm gutter } — full width row
@@ -79,25 +96,28 @@ export const PAINTED: Record<InteractiveId, Size> = {
   [A11Y_IDS.micButton]: { width: 52, height: 52 },
   // .send { width: 36px; height: 36px }
   [A11Y_IDS.composerSend]: { width: 36, height: 36 },
-  // .undo-btn { padding: xs md }
+  // .undo-btn { padding: xs md } — icon + "Undo", floor published in
+  // components.md (renders 83.4)
   [A11Y_IDS.undoButton]: {
-    width: 108,
+    width: 80,
     height: textControlHeight(font.size.body, spacing.xs),
   },
-  // .retry-btn { padding: sm lg } — floor published in components.md (renders 81.9)
+  // .retry-btn { padding: sm lg } — "Retry", floor published in components.md
+  // (renders 72.4; the tightest multiple of 4 below that is 72, and one step
+  // down keeps the slack the section calls deliberate)
   [A11Y_IDS.retryButton]: {
-    width: 80,
+    width: 68,
     height: textControlHeight(font.size.body, spacing.sm),
   },
-  // .retry-btn shape, permission CTA copy.
-  // KNOWN OVER-CLAIM, deliberately left alone: the iOS mockup renders 114.3.
-  // It is harmless today (both far above the platform minimums, so the slop is
-  // zero either way), but the real floor cannot be measured from one mockup any
-  // more — since the permission catalogue landed, this button's label varies by
-  // row ("Mở Cài đặt" / "Mở cài đặt ứng dụng" / "Cấp quyền micro"), so its floor
-  // is the SHORTEST of the three. Awaiting design's measurement; do not guess.
+  // .retry-btn shape, permission CTA copy. Floor published in components.md:
+  // the label varies by catalogue row, so the SHORTEST one binds — "Open
+  // Settings" renders 138.3, against 166.8 and 169.3 for the other two. This is
+  // the one floor the English re-measure moved UP (was 112 for the superseded
+  // catalogue's shorter label), so it is the one where carrying the old number
+  // over would have under-sized a real tap target instead of merely
+  // mis-describing it.
   [A11Y_IDS.permissionCta]: {
-    width: 140,
+    width: 136,
     height: textControlHeight(font.size.body, spacing.sm),
   },
   // .cancel-btn { padding: xs md } at meta size
@@ -118,10 +138,30 @@ export const PAINTED: Record<InteractiveId, Size> = {
     width: 140,
     height: textControlHeight(font.size.body, spacing.xs),
   },
+  // .nm-pill { padding: sm lg } around body text at emphasis weight, plus a
+  // down arrow at icon.size.sm (F-001 AC-30 / components.md
+  // § NewMessageAffordance). The HEIGHT is derived the same way every other
+  // padded text control here is, and it is the dimension that binds: one line
+  // of body type inside `sm` padding sits below both platform minima, so this
+  // control needs slop exactly as the AC's a11y floor requires.
+  //
+  // The WIDTH is deliberately NOT a measurement. components.md publishes no
+  // content-width floor for this control — "those floors are measured from a
+  // shipped control and this one does not exist yet" — so there is nothing to
+  // adopt, and inventing a number would put a fabricated measurement in a file
+  // whose other numbers are real. The platform maximum minimum (48) is the
+  // safe placeholder: this section's own rule is that under-stating is the safe
+  // direction, because an over-stated width under-computes the slop a genuinely
+  // narrow control would need. Once the control ships, design measures it and
+  // publishes the row; the published-floors test below adopts it automatically.
+  [A11Y_IDS.newMessageAffordance]: {
+    width: MIN_TOUCH_TARGET.android,
+    height: textControlHeight(font.size.body, spacing.sm),
+  },
 }
 
-/** The catalogue ids a finger can activate. The rest of the 22 are structural
- * or purely informative (a bubble, a badge, the boundary marker, the offline
+/** The catalogue ids a finger can activate. The rest of the catalogue is
+ * structural or purely informative (a bubble, a badge, the boundary marker, the offline
  * banner, the state indicator, the queued notice, the two diff chips), and
  * AC-9 scopes itself to "every interactive element". */
 export const INTERACTIVE_IDS = [
@@ -139,6 +179,7 @@ export const INTERACTIVE_IDS = [
   A11Y_IDS.chipAffirm,
   A11Y_IDS.chipNegative,
   A11Y_IDS.optionChip,
+  A11Y_IDS.newMessageAffordance,
 ] as const
 
 export type InteractiveId = (typeof INTERACTIVE_IDS)[number]

@@ -14,7 +14,7 @@ import type {
   TurnWire,
   UndoOutcomeWire,
 } from '../types.ts'
-import { appliedHead, formatStamp, formatValue } from './format.ts'
+import { appliedHead, formatStamp, formatValue, tasksWord } from './format.ts'
 
 /** Reducer assigns ids; builders produce id-less messages. Omit must
  * distribute over the union so each variant keeps its own fields. */
@@ -64,7 +64,7 @@ export function anatomyView(anatomy: AppliedAnatomy, ctx: MessageContext): Anato
         formatValue(titleRow?.new, ctx.now) ??
         ctx.titleFor(taskId) ??
         anatomy.created_titles[createdIdx] ??
-        'Việc mới'
+        'New task'
       createdIdx += 1
       const chips: DiffChip[] = rows
         .filter((r) => r.field !== 'title' && r.new !== null && r.new !== undefined)
@@ -76,7 +76,7 @@ export function anatomyView(anatomy: AppliedAnatomy, ctx: MessageContext): Anato
         ctx.titleFor(taskId) ??
         formatValue(titleRow?.new, ctx.now) ??
         formatValue(titleRow?.old, ctx.now) ??
-        'Việc'
+        'Task'
       const chips: DiffChip[] = rows.map((r) => ({
         field: r.field,
         old: formatValue(r.old, ctx.now),
@@ -88,7 +88,7 @@ export function anatomyView(anatomy: AppliedAnatomy, ctx: MessageContext): Anato
   // created tasks may carry a single title-only diff or none at all — make
   // sure every created title is represented
   while (createdIdx < anatomy.created_titles.length) {
-    lines.push({ taskId: '', title: anatomy.created_titles[createdIdx] ?? 'Việc mới', label: 'new', chips: [] })
+    lines.push({ taskId: '', title: anatomy.created_titles[createdIdx] ?? 'New task', label: 'new', chips: [] })
     createdIdx += 1
   }
   return {
@@ -145,8 +145,8 @@ export function questionMessage(turn: TurnWire): NewMsg {
       kind: 'question',
       turnId: turn.id,
       qkind: q.kind,
-      head: `Xóa ${n} việc?`,
-      body: `Sẽ xóa: ${q.task_titles.join(', ')}.`,
+      head: `Delete ${n} ${tasksWord(n)}?`,
+      body: `Will delete: ${q.task_titles.join(', ')}.`,
       options: [...q.options],
       taskTitles: [...q.task_titles],
       resolved: q.resolution !== null,
@@ -157,7 +157,11 @@ export function questionMessage(turn: TurnWire): NewMsg {
     kind: 'question',
     turnId: turn.id,
     qkind: q.kind,
-    head: `Có ${n} việc khớp — bạn muốn việc nào?`,
+    // The mockup's clarify head quotes the matched phrase ("“Meeting” matches
+    // two tasks — which one?"); the wire carries no such field (api types.ts
+    // `Question` has kind/task_ids/task_titles/options only), so the count
+    // carries it. Reported as a catalogue gap, not invented wording.
+    head: `${n} ${tasksWord(n)} match — which one?`,
     body: null,
     options: [...q.options],
     taskTitles: [...q.task_titles],
@@ -166,30 +170,31 @@ export function questionMessage(turn: TurnWire): NewMsg {
   }
 }
 
-/** declined / declined-superseded outcome — "Đã giữ nguyên 3 việc" (AC-11). */
+/** declined / declined-superseded outcome — "Kept all 3 tasks" (AC-11). */
 export function keptMessage(
   info: { qkind: QuestionKind; titles: string[] } | null,
   superseded: boolean,
   at: string,
 ): NewMsg {
   const body = superseded
-    ? 'Việc xóa được bỏ qua vì bạn đã chuyển sang chuyện khác. Không có gì bị xóa.'
-    : 'Không có gì bị xóa.'
+    ? 'The delete was set aside because you moved on to something else. Nothing was deleted.'
+    : 'Nothing was deleted.'
   if (info === null || info.qkind !== 'bulk_delete') {
     return {
       kind: 'outcome',
-      head: 'Bỏ qua câu hỏi đó',
+      head: 'That question was set aside',
       body: [
         superseded
-          ? 'Câu hỏi được bỏ qua vì bạn đã chuyển sang chuyện khác. Chưa có gì thay đổi.'
-          : 'Chưa có gì thay đổi.',
+          ? 'The question was set aside because you moved on to something else. Nothing changed.'
+          : 'Nothing changed.',
       ],
       at,
     }
   }
+  const n = info.titles.length
   return {
     kind: 'outcome',
-    head: `Đã giữ nguyên ${info.titles.length} việc`,
+    head: `Kept all ${n} ${tasksWord(n)}`,
     body: [body],
     at,
   }
@@ -198,8 +203,8 @@ export function keptMessage(
 export function alreadyResolvedMessage(at: string): NewMsg {
   return {
     kind: 'outcome',
-    head: 'Câu hỏi đó đã được trả lời rồi',
-    body: ['Không làm gì thêm — câu hỏi đã xử lý xong từ trước.'],
+    head: 'That question was already answered',
+    body: ['Nothing more to do — it was settled earlier.'],
     at,
   }
 }
@@ -208,7 +213,7 @@ export function unclassifiableMessage(at: string): NewMsg {
   return {
     kind: 'outcome',
     head: null,
-    body: ['Tôi chưa hiểu đó là câu trả lời — câu hỏi ở trên vẫn đang chờ. Chưa làm gì cả.'],
+    body: ["I didn't catch that as an answer — the question above is still waiting. Nothing was done."],
     at,
   }
 }
@@ -224,9 +229,9 @@ export function unsupportedMessage(alternative: string, at: string): NewMsg {
 export function aiErrorMessage(retryTurnId: string | null, at: string): NewMsg {
   return {
     kind: 'error',
-    head: 'Chưa gửi được',
+    head: "Couldn't send",
     body: [
-      'Trợ lý chưa xử lý được lời bạn vừa gửi. Chưa có gì thay đổi — lời của bạn vẫn được giữ bên dưới.',
+      "The assistant couldn't handle that one. Nothing changed — your words are still in the box below.",
     ],
     retryTurnId,
     at,
@@ -234,9 +239,9 @@ export function aiErrorMessage(retryTurnId: string | null, at: string): NewMsg {
 }
 
 const UNDO_REFUSAL_BODY: Record<string, string> = {
-  not_undoable: 'Không có gì để hoàn tác — phiên này chưa có thay đổi nào được áp dụng.',
-  not_newest: 'Không hoàn tác được nữa — đã có thay đổi mới hơn sau đó.',
-  session_closed: 'Phiên đó đã kết thúc nên không hoàn tác được các thay đổi của nó.',
+  not_undoable: 'There is nothing to undo — nothing has been applied in this session.',
+  not_newest: "That can't be undone any more — a newer change came after it.",
+  session_closed: "That session has closed, so its changes can't be undone.",
 }
 
 /** AC-6/AC-8: a refused undo is a visible outcome stating why, never silence. */
@@ -244,13 +249,13 @@ export function undoRefusedMessage(reason: string, at: string): NewMsg {
   return {
     kind: 'outcome',
     head: null,
-    body: [UNDO_REFUSAL_BODY[reason] ?? 'Bây giờ chưa hoàn tác được.'],
+    body: [UNDO_REFUSAL_BODY[reason] ?? "That can't be undone right now."],
     at,
   }
 }
 
 /** Undo result → reverted message (AC-7): skipped tasks named; all-skipped
- * renders "Không hoàn tác được gì", never dressed as success. */
+ * renders "Nothing was undone", never dressed as success. */
 export function revertedMessage(
   undo: Pick<UndoOutcomeWire, 'reverted' | 'skipped' | 'nothing_reverted'>,
   lineFor: (taskId: string) => DiffLine | null,
@@ -260,8 +265,8 @@ export function revertedMessage(
     const titles = undo.skipped.map((s) => s.title).join(', ')
     return {
       kind: 'reverted',
-      head: 'Không hoàn tác được gì',
-      body: [`Mọi việc của lần đó đều đã thay đổi sau đấy: ${titles}. Chúng được giữ nguyên.`],
+      head: 'Nothing was undone',
+      body: [`They all changed after my edit: ${titles}. I left them as they are.`],
       at,
     }
   }
@@ -273,15 +278,21 @@ export function revertedMessage(
     else restored.push(r.title)
   }
   const body: string[] = []
-  if (removed.length > 0) body.push(`Đã bỏ: ${removed.join(', ')}.`)
-  if (restored.length > 0) body.push(`Đã khôi phục: ${restored.join(', ')}.`)
+  // "Undone:" is the mockup's published label for the case it renders (a task
+  // the turn created, taken away again). The second group — a task whose edited
+  // field value came back — has no published label, and "Restored:" is not
+  // available: §Buttons bans restore/revert/roll back for anything in the undo
+  // family. "Put back:" is the placeholder; reported to design as a gap.
+  if (removed.length > 0) body.push(`Undone: ${removed.join(', ')}.`)
+  if (restored.length > 0) body.push(`Put back: ${restored.join(', ')}.`)
   for (const s of undo.skipped) {
-    body.push(`Bỏ qua: ${s.title} — việc này đã thay đổi sau đó nên tôi giữ nguyên.`)
+    body.push(`Skipped: ${s.title} — it changed after my edit, so I left it alone.`)
   }
+  const skipped = undo.skipped.length
   const head =
-    undo.skipped.length === 0
-      ? 'Đã hoàn tác'
-      : `Đã hoàn tác — trừ ${undo.skipped.length} việc`
+    skipped === 0
+      ? 'Undone'
+      : `Undone — except ${skipped === 1 ? 'one task' : `${skipped} tasks`}`
   return { kind: 'reverted', head, body, at }
 }
 
@@ -372,15 +383,18 @@ function revertedFromRecord(rec: UndoResultRec, view: TurnView, at: string): New
 /** Clean start: exactly ONE boundary message carrying the closed session's
  * terminal outcomes (AC-28). */
 export function boundaryMessage(b: BoundaryWire, ctx: MessageContext): NewMsg {
-  const reason = b.close_reason === 'idle' ? 'để lâu không dùng' : 'bạn đã đóng'
-  const head = `Phiên đã kết thúc — ${reason} · ${formatStamp(b.closed_at, ctx.now)}`
+  const reason = b.close_reason === 'idle' ? 'no activity' : 'you closed it'
+  const head = `Session closed — ${reason} · ${formatStamp(b.closed_at, ctx.now)}`
   const lines: string[] = []
   for (const q of b.declined_questions) {
-    const label = q.kind === 'bulk_delete' ? `Xóa ${q.task_titles.length} việc?` : 'Việc nào?'
-    lines.push(`Đóng phiên nên bỏ qua: “${label}” — vẫn giữ ${q.task_titles.join(', ')}.`)
+    const n = q.task_titles.length
+    const label = q.kind === 'bulk_delete' ? `Delete ${n} ${tasksWord(n)}?` : 'Which task?'
+    lines.push(
+      `Closing the session declined “${label}” — ${q.task_titles.join(', ')} were all kept.`,
+    )
   }
   for (const late of b.late_outcomes) {
-    lines.push(`Trong lúc bạn vắng mặt: ${describeLateOutcome(late, ctx)}`)
+    lines.push(`While you were away: ${describeLateOutcome(late, ctx)}`)
   }
   return { kind: 'boundary', head, lines, at: b.closed_at }
 }
@@ -390,29 +404,29 @@ function describeLateOutcome(
   ctx: MessageContext,
 ): string {
   if (late.status === 'failed')
-    return 'có một câu chưa xử lý được — nội dung vẫn được lưu trong phiên.'
+    return "one turn couldn't be handled — what you said is still saved in the session."
   const o = late.outcome
   if (o !== null && o !== undefined && o.kind === 'applied') {
     const parts: string[] = []
-    for (const t of o.created_titles) parts.push(`đã thêm “${t}”`)
-    for (const t of o.deleted_titles) parts.push(`đã xóa “${t}”`)
+    for (const t of o.created_titles) parts.push(`added “${t}”`)
+    for (const t of o.deleted_titles) parts.push(`deleted “${t}”`)
     const edits = new Set(
       o.diff.filter((d) => d.old !== null && d.new !== null).map((d) => d.task_id),
     )
     for (const id of edits) {
       const title = ctx.titleFor(id)
-      parts.push(title === null ? 'đã sửa 1 việc' : `đã sửa “${title}”`)
+      parts.push(title === null ? 'edited 1 task' : `edited “${title}”`)
     }
     if (parts.length > 0) return `${parts.join('; ')}.`
   }
   if (o !== null && o !== undefined && o.kind === 'resolution' && o.executed) {
     const del = o.executed.deleted_titles
-    if (del.length > 0) return `đã xóa ${del.join(', ')}.`
+    if (del.length > 0) return `deleted ${del.join(', ')}.`
   }
   // Defensive: some harness stubs summarize late outcomes as a plain string.
   const summary = (late as { summary?: unknown }).summary
   if (typeof summary === 'string') return `${summary}.`
-  return 'một thay đổi đã hoàn tất.'
+  return 'a change went through.'
 }
 
 // ---------------------------------------------------------------------------
@@ -422,10 +436,10 @@ function describeLateOutcome(
 export function permissionDeniedMessage(at: string): NewMsg {
   return {
     kind: 'info',
-    head: 'Micro cần quyền truy cập',
+    head: 'Microphone needs permission',
     body: [
-      'Trình duyệt đang chặn micro cho trang này. Bạn cho phép trong cài đặt trang là micro sáng lại ngay.',
-      'Gõ chữ vẫn dùng được như thường.',
+      'Your browser is blocking the microphone for this page. Allow it in the site settings and the mic lights up again.',
+      'Typing still works as usual.',
     ],
     cta: 'permission',
     at,
@@ -435,10 +449,10 @@ export function permissionDeniedMessage(at: string): NewMsg {
 export function transientFailureMessage(at: string): NewMsg {
   return {
     kind: 'info',
-    head: 'Nhận dạng giọng nói đang bận',
+    head: 'Speech recognition is busy',
     body: [
-      'Dịch vụ nhận dạng chưa phản hồi lúc này. Thường chỉ một lát là xong — micro sẽ tự bật lại.',
-      'Gõ chữ vẫn dùng được như thường.',
+      "The recognition service isn't answering. It usually clears in a moment — the mic will come back on its own.",
+      'Typing still works as usual.',
     ],
     cta: null,
     at,

@@ -63,19 +63,25 @@ export function formatTopDate(now: Date = new Date()): string {
   return dayLabel(now)
 }
 
-/** The applied-message head: "Đã sửa 1 việc · thêm 1", "Đã thêm 1 việc",
- * "Đã xóa 3 việc" (design mockup wording, Vietnamese per components.md). The
- * first segment carries the "việc" noun; later segments are the bare verb +
- * count. Vietnamese has no plural inflection, so the count alone carries it. */
+/** "task" / "tasks" — the house noun (components.md §Buttons: never item,
+ * to-do, entry or note). */
+export function tasksWord(n: number): string {
+  return n === 1 ? 'task' : 'tasks'
+}
+
+/** The applied-message head: "Edited 1 task · added 1", "Added 1 task",
+ * "Deleted 3 tasks" (design mockup wording — English per ADR-008). Only the
+ * FIRST segment carries the noun; later segments are the bare verb + count,
+ * exactly as the mockup renders "Edited 1 task · added 1". */
 export function appliedHead(counts: { edited: number; created: number; deleted: number }): string {
   const segs: string[] = []
   const push = (lead: string, verb: string, n: number) => {
     if (n <= 0) return
-    if (segs.length === 0) segs.push(`${lead} ${n} việc`)
+    if (segs.length === 0) segs.push(`${lead} ${n} ${tasksWord(n)}`)
     else segs.push(`${verb} ${n}`)
   }
-  push('Đã sửa', 'sửa', counts.edited)
-  push('Đã thêm', 'thêm', counts.created)
-  push('Đã xóa', 'xóa', counts.deleted)
-  return segs.length === 0 ? 'Xong' : segs.join(' · ')
+  push('Edited', 'edited', counts.edited)
+  push('Added', 'added', counts.created)
+  push('Deleted', 'deleted', counts.deleted)
+  return segs.length === 0 ? 'Done' : segs.join(' · ')
 }

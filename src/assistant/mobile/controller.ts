@@ -27,7 +27,8 @@ import { AssistantController } from '../_shared/controller.ts'
 import type { ControllerDeps } from '../_shared/controller.ts'
 import type { PermissionState } from '../_shared/model/client-stores.ts'
 import type { TurnSource } from '../_shared/types.ts'
-import { announcementsFor } from './model/announce.ts'
+import { affordanceAnnouncement, announcementsFor } from './model/announce.ts'
+import type { AffordanceView } from './model/follow.ts'
 import { backAction } from './model/lifecycle.ts'
 import type { AudioInterruptionReason } from './model/lifecycle.ts'
 import {
@@ -42,7 +43,8 @@ import {
   statusOf,
 } from './model/permissions.ts'
 import type { MobilePlatform } from './model/permissions.ts'
-import type { Announcer, AppLifecycle, Connectivity } from './ports/app-lifecycle.ts'
+import { FakeReduceMotion } from './ports/app-lifecycle.ts'
+import type { Announcer, AppLifecycle, Connectivity, ReduceMotion } from './ports/app-lifecycle.ts'
 import type { MobileTranscriptSource } from './ports/transcript-source.ts'
 
 export interface MobileControllerDeps extends ControllerDeps {
@@ -50,6 +52,10 @@ export interface MobileControllerDeps extends ControllerDeps {
   lifecycle: AppLifecycle
   connectivity: Connectivity
   announcer: Announcer
+  /** F-001 AC-30(g). Optional only so a caller that never scrolls (a headless
+   * assertion over the conversation model) need not construct one; the default
+   * reports the OS default, and `boot.ts` always passes the real port. */
+  reduceMotion?: ReduceMotion
 }
 
 /** Prototype-grade observability (spec ## Ops, ADR-001): in-process counters,
@@ -67,12 +73,19 @@ export class MobileAssistantController extends AssistantController {
   private readonly lifecycle: AppLifecycle
   private readonly connectivity: Connectivity
   private readonly announcer: Announcer
+  private readonly reduceMotionPort: ReduceMotion
   private readonly unsubscribes: (() => void)[] = []
 
   private keyboardVisible = false
   private foregroundSync: Promise<void> | null = null
   private suppressAnnouncements = false
   private readonly announced = new Set<string>()
+  /** AC-30: the last accessible name the affordance announced, so a change of
+   * row (NMA-NEW → NMA-WAITING) is news and a re-render of the same state is
+   * not. React Native has no live region, so "the dock is a polite live region"
+   * (components.md) is this imperative announcement — same port, same rule as
+   * every other announcement (platform mobile.md). */
+  private lastAffordanceAnnouncement: string | null = null
 
   readonly counters: MobileCounters = {
     permissionDenied: { microphone: 0, speech_recognition: 0 },
@@ -89,6 +102,7 @@ export class MobileAssistantController extends AssistantController {
     this.lifecycle = deps.lifecycle
     this.connectivity = deps.connectivity
     this.announcer = deps.announcer
+    this.reduceMotionPort = deps.reduceMotion ?? new FakeReduceMotion(false)
 
     // AC-12 — every message the conversation adds is announced.
     this.unsubscribes.push(this.subscribe(() => this.drainAnnouncements()))
@@ -109,6 +123,38 @@ export class MobileAssistantController extends AssistantController {
 
   get platform(): MobilePlatform {
     return this.mobile.platform
+  }
+
+  /**
+   * AC-30(g). Read on every scroll rather than cached in the view, so flipping
+   * the OS switch while the app is open takes effect on the next scroll — the
+   * clause is a quantifier over scrolls, not a decision taken once at mount.
+   */
+  reduceMotionEnabled(): boolean {
+    return this.reduceMotionPort.isEnabled()
+  }
+
+  onReduceMotionChange(cb: (enabled: boolean) => void): () => void {
+    return this.reduceMotionPort.onChange(cb)
+  }
+
+  /**
+   * AC-30(e) on the announcement path AC-19 already establishes: the affordance
+   * has to tell a screen-reader user that an answer is *waiting*, not merely
+   * that something arrived, and it has to say so again when it changes from a
+   * count to a question. Called by the view with the affordance it is currently
+   * rendering (`null` = NMA-HIDDEN); repeated calls with the same name say
+   * nothing, so a re-render is not an announcement.
+   */
+  announceAffordance(view: AffordanceView | null): void {
+    const a = affordanceAnnouncement(view)
+    if (a === null) {
+      this.lastAffordanceAnnouncement = null
+      return
+    }
+    if (a.text === this.lastAffordanceAnnouncement) return
+    this.lastAffordanceAnnouncement = a.text
+    this.announcer.announce(a.text, { assertive: a.assertive })
   }
 
   dispose(): void {

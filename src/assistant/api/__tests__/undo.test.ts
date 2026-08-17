@@ -267,15 +267,25 @@ describe('voice undo — guard before interpretation (AC-5, ADR-006)', () => {
     expect(session.body.session.messages).toHaveLength(1)
   })
 
-  it('"hoàn tác" behaves identically', async () => {
+  // The Vietnamese undo phrase left the closed list with the rest of the
+  // Vietnamese (ADR-008 / owner decision 2026-08-17: AC-5's undo vocabulary is
+  // "undo"). Its old "behaves identically" case retired with it — T-069 had
+  // already removed the fixture tripwire row behind it, leaving a test whose
+  // "never becomes a task" half could not fail. What replaces it asserts the
+  // behaviour *change*: the phrase is no longer guarded, so it reaches the
+  // interpreter like any other utterance.
+  it('"hoàn tác" is no longer a guarded phrase — it takes the normal turn path', async () => {
     const h = await buildHarness()
     const user = uid()
     await sendTurn(h, user, 'add a task to buy milk')
     const calls = h.interpreter.calls.length
     const res = await sendTurn(h, user, 'hoàn tác', { source: 'voice' })
-    expect(res.body.kind).toBe('undo')
-    expect(h.interpreter.calls.length).toBe(calls)
-    expect(await listTasks(h, user)).toHaveLength(0)
+    expect(res.status).toBe(200)
+    expect(res.body.kind).toBe('turn') // not 'undo' — the guard no longer claims it
+    expect(h.interpreter.calls.length).toBe(calls + 1) // interpreted, not short-circuited
+    expect(res.body.turn.outcome.kind).toBe('no_match') // no fixture row for it
+    // and nothing was undone: the earlier create still stands
+    expect((await listTasks(h, user)).map((t) => t.title)).toEqual(['Buy milk'])
   })
 
   it('a voice undo with no applied turn is a visible refusal, not a task named undo (AC-8)', async () => {

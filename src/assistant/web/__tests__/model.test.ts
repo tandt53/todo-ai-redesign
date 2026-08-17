@@ -165,8 +165,8 @@ describe('mic modes (AC-20, AC-21, AC-22)', () => {
     expect(p.cta).toBe('permission')
     expect(t.cta).toBeNull()
     // typing is never blocked by either
-    expect(p.body.join(' ')).toMatch(/gõ chữ vẫn dùng được/i)
-    expect(t.body.join(' ')).toMatch(/gõ chữ vẫn dùng được/i)
+    expect(p.body.join(' ')).toMatch(/typing still works as usual/i)
+    expect(t.body.join(' ')).toMatch(/typing still works as usual/i)
   })
 })
 
@@ -298,9 +298,9 @@ describe('applied anatomy (AC-1, AC-4)', () => {
   })
 
   it('the applied head states the real counts', () => {
-    expect(appliedHead({ edited: 1, created: 1, deleted: 0 })).toBe('Đã sửa 1 việc · thêm 1')
-    expect(appliedHead({ edited: 0, created: 1, deleted: 0 })).toBe('Đã thêm 1 việc')
-    expect(appliedHead({ edited: 0, created: 0, deleted: 3 })).toBe('Đã xóa 3 việc')
+    expect(appliedHead({ edited: 1, created: 1, deleted: 0 })).toBe('Edited 1 task · added 1')
+    expect(appliedHead({ edited: 0, created: 1, deleted: 0 })).toBe('Added 1 task')
+    expect(appliedHead({ edited: 0, created: 0, deleted: 3 })).toBe('Deleted 3 tasks')
   })
 })
 
@@ -321,7 +321,7 @@ describe('undo outcomes (AC-6, AC-7)', () => {
       T0,
     )
     if (m.kind !== 'reverted') throw new Error('unreachable')
-    expect(m.head).toMatch(/trừ 1 việc/)
+    expect(m.head).toMatch(/except one task/)
     expect(m.body.join(' ')).toContain('Review Q3 budget draft')
     expect(m.body.join(' ')).toContain('Pick up birthday cake')
   })
@@ -340,8 +340,8 @@ describe('undo outcomes (AC-6, AC-7)', () => {
       T0,
     )
     if (m.kind !== 'reverted') throw new Error('unreachable')
-    expect(m.head).toBe('Không hoàn tác được gì')
-    expect(m.head).not.toMatch(/^Đã hoàn tác/)
+    expect(m.head).toBe('Nothing was undone')
+    expect(m.head).not.toMatch(/^Undone/)
     expect(m.body.join(' ')).toContain('Review Q3 budget draft')
   })
 
@@ -356,7 +356,7 @@ describe('undo outcomes (AC-6, AC-7)', () => {
     for (const b of bodies) expect(b.length).toBeGreaterThan(0)
     const unknown = undoRefusedMessage('something-new', T0)
     if (unknown.kind !== 'outcome') throw new Error('unreachable')
-    expect(unknown.body.join(' ')).toMatch(/chưa hoàn tác được/)
+    expect(unknown.body.join(' ')).toMatch(/can't be undone/)
   })
 })
 
@@ -398,7 +398,7 @@ describe('resolution + honesty messages (AC-11, AC-14, AC-15)', () => {
     expect(m?.kind).toBe('applied')
     if (m?.kind !== 'applied') throw new Error('unreachable')
     expect(m.mutated).toBe(true)
-    expect(m.head).toBe('Đã xóa 3 việc')
+    expect(m.head).toBe('Deleted 3 tasks')
     expect(m.deletedTitles).toHaveLength(3)
   })
 
@@ -411,7 +411,7 @@ describe('resolution + honesty messages (AC-11, AC-14, AC-15)', () => {
     expect(marks).toBeNull()
     const m = messages[0]
     if (m?.kind !== 'outcome') throw new Error('unreachable')
-    expect(m.body.join(' ')).toMatch(/vẫn đang chờ/i)
+    expect(m.body.join(' ')).toMatch(/still waiting/i)
   })
 
   it('no-match quotes the heard transcript verbatim (AC-14)', () => {
@@ -480,7 +480,7 @@ describe('session lifecycle (AC-28)', () => {
       ctx,
     )
     if (m.kind !== 'boundary') throw new Error('unreachable')
-    expect(m.head).toMatch(/Phiên đã kết thúc — để lâu không dùng/)
+    expect(m.head).toMatch(/Session closed — no activity/)
     expect(m.lines).toHaveLength(2)
     expect(m.lines[0]).toContain('Buy groceries for the week')
     expect(m.lines[1]).toContain('Call the bank')

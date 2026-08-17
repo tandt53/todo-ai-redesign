@@ -130,7 +130,7 @@ describe('POST /assistant/turn — apply outcomes', () => {
     expect(res.status).toBe(200)
     expect(res.body.turn.outcome).toEqual({
       kind: 'unsupported_query',
-      alternative: 'danh sách và bộ lọc trên màn hình',
+      alternative: 'the on-screen list and its filters',
     })
     expect(await listTasks(h, user)).toHaveLength(1)
   })

@@ -46,12 +46,20 @@ import { performUndo, undoRefusedNoAppliedTurn } from './undo.ts'
 /**
  * The working alternative named by an `unsupported_query` outcome (AC-15).
  * This string is read aloud/rendered to the user, not a protocol token, so it
- * follows the product's UI language. Vietnamese as of T-015g (Gate-3
- * localization pass); the contract fixes the literal value — see
- * `specs/assistant/api-contracts.md` §9 and `specs/assistant/data-model.md`
- * TurnOutcome. Gloss: "the on-screen list and its filters".
+ * follows the product's UI language. English as of T-069 (ADR-008 — English is
+ * the product language this phase; direct replacement, no i18n layer), which
+ * restores the literal this constant carried before the T-015g localization
+ * pass.
+ *
+ * DRIFT, deliberate and reported (T-069): the contract still fixes the
+ * Vietnamese literal — `specs/assistant/api-contracts.md` §9 and
+ * `specs/assistant/data-model.md` TurnOutcome both pin
+ * "danh sách và bộ lọc trên màn hình", which glosses as exactly this string.
+ * ADR-008 supersedes them; `specs/` is spec-agent's to edit and was explicitly
+ * out of scope for this task, so the code moves first and the two contract
+ * lines are a named follow-up.
  */
-export const UNSUPPORTED_QUERY_ALTERNATIVE = 'danh sách và bộ lọc trên màn hình'
+export const UNSUPPORTED_QUERY_ALTERNATIVE = 'the on-screen list and its filters'
 
 /**
  * Bulk-delete confirm-chip labels (T-006d). A tap sends the option's LITERAL
@@ -61,16 +69,30 @@ export const UNSUPPORTED_QUERY_ALTERNATIVE = 'danh sách và bộ lọc trên m�
  * negative is a plain refusal. Web/mobile render these verbatim, which is what
  * keeps WCAG 2.5.3 (label in name) satisfied by construction.
  *
- * Vietnamese (T-015b, Gate-3 product decision): the product's UI language is
- * Vietnamese, and because a tap replays the label as the user's own utterance,
- * an English chip would put English in a Vietnamese speaker's mouth. Vietnamese
- * nouns do not inflect for number, so "Xoá 1 việc" / "Xoá 3 việc" both read
- * naturally from one template — the English plural branch is dropped rather
- * than translated. Classification stays positional (index 0 = affirmative,
- * index 1 = negative, see ports/fixture-interpreter.ts), so it is unaffected by
- * the language of these strings.
+ * English (T-069, ADR-008 — English is the product language this phase). The
+ * two labels are TRANSCRIBED, not composed: they are the literal chip text
+ * design published on `assistant-chip-affirm` / `assistant-chip-negative` in
+ * `design/assistant/screens/voice-assistant-view.html` (and its `-android`
+ * twin), and they obey `design/_shared/components.md` §Buttons' one-word-per-
+ * concept rule — **delete** (never remove/clear) and **task** (never item /
+ * to-do). This is also what fixes product-review M5: the split there was the
+ * server and the client spelling the same word two ways inside one bubble, and
+ * the fix is not that Vietnamese left but that both layers now take the word
+ * from the same catalogue row.
+ *
+ * Only the plural form exists because only the plural is reachable: the gate
+ * below applies a single-task delete immediately (AC-9), so `bulkDeleteOptions`
+ * is never called with count < 2. A singular branch would be unreachable copy
+ * design has not published.
+ *
+ * Classification stays positional (index 0 = affirmative, index 1 = negative,
+ * see ports/fixture-interpreter.ts), so it is unaffected by the language of
+ * these strings.
  */
-export const bulkDeleteOptions = (count: number): string[] => [`Xoá ${count} việc`, 'Giữ lại']
+export const bulkDeleteOptions = (count: number): string[] => [
+  `Delete ${count} tasks`,
+  'Keep them',
+]
 
 export interface TurnDeps {
   store: Store

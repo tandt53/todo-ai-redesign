@@ -20,6 +20,7 @@ import { chipRole, showPermissionCta, showQueuedNotice, showRetry, showUndo } fr
 import { tokens } from '../model/theme.ts'
 import { touchProps } from '../model/touch.ts'
 import { useStyles } from './styles.ts'
+import type { NewMessageFollow } from './useNewMessageFollow.ts'
 
 function DiffRow({ line }: { line: DiffLine }) {
   const { styles } = useStyles()
@@ -43,7 +44,7 @@ function DiffRow({ line }: { line: DiffLine }) {
       ))}
       {/* AC-4: diff and state are never colour-only — the text label rides
           every marker. */}
-      <Text style={styles.miniLabel}>{line.label === 'new' ? 'Mới' : 'Đã sửa'}</Text>
+      <Text style={styles.miniLabel}>{line.label === 'new' ? 'NEW' : 'EDITED'}</Text>
     </View>
   )
 }
@@ -70,12 +71,12 @@ function MessageView({
         </View>
         {showQueuedNotice(m) && (
           <View {...a11yProps(A11Y_IDS.queuedNotice)} style={styles.queuedNotice} accessible>
-            <Text style={styles.queuedNoticeText}>Đang chờ mạng — sẽ gửi lại</Text>
+            <Text style={styles.queuedNoticeText}>Waiting for the network — will send again</Text>
           </View>
         )}
         <Text style={styles.msgMeta}>
-          Bạn · {meta}
-          {m.via === 'voice' ? ' · giọng nói' : ''}
+          You · {meta}
+          {m.via === 'voice' ? ' · voice' : ''}
         </Text>
       </View>
     )
@@ -106,11 +107,11 @@ function MessageView({
               <DiffRow key={`${l.taskId}-${i}`} line={l} />
             ))}
             {m.deletedTitles.length > 0 && (
-              <Text style={styles.bubbleText}>Đã xóa: {m.deletedTitles.join(', ')}.</Text>
+              <Text style={styles.bubbleText}>Deleted: {m.deletedTitles.join(', ')}.</Text>
             )}
             {showUndo(m, undoableTurnId) && (
               <Pressable
-                {...a11yProps(A11Y_IDS.undoButton, { label: 'Hoàn tác', role: 'button' })}
+                {...a11yProps(A11Y_IDS.undoButton, { label: 'Undo', role: 'button' })}
                 hitSlop={undoTouch.hitSlop}
                 style={styles.undoButton}
                 onPress={() => void controller.undoTap(m.turnId)}
@@ -121,13 +122,13 @@ function MessageView({
                     color={colors.primary}
                     strokeWidth={tokens.icon.stroke}
                   />
-                  <Text style={styles.undoButtonText}>Hoàn tác</Text>
+                  <Text style={styles.undoButtonText}>Undo</Text>
                 </View>
               </Pressable>
             )}
-            {m.undone && <Text style={styles.miniLabel}>Đã hoàn tác</Text>}
+            {m.undone && <Text style={styles.miniLabel}>Undone</Text>}
             {!m.undone && !showUndo(m, undoableTurnId) && m.mutated && (
-              <Text style={styles.miniLabel}>Đã qua — không hoàn tác được nữa.</Text>
+              <Text style={styles.miniLabel}>Undo window passed</Text>
             )}
           </>
         )
@@ -193,12 +194,12 @@ function MessageView({
             ))}
             {showRetry(m) && m.retryTurnId !== null && (
               <Pressable
-                {...a11yProps(A11Y_IDS.retryButton, { label: 'Thử lại', role: 'button' })}
+                {...a11yProps(A11Y_IDS.retryButton, { label: 'Retry', role: 'button' })}
                 hitSlop={touch.hitSlop}
                 style={styles.primaryButton}
                 onPress={() => void controller.retry(m.retryTurnId as string)}
               >
-                <Text style={styles.primaryButtonText}>Thử lại</Text>
+                <Text style={styles.primaryButtonText}>Retry</Text>
               </Pressable>
             )}
           </>
@@ -247,10 +248,10 @@ function MessageView({
         return (
           <>
             <Text style={styles.bubbleText}>
-              Tôi nghe được “{m.heard}” — không có việc nào trong danh sách khớp với câu đó.
+              I heard “{m.heard}” — no task on the list matches that.
             </Text>
             <Text style={styles.bubbleText}>
-              Chưa có gì thay đổi. Nếu tôi nghe nhầm, bạn nói lại hoặc gõ vào giúp tôi nhé.
+              Nothing has changed. If I misheard, say it again or type it.
             </Text>
           </>
         )
@@ -258,9 +259,9 @@ function MessageView({
         return (
           <>
             <Text style={styles.bubbleText}>
-              Tôi chưa trả lời được câu hỏi về danh sách — chưa có gì thay đổi.
+              I cannot answer questions about the list yet — nothing has changed.
             </Text>
-            <Text style={styles.bubbleText}>Bạn dùng {m.alternative} thay cho việc hỏi nhé.</Text>
+            <Text style={styles.bubbleText}>Use {m.alternative} instead.</Text>
           </>
         )
     }
@@ -288,26 +289,38 @@ export function ConversationList({
   controller,
   undoableTurnId,
   platform,
+  scrollProps,
 }: {
   state: AppState
   controller: MobileAssistantController
   undoableTurnId: string | null
   platform: MobilePlatform
+  /** F-001 AC-30: the ref, `onScroll` and `onContentSizeChange` this list
+   * rendered without until BUG-004 — supplied by `useNewMessageFollow`, which
+   * owns the measurement and the decisions. Nothing here samples the viewport
+   * itself; see that hook's header for why the (a) sample must be the
+   * pre-append one. */
+  scrollProps: NewMessageFollow['scrollProps']
 }) {
   const { styles } = useStyles()
   return (
     <ScrollView
+      {...scrollProps}
       style={styles.convPane}
       contentContainerStyle={styles.convContent}
       keyboardShouldPersistTaps="handled"
     >
+      {/* `components.md` § Message bubbles: the display line verbatim, then ONE
+          muted hint line — the catalogue specifies exactly one, and "no
+          fabricated sample messages", which is why the hint no longer demos an
+          invented utterance. The hint's wording is not published; it is
+          reported as a copy gap. */}
       {state.messages.length === 0 && (
         <View style={styles.invite}>
-          <Text style={styles.inviteTitle}>Nói đi.{'\n'}Tôi ghi.</Text>
+          <Text style={styles.inviteTitle}>Say it.{'\n'}I&#39;ll write it down.</Text>
           <Text style={styles.inviteBody}>
-            Chạm vào micro và thử nói “họp nhóm ngày mai lúc 2 giờ”.
+            Tap the mic and say what needs doing — typing works exactly the same.
           </Text>
-          <Text style={styles.inviteBody}>Gõ chữ cũng dùng được y như vậy.</Text>
         </View>
       )}
       {state.messages.map((m) => (

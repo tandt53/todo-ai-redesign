@@ -29,6 +29,13 @@ const checkboxBox = paintedBox(A11Y_IDS.taskCheckbox)
 const composerInputBox = paintedBox(A11Y_IDS.composerInput)
 const micBox = paintedBox(A11Y_IDS.micButton)
 const sendBox = paintedBox(A11Y_IDS.composerSend)
+// The new-message pill is deliberately NOT in this list. Its painted height is
+// padding on type, which `PAINTED` already computes from the same
+// `spacing`/`font` tokens the style block below uses — the "single-sourced the
+// other way" case above. Its width is its label's, and `PAINTED`'s width for
+// that id is the documented placeholder standing in for a floor design has not
+// measured yet; spreading the box would pin the control to 48 units wide and
+// truncate the very question it exists to show.
 
 export function makeStyles(c: Palette) {
   return StyleSheet.create({
@@ -313,6 +320,53 @@ export function makeStyles(c: Palette) {
       fontSize: font.size.meta,
       color: c.question,
     },
+
+    // ---- new-message affordance (F-001 AC-30 / BUG-004) ----
+    // ZERO-HEIGHT DOCK. The pill OVERLAYS the last line of the conversation
+    // instead of reflowing it: an affordance that appears by pushing history
+    // upward moves the sentence the user is reading, which is the exact defect
+    // it exists to prevent (components.md § NewMessageAffordance). `height: 0`
+    // plus an absolutely-positioned child is how that reads in RN, and it is
+    // also why NMA-HIDDEN costs nothing — the dock holds no layout either way.
+    nmDock: { height: 0, zIndex: 6 },
+    nmWrap: {
+      position: 'absolute',
+      left: spacing.gutter_mobile,
+      right: spacing.gutter_mobile,
+      bottom: spacing.sm,
+      alignItems: 'center',
+    },
+    nmPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      maxWidth: '100%',
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.lg,
+      borderRadius: radius.pill,
+      backgroundColor: c.bg.raised,
+      borderWidth: 1,
+      borderColor: c.bg.hairline,
+      // tokens.shadow.raised, as RN shadow props (the CSS string cannot cross).
+      shadowColor: c.bg.base,
+      shadowOpacity: 0.5,
+      shadowRadius: 24,
+      shadowOffset: { width: 0, height: 8 },
+      elevation: 6,
+    },
+    // NMA-WAITING takes the amber that already means "open question" everywhere
+    // else in the catalogue. Colour never carries this alone — the words change
+    // too (components.md), which is what `label` in `model/follow.ts` decides.
+    nmPillWaiting: { backgroundColor: c.questionTint, borderColor: c.question },
+    nmLabel: {
+      flexShrink: 1,
+      fontFamily: font.family.body,
+      fontSize: font.size.body,
+      lineHeight: lineHeightFor(font.size.body),
+      fontWeight: String(font.weight.emphasis) as '600',
+      color: c.text.primary,
+    },
+    nmLabelWaiting: { color: c.question },
 
     // ---- voice surface (the ONE place the gradient is legal) ----
     voiceSurface: { alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.sm },

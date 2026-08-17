@@ -63,11 +63,11 @@ describe('AC-9 — every interactive element reaches the platform minimum as HIT
     expect(hitArea(A11Y_IDS.taskCheckbox, 'android')).toEqual({ width: 48, height: 48 })
   })
 
-  it('the four content-width floors match the table design published — parsed, not retyped', () => {
-    // These four have no mockup measurement to read (a full-bleed row, and three
-    // controls whose width is their label), so design published them in
-    // components.md. Parsing that table is what makes PAINTED a consumer of the
-    // number rather than a second declaration of it.
+  it('the published content-width floors match the table design published — parsed, not retyped', () => {
+    // These have no mockup CSS rule to read (a full-bleed row, and controls
+    // whose width is their label), so design published them in components.md.
+    // Parsing that table is what makes PAINTED a consumer of the number rather
+    // than a second declaration of it.
     const md = readFileSync(
       resolve(dirname(fileURLToPath(import.meta.url)), '../../../../design/_shared/components.md'),
       'utf8',
@@ -79,20 +79,31 @@ describe('AC-9 — every interactive element reaches the platform minimum as HIT
       const m = /^\|\s*`([a-z-]+)`\s*\|\s*\*\*(\d+)\*\*\s*\|/.exec(line)
       if (m !== null) published.set(m[1] as string, Number(m[2]))
     }
-    expect([...published.keys()].sort()).toEqual([
+    // Every row design publishes must be adopted here — including rows added
+    // after this test was written, which is how the retry and permission-CTA
+    // corrections both arrived. Asserted as a superset rather than an exact
+    // list so a NEW floor fails as "PAINTED has not adopted it" (actionable)
+    // rather than as "the expected list is stale" (noise), while a row that
+    // DISAPPEARS still fails.
+    for (const id of [
       'assistant-add-task-button',
-      'assistant-retry-button',
       'assistant-task-row',
       'assistant-undo-button',
-    ])
+      'assistant-retry-button',
+      'assistant-permission-cta',
+    ]) {
+      expect(published.has(id), `${id} is missing from the published table`).toBe(true)
+    }
     for (const [id, width] of published) {
+      expect(isInteractive(id as InteractiveId), `${id} is not a known interactive id`).toBe(true)
       expect(PAINTED[id as InteractiveId].width, `${id} floor`).toBe(width)
     }
     // The rounding rule the table states, checked as a property rather than
-    // trusted: a floor must UNDER-state the rendered width, because an
-    // over-stated one under-computes slop and fails silently in the
-    // safe-looking direction. 96 on retry (a copy of add-task's number) was
-    // exactly that error.
+    // trusted: a floor is a multiple of 4 at or below the rendered width. It
+    // must UNDER-state, because an over-stated one under-computes slop and
+    // fails silently in the safe-looking direction — which is what retry's 96
+    // (add-task's number) and the permission CTA's 140 (neither of its labels)
+    // both were.
     for (const width of published.values()) expect(width % 4).toBe(0)
   })
 

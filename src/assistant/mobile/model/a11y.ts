@@ -1,8 +1,11 @@
 // The accessibility-id contract — F-003 AC-12's second half.
 //
-// ONE catalogue, three spellings. The 22 values below are the design mockups'
+// ONE catalogue, three spellings. The 23 values below are the design mockups'
 // catalogue verbatim (`design/assistant/screens/voice-assistant-view-ios.html`
-// and `-android.html`), the same 22 the web client carries as `data-testid`.
+// and `-android.html`), the same 23 the web client carries as `data-testid`.
+// The 23rd — `assistant-new-message-affordance` — arrived with F-001 AC-30 /
+// BUG-004; the count in this file is derived from the mockups by the unit tier,
+// never asserted from memory.
 // Nothing here is invented and nothing is dropped: the unit tier parses both
 // mockups and fails if this file and the mockups disagree in either direction.
 //
@@ -29,6 +32,7 @@
 
 import type { AppState } from '../../_shared/model/reducer.ts'
 import { undoableTurnId } from '../../_shared/model/reducer.ts'
+import { affordanceFor } from './follow.ts'
 import type { MobilePlatform } from './permissions.ts'
 import {
   chipRole,
@@ -56,6 +60,7 @@ export const A11Y_IDS = {
   drawerButton: 'assistant-drawer-button',
   messageBubble: 'assistant-message-bubble',
   micButton: 'assistant-mic-button',
+  newMessageAffordance: 'assistant-new-message-affordance',
   offlineBanner: 'assistant-offline-banner',
   optionChip: 'assistant-option-chip',
   permissionCta: 'assistant-permission-cta',
@@ -107,6 +112,12 @@ export interface SurfaceContext {
   tasksVisible: boolean
   /** at least one task row currently rendered */
   hasTasks: boolean
+  /** F-001 AC-30: how many messages arrived while the user was away from the
+   * bottom. A VIEWPORT fact and deliberately not part of `AppState` — the AC
+   * adds no model state — which is why it enters through the context rather
+   * than through the reducer. Zero means the newest message is on screen
+   * (NMA-HIDDEN), and the affordance is then not rendered at all. */
+  unseenBelowFold: number
 }
 
 /**
@@ -115,7 +126,7 @@ export interface SurfaceContext {
  * description of the UI — it is the UI's own conditions, evaluated.
  *
  * Used by the unit tier to prove that the enumerated surface states between
- * them cover all 22 catalogue ids and invent none.
+ * them cover every catalogue id and invent none.
  */
 export function expectedIds(state: AppState, ctx: SurfaceContext): Set<A11yId> {
   const ids = new Set<A11yId>()
@@ -128,6 +139,11 @@ export function expectedIds(state: AppState, ctx: SurfaceContext): Set<A11yId> {
   if (showStateIndicator(state)) ids.add(A11Y_IDS.stateIndicator)
   if (showCancel(state)) ids.add(A11Y_IDS.cancelButton)
   if (showOfflineBanner(state)) ids.add(A11Y_IDS.offlineBanner)
+  // AC-30(d): ONE affordance, however many messages arrived — a Set makes the
+  // count structural, and the view mounts a single control whose props change.
+  if (affordanceFor(ctx.unseenBelowFold, state.messages) !== null) {
+    ids.add(A11Y_IDS.newMessageAffordance)
+  }
 
   if (ctx.tasksVisible && ctx.hasTasks) {
     ids.add(A11Y_IDS.taskRow)
@@ -170,7 +186,7 @@ export function expectedIds(state: AppState, ctx: SurfaceContext): Set<A11yId> {
 }
 
 /** iOS reads `testID` as `accessibilityIdentifier`; Android exposes it as the
- * view's resource-id. Both platforms therefore carry the same 22 values — the
+ * view's resource-id. Both platforms therefore carry the same values — the
  * function exists so the claim is executable rather than asserted in a
  * comment. */
 export function identityAttribute(platform: MobilePlatform): 'accessibilityIdentifier' | 'resource-id' {

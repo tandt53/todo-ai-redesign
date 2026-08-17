@@ -38,6 +38,20 @@ export interface Announcer {
   announce(text: string, opts: { assertive: boolean }): void
 }
 
+/**
+ * F-001 AC-30(g) — `AccessibilityInfo.isReduceMotionEnabled()` behind a port,
+ * because the clause binds *every* scroll AC-30 mandates and a setting the unit
+ * tier cannot drive is a clause the unit tier cannot hold.
+ *
+ * `onChange` exists because the user can flip the OS setting while the app is
+ * foregrounded; a value read once at boot would leave the next scroll animating
+ * against an accessibility preference that has already changed.
+ */
+export interface ReduceMotion {
+  isEnabled(): boolean
+  onChange(cb: (enabled: boolean) => void): Unsubscribe
+}
+
 // ---------------------------------------------------------------------------
 // Doubles
 // ---------------------------------------------------------------------------
@@ -142,6 +156,29 @@ export class FakeConnectivity implements Connectivity {
     if (online === this.online) return
     this.online = online
     this.e.emit(online)
+  }
+}
+
+export class FakeReduceMotion implements ReduceMotion {
+  private enabled: boolean
+  private readonly e = emitter<boolean>()
+
+  constructor(enabled = false) {
+    this.enabled = enabled
+  }
+
+  isEnabled(): boolean {
+    return this.enabled
+  }
+
+  onChange(cb: (enabled: boolean) => void): Unsubscribe {
+    return this.e.subscribe(cb)
+  }
+
+  set(enabled: boolean): void {
+    if (enabled === this.enabled) return
+    this.enabled = enabled
+    this.e.emit(enabled)
   }
 }
 
