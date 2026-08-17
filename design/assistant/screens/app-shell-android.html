@@ -1,76 +1,65 @@
 <!doctype html>
 <!--
-  APP SHELL — the surfaces outside the conversation · design-agent T-101 · WEB mockup
+  APP SHELL — ANDROID mockup · design-agent T-104 · the surfaces outside the conversation
+  Web sibling: app-shell.html · iOS sibling: app-shell-ios.html
   IA: design/_shared/information-architecture.md · components: design/_shared/components.md § App shell
-  Tokens: every :root value below is generated verbatim from design/_shared/tokens.json.
-  ZERO new tokens were added for this pass; semantic aliases + px derivation live in the html{} blocks.
+  Tokens: design/_shared/tokens.json
 
-  WHAT THIS FILE IS. The owner's decision of 2026-08-17 removes the task list from the
-  conversation. That makes four surfaces necessary that this repo has never drawn: the task list
-  as a surface of its own, a real navigation menu, Settings, and the sheet that names a list.
-  This file draws those, plus the four Talk states the change touches. It does NOT redraw the
-  Talk states that are unaffected — listening, thinking, questions, outcomes, permissions,
-  boundary, new-message affordance all live in voice-assistant-view.html and keep living there.
-  Two files, no overlap, one source of truth per state.
+  WHY THIS FILE EXISTS AND WHY IT DID NOT EXIST YESTERDAY. T-101 drew the shell for web only and
+  said so: producing three variants of a proposal the spec pass would change is waste. The shape
+  is now settled (owner decision 2026-08-17, desktop), so the platform variants are due — and
+  they are a BUILD DEPENDENCY, not decoration: this file carries the resource-id catalogue that
+  qa-mobile-agent parses into selectors and mobile-agent applies to components. An element with
+  no id here has no contract and is invisible to mobile automation.
 
-  REVISED 2026-08-17 (T-105) for reports/owner-decision-2026-08-17-desktop-list-is-primary.md.
+  A PHONE IS ALWAYS BELOW tokens.json breakpoints.split. There is no two-pane layout in this
+  file and no container query: exactly one surface is on screen and PathSwitch moves between
+  them in one tap. The desktop reposition (Tasks centre, Talk right panel) changes nothing here.
 
-  THE EXISTING F-001 MOCKUPS ARE UNTOUCHED. src/assistant/web/__tests__/app.test.tsx and
-  src/assistant/mobile/__tests__/a11y.test.ts parse their testid catalogues at run time; this is
-  a proposal the spec pass (T-103) has not yet accepted, so it is additive and nothing is renamed.
+  WHAT MOBILE LANDS ON IS NOT DECIDED. This file opens on talk-idle because that is today's
+  behaviour and design's proposal (information-architecture.md § 12), NOT because it is settled.
+  The owner has the call. If the answer is Tasks, this file changes by more than a default — see
+  § 12; the mic lives in Talk's composer and voice capture would become three actions.
 
-  STATES — 22, switchable via the dev bar (showState):
+  Android specifics honoured here (same rules as voice-assistant-view-android.html):
+  - IDs ride resource-id, same values as data-testid — one identity catalogue, one source prop
+    (RN testID, which surfaces as accessibilityIdentifier on iOS and resource-id on Android).
+    data-testid is kept so design-check can verify uniqueness and per-state visibility here.
+  - contentDescription is deliberately NOT used for identity: TalkBack reads it aloud, so an id
+    parked there would be spoken instead of the message (F-003 AC-12). Announcements ride
+    aria-label in this mockup and accessibilityLabel in the app.
+  - Material 3 structure: 28px status bar, 56dp top app bar, 48dp icon targets, rounded-square
+    checkboxes, outlined buttons, M3 switch and segmented button, bottom sheet with a drag
+    handle, gesture navigation bar. The nav drawer IS Material's own idiom, so the slide-over
+    that components.md fixes for every platform is native here rather than borrowed.
+  - TOKENS BEAT PLATFORM PAINT: type stays Space Grotesk / Be Vietnam Pro, colour stays
+    tokens.json, body line-height 1.5 so Vietnamese diacritics never clip.
+
+  TWO PLACES THIS DELIBERATELY DIFFERS FROM THE WEB MOCKUP, because touch is not hover:
+  1. The row's delete control is ALWAYS VISIBLE. On web it appears on hover; a hover-revealed
+     control does not exist on a touch device, so hiding it here would publish a testid that a
+     user can never reach.
+  2. Rename is entered by tapping the task title, not by a separate control.
+  BOTH ARE DRAWN AND NEITHER SHIPS TODAY — uc-coverage-map D8 records that mobile has two of
+  AC-18's four manual operations. They are drawn so parity has something to close against; they
+  are not a claim that the build has them.
+
+  STATES — 20, switchable via the dev bar (showState):
     talk-idle · talk-empty · talk-loading · talk-failed
-    tasks-default · tasks-rename · tasks-arrived · tasks-empty-first · tasks-empty-list · tasks-loading ·
-    tasks-refresh-failed · tasks-offline · tasks-error
+    tasks-default · tasks-rename · tasks-arrived · tasks-empty-first · tasks-empty-list ·
+    tasks-loading · tasks-refresh-failed · tasks-offline · tasks-error
     menu-default · menu-empty · menu-failed
     settings-default · settings-save-failed
     list-new · list-name-taken
-    phone-talk · phone-tasks   ← the below-split rendering of talk-idle / tasks-default, in a
-                                 phone frame, so a desktop browser can see the other half of the
-                                 one layout branch. Not extra design states.
 
-  ONE LAYOUT BRANCH, AT tokens.json breakpoints.split = 1024px. That is the whole of the
-  responsive design; there is no second branch and tablet (768) is not one.
-
-    < 1024  exactly one surface is on screen; PathSwitch moves between them in one tap.
-            375 and 768 render the SAME layout — see "TABLET" below.
-    ≥ 1024  Tasks holds the centre, Talk holds a 360–420px right panel. Both are permanently
-            on screen, so PathSwitch is absent: a control that switches to what is already
-            visible is a dead control. Settings replaces the CENTRE and never the panel.
-
-  THE CONSTRAINT THAT MUST NOT BREAK. The message bubble carries its FULL per-field diff in the
-  panel exactly as it does at 375px — one mechanism at every width. The centre list is an
-  addition and is never what F-001 AC-1 relies on. If the centre list were allowed to *be* the
-  confirmation here, AC-1 would carry two mechanisms selected by viewport and the branch nobody
-  runs is the one that rots. Compare talk-idle at 375 and at 1280: the bubble is identical.
-
-  TABLET (768) RENDERS THE SINGLE-SURFACE LAYOUT. Splitting 768 gives the panel ~330px and the
-  centre ~420px: the centre loses the day/row rhythm and the panel loses the diff row, which is
-  the one thing the panel may not lose. 768 is also iPad portrait, held and used in the posture a
-  phone is used in — one thing at a time. So the split lands at 1024, where the panel can hold a
-  real conversation and the centre still has room to be a list.
-
-  WHAT THIS REVERSES IN MY OWN EARLIER PASS. T-101 set the day headers in a 180px left gutter
-  beside the rows, because Tasks then had the whole 1280. It no longer does — the panel takes
-  360–420 of it — so the gutter is gone and day headers stack above their rows at every width.
-  One row treatment, one day-header treatment, everywhere; same reason § ListsMenu refused a
-  desktop rail. The Lists menu is likewise a slide-over at EVERY width.
-
-  TESTID CANON (same rule as voice-assistant-view.html): each contract testid appears exactly
-  ONCE, on an exemplar element; the app applies it to every instance. Two ids are the same
-  logical control in two renderings and carry one id in the app: tasks-list-retry-button is on
-  the inline banner here and also belongs on the full-surface Retry; tasks-delete-button is on
-  one row here and belongs on every row.
-
-  DEV CHROME: the top state-switcher bar and theme toggle are mockup tooling, not design, and
-  are excluded from the testid contract.
+  TESTID CANON: each contract id appears exactly ONCE, on an exemplar element; the app applies
+  it to every instance. DEV CHROME (state bar, theme toggle) is mockup tooling and excluded.
 -->
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>App shell · Talk · Tasks · Lists · Settings — web</title>
+<title>App shell · Talk · Tasks · Lists · Settings — Android</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -254,7 +243,7 @@ body {
 button, input { font: inherit; color: inherit; background: none; border: 0; }
 button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--r-sm); }
-svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; stroke-width: var(--icon-stroke); stroke-linecap: round; stroke-linejoin: round; fill: none; flex: none; }
+svg.ic { width: var(--icon-lg); height: var(--icon-lg); stroke: currentColor; stroke-width: var(--icon-stroke); stroke-linecap: round; stroke-linejoin: round; fill: none; flex: none; }
 svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
 .num { font-variant-numeric: var(--font-numeric); }
 
@@ -269,56 +258,57 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
 .dev-bar button.on { border-color: var(--primary); color: var(--primary); }
 .dev-bar .dev-theme { margin-left: auto; }
 
-/* ============ app shell ============ */
-/* The layout branch below is a CONTAINER query on .app, not a viewport media query. Two reasons,
-   and the second is the load-bearing one: (1) a container query on the app root is equivalent to
-   a media query whenever the app fills the window, and stays correct when it does not — an
-   embedded or split-screen window gets the layout its own width deserves rather than the
-   display's; (2) it lets this mockup show the below-split layout inside a phone frame while
-   being read in a desktop browser, which is the only way the two PathSwitch controls can be
-   seen at all — they do not exist above the split. The iOS/Android mockups use the same frame
-   permanently (.stage, max-width 430). Implementers: `container-type: inline-size` on the app
-   root is the one line this costs. */
-.stage { flex: 1; min-height: 0; display: flex; flex-direction: column; container-type: inline-size; container-name: app; }
-/* dev chrome: the phone frame the phone-* states put the app in. Not design — a viewing device,
-   and the same one the iOS/Android mockups wear permanently. */
-/* EXPLICIT width, not max-width + auto margins. A query container carries `contain: inline-size`,
-   so its own inline size may not be derived from its contents; auto margins stop it stretching,
-   and the two together collapse it to zero. Implementers hit the same rule the moment they put
-   `container-type` on anything shrink-to-fit: size a query container from outside. */
-.stage[data-frame="phone"] { width: min(430px, 100%); margin: 0 auto; border-left: 1px solid var(--hairline); border-right: 1px solid var(--hairline); }
-.app { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; background: var(--bg-base); }
+/* ============ phone frame ============ */
+.stage { flex: 1; min-height: 0; display: flex; justify-content: center; }
+.app {
+  width: 100%; max-width: 430px; min-height: 0; position: relative;
+  display: flex; flex-direction: column; background: var(--bg-base);
+}
+@media (min-width: 480px) { .app { border-left: 1px solid var(--hairline); border-right: 1px solid var(--hairline); } }
 .surface { display: none; flex: 1; min-height: 0; flex-direction: column; }
 .app[data-surface="talk"]     .s-talk     { display: flex; }
 .app[data-surface="tasks"]    .s-tasks    { display: flex; }
 .app[data-surface="settings"] .s-settings { display: flex; }
 
-/* top bar — one bar, three arrangements */
-.topbar {
-  flex: none; display: flex; align-items: center; gap: var(--sp-sm);
-  padding: var(--sp-sm) var(--gutter);
-  border-bottom: 1px solid var(--hairline);
-  background: var(--bg-base);
-  min-height: 56px;
+/* Android status bar */
+.statusbar {
+  flex: none; display: flex; align-items: center;
+  height: 28px; padding: 0 var(--sp-lg); font-size: var(--fs-meta);
+  font-weight: var(--font-weight-emphasis); font-variant-numeric: var(--font-numeric);
 }
-.wordmark { font-family: var(--font-family-display); font-weight: var(--font-weight-title); font-size: var(--fs-body); letter-spacing: 0.01em; }
-/* The panel's own name — hidden below the split, where Talk IS the app and the wordmark stands
-   for it. Quiet on purpose: at this width "Today" is the loud thing and this is beside it. */
-.panel-title { display: none; font-weight: var(--font-weight-emphasis); color: var(--tx-2); }
-.topbar h1 { font-family: var(--font-family-display); font-size: var(--fs-title); font-weight: var(--font-weight-title); line-height: var(--font-lineHeight-title); letter-spacing: var(--font-letterSpacing-display); }
-.spacer { flex: 1; }
-.icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: var(--r-sm); color: var(--tx); flex: none; }
-.icon-btn:hover { background: var(--bg-raised); }
+.statusbar .sb-icons { margin-left: auto; display: inline-flex; gap: var(--sp-xs); align-items: center; color: var(--tx-2); }
+.statusbar .sb-icons svg { width: 14px; height: 12px; }
 
-/* PathSwitch — PS-TASKS / PS-TALK */
+/* Android gesture navigation bar */
+.gesture-bar { flex: none; height: 24px; display: flex; align-items: center; justify-content: center; }
+.gesture-bar span { width: 108px; height: 4px; border-radius: var(--r-pill); background: var(--tx-muted); opacity: .7; }
+
+/* M3 top app bar — 56dp, title left, actions right. One bar shape on every surface: Material
+   does not have iOS's large-title/inline split, so the hierarchy is carried by the title text
+   and the actions, not by the bar. */
+.appbar {
+  flex: none; display: flex; align-items: center; gap: var(--sp-sm);
+  height: 56px; padding: 0 var(--sp-sm);
+  border-bottom: 1px solid var(--hairline);
+}
+.appbar h1 {
+  font-family: var(--font-family-display); font-size: var(--fs-title); font-weight: var(--font-weight-title);
+  line-height: var(--font-lineHeight-title); letter-spacing: var(--font-letterSpacing-display);
+}
+.appbar .wordmark { font-family: var(--font-family-display); font-weight: var(--font-weight-title); font-size: var(--fs-body); letter-spacing: 0.01em; padding-left: var(--sp-md); }
+.spacer { flex: 1; }
+/* 48dp circular targets — M3's own minimum, above F-003 AC-9's 48dp floor by construction. */
+.icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: var(--radius-orb); color: var(--tx-2); flex: none; }
+.icon-btn:active { background: var(--bg-raised); }
+
+/* PathSwitch — PS-TASKS / PS-TALK, as an M3 text button with a leading icon */
 .path {
   display: inline-flex; align-items: center; gap: var(--sp-sm);
-  padding: var(--sp-xs) var(--sp-md) var(--sp-xs) var(--sp-sm);
-  border-radius: var(--r-pill); color: var(--tx);
+  height: 48px; padding: 0 var(--sp-md);
+  border-radius: var(--r-pill); color: var(--primary);
   font-size: var(--fs-body); font-weight: var(--font-weight-emphasis);
-  transition: background var(--dur-micro) var(--motion-easing-standard);
 }
-.path:hover { background: var(--bg-raised); }
+.path:active { background: var(--primary-tint); }
 .path .badge {
   min-width: 22px; padding: 1px var(--sp-sm); border-radius: var(--r-pill);
   background: var(--primary-tint); color: var(--primary);
@@ -327,12 +317,8 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
 }
 
 /* ============ TALK ============ */
-.talk-body { flex: 1; min-height: 0; overflow-y: auto; display: flex; justify-content: center; }
-.talk-col { width: 100%; max-width: 760px; padding: var(--sp-xl) var(--gutter) var(--sp-lg); }
-/* Newest at bottom (§ Message bubbles), so a short thread sits ON the composer rather than
-   floating at the top of a tall column with a gap under it. `margin-top: auto` and not
-   `align-items: flex-end`, which clips the top of an overflowing scroller. Idle only: the
-   invitation, the skeletons and SE-SESSION are not threads and read from the top. */
+.talk-body { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
+.talk-col { width: 100%; padding: var(--sp-lg) var(--gutter); }
 .app[data-talk="idle"] .talk-col { margin-top: auto; }
 .v { display: none; }
 .app[data-talk="idle"]    .v-talk-idle    { display: block; }
@@ -354,23 +340,21 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
   color: var(--tx); text-decoration: underline; text-decoration-color: var(--tx-muted);
   text-underline-offset: 2px; text-decoration-thickness: 1px; padding: 0;
 }
-.tasklink:hover { text-decoration-color: var(--tx-2); }
 .chip-old { background: var(--remove-tint); color: var(--remove); border-radius: var(--r-sm); padding: 1px var(--sp-sm); font-size: var(--fs-meta); text-decoration: line-through; }
 .chip-new { background: var(--add-tint); color: var(--add); border-radius: var(--r-sm); padding: 1px var(--sp-sm); font-size: var(--fs-meta); }
 .arrow { color: var(--tx-muted); }
 .mini-label { font-size: var(--fs-label); font-weight: var(--font-weight-label); letter-spacing: var(--font-letterSpacing-label); }
 .mini-label.edit { color: var(--remove); }
 .mini-label.add { color: var(--add); }
-.undo-btn { display: inline-flex; align-items: center; gap: var(--sp-sm); margin-top: var(--sp-sm); padding: var(--sp-xs) var(--sp-md); border-radius: var(--r-pill); color: var(--primary); font-weight: var(--font-weight-emphasis); }
-.undo-btn:hover { background: var(--primary-tint); }
+.undo-btn { display: inline-flex; align-items: center; gap: var(--sp-sm); margin-top: var(--sp-sm); height: 40px; padding: 0 var(--sp-md); border-radius: var(--r-pill); color: var(--primary); font-weight: var(--font-weight-emphasis); }
+.undo-btn:active { background: var(--primary-tint); }
 
-/* Talk empty — the invitation, now carrying the second door */
-.invite { padding: var(--sp-xxl) 0; }
+.invite { padding: var(--sp-xl) 0; }
 .invite h2 { font-family: var(--font-family-display); font-size: var(--fs-display); font-weight: var(--font-weight-display); line-height: var(--font-lineHeight-display); letter-spacing: var(--font-letterSpacing-display); }
 .invite p { color: var(--tx-2); margin-top: var(--sp-md); max-width: 42ch; }
 .invite p.second-door { color: var(--tx-muted); font-size: var(--fs-meta); margin-top: var(--sp-xl); }
 
-/* Skeletons — SK-BUBBLE / SK-ROW / SK-LISTROW */
+/* Skeletons — SK-BUBBLE / SK-ROW */
 .sk { background: var(--hairline); border-radius: var(--r-sm); animation: pulse 1600ms ease-in-out infinite; }
 @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .55 } }
 @media (prefers-reduced-motion: reduce) { .sk { animation: none; opacity: .78; } }
@@ -379,34 +363,35 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
 .sk-bubble.b { width: 45%; margin-left: auto; height: 44px; }
 .sk-bubble.c { width: 80%; }
 .sk-rowline { display: flex; align-items: center; gap: var(--sp-md); padding: var(--sp-md) 0; }
-.sk-box { width: 22px; height: 22px; border-radius: var(--r-sm); flex: none; }
+.sk-box { width: 20px; height: 20px; border-radius: 4px; flex: none; }
 .sk-bar { height: 12px; }
 
 /* SurfaceError — SE-SESSION / SE-TASKS */
-.surface-error { padding: var(--sp-xxl) 0; max-width: 46ch; }
+.surface-error { padding: var(--sp-xl) 0; max-width: 46ch; }
 .surface-error h2 { font-family: var(--font-family-display); font-size: var(--fs-title); font-weight: var(--font-weight-title); line-height: var(--font-lineHeight-title); }
 .surface-error p { color: var(--tx-2); margin-top: var(--sp-sm); }
-.btn-primary { display: inline-flex; align-items: center; gap: var(--sp-sm); margin-top: var(--sp-lg); padding: var(--sp-sm) var(--sp-lg); border-radius: var(--r-pill); background: var(--primary); color: var(--tx-onaccent); font-weight: var(--font-weight-emphasis); }
-.btn-ghost { display: inline-flex; align-items: center; gap: var(--sp-sm); padding: var(--sp-xs) var(--sp-md); border-radius: var(--r-pill); color: var(--primary); font-weight: var(--font-weight-emphasis); }
-.btn-ghost:hover { background: var(--primary-tint); }
+/* M3 filled button: 40dp tall, fully rounded */
+.btn-primary { display: inline-flex; align-items: center; gap: var(--sp-sm); margin-top: var(--sp-lg); height: 48px; padding: 0 var(--sp-xl); border-radius: var(--r-pill); background: var(--primary); color: var(--tx-onaccent); font-weight: var(--font-weight-emphasis); }
+/* M3 text button */
+.btn-ghost { display: inline-flex; align-items: center; gap: var(--sp-sm); height: 48px; padding: 0 var(--sp-md); border-radius: var(--r-pill); color: var(--primary); font-weight: var(--font-weight-emphasis); }
 
-/* Composer */
+/* Composer — M3 filled field + orb, docked, top hairline */
 .composer { flex: none; border-top: 1px solid var(--hairline); background: var(--bg-raised); }
-.composer-inner { max-width: 760px; margin: 0 auto; display: flex; align-items: center; gap: var(--sp-md); padding: var(--sp-md) var(--gutter); }
+.composer-inner { display: flex; align-items: center; gap: var(--sp-md); padding: var(--sp-md) var(--gutter); }
 .composer input { flex: 1; min-width: 0; color: var(--tx); }
 .composer input::placeholder { color: var(--tx-muted); }
 .orb {
-  width: 44px; height: 44px; border-radius: var(--radius-orb); flex: none;
+  width: 48px; height: 48px; border-radius: var(--radius-orb); flex: none;
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--bg-base); color: var(--tx); border: 1px solid var(--hairline);
 }
 .app[data-mic="dimmed"] .orb { opacity: .4; }
-.mic-note { display: none; font-size: var(--fs-meta); color: var(--tx-2); padding: 0 var(--gutter) var(--sp-sm); width: 100%; max-width: 760px; margin: 0 auto; }
+.mic-note { display: none; font-size: var(--fs-meta); color: var(--tx-2); padding: 0 var(--gutter) var(--sp-sm); }
 .app[data-mic="dimmed"] .mic-note { display: block; }
 
 /* ============ TASKS ============ */
 .tasks-body { flex: 1; min-height: 0; overflow-y: auto; }
-.tasks-col { max-width: 900px; padding: var(--sp-lg) var(--gutter) var(--sp-xxl); }
+.tasks-col { padding: var(--sp-md) var(--gutter) var(--sp-xxl); }
 .app[data-tasks="default"] .v-tasks-default,
 .app[data-tasks="rename"]  .v-tasks-default,
 .app[data-tasks="arrived"] .v-tasks-default { display: block; }
@@ -415,161 +400,121 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
 .app[data-tasks="loading"] .v-tasks-loading { display: block; }
 .app[data-tasks="error"]   .v-tasks-error   { display: block; }
 
-.tasks-head { display: flex; align-items: baseline; gap: var(--sp-md); padding-bottom: var(--sp-md); }
+.tasks-head { display: flex; align-items: center; gap: var(--sp-md); padding-bottom: var(--sp-sm); }
 .tasks-head .count { font-size: var(--fs-meta); color: var(--tx-muted); font-variant-numeric: var(--font-numeric); }
-.add-btn { display: inline-flex; align-items: center; gap: var(--sp-xs); margin-left: auto; padding: var(--sp-xs) var(--sp-sm); border-radius: var(--r-pill); border: 1px solid var(--hairline); color: var(--tx); font-size: var(--fs-meta); }
-.add-btn:hover { border-color: var(--primary); color: var(--primary); }
+/* M3 outlined button */
+.add-btn { display: inline-flex; align-items: center; gap: var(--sp-xs); margin-left: auto; height: 48px; padding: 0 var(--sp-md); border-radius: var(--r-pill); border: 1px solid var(--hairline); color: var(--tx); font-size: var(--fs-meta); }
+.add-btn:active { border-color: var(--primary); color: var(--primary); }
 
 .day-group { display: block; padding-top: var(--sp-lg); }
 .day-head { font-size: var(--fs-label); font-weight: var(--font-weight-label); letter-spacing: var(--font-letterSpacing-label); text-transform: uppercase; color: var(--tx-muted); padding-bottom: var(--sp-sm); }
 .tasks { list-style: none; }
 .task-row {
   display: flex; align-items: center; gap: var(--sp-md);
-  padding: var(--sp-md) 0; border-radius: var(--r-row);
+  min-height: 48px; padding: var(--sp-md) 0; border-radius: var(--r-row);
   border-bottom: 1px solid var(--hairline);
 }
 .task-row:last-child { border-bottom: 0; }
-.checkbox { width: 22px; height: 22px; border-radius: var(--r-sm); border: 1px solid var(--tx-muted); flex: none; display: inline-flex; align-items: center; justify-content: center; color: transparent; }
+/* M3 rounded-square checkbox */
+.checkbox { width: 20px; height: 20px; border-radius: 4px; border: 1.8px solid var(--tx-muted); flex: none; display: inline-flex; align-items: center; justify-content: center; color: transparent; }
+.checkbox svg.ic-sm { width: 14px; height: 14px; }
 .task-row.done .checkbox { border-color: var(--success); color: var(--success); }
-.task-main { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: var(--sp-sm); flex-wrap: wrap; }
-.task-title { }
+.task-main { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: var(--sp-sm); flex-wrap: wrap; text-align: left; }
 .task-row.done .task-title { text-decoration: line-through; opacity: .6; }
 .task-meta { font-size: var(--fs-meta); color: var(--tx-muted); font-variant-numeric: var(--font-numeric); }
-.row-del { color: var(--tx-muted); opacity: 0; padding: var(--sp-xs); border-radius: var(--r-sm); }
-.task-row:hover .row-del, .task-row:focus-within .row-del { opacity: 1; }
-.row-del:hover { color: var(--danger); }
-.rename-input { flex: 1; min-width: 0; color: var(--tx); background: var(--bg-raised); border: 1px solid var(--primary); border-radius: var(--r-sm); padding: var(--sp-xs) var(--sp-sm); }
+/* Touch has no hover, so the delete control is ALWAYS visible here — see the header note. */
+.row-del { color: var(--tx-muted); width: 48px; height: 48px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-orb); flex: none; }
+.row-del:active { color: var(--danger); background: var(--bg-raised); }
+.rename-input { flex: 1; min-width: 0; color: var(--tx); background: var(--bg-raised); border: 0; border-bottom: 2px solid var(--primary); border-radius: var(--r-sm) var(--r-sm) 0 0; padding: var(--sp-sm) var(--sp-md); }
 .row-rename { display: none; }
 .app[data-tasks="rename"] .row-editing .row-static { display: none; }
 .app[data-tasks="rename"] .row-editing .row-rename { display: flex; flex: 1; min-width: 0; gap: var(--sp-sm); align-items: center; }
 
-/* arrival flash — AC-4's cue, moved to the moment of arrival from a message.
-   It is a MOMENT, so it renders only in its own state: a permanent green row in the
-   default rendering would read as a selection and spend the one signal add-green carries. */
+/* arrival flash — AC-4's cue at the moment of arrival from a message. A moment, so it renders
+   only in its own state: a permanent green row would read as a selection. */
 .app[data-tasks="arrived"] .on-arrival { background: var(--add-tint); }
 
-/* empty states — ET-FIRST / ET-COLLECTION / ET-DONE */
-.empty { padding: var(--sp-xxl) 0; max-width: 44ch; }
+.empty { padding: var(--sp-xl) 0; max-width: 44ch; }
 .empty h2 { font-family: var(--font-family-display); font-size: var(--fs-title); font-weight: var(--font-weight-title); }
 .empty p { color: var(--tx-2); margin-top: var(--sp-sm); }
 .empty .second-door { color: var(--tx-muted); font-size: var(--fs-meta); margin-top: var(--sp-md); }
 
-/* banners */
 .banner { display: none; align-items: center; gap: var(--sp-md); padding: var(--sp-sm) var(--gutter); background: var(--bg-raised); font-size: var(--fs-meta); }
 .app[data-banner="retry"]   .banner-retry   { display: flex; }
 .app[data-banner="offline"] .banner-offline { display: flex; }
 .banner-retry { border-top: 1px solid var(--danger); border-bottom: 1px solid var(--danger); color: var(--tx); }
-.banner-retry .ic { color: var(--danger); }
+.banner-retry .ic-sm { color: var(--danger); }
 .banner-offline { border-bottom: 1px solid var(--hairline); color: var(--question); }
 .banner .btn-ghost { margin-left: auto; font-size: var(--fs-meta); }
 
-/* ============ LISTS MENU — slide-over at every width ============ */
+/* ============ LISTS MENU — M3 navigation drawer (native idiom here) ============ */
 .scrim { position: absolute; inset: 0; background: var(--scrim); z-index: 30; display: none; }
 .app[data-menu] .scrim { display: block; }
 .menu {
   position: absolute; inset: 0 auto 0 0; width: min(320px, 86vw); z-index: 31;
-  background: var(--bg-raised); border-right: 1px solid var(--hairline);
+  background: var(--bg-raised); border-radius: 0 var(--r-sheet) var(--r-sheet) 0;
   box-shadow: var(--shadow-card);
-  display: none; flex-direction: column; padding: var(--sp-md) 0;
+  display: none; flex-direction: column; padding: var(--sp-md) 0 0;
 }
 .app[data-menu] .menu { display: flex; }
-.menu-head { display: flex; align-items: center; gap: var(--sp-sm); padding: 0 var(--sp-md) var(--sp-md); }
-.menu-head .wordmark { flex: 1; }
-.menu-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 0 var(--sp-sm); }
-.menu-section { font-size: var(--fs-label); font-weight: var(--font-weight-label); letter-spacing: var(--font-letterSpacing-label); text-transform: uppercase; color: var(--tx-muted); padding: var(--sp-lg) var(--sp-md) var(--sp-sm); }
-.menu-row { display: flex; align-items: center; gap: var(--sp-md); width: 100%; padding: var(--sp-sm) var(--sp-md); border-radius: var(--r-sm); color: var(--tx); text-align: left; }
-.menu-row:hover { background: var(--primary-tint); }
+.menu-head { display: flex; align-items: center; gap: var(--sp-sm); padding: var(--sp-sm) var(--sp-sm) var(--sp-md) var(--sp-lg); }
+.menu-head .wordmark { flex: 1; font-family: var(--font-family-display); font-weight: var(--font-weight-title); font-size: var(--fs-body); }
+.menu-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 0 var(--sp-md); }
+.menu-section { font-size: var(--fs-label); font-weight: var(--font-weight-label); letter-spacing: var(--font-letterSpacing-label); text-transform: uppercase; color: var(--tx-muted); padding: var(--sp-lg) var(--sp-lg) var(--sp-sm); }
+/* M3 drawer rows are fully rounded pills, 56dp */
+.menu-row { display: flex; align-items: center; gap: var(--sp-md); width: 100%; height: 56px; padding: 0 var(--sp-lg); border-radius: var(--r-pill); color: var(--tx); text-align: left; }
+.menu-row:active { background: var(--primary-tint); }
 .menu-row .mcount { margin-left: auto; font-size: var(--fs-meta); color: var(--tx-muted); font-variant-numeric: var(--font-numeric); }
 .menu-row.active { background: color-mix(in srgb, var(--primary) 7%, transparent); color: var(--primary); }
-.menu-foot { border-top: 1px solid var(--hairline); padding: var(--sp-sm) var(--sp-sm) 0; margin-top: var(--sp-sm); }
+.menu-foot { border-top: 1px solid var(--hairline); padding: var(--sp-sm) var(--sp-md) var(--sp-lg); margin-top: var(--sp-sm); }
 .menu-lists { display: none; }
-.menu-lists-sk { display: none; }
 .menu-lists-fail { display: none; }
 .app[data-menu="default"] .menu-lists { display: block; }
-.app[data-menu="failed"]  .menu-lists-fail { display: flex; align-items: center; gap: var(--sp-sm); padding: var(--sp-sm) var(--sp-md); color: var(--tx-2); font-size: var(--fs-meta); }
+.app[data-menu="failed"]  .menu-lists-fail { display: flex; align-items: center; gap: var(--sp-sm); padding: var(--sp-sm) var(--sp-lg); color: var(--tx-2); font-size: var(--fs-meta); }
 .app[data-menu="empty"]   .menu-empty-note { display: block; }
-.menu-empty-note { display: none; padding: var(--sp-sm) var(--sp-md) 0; color: var(--tx-muted); font-size: var(--fs-meta); }
+.menu-empty-note { display: none; padding: var(--sp-sm) var(--sp-lg) 0; color: var(--tx-muted); font-size: var(--fs-meta); }
 
 /* ============ SETTINGS ============ */
-.set-col { max-width: 640px; padding: var(--sp-lg) var(--gutter) var(--sp-xxl); }
-.set-row { display: flex; align-items: center; gap: var(--sp-lg); padding: var(--sp-md) 0; border-bottom: 1px solid var(--hairline); flex-wrap: wrap; }
-.set-label { flex: 1; min-width: 140px; }
+.set-col { padding: var(--sp-md) var(--gutter) var(--sp-xxl); }
+.set-row { display: flex; align-items: center; gap: var(--sp-lg); min-height: 56px; padding: var(--sp-md) 0; border-bottom: 1px solid var(--hairline); flex-wrap: wrap; }
+.set-label { flex: 1; min-width: 120px; }
 .set-sub { display: block; font-size: var(--fs-meta); color: var(--tx-muted); }
+/* M3 segmented button: connected, outlined, pill ends */
 .seg { display: inline-flex; border: 1px solid var(--hairline); border-radius: var(--r-pill); overflow: hidden; }
-.seg button { padding: var(--sp-xs) var(--sp-md); font-size: var(--fs-meta); color: var(--tx-2); }
+.seg button { height: 40px; padding: 0 var(--sp-md); font-size: var(--fs-meta); color: var(--tx-2); border-right: 1px solid var(--hairline); }
+.seg button:last-child { border-right: 0; }
 .seg button.on { background: var(--primary-tint); color: var(--primary); font-weight: var(--font-weight-emphasis); }
-.switch { width: 46px; height: 26px; border-radius: var(--r-pill); background: var(--primary); position: relative; flex: none; }
-.switch::after { content: ""; position: absolute; top: 3px; left: 23px; width: 20px; height: 20px; border-radius: var(--radius-orb); background: var(--tx-onaccent); }
-.app[data-settings="failed"] .switch { background: var(--hairline); }
-.app[data-settings="failed"] .switch::after { left: 3px; background: var(--tx-2); }
+/* M3 switch: 52x32 track, 24 thumb when on */
+.switch { width: 52px; height: 32px; border-radius: var(--r-pill); background: var(--primary); position: relative; flex: none; }
+.switch::after { content: ""; position: absolute; top: 4px; left: 24px; width: 24px; height: 24px; border-radius: var(--radius-orb); background: var(--tx-onaccent); }
+.app[data-settings="failed"] .switch { background: var(--hairline); border: 2px solid var(--tx-muted); }
+.app[data-settings="failed"] .switch::after { top: 8px; left: 6px; width: 16px; height: 16px; background: var(--tx-2); }
 .set-fail { display: none; width: 100%; align-items: center; gap: var(--sp-sm); color: var(--danger); font-size: var(--fs-meta); }
 .app[data-settings="failed"] .set-fail { display: flex; }
 .set-fail .btn-ghost { color: var(--danger); font-size: var(--fs-meta); padding: 0 var(--sp-xs); }
 
-/* ============ NEW LIST SHEET ============ */
+/* ============ NEW LIST — M3 bottom sheet with a drag handle ============ */
 .sheet-wrap { position: absolute; inset: 0; z-index: 40; display: none; align-items: flex-end; justify-content: center; background: var(--scrim); }
 .app[data-sheet] .sheet-wrap { display: flex; }
-.sheet { width: 100%; max-width: 420px; background: var(--bg-raised); border-radius: var(--r-sheet) var(--r-sheet) 0 0; padding: var(--sp-lg) var(--gutter) var(--sp-xl); box-shadow: var(--shadow-card); }
+.sheet { width: 100%; background: var(--bg-raised); border-radius: var(--r-sheet) var(--r-sheet) 0 0; padding: var(--sp-sm) var(--gutter) var(--sp-xl); box-shadow: var(--shadow-card); }
+.grabber { width: 32px; height: 4px; border-radius: var(--r-pill); background: var(--tx-muted); opacity: .5; margin: 0 auto var(--sp-md); }
 .sheet h2 { font-family: var(--font-family-display); font-size: var(--fs-title); font-weight: var(--font-weight-title); }
+/* M3 filled text field: underlined, top-rounded */
 .field { margin-top: var(--sp-lg); }
-.field input { width: 100%; padding: var(--sp-sm) var(--sp-md); border-radius: var(--r-sm); border: 1px solid var(--hairline); background: var(--bg-base); color: var(--tx); }
-.app[data-sheet="taken"] .field input { border-color: var(--danger); }
-.field-err { display: none; color: var(--danger); font-size: var(--fs-meta); margin-top: var(--sp-sm); }
+.field input { width: 100%; height: 56px; padding: 0 var(--sp-md); border: 0; border-bottom: 1px solid var(--tx-muted); border-radius: var(--r-sm) var(--r-sm) 0 0; background: var(--bg-base); color: var(--tx); }
+.app[data-sheet="taken"] .field input { border-bottom: 2px solid var(--danger); }
+.field-err { display: none; color: var(--danger); font-size: var(--fs-meta); margin-top: var(--sp-sm); padding: 0 var(--sp-md); }
 .app[data-sheet="taken"] .field-err { display: block; }
 .sheet-actions { display: flex; justify-content: flex-end; gap: var(--sp-sm); margin-top: var(--sp-lg); align-items: center; }
 .sheet-actions .btn-primary { margin-top: 0; }
-.app[data-sheet="new"] .btn-primary[disabled] { opacity: .4; cursor: not-allowed; }
-
-/* ================= THE ONE LAYOUT BRANCH — tokens.json breakpoints.split = 1024 =================
-   Below: one surface at a time, PathSwitch moves between them (375 and 768 are identical).
-   At and above: Tasks is the centre and the primary object; Talk is a panel beside it.
-   Owner decision 2026-08-17 — reports/owner-decision-2026-08-17-desktop-list-is-primary.md.
-   The panel keeps the FULL diff bubble. Nothing about AC-1 branches here; only the frame does. */
-@container app (min-width: 1024px) {
-  /* --gutter is redefined on .app, not on html: a container query styles the container's
-     DESCENDANTS, and html is an ancestor of the container. A rule for html in here is dead. */
-  .app { --gutter: calc(var(--spacing-gutter_web) * 1px);
-         display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 420px); grid-template-rows: minmax(0, 1fr); }
-  .surface { grid-row: 1; }
-  .s-tasks, .s-settings { grid-column: 1; }
-  .s-tasks { display: flex; }
-  /* Talk is always mounted at this width — it is a panel, not a destination. */
-  .s-talk { display: flex; grid-column: 2; border-left: 1px solid var(--hairline); }
-  /* Settings is a STACKED surface: it takes the centre, never the panel. The assistant is
-     never dismissed by navigating, which is the difference between a panel and a screen. */
-  .app[data-surface="settings"] .s-tasks { display: none; }
-
-  /* PathSwitch is absent — both paths are on screen. The fallback guarantee it carried
-     (§ PathSwitch: visible in every Talk failure state) is met MORE strongly here: the second
-     path is not one tap away, it is never left. Watch talk-failed at this width. */
-  .path { display: none; }
-
-  /* Centre bar names the collection; panel bar names the panel, quietly. "todo-ai" moves to
-     the Lists menu head, which is where an app's name usually lives once it has navigation. */
-  .s-talk .wordmark { display: none; }
-  .s-talk .panel-title { display: inline; }
-
-  .topbar { padding-left: var(--sp-xxl); padding-right: var(--sp-xxl); }
-  .s-talk .topbar { padding-left: var(--gutter); padding-right: var(--gutter); }
-  .talk-col { padding-top: var(--sp-xl); }
-  /* The list keeps a measure. Left-anchored against the checkbox rail, not centred and not
-     stretched: a task row is a short line, and running its hairline across 830px makes a list
-     look like a spreadsheet. The canvas is used by the SPLIT — the panel takes the right third
-     — so the slack beside the rows is breathing room, not a mobile layout adrift in a window. */
-  .tasks-col { max-width: 720px; padding-left: var(--sp-xxl); padding-right: var(--sp-xxl); }
-  .set-col { padding-left: var(--sp-xxl); }
-
-  /* ListEditorSheet becomes a centred dialog (components.md § ListEditorSheet). */
-  .sheet-wrap { align-items: center; }
-  .sheet { border-radius: var(--r-sheet); }
-}
+.app[data-sheet="new"] .btn-primary[disabled] { opacity: .4; }
 </style>
 </head>
 <body>
 
 <!-- dev chrome: state switcher — mockup tooling, excluded from the testid contract -->
 <div class="dev-bar" aria-label="Mockup state switcher (dev chrome)">
-  <span class="dev-tag">app shell</span>
+  <span class="dev-tag">app shell · Android</span>
   <button data-s="talk-idle" onclick="showState('talk-idle')">talk-idle</button>
   <button data-s="talk-empty" onclick="showState('talk-empty')">talk-empty</button>
   <button data-s="talk-loading" onclick="showState('talk-loading')">talk-loading</button>
@@ -590,24 +535,29 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
   <button data-s="settings-save-failed" onclick="showState('settings-save-failed')">settings-save-failed</button>
   <button data-s="list-new" onclick="showState('list-new')">list-new</button>
   <button data-s="list-name-taken" onclick="showState('list-name-taken')">list-name-taken</button>
-  <button data-s="phone-talk" onclick="showState('phone-talk')">phone-talk</button>
-  <button data-s="phone-tasks" onclick="showState('phone-tasks')">phone-tasks</button>
   <button class="dev-theme" onclick="toggleTheme()">dark / light</button>
 </div>
 
-<div id="stage" class="stage">
+<div class="stage">
 <div id="app" class="app" data-surface="talk" data-talk="idle" data-tasks="default">
+
+  <div class="statusbar" aria-hidden="true">
+    9:41
+    <span class="sb-icons">
+      <svg viewBox="0 0 18 12" fill="currentColor" stroke="none"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg>
+      <svg viewBox="0 0 26 12"><rect x="0.9" y="0.9" width="20" height="10.2" rx="3" fill="none" stroke="currentColor" stroke-width="1"/><rect x="2.8" y="2.8" width="14" height="6.4" rx="1.6" fill="currentColor" stroke="none"/><path d="M23 4v4a2.2 2.2 0 0 0 0-4Z" fill="currentColor" stroke="none"/></svg>
+    </span>
+  </div>
 
   <!-- ==================== S1 · TALK ==================== -->
   <div class="surface s-talk">
-    <header class="topbar">
+    <header class="appbar">
       <span class="wordmark">todo-ai</span>
-      <span class="panel-title">Talk</span>
       <span class="spacer"></span>
-      <!-- PS-TASKS. Visible and enabled in EVERY Talk state, failures included — that is the
-           whole point of it. Absent at ≥ 1024px, where Tasks is permanently on screen and this
-           control would switch to what the user is already looking at. -->
-      <button class="path" data-testid="shell-tasks-button" aria-label="Tasks, 3 left today">
+      <!-- PS-TASKS. Visible and enabled in EVERY Talk state, failures included. On a phone this
+           is the whole of ADR-11's second path: there is no width at which the list is simply
+           already there, so this control is the fallback, not a shortcut to it. -->
+      <button class="path" data-testid="shell-tasks-button" resource-id="shell-tasks-button" aria-label="Tasks, 3 left today">
         <svg class="ic" viewBox="0 0 24 24"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
         Tasks <span class="badge num">3</span>
       </button>
@@ -616,14 +566,15 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
     <main class="talk-body">
       <div class="talk-col">
 
-        <!-- talk-idle: the conversation carries the whole result. No list beside it. -->
+        <!-- talk-idle: the conversation carries the whole result. No list beside it, at any
+             width — and on a phone there never was one to keep. -->
         <section class="v v-talk-idle">
           <div class="msg user"><div class="bubble">Move the budget review to 4 and add pay the electricity bill</div><span class="msg-meta">You · 2:04 PM</span></div>
           <div class="msg ai">
             <div class="bubble">
               <div class="bubble-head">Edited 1 task · added 1</div>
               <div class="diff-row">
-                <button class="tasklink" data-testid="talk-task-link">Review the Q3 budget draft</button>
+                <button class="tasklink" data-testid="talk-task-link" resource-id="talk-task-link">Review the Q3 budget draft</button>
                 <span class="chip-old">2:00 PM</span><span class="arrow">→</span><span class="chip-new">4:00 PM</span>
                 <span class="mini-label edit">EDITED</span>
               </div>
@@ -631,17 +582,15 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
                 <button class="tasklink">Pay the electricity bill</button>
                 <span class="chip-new">today</span><span class="mini-label add">NEW</span>
               </div>
-              <button class="undo-btn" data-testid="assistant-undo-button"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>Undo</button>
+              <button class="undo-btn" data-testid="assistant-undo-button" resource-id="assistant-undo-button"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>Undo</button>
             </div>
-            <!-- Width-independent copy on purpose: below the split this tap navigates, at and
-                 above it only scrolls the centre column. "find it in the list" is true of both;
-                 "open it in Tasks" was true of one and would have needed a second string. -->
             <span class="msg-meta">2:04 PM · tap a task to find it in the list</span>
           </div>
         </section>
 
-        <!-- talk-empty: first run. The invitation gains the second door — a user whose mic is
-             denied or absent otherwise sees one control they cannot use and no sign of the rest. -->
+        <!-- talk-empty: first run. The invitation carries the second door — a user whose mic is
+             denied or absent (AC-20 hides the orb entirely) otherwise sees a screen with one
+             control they cannot use and no evidence the rest of the app exists. -->
         <section class="v v-talk-empty">
           <div class="invite">
             <h2>Say it.<br>I'll write it down.</h2>
@@ -650,26 +599,22 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
           </div>
         </section>
 
-        <!-- talk-loading: the session read. Skeletons, NOT the empty invitation — a returning
-             user who reads “Say it. I'll write it down.” while their history loads reads it as lost. -->
+        <!-- talk-loading: the session read (F-003 AC-5 / BUG-002 withhold input until it
+             returns). Skeletons, NOT the empty invitation — a returning user who reads
+             “Say it. I'll write it down.” while their history loads reads it as lost. -->
         <section class="v v-talk-loading" aria-busy="true">
           <div class="sk sk-bubble a"></div>
           <div class="sk sk-bubble b"></div>
           <div class="sk sk-bubble c"></div>
         </section>
 
-        <!-- talk-failed: SE-SESSION. There is no thread, so there is nowhere to put an error
-             bubble. This is the exact moment ADR-11's second path is supposed to exist — and at
-             ≥ 1024px it is the state that proves the split earns its keep: the assistant is
-             broken in the panel and the whole todo is still working, untouched, in the centre. -->
+        <!-- talk-failed: SE-SESSION. No thread, so nowhere to put an error bubble. On a phone
+             this is the state that most needs PS-TASKS live in the bar above. -->
         <section class="v v-talk-failed">
           <div class="surface-error">
             <h2>Couldn't load your conversation</h2>
-            <!-- Line 2 is width-independent (SE-SESSION, components.md): below the split the
-                 route is the live Tasks control in the bar, at and above it the list is already
-                 on screen. "open Tasks" named a route that only one of the two widths has. -->
             <p>Your tasks are unaffected. Try again, or carry on by hand.</p>
-            <button class="btn-primary" data-testid="talk-session-retry-button">Retry</button>
+            <button class="btn-primary" data-testid="talk-session-retry-button" resource-id="talk-session-retry-button">Retry</button>
           </div>
         </section>
 
@@ -679,8 +624,8 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
     <div class="mic-note">Getting your conversation…</div>
     <footer class="composer">
       <div class="composer-inner">
-        <input data-testid="assistant-composer-input" placeholder="Say or type what needs doing…" aria-label="Say or type what needs doing">
-        <button class="orb" data-testid="assistant-mic-button" aria-label="Tap to speak">
+        <input data-testid="assistant-composer-input" resource-id="assistant-composer-input" placeholder="Say or type what needs doing…" aria-label="Say or type what needs doing">
+        <button class="orb" data-testid="assistant-mic-button" resource-id="assistant-mic-button" aria-label="Tap to speak">
           <svg class="ic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v5"/></svg>
         </button>
       </div>
@@ -689,13 +634,13 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
 
   <!-- ==================== S2 · TASKS ==================== -->
   <div class="surface s-tasks">
-    <header class="topbar">
-      <button class="icon-btn" data-testid="shell-lists-menu-button" aria-label="Lists">
+    <header class="appbar">
+      <button class="icon-btn" data-testid="shell-lists-menu-button" resource-id="shell-lists-menu-button" aria-label="Lists">
         <svg class="ic" viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
       </button>
       <h1>Today</h1>
       <span class="spacer"></span>
-      <button class="path" data-testid="shell-talk-button" aria-label="Talk">
+      <button class="path" data-testid="shell-talk-button" resource-id="shell-talk-button" aria-label="Talk">
         <svg class="ic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v5"/></svg>
         Talk
       </button>
@@ -705,9 +650,9 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
     <div class="banner banner-retry">
       <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
       Couldn't refresh your tasks — showing what's on this device.
-      <button class="btn-ghost" data-testid="tasks-list-retry-button">Retry</button>
+      <button class="btn-ghost" data-testid="tasks-list-retry-button" resource-id="tasks-list-retry-button">Retry</button>
     </div>
-    <div class="banner banner-offline" data-testid="assistant-offline-banner">
+    <div class="banner banner-offline" data-testid="assistant-offline-banner" resource-id="assistant-offline-banner">
       <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M2 2 22 22"/><path d="M8.5 16.4a5 5 0 0 1 7 0"/><path d="M5 12.9a10 10 0 0 1 4-2.5"/><path d="M15 10.4a10 10 0 0 1 4 2.5"/><path d="M12 20h.01"/></svg>
       No connection — the list still works, and what you type is saved on the device.
     </div>
@@ -715,11 +660,10 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
     <div class="tasks-body">
       <div class="tasks-col">
 
-        <!-- tasks-default (and tasks-rename, which differs by one row) -->
         <section class="v v-tasks-default">
           <div class="tasks-head">
             <span class="count num">3 tasks left today</span>
-            <button class="add-btn" data-testid="assistant-add-task-button">
+            <button class="add-btn" data-testid="assistant-add-task-button" resource-id="assistant-add-task-button">
               <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Add task
             </button>
           </div>
@@ -728,23 +672,24 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
             <div class="day-head">Today · Sat, Aug 16</div>
             <ul class="tasks">
               <li class="task-row done">
-                <button class="checkbox" aria-label="Mark “Morning stand-up” not done" aria-pressed="true"><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></button>
-                <div class="task-main"><span class="task-title">Morning stand-up</span><span class="task-meta">9:30 AM</span></div>
+                <button class="checkbox" aria-label="Mark “Morning stand-up” not done" aria-pressed="true"><svg class="ic-sm" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+                <span class="task-main"><span class="task-title">Morning stand-up</span><span class="task-meta">9:30 AM</span></span>
               </li>
-              <!-- on-arrival: the row a user lands on after tapping this task inside its message.
-                   Tinted only in the tasks-arrived state — see the note by .on-arrival in the CSS. -->
-              <li class="task-row on-arrival" data-testid="assistant-task-row">
-                <button class="checkbox" data-testid="assistant-task-checkbox" aria-label="Mark “Review the Q3 budget draft” done" aria-pressed="false"></button>
-                <div class="task-main"><span class="task-title">Review the Q3 budget draft</span><span class="task-meta">4:00 PM</span></div>
-                <button class="row-del" data-testid="tasks-delete-button" aria-label="Delete “Review the Q3 budget draft”">
+              <!-- on-arrival: the row a user lands on after tapping this task inside its message. -->
+              <li class="task-row on-arrival" data-testid="assistant-task-row" resource-id="assistant-task-row">
+                <button class="checkbox" data-testid="assistant-task-checkbox" resource-id="assistant-task-checkbox" aria-label="Mark “Review the Q3 budget draft” done" aria-pressed="false"></button>
+                <span class="task-main"><span class="task-title">Review the Q3 budget draft</span><span class="task-meta">4:00 PM</span></span>
+                <button class="row-del" data-testid="tasks-delete-button" resource-id="tasks-delete-button" aria-label="Delete “Review the Q3 budget draft”">
                   <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
                 </button>
               </li>
+              <!-- rename is entered by TAPPING THE TITLE, not by a separate control: there is no
+                   hover on a phone and a second per-row button would crowd the delete target. -->
               <li class="task-row row-editing">
                 <button class="checkbox" aria-label="Mark “Pay the electricity bill” done" aria-pressed="false"></button>
-                <div class="task-main row-static"><span class="task-title">Pay the electricity bill</span><span class="task-meta">due today</span></div>
+                <button class="task-main row-static" aria-label="Rename “Pay the electricity bill”"><span class="task-title">Pay the electricity bill</span><span class="task-meta">due today</span></button>
                 <div class="row-rename">
-                  <input class="rename-input" data-testid="tasks-rename-input" value="Pay the electricity bill" aria-label="Task name">
+                  <input class="rename-input" data-testid="tasks-rename-input" resource-id="tasks-rename-input" value="Pay the electricity bill" aria-label="Task name">
                 </div>
                 <button class="row-del" aria-label="Delete “Pay the electricity bill”">
                   <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
@@ -752,7 +697,7 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
               </li>
               <li class="task-row">
                 <button class="checkbox" aria-label="Mark “1:1 with Hà” done" aria-pressed="false"></button>
-                <div class="task-main"><span class="task-title">1:1 with Hà</span><span class="task-meta">4:30 PM</span></div>
+                <span class="task-main"><span class="task-title">1:1 with Hà</span><span class="task-meta">4:30 PM</span></span>
               </li>
             </ul>
           </div>
@@ -762,31 +707,29 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
             <ul class="tasks">
               <li class="task-row">
                 <button class="checkbox" aria-label="Mark “Grocery run for the week” done" aria-pressed="false"></button>
-                <div class="task-main"><span class="task-title">Grocery run for the week</span><span class="task-meta">morning</span></div>
+                <span class="task-main"><span class="task-title">Grocery run for the week</span><span class="task-meta">morning</span></span>
               </li>
               <li class="task-row">
                 <button class="checkbox" aria-label="Mark “Call Mum” done" aria-pressed="false"></button>
-                <div class="task-main"><span class="task-title">Call Mum</span><span class="task-meta">10:00 AM</span></div>
+                <span class="task-main"><span class="task-title">Call Mum</span><span class="task-meta">10:00 AM</span></span>
               </li>
             </ul>
           </div>
         </section>
 
-        <!-- ET-FIRST: both doors, because a user arriving from a broken assistant needs the
-             hand path and a user arriving by curiosity needs to know the fast one exists. -->
+        <!-- ET-FIRST: both doors. -->
         <section class="v v-tasks-empty-first">
           <div class="empty">
             <h2>No tasks yet</h2>
             <p>Add one by hand and it lands right here.</p>
-            <button class="btn-primary" data-testid="tasks-empty-add-button">
+            <button class="btn-primary" data-testid="tasks-empty-add-button" resource-id="tasks-empty-add-button">
               <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Add task
             </button>
             <p class="second-door">Or say one, on Talk.</p>
           </div>
         </section>
 
-        <!-- ET-COLLECTION: a different fact, so different words. Telling a user with 40 tasks
-             that they have none is the lie the generic empty state tells. -->
+        <!-- ET-COLLECTION: a different fact, so different words. -->
         <section class="v v-tasks-empty-list">
           <div class="empty">
             <h2>Nothing in Groceries</h2>
@@ -797,7 +740,7 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
           </div>
         </section>
 
-        <!-- SK-ROW: five rows in the row's own silhouette, under a real day header. No spinner. -->
+        <!-- SK-ROW: the row's own silhouette under a real day header. No spinner. -->
         <section class="v v-tasks-loading" aria-busy="true">
           <div class="day-group">
             <div class="day-head">Today · Sat, Aug 16</div>
@@ -818,7 +761,7 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
             <h2>Couldn't load your tasks</h2>
             <p>Nothing is saved on this device yet. You can still add one by hand.</p>
             <button class="btn-primary">Retry</button>
-            <button class="btn-ghost" style="margin-left:var(--sp-sm)">
+            <button class="btn-ghost">
               <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Add task
             </button>
           </div>
@@ -830,9 +773,9 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
 
   <!-- ==================== S4 · SETTINGS ==================== -->
   <div class="surface s-settings">
-    <header class="topbar">
-      <button class="icon-btn" data-testid="settings-back-button" aria-label="Back to Lists">
-        <svg class="ic" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+    <header class="appbar">
+      <button class="icon-btn" data-testid="settings-back-button" resource-id="settings-back-button" aria-label="Back to Lists">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
       </button>
       <h1>Settings</h1>
     </header>
@@ -841,7 +784,7 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
 
         <div class="set-row">
           <span class="set-label">Theme<span class="set-sub">Dark is the default. Both are fully drawn.</span></span>
-          <div class="seg" data-testid="settings-theme-control" role="group" aria-label="Theme">
+          <div class="seg" data-testid="settings-theme-control" resource-id="settings-theme-control" role="group" aria-label="Theme">
             <button class="on" aria-pressed="true">Dark</button>
             <button aria-pressed="false">Light</button>
             <button aria-pressed="false">System</button>
@@ -850,12 +793,13 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
 
         <div class="set-row">
           <span class="set-label">Talk back<span class="set-sub">The assistant reads its answer aloud.</span></span>
-          <button class="switch" data-testid="settings-talkback-switch" role="switch" aria-checked="true" aria-label="Talk back"></button>
-          <!-- SettingsRow failed: the control REVERTS visibly and the row says so. Never a toast. -->
+          <button class="switch" data-testid="settings-talkback-switch" resource-id="settings-talkback-switch" role="switch" aria-checked="true" aria-label="Talk back"></button>
+          <!-- SettingsRow failed: the control REVERTS visibly and the row says so. Never a toast
+               and never a snackbar — Android's default answer here is the one that disappears. -->
           <span class="set-fail">
             <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
             Couldn't save —
-            <button class="btn-ghost" data-testid="settings-row-retry">tap to try again</button>
+            <button class="btn-ghost" data-testid="settings-row-retry" resource-id="settings-row-retry">tap to try again</button>
           </span>
         </div>
 
@@ -868,17 +812,17 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
     </div>
   </div>
 
-  <!-- ==================== S3 · LISTS MENU (slide-over at every width) ==================== -->
+  <!-- ==================== S3 · LISTS MENU ==================== -->
   <div class="scrim"></div>
   <nav class="menu" aria-label="Lists">
     <div class="menu-head">
       <span class="wordmark">todo-ai</span>
-      <button class="icon-btn" data-testid="menu-close-button" aria-label="Close">
+      <button class="icon-btn" data-testid="menu-close-button" resource-id="menu-close-button" aria-label="Close">
         <svg class="ic" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></svg>
       </button>
     </div>
     <div class="menu-scroll">
-      <button class="menu-row active" data-testid="menu-collection-row">
+      <button class="menu-row active" data-testid="menu-collection-row" resource-id="menu-collection-row">
         <svg class="ic" viewBox="0 0 24 24"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>
         Today <span class="mcount num">3</span>
       </button>
@@ -893,7 +837,7 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
 
       <div class="menu-lists">
         <div class="menu-section">Your lists</div>
-        <button class="menu-row" data-testid="menu-list-row">
+        <button class="menu-row" data-testid="menu-list-row" resource-id="menu-list-row">
           <svg class="ic" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
           Work <span class="mcount num">5</span>
         </button>
@@ -910,18 +854,18 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
       <div class="menu-lists-fail">
         <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
         Couldn't load your lists
-        <button class="btn-ghost" data-testid="menu-retry-button">Retry</button>
+        <button class="btn-ghost" data-testid="menu-retry-button" resource-id="menu-retry-button">Retry</button>
       </div>
 
       <p class="menu-empty-note">Lists group tasks the way you think about them.</p>
 
-      <button class="menu-row" data-testid="menu-new-list-button">
+      <button class="menu-row" data-testid="menu-new-list-button" resource-id="menu-new-list-button">
         <svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
         New list
       </button>
     </div>
     <div class="menu-foot">
-      <button class="menu-row" data-testid="menu-settings-row">
+      <button class="menu-row" data-testid="menu-settings-row" resource-id="menu-settings-row">
         <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg>
         Settings
       </button>
@@ -931,57 +875,49 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
   <!-- ==================== S5 · NEW LIST ==================== -->
   <div class="sheet-wrap">
     <div class="sheet" role="dialog" aria-label="New list">
+      <div class="grabber" aria-hidden="true"></div>
       <h2>New list</h2>
       <div class="field">
-        <input id="listName" data-testid="list-editor-name-input" placeholder="List name" aria-label="List name">
+        <input id="listName" data-testid="list-editor-name-input" resource-id="list-editor-name-input" placeholder="List name" aria-label="List name">
         <p class="field-err">A list called Work already exists.</p>
       </div>
       <div class="sheet-actions">
-        <button class="btn-ghost" data-testid="list-editor-cancel-button">Cancel</button>
-        <button class="btn-primary" id="listCreate" data-testid="list-editor-create-button">Create</button>
+        <button class="btn-ghost" data-testid="list-editor-cancel-button" resource-id="list-editor-cancel-button">Cancel</button>
+        <button class="btn-primary" id="listCreate" data-testid="list-editor-create-button" resource-id="list-editor-create-button">Create</button>
       </div>
     </div>
   </div>
+
+  <div class="gesture-bar" aria-hidden="true"><span></span></div>
 
 </div>
 </div>
 
 <script>
 /* state → the data-attributes the CSS reads. One map, so a state cannot half-apply.
-   EVERY state carries BOTH a talk: and a tasks: value. Below the split only the one named by
-   surface: is on screen and the other is inert; at and above it both columns render, so a state
-   that set only its own half would paint an empty column at 1280 and look like a layout bug.
-   `surface:` therefore means "which surface this state is ABOUT", not "which one is visible". */
+   Unlike the web mockup, a phone is always below the split, so `surface:` really does mean
+   "the one surface on screen" here. */
 var STATES = {
-  'talk-idle':            { surface: 'talk',  talk: 'idle',    tasks: 'default' },
-  'talk-empty':           { surface: 'talk',  talk: 'empty',   tasks: 'empty-first' },
-  'talk-loading':         { surface: 'talk',  talk: 'loading', tasks: 'default', mic: 'dimmed' },
-  'talk-failed':          { surface: 'talk',  talk: 'failed',  tasks: 'default' },
-  'tasks-default':        { surface: 'tasks', tasks: 'default',     talk: 'idle' },
-  'tasks-rename':         { surface: 'tasks', tasks: 'rename',      talk: 'idle' },
-  'tasks-arrived':        { surface: 'tasks', tasks: 'arrived',     talk: 'idle' },
-  'tasks-empty-first':    { surface: 'tasks', tasks: 'empty-first', talk: 'empty' },
-  'tasks-empty-list':     { surface: 'tasks', tasks: 'empty-list',  talk: 'idle' },
-  'tasks-loading':        { surface: 'tasks', tasks: 'loading',     talk: 'idle' },
-  'tasks-refresh-failed': { surface: 'tasks', tasks: 'default', talk: 'idle', banner: 'retry' },
-  'tasks-offline':        { surface: 'tasks', tasks: 'default', talk: 'idle', banner: 'offline' },
-  'tasks-error':          { surface: 'tasks', tasks: 'error',   talk: 'idle' },
-  'menu-default':         { surface: 'tasks', tasks: 'default', talk: 'idle', menu: 'default' },
-  'menu-empty':           { surface: 'tasks', tasks: 'default', talk: 'idle', menu: 'empty' },
-  'menu-failed':          { surface: 'tasks', tasks: 'default', talk: 'idle', menu: 'failed' },
-  'settings-default':     { surface: 'settings', settings: 'default', talk: 'idle', tasks: 'default' },
-  'settings-save-failed': { surface: 'settings', settings: 'failed',  talk: 'idle', tasks: 'default' },
-  'list-new':             { surface: 'tasks', tasks: 'default', talk: 'idle', menu: 'default', sheet: 'new' },
-  'list-name-taken':      { surface: 'tasks', tasks: 'default', talk: 'idle', menu: 'default', sheet: 'taken' },
-
-  /* The two BELOW-SPLIT renderings. They are the same design states as talk-idle and
-     tasks-default; what they demonstrate is the other side of the one layout branch, which a
-     desktop browser cannot otherwise show. They are also the only states in which PathSwitch
-     exists at all — above the split it is absent by design, so shell-tasks-button and
-     shell-talk-button have no rendering to be checked in without them. At a real phone width
-     every state is already below the split and these two look like their twins. */
-  'phone-talk':           { frame: 'phone', surface: 'talk',  talk: 'idle',     tasks: 'default' },
-  'phone-tasks':          { frame: 'phone', surface: 'tasks', tasks: 'default', talk: 'idle' }
+  'talk-idle':            { surface: 'talk',  talk: 'idle' },
+  'talk-empty':           { surface: 'talk',  talk: 'empty' },
+  'talk-loading':         { surface: 'talk',  talk: 'loading', mic: 'dimmed' },
+  'talk-failed':          { surface: 'talk',  talk: 'failed' },
+  'tasks-default':        { surface: 'tasks', tasks: 'default' },
+  'tasks-rename':         { surface: 'tasks', tasks: 'rename' },
+  'tasks-arrived':        { surface: 'tasks', tasks: 'arrived' },
+  'tasks-empty-first':    { surface: 'tasks', tasks: 'empty-first' },
+  'tasks-empty-list':     { surface: 'tasks', tasks: 'empty-list' },
+  'tasks-loading':        { surface: 'tasks', tasks: 'loading' },
+  'tasks-refresh-failed': { surface: 'tasks', tasks: 'default', banner: 'retry' },
+  'tasks-offline':        { surface: 'tasks', tasks: 'default', banner: 'offline' },
+  'tasks-error':          { surface: 'tasks', tasks: 'error' },
+  'menu-default':         { surface: 'tasks', tasks: 'default', menu: 'default' },
+  'menu-empty':           { surface: 'tasks', tasks: 'default', menu: 'empty' },
+  'menu-failed':          { surface: 'tasks', tasks: 'default', menu: 'failed' },
+  'settings-default':     { surface: 'settings', settings: 'default' },
+  'settings-save-failed': { surface: 'settings', settings: 'failed' },
+  'list-new':             { surface: 'tasks', tasks: 'default', menu: 'default', sheet: 'new' },
+  'list-name-taken':      { surface: 'tasks', tasks: 'default', menu: 'default', sheet: 'taken' }
 };
 var KEYS = ['surface', 'talk', 'tasks', 'menu', 'settings', 'sheet', 'banner', 'mic'];
 
@@ -994,12 +930,6 @@ function showState(name) {
     if (cfg[k]) { app.setAttribute('data-' + k, cfg[k]); } else { app.removeAttribute('data-' + k); }
   }
   app.setAttribute('data-state', name);
-  /* frame lives on the STAGE, because the stage is the query container and a container query
-     cannot see an attribute on the container's own child. */
-  var stage = document.getElementById('stage');
-  if (stage) {
-    if (cfg.frame) { stage.setAttribute('data-frame', cfg.frame); } else { stage.removeAttribute('data-frame'); }
-  }
   var btns = document.querySelectorAll('.dev-bar button[data-s]');
   for (var j = 0; j < btns.length; j++) {
     btns[j].classList.toggle('on', btns[j].getAttribute('data-s') === name);

@@ -423,7 +423,7 @@ lie about what the app can do.
 
 | ID | Surface | Line 1 | Line 2 |
 |---|---|---|---|
-| **SE-SESSION** | Talk | Couldn't load your conversation | Your tasks are still here — open Tasks, or try again. |
+| **SE-SESSION** | Talk | Couldn't load your conversation | Your tasks are unaffected. Try again, or carry on by hand. |
 | **SE-TASKS** | Tasks | Couldn't load your tasks | Nothing is saved on this device yet. You can still add one by hand. |
 
 It looks **calm**: body-size supporting text, one accent, one button. An error state that shouts
@@ -463,7 +463,7 @@ Genuinely new controls, and only those, take new ids:
 | `menu-new-list-button` | LM-ACTION — New list |
 | `menu-settings-row` | LM-ACTION — Settings |
 | `menu-retry-button` | ListsMenu failed state |
-| `menu-close-button` | the panel's close control (≤ 1023px only) |
+| `menu-close-button` | the panel's close control (every width — the menu is a slide-over everywhere) |
 | `settings-back-button` | Settings → Lists menu |
 | `settings-theme-control` | SettingsRow segmented |
 | `settings-talkback-switch` | SettingsRow switch |
@@ -486,3 +486,97 @@ tests that parse them are untouched by this section.
 No content-width floor is published for any control above. § Touch's floors are measured from a
 shipped control; none of these has shipped, and publishing a floor measured only in Chromium
 would put a number into a table whose whole value is that its numbers are checkable.
+
+---
+
+## AppFrame — the one layout branch, and where it lands
+
+**Added 2026-08-17 (T-105), additive**, for
+`reports/owner-decision-2026-08-17-desktop-list-is-primary.md`. Nothing above this line moved,
+was renamed or was reordered. Two cells changed content and are called out at the foot.
+
+Mockups: `app-shell.html` (web, both sides of the branch) · `app-shell-ios.html` ·
+`app-shell-android.html` (T-104 — phones, always below the branch).
+
+**The branch is `tokens.json breakpoints.split`, and there is exactly one of it.**
+
+| Width | Frame | PathSwitch | Settings |
+|---|---|---|---|
+| **below split** | one surface on screen: Talk **or** Tasks | present; one tap between them | replaces the surface |
+| **at or above split** | Tasks in the centre, Talk in a `360–420px` right panel, both permanently on screen | **absent** | replaces the **centre**, never the panel |
+
+**Tablet is not a third case.** `768` renders the below-split frame unchanged from `375`.
+Splitting `768` leaves the panel about `330px` and the centre about `420px`: the centre loses the
+day/row rhythm and the panel loses the diff row, which is the one thing the panel may not lose.
+`768` is also iPad portrait — held, and used one-thing-at-a-time the way a phone is.
+
+**The constraint that governs everything here:** the Applied bubble carries its **full per-field
+diff at every width**, in the panel exactly as on a phone. The centre list is an addition and is
+never what `F-001 AC-1` relies on. If the centre list were allowed to *be* the confirmation at
+desktop, AC-1 would carry two mechanisms selected by viewport, tests would branch, and the branch
+nobody runs is the one that rots. The same trap from the other side is already recorded under
+§ PathSwitch: the `Tasks · N` count is a second confirmation and must never be specced as the
+guarantee, because a number cannot say *which* task.
+
+**Why PathSwitch is absent above the split, and why that strengthens rather than weakens it.**
+A control that switches to what is already visible is a dead control. § PathSwitch's guarantee —
+*visible and enabled in every Talk failure state* — is met more strongly at this width: the
+second path is not one tap away, it is never left. `talk-failed` is the state to look at, and it
+is the state that most justifies the split: the assistant is broken in the panel and the whole
+todo is untouched and usable in the centre.
+**Consequence for the id catalogue:** `shell-tasks-button` and `shell-talk-button` are
+**below-split-only controls**. A desktop selector for either will not resolve, and should not.
+
+**A container query, not a viewport media query.** The branch reads `.app`'s own width. It is
+equivalent to a media query whenever the app fills the window and stays correct when it does not
+(embedded, split-screen). One line for implementers: `container-type: inline-size` on the app
+root. It is also what lets `app-shell.html` show the below-split frame — the `phone-talk` and
+`phone-tasks` states — while being read in a desktop browser.
+
+**The day-header gutter is withdrawn.** T-101 set day headers in a `180px` right-aligned gutter
+beside their rows, on the premise that Tasks had the whole `1280`. It has the centre column now.
+Day headers stack above their rows **at every width**, and the list keeps a `720px` measure
+left-anchored against the checkbox rail. The width is used by the split, not by stretching a
+task row's hairline across `830px`. Same reasoning § ListsMenu used to refuse a desktop rail:
+one presentation, one behaviour to spec, build and test.
+
+### Platform variants — what T-104 fixes, and the two places touch is not hover
+
+The id catalogue above is **identical in all three shell mockups**, in the three spellings the
+one source prop surfaces as: web `data-testid` · iOS `accessibilityIdentifier` · Android
+`resource-id`. Android's `contentDescription` is never used for identity — TalkBack speaks it,
+so an id parked there is read aloud instead of the message (F-003 AC-12).
+
+Two renderings differ on the phones, and both differences are forced rather than stylistic:
+
+| | Web | iOS / Android |
+|---|---|---|
+| `tasks-delete-button` | appears on row hover / focus-within | **always visible** in the row's trailing slot — a hover-revealed control does not exist on touch, and hiding it would publish an id no user can reach |
+| `tasks-rename-input` | entered from a per-row control | entered by **tapping the task title**; a second per-row button would crowd the delete target |
+
+**Both are drawn and neither ships today.** `uc-coverage-map` D8 records that mobile has two of
+`AC-18`'s four manual operations. They are drawn so parity has a contract to close against —
+not as a claim that the build has them.
+
+**Platform chrome, token-first.** iOS takes a large title on Tasks (a place) and a compact bar on
+Talk (a continuous thing), a bottom sheet with a grabber, a home indicator, and `44pt` targets.
+Android takes one `56dp` M3 top app bar everywhere, rounded-square checkboxes, an outlined
+`Add task`, the M3 switch and segmented button, a drag-handled bottom sheet, the gesture bar, and
+`48dp` targets. Type, colour, spacing and radius stay `tokens.json` on both — platform paint
+never wins over the design system.
+
+**One presentation for the Lists menu on every platform**, per § ListsMenu. On Android that is
+Material's own navigation drawer; on iOS it is borrowed, and we borrow it knowingly rather than
+fork the id catalogue between a push and a sheet.
+
+### Two cells above changed content in this pass
+
+Neither is a rename, a reorder, or a new row.
+
+1. **§ SurfaceError, SE-SESSION line 2** was *"Your tasks are still here — open Tasks, or try
+   again."* It named a route only one of the two widths has: above the split the list is already
+   on screen and there is nothing to open. Now *"Your tasks are unaffected. Try again, or carry
+   on by hand."*, which is true at both. Not parsed by any test.
+2. **The `menu-close-button` catalogue annotation** said *"≤ 1023px only"* — left over from the
+   desktop rail this file rejected. The menu is a slide-over at every width and always carries
+   its close control.

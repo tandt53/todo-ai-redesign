@@ -1,10 +1,19 @@
 # Information architecture — the whole app
 
-**Date** 2026-08-17 · **Author** design-agent (T-101) · **Status** proposal, not yet specced
+**Date** 2026-08-17 · **Author** design-agent (T-101, revised T-105/T-106) · **Status** proposal,
+not yet specced. **§ 12 is a question for the owner, not a decision.**
 
 **Trigger.** `reports/owner-decision-2026-08-17-conversation-is-not-a-list.md` (the conversation
 stops rendering the task list) and `reports/owner-decision-2026-08-17-settings-and-lists.md`
 (the app needs Settings; the todo needs personal lists).
+
+**Revised 2026-08-17 (T-105/T-106)** for
+`reports/owner-decision-2026-08-17-desktop-list-is-primary.md` — on a wide screen the task list
+takes the centre and the assistant becomes a right panel. That decision **supersedes the
+confirmation this document was written against** ("no list beside the conversation at any
+width") for wide screens only; on a phone the peer-path design below stands untouched. Every
+section that changed says so in place. The one thing the decision did **not** answer — what a
+phone lands on — is § 12, and it is open.
 
 **What this file is.** The map of surfaces: what exists, what each is *for*, what lives on each,
 how a user moves between them, and what each looks like empty, loading and failing. It is the
@@ -73,6 +82,30 @@ moves) alongside the message bubble, which is the guarantee F-001 AC-1/AC-4 were
 Zero open today renders **no badge**; the zero case is stated in words on S2 itself
 ("Nothing left today"), where there is room to say it properly.
 
+### 1a. Above the split, the two peers stop taking turns — revised T-105
+
+The owner's desktop decision does not add a surface or change what any surface is for. It
+changes **how the two peers share one screen**, at one width, and nothing else:
+
+| | Below `tokens.json breakpoints.split` | At or above it |
+|---|---|---|
+| Frame | one surface at a time | **S2 Tasks in the centre · S1 Talk in a `360–420px` right panel** |
+| The reciprocal switch | `Tasks · N` / `Talk` in the top bar, one tap | **absent** — both are on screen, and a control that switches to what you are already looking at is dead |
+| S3/S4/S5 | stack over the surface | stack over the **centre**; the panel is never dismissed by navigating |
+| Which is primary | expressed by **order** — what opens first (§ 12, open) | expressed by **position** — the centre |
+
+Two things this does **not** change, and both are load-bearing:
+
+1. **The Applied bubble keeps its full per-field diff at every width.** The centre list is an
+   addition, never the mechanism `AC-1` relies on. § 10's restatement of AC-1 is therefore
+   unaffected by the desktop decision — which is the point of the constraint the owner attached
+   to it. One mechanism everywhere; nothing about AC-1 branches on viewport.
+2. **Tablet is not a third case.** `768` renders the single-surface frame, identical to `375`.
+   Reasoning in `components.md § AppFrame`; the short version is that a split at `768` leaves
+   the panel too narrow to hold a diff row, and the diff row is the thing the panel exists for.
+
+**What this reverses in § 8.4 and in my own T-101 drawing** is recorded there and in § 11.
+
 ---
 
 ## 2. The surfaces
@@ -127,7 +160,14 @@ check the owner asked for — *"design lại app cho đầy đủ ứng với c�
 | **Theme (dark / light)** | **nowhere** | **S4** | `tokens.json` ships both themes and the app has no control — a capability that exists today with no surface |
 | **Personal lists** | **nowhere; no field** | **S3**, and S2's header | §7 |
 | **Move a task to a list** | **nowhere; no field** | **S2** row action | §7 |
-| Go from a message to the task it changed | nowhere | **S1 bubble → S2** | new; §5 |
+| Go from a message to the task it changed | nowhere | **S1 bubble → S2** | new; §5 — below the split this navigates; above it, it only scrolls the centre |
+
+**Read the "Seeing what a turn changed" row carefully after the desktop revision.** Above the
+split a task list *is* on screen beside the conversation again, which looks like the row's "the
+bubble alone" has been undone. It has not: **the bubble is still the only mechanism**, and the
+centre list is an addition the spec must not lean on. That is the constraint the owner attached
+to the repositioning, and § 1a and § 10 both turn on it. Every other row in this table is
+width-independent.
 
 ---
 
@@ -148,9 +188,17 @@ this list.
 | S4 | back to S3 | back control | 1 |
 | S5 | back to S3 | `Create` or `Cancel` | 1 |
 
-**Entry.** The app opens on **S1**, always — including cold open after a kill. This is unchanged
-and deliberate: ADR-11 makes the conversation the main surface, and an app that reopens somewhere
-else has quietly demoted it.
+**Entry — revised T-105/T-106.** Two different questions, and until today they had one answer.
+
+- **Above the split there is no entry question.** Both surfaces are on screen from the first
+  frame, with Tasks in the centre. "Opening on a wide screen shows your tasks first" is
+  satisfied by *position*, not by a default, and nothing has to be chosen.
+- **Below the split the app opens on S1 Talk**, including cold open after a kill — **as it does
+  today, and as design proposes it should continue**. This is **§ 12 and it is not settled**:
+  the owner has the call, and the table above is what the mockups currently draw.
+
+**Every edge in the table above is unchanged at both widths**, except the two S1 ⇄ S2 rows,
+which have no cost above the split because there is nothing to move between.
 
 **Settings is three taps from Talk** (Tasks → menu → Settings) and one from the menu. That is the
 right cost. Settings is opened rarely, and the alternative — a second entry point on S1 — buys
@@ -260,6 +308,14 @@ Building half of this is the failure mode, so here is the line, explicitly:
 | S4 with Theme and About | The assistant creating a task **into** a list — needs `list_id` in the interpreter context, and `UC-41 AC-41.4` (the AI may never invent a list) routes through F-001 AC-13's clarify path |
 | S4's Talk back row — needs F-002 built, not a new field | |
 
+**This table is width- and platform-independent, and the T-104/T-105 drawings do not move a
+single row of it.** The same surfaces are blocked in `app-shell.html`, `app-shell-ios.html` and
+`app-shell-android.html`, at every width: S3's whole personal-lists section, the S5 sheet, S2's
+header when it names a personal list, and the per-row "Move to list". The desktop panel adds no
+field and needs none. Anyone reading the three shell mockups as a build order should read this
+table first — **six of the drawn surfaces cannot be built from today's data model**, and the
+platform variants make that easier to forget by making it look finished on three platforms.
+
 **Two fields that are *not* the blocker, contrary to the report that started this:**
 `due_at`, `reminder_at` and `priority` all exist on `task` and are already patchable
 (`TASK_PATCH_FIELDS`). A due-date picker is a pure UI change. It is still out of scope here
@@ -303,17 +359,30 @@ After this change there is no on-screen list, and the filters are menu rows. The
 still *true* (the alternative exists, one tap away) and is no longer *accurate*. It needs the
 same restatement treatment as AC-1 and AC-4 and is not currently on T-103's list.
 
-**8.4 — the owner's decision is written unconditionally; the complaint was about a phone.**
-`owner-feedback-2026-08-17-product-gaps.md` §1 is explicit that the crowding is "trong khuôn khổ
-màn hình nhỏ bé", and F-001's own reasoning for the split pane is recorded as sound on a wide
-screen. The decision doc then says, flatly, that the conversation no longer renders the list —
-no width qualifier. **I followed the decision as written: no list on S1 at any width.** At
-1280px S1 holds a 760px measure centred — deliberately, not by neglect: a conversation read at a
-1200px measure is unreadable at any aesthetic, and `DESIGN.md ## Identity` names ChatGPT voice
-mode in the reference bar, where exactly this measure is what the audience meets daily. S2 uses
-the width instead, setting each day header in a left gutter beside its rows. If the owner meant
-"on phones", reinstating the desktop split pane is a cheap, isolated change to S1 alone — but it
-is theirs to make, not mine to assume.
+**8.4 — RESOLVED 2026-08-17, and resolved the other way. Kept as the record.**
+The original finding: the owner's decision was written unconditionally, while the complaint that
+prompted it (`owner-feedback-2026-08-17-product-gaps.md` §1) was explicitly about "trong khuôn
+khổ màn hình nhỏ bé" — a small screen — and F-001's own reasoning for the split pane was
+recorded as sound on a wide one. I followed the decision as written (no list on S1 at any width),
+flagged the ambiguity rather than assuming, and it was put back to the owner twice. The first
+answer confirmed "every width". The second, later the same day, **repositioned the product**:
+above the split the list takes the centre and the assistant takes a right panel.
+
+Three consequences, all now landed:
+
+- **The wide-screen half of this section is void.** S1 no longer holds a centred `760px` measure
+  at `1280`; it holds a `360–420px` panel, and the measure argument (a conversation is unreadable
+  at a `1200px` measure) is served by the panel rather than by centring.
+- **The day-header gutter I drew for S2 is withdrawn** — see § 11. It was designed for an S2 that
+  owned the whole width, and S2 now owns the centre column.
+- **The phone half of this section stands entirely.** The complaint was about a phone; on a
+  phone nothing changed.
+
+**Worth keeping for the next pass:** the flag was right and the answer it drew was not the answer
+it anticipated. Surfacing an ambiguity is not the same as guessing which way it will fall, and a
+design that had quietly "corrected" the unconditional wording to "phones only" would have
+produced a split pane the owner had not asked for and would have missed the repositioning
+underneath it.
 
 ---
 
@@ -331,7 +400,7 @@ one the owner can act on.
 | **Due-date / reminder / priority controls** (UC-34, UC-35) | Buildable today (§7) and genuinely cheap — deliberately still out, because the briefing's scope is the app as it is plus the two named gaps, and this is a third. Flagged as the cheapest next thing. |
 | **S4 rows: default list, export, delete history, account** | Each needs something that does not exist — `list_id`, UC-48, UC-28, UC-22. I drew three real rows rather than a full-looking screen of dead ones. Content discipline: a mockup that fabricates rows teaches implementers to build them. |
 | **A language picker in S4** | 8.2 — a separate owner decision. |
-| **iOS and Android variants of the new surfaces** | Drawn for web only. The platform variants encode native nav chrome and carry the `accessibilityIdentifier` / `contentDescription` catalogues that mobile tests parse; producing three variants of a proposal that the spec pass will change is waste. They follow once the IA is accepted. **This is why the drawn file is PARTIAL, not DONE.** |
+| ~~**iOS and Android variants of the new surfaces**~~ | **DONE 2026-08-17 (T-104).** The reasoning for holding them — three variants of a proposal the spec pass would change is waste — was right and expired when the shape settled. `app-shell-ios.html` and `app-shell-android.html` now carry the `accessibilityIdentifier` / `resource-id` catalogues, identical to web's, and the two places touch is not hover (`components.md § AppFrame`). |
 | **Any change to the three existing F-001 mockups** | They are the current build's contract: `src/assistant/web/__tests__/app.test.tsx` and `src/assistant/mobile/__tests__/a11y.test.ts` parse their testid catalogues at run time. Editing them now would break the build for a change the spec has not yet accepted. The new file is additive; the retirement of `assistant-drawer-button` happens with the spec pass. |
 
 ---
@@ -366,22 +435,130 @@ restated rather than deleted, plus the one nobody has listed.
 
 ## 11. What was drawn, and what was left as IA
 
-**Drawn** — `design/assistant/screens/app-shell.html`, web, verified at 375 / 768 / 1280px.
-Twenty states: S1 idle · empty · loading · session-failed; S2 default · rename · arrived ·
-empty-first-run · empty-collection · loading · refresh-failed · offline · load-failed;
-S3 default · empty · lists-failed; S4 default · save-failed; S5 default · name-taken.
+**Drawn — three files, one design.**
 
-The mockup passes `.claude/tools/design-check` at **36 passed, 0 failed, 0 skipped** across all
-four mockups in the repo. Two of those checks had been silently skipping for this project's whole
-life and now run: `tokens.json` gained a `breakpoints` block (the overflow check had no widths to
-measure at, so it was checking nothing) and `DESIGN.md ## Colour rules` now states the 4.5:1
-threshold as a number the tool can read (the contrast check reads it from that file and skips
-when it finds none). Both are green on the three pre-existing mockups as well as this one — the
-checks were not merely turned on, they were turned on and passed.
+| File | Frame | States |
+|---|---|---|
+| `design/assistant/screens/app-shell.html` | web, **both sides of the split** | 22 |
+| `design/assistant/screens/app-shell-ios.html` | phone, below the split only | 20 |
+| `design/assistant/screens/app-shell-android.html` | phone, below the split only | 20 |
+
+The twenty design states are the same in all three: S1 idle · empty · loading · session-failed;
+S2 default · rename · arrived · empty-first-run · empty-collection · loading · refresh-failed ·
+offline · load-failed; S3 default · empty · lists-failed; S4 default · save-failed; S5 default ·
+name-taken. The web file carries two more — `phone-talk` and `phone-tasks` — which are **not**
+extra design states: they are the below-split rendering of `talk-idle` and `tasks-default` inside
+a phone frame, so a desktop browser can see the other half of the one layout branch. Without
+them `shell-tasks-button` and `shell-talk-button` have no rendering to be checked in at all,
+because they do not exist above the split.
+
+All six mockups in the repo pass `.claude/tools/design-check` at **60 passed, 0 failed, 0
+skipped** — token drift, horizontal overflow at every declared breakpoint, state switching,
+testid uniqueness and per-state visibility, and the declared 4.5:1 contrast floor.
+
+**`tokens.json` gained `breakpoints.split`** so the one width that branches the layout is a token
+rather than a magic number in CSS, and so design-check measures overflow at it.
+
+**Two hazards found while doing this, both of which produced a GREEN check for the wrong reason.
+Recorded because an implementer will meet both.**
+
+1. **A digit in the `breakpoints` note becomes a breakpoint.** The checker iterates *every* key in
+   that block and parses digits out of the value, so a first draft of the explanatory note said
+   "768" in prose and the tool silently added a phantom `@note (768px)` width and measured at it.
+   It passed, so nothing complained. The note now contains no digits and says so about itself.
+2. **A query container must be sized from outside.** `container-type: inline-size` carries
+   `contain: inline-size`, so the element's own width may not come from its contents; `max-width`
+   plus `margin: 0 auto` stops it stretching, and the two together **collapse it to zero**. The
+   phone frame did exactly this, and design-check still reported `shell-tasks-button` and
+   `shell-talk-button` visible — its visibility test asks only `width > 0`, which overflowing
+   children of a zero-width box satisfy. The tool's verdict was right about the ids and told me
+   nothing about the frame; a screenshot showed a blank column in one look. Fixed with an
+   explicit `width: min(430px, 100%)`. This is `LEARNINGS.md` L-012's shape in CSS — a check that
+   goes green propped up by something other than the thing it names.
+
+**What the desktop revision changed in the drawing** (T-105), beyond adding the split:
+
+- The **day-header gutter is withdrawn**. Day headers stack above their rows at every width and
+  the list keeps a `720px` measure. It was drawn for an S2 that owned `1280`; S2 owns the centre
+  column now, and a task row's hairline stretched across `830px` reads as a spreadsheet.
+- **PathSwitch is absent above the split**, so `shell-tasks-button` / `shell-talk-button` are
+  below-split-only ids. A desktop selector for either will not resolve, and should not.
+- Two copy lines that named a **route only one width has** were made width-independent:
+  SE-SESSION line 2 (was "open Tasks"), and the applied bubble's "tap a task to *open it in
+  Tasks*" → "*find it in the list*", because above the split that tap only scrolls the centre.
+  Both are one string at every width rather than two selected by viewport, which is the same
+  discipline the AC-1 constraint imposes on the mechanism.
+- The idle thread **sits on the composer** rather than at the top of its column. In a
+  `420px` panel holding two messages the old top-alignment left a visible gap; "newest at bottom"
+  (§ Message bubbles) was already the rule and is now what the mockup does at every width.
 
 **Left as IA, on purpose** — S1's unchanged states (listening, thinking, applied, questions,
 outcomes, permissions, boundary, new-message affordance) are already drawn in
-`voice-assistant-view.html` and are not affected by this change; redrawing them would create a
-second source of truth for states nobody is changing, which is `LEARNINGS.md` L-004's shape.
-The iOS and Android variants are undrawn (§9). Upcoming, Logbook, search, task detail and the
-deferred S4 rows are undrawn because they are undesigned.
+`voice-assistant-view.html` and its two platform variants, and are not affected by this change;
+redrawing them would create a second source of truth for states nobody is changing, which is
+`LEARNINGS.md` L-004's shape. **This is also why the desktop panel's unchanged states are not
+redrawn**: a panel-width `listening` or `question` bubble is the same bubble, and the one thing
+that could have differed — whether the full diff survives at panel width — is drawn, in
+`talk-idle`, and is exactly the constraint the owner attached to the decision. Upcoming, Logbook,
+search, task detail and the deferred S4 rows are undrawn because they are undesigned.
+
+---
+
+## 12. Open for the owner — what does a phone land on, Talk or Tasks?
+
+**Status: design proposes, owner decides. Nothing here is settled and no file assumes it is.**
+The desktop decision did not ask or answer this; it says so itself.
+
+### The proposal
+
+**A phone lands on Talk.** That is what the app does today, what the three mockups draw, and what
+I would defend.
+
+### The argument
+
+**These are not the same question asked twice.** Above the split there is no landing question at
+all: both surfaces are on screen, and "the list is the primary object" is expressed by
+**position** — the centre. Below the split there is no position to express it with, only
+**order**. So the phone's choice is not a second answer to the desktop question; it is the only
+question of its kind, and it should be decided by what a phone is for.
+
+**A phone is where you capture; a wide screen is where you organise.** The happy path this whole
+design is built around is *tap the mic, say it* — 2 actions, matching the existing app's "≤ 2
+chạm" law (`DESIGN.md ## User journey`). The mic lives in Talk's composer. Landing on Tasks makes
+that **3 actions**, a 50% increase on the one path the product's differentiator lives on, paid on
+every capture, forever.
+
+**Landing on Talk does not hide the list — it announces it.** `Tasks · 3` sits in the top bar of
+every Talk state, carrying both the name and the count. If landing on Talk were the inconsistency
+it might look like, the symptom would be a user who cannot find their tasks; there is no such
+user, because the first screen names them and says how many there are.
+
+**And it is consistent with the reference bar.** `DESIGN.md ## Identity` names ChatGPT voice mode
+among the audience's daily apps. On a phone that product opens on the conversation and reaches
+its history through a control; on a wide screen it shows both. The audience already holds this
+shape.
+
+### The honest case against, which the owner may find decisive
+
+**"The primary object should be primary everywhere."** A user who learns *this is my todo list*
+on a laptop and *this is a chat* on a phone is learning two products. The owner's day has been
+about the todo underneath the assistant being the part that was never built — and landing on Talk
+keeps the list the thing you go and find. That is a coherent position and I cannot falsify it
+from here: nobody has data on whether this app's phone sessions are mostly *check what's next*
+(reading, favours Tasks) or *put this somewhere* (capture, favours Talk).
+
+### What makes this more than a default flag — the part worth deciding with
+
+**If the answer is Tasks, I owe a design change, not a setting.** Voice capture would drop to
+three actions unless the Tasks surface gains a capture affordance of its own — a mic in a Tasks
+composer, or a mic-bearing FAB. That is a new control, a new id, new states, and a second place
+the mic can live, which is `LEARNINGS.md` L-005's shape (one obligation, two doors) applied to
+the interface. I have deliberately **not** drawn it: drawing it would be assuming the answer, and
+`_ethos.md` § 1 puts this call with the owner.
+
+**If the answer is Talk, nothing changes** — the mockups, the current build and this document
+already agree, and the decision costs one line in the spec pass making it explicit rather than
+inherited.
+
+**Cheapest question that settles it:** *on your phone, in the morning, do you open this app to
+see what's next, or to put something down?*
