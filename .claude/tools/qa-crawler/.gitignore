@@ -1,0 +1,16 @@
+# Project-specific output (regenerable)
+projects/*/output/
+projects/*/logs/
+
+# Auth sessions (sensitive)
+projects/*/output/session*.json
+
+# Playwright runtime cache
+.playwright-cli/
+
+# Secrets
+projects/*/.env
+.env
+
+# OS files
+.DS_Store

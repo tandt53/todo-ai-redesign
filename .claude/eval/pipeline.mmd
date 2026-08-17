@@ -1,0 +1,60 @@
+graph LR
+  spec_agent["Spec"]
+  product_spec["Product<br/>(Spec)"]
+  architect_agent["Architect"]
+  design_agent["Design"]
+  backend_agent["Backend"]
+  web_agent["Web"]
+  mobile_agent["Mobile"]
+  qa_api_agent["QA API"]
+  qa_web_agent["QA Web"]
+  qa_mobile_agent["QA Mobile"]
+  reviewer_agent["Reviewer"]
+  product_final["Product<br/>(Final)"]
+  human["Human<br/>Sign-off"]
+
+  spec_agent --> product_spec
+  product_spec --> architect_agent
+  product_spec --> design_agent
+  architect_agent --> backend_agent
+  architect_agent --> mobile_agent
+  design_agent --> web_agent
+  design_agent --> mobile_agent
+  backend_agent --> qa_api_agent
+  web_agent --> qa_web_agent
+  mobile_agent --> qa_mobile_agent
+  qa_api_agent --> reviewer_agent
+  qa_web_agent --> reviewer_agent
+  qa_mobile_agent --> reviewer_agent
+  reviewer_agent --> product_final
+  product_final --> human
+
+  subgraph Spec
+    spec_agent
+  end
+  subgraph Gate1["Gate 1"]
+    product_spec
+  end
+  subgraph Architecture
+    architect_agent
+    design_agent
+  end
+  subgraph Build
+    backend_agent
+    web_agent
+    mobile_agent
+  end
+  subgraph QA
+    qa_api_agent
+    qa_web_agent
+    qa_mobile_agent
+  end
+  subgraph Gate2["Gate 2"]
+    reviewer_agent
+  end
+  subgraph Gate3["Gate 3"]
+    product_final
+  end
+  subgraph Done
+    human
+  end

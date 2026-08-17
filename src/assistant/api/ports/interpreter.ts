@@ -1,0 +1,75 @@
+// Interpreter port (ADR-001): the AI seam. The engine hands the model an
+// interpretation context in HANDLE space — candidate tasks appear as per-turn
+// handles t1..tn with titles/fields, never raw uuids (ADR-002); the engine
+// keeps the handle→uuid map to itself. The stub replaces model interpretation
+// ONLY, including answer classification (spec, Test strategy); orchestration,
+// gating, persistence, dedupe and undo always run real.
+
+import type { PendingOp, QuestionKind, TaskChanges, TaskStatus, TurnSource } from '../types.ts'
+
+/**
+ * AI endpoint parameters, resolved SERVER-side (api-contracts.md): the model
+ * is never chosen by the client; temperature is deliberately not sent (the
+ * parameter is removed on current Claude models — the request would 400).
+ * The real Anthropic-backed Interpreter that consumes these lands in a later
+ * phase behind this same port — this phase ships the fixture stub only
+ * (briefing: no real AI provider calls).
+ */
+export const INTERPRETER_DEFAULTS = {
+  model: 'claude-opus-5',
+  max_tokens: 1024,
+} as const
+
+/** Candidate task as the model sees it — handle, no uuid (ADR-002). */
+export interface ContextTask {
+  handle: string
+  title: string
+  status: TaskStatus
+  due_at: string | null
+  priority: string | null
+}
+
+export interface QuestionContext {
+  kind: QuestionKind
+  task_titles: string[]
+  options: string[]
+}
+
+export interface InterpreterContext {
+  transcript: string
+  source: TurnSource
+  timezone: string | null
+  /** the user's current tasks, read fresh inside this turn's queue slot (OQ 7) */
+  tasks: ContextTask[]
+  /** sliding window: at most the last 10 resolved turns (ADR-003) */
+  recent_turns: { transcript: string; outcome_kind: string | null }[]
+  /** the pending question this turn is bound to, if any (answer classification) */
+  question: QuestionContext | null
+}
+
+export type AnswerClass =
+  | { type: 'affirmative' }
+  | { type: 'negative' }
+  | { type: 'unclassifiable' }
+  | { type: 'selection'; handle: string }
+
+export type Interpretation =
+  | {
+      kind: 'create'
+      tasks: {
+        title: string
+        due_at?: string | null
+        priority?: string | null
+        status?: TaskStatus
+      }[]
+    }
+  | { kind: 'edit'; edits: { handle: string; changes: TaskChanges }[] }
+  | { kind: 'delete'; handles: string[] }
+  | { kind: 'clarify'; handles: string[]; pending_op: PendingOp }
+  | { kind: 'no_match' }
+  | { kind: 'query' }
+  | { kind: 'answer'; answer: AnswerClass }
+
+export interface Interpreter {
+  interpret(ctx: InterpreterContext): Promise<Interpretation>
+}

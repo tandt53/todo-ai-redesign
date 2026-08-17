@@ -1,0 +1,34 @@
+{
+  "hooks": {
+    "SubagentStop": [
+      {
+        "hooks": [{
+          "type": "command",
+          "command": "bash $HOME/.claude/eval/hooks/capture-agent-metrics.sh",
+          "timeout": 10,
+          "statusMessage": "Capturing agent metrics..."
+        }]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [{
+          "type": "command",
+          "command": "bash $HOME/.claude/eval/hooks/capture-quality-signals.sh",
+          "timeout": 10
+        }]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [{
+          "type": "command",
+          "command": "python3 $HOME/.claude/eval/hooks/capture-session-digest.py",
+          "timeout": 15,
+          "statusMessage": "Saving session digest to history..."
+        }]
+      }
+    ]
+  }
+}

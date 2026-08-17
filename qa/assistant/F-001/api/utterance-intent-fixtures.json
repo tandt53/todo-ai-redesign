@@ -1,0 +1,187 @@
+{
+  "_meta": {
+    "title": "F-001 canonical utterance → intent fixture table",
+    "owner": "qa-api-agent (authored T-007b); shared by QA and implementers — the stub Interpreter resolves interpretation from these rows",
+    "contract": "The stub replaces MODEL INTERPRETATION ONLY, including answer classification (spec F-001 ## Test strategy (api)). Orchestration, confirmation gating and resolution, persistence, dedupe and undo always run real.",
+    "conventions": {
+      "namespacing": "All mutable test data carries the qaapi- prefix (_qa-foundations §10; briefing override of the email convention — this API keys on X-User-Id uuids and task titles, not emails). Reserved user uuids live in qa/_shared/fixtures/api/users.json.",
+      "matching": "The stub matches on the exact utterance string after the ADR-006 normalization (trim, lowercase, Unicode NFC, strip terminal punctuation). Rows with kind=undo_guard must NEVER reach the Interpreter — the server guard short-circuits them; the harness AI-call counter proves it.",
+      "answers": "kind=answer rows are only meaningful while a question is pending; classification (affirmative | negative | unclassifiable) comes from the row, resolution logic runs real (contract processing rule 8).",
+      "targets": "target_titles name tasks by their qaapi- title; the stub resolves them to uuids from the fresh task context the server hands it (contract processing rule 5). match_count declares how many tasks the reference resolves to."
+    }
+  },
+  "rows": [
+    {
+      "id": "UT-CREATE-1",
+      "utterance": "add a task qaapi-buy-milk",
+      "interpretation": { "kind": "create", "tasks": [{ "title": "qaapi-buy-milk" }] },
+      "acs": ["AC-1"],
+      "notes": "Single-create happy path; applied turn, diff old=null."
+    },
+    {
+      "id": "UT-CREATE-3",
+      "utterance": "add qaapi-pack-bags, qaapi-book-taxi and qaapi-print-tickets",
+      "interpretation": { "kind": "create", "tasks": [{ "title": "qaapi-pack-bags" }, { "title": "qaapi-book-taxi" }, { "title": "qaapi-print-tickets" }] },
+      "acs": ["AC-1"],
+      "notes": "Multi-task applying turn — atomicity probe target (TC-02 injects mid-apply store failure)."
+    },
+    {
+      "id": "UT-EDIT-1",
+      "utterance": "rename qaapi-buy-milk to qaapi-buy-oat-milk",
+      "interpretation": { "kind": "edit", "target_titles": ["qaapi-buy-milk"], "match_count": 1, "changes": { "title": "qaapi-buy-oat-milk" } },
+      "acs": ["AC-1", "AC-6"],
+      "notes": "Edit path; per-field old→new diff; undo restores prior value."
+    },
+    {
+      "id": "UT-COMPLETE-1",
+      "utterance": "mark qaapi-buy-milk done",
+      "interpretation": { "kind": "edit", "target_titles": ["qaapi-buy-milk"], "match_count": 1, "changes": { "status": "done" } },
+      "acs": ["AC-1"],
+      "notes": "Complete = edit of status."
+    },
+    {
+      "id": "UT-DELETE-1",
+      "utterance": "delete qaapi-buy-milk",
+      "interpretation": { "kind": "delete", "target_titles": ["qaapi-buy-milk"], "match_count": 1 },
+      "acs": ["AC-9"],
+      "notes": "Single-task delete — applies immediately with undo, no confirmation (AC-9)."
+    },
+    {
+      "id": "UT-DELETE-BULK-3",
+      "utterance": "delete all my qaapi shopping tasks",
+      "interpretation": { "kind": "delete", "target_titles": ["qaapi-shop-eggs", "qaapi-shop-bread", "qaapi-shop-cheese"], "match_count": 3 },
+      "acs": ["AC-9", "AC-10", "AC-12"],
+      "notes": "Bulk delete (>1) — server must refuse to apply and ask the confirm question naming count and titles."
+    },
+    {
+      "id": "UT-DELETE-BULK-2",
+      "utterance": "delete both qaapi report tasks",
+      "interpretation": { "kind": "delete", "target_titles": ["qaapi-report-q3", "qaapi-report-q4"], "match_count": 2 },
+      "acs": ["AC-9"],
+      "notes": "Boundary: exactly 2 tasks is already 'more than one' — gate fires at 2, not just at 3+."
+    },
+    {
+      "id": "UT-CLARIFY-1",
+      "utterance": "delete the report task",
+      "interpretation": { "kind": "delete", "target_titles": ["qaapi-report-q3", "qaapi-report-q4"], "match_count": 2, "ambiguous_reference": true },
+      "acs": ["AC-13"],
+      "notes": "Reference matching ≥ 2 tasks → clarify question presenting the actual candidates; no data changes until answered."
+    },
+    {
+      "id": "UT-ANS-YES-1",
+      "utterance": "yes",
+      "interpretation": { "kind": "answer", "classification": "affirmative" },
+      "acs": ["AC-10"],
+      "notes": "Clearly affirmative → executes the questioned action."
+    },
+    {
+      "id": "UT-ANS-YES-2",
+      "utterance": "đúng vậy, xoá đi",
+      "interpretation": { "kind": "answer", "classification": "affirmative" },
+      "acs": ["AC-10"],
+      "notes": "Affirmative in Vietnamese."
+    },
+    {
+      "id": "UT-ANS-NO-1",
+      "utterance": "no",
+      "interpretation": { "kind": "answer", "classification": "negative" },
+      "acs": ["AC-10"],
+      "notes": "Negative → declines, nothing deleted."
+    },
+    {
+      "id": "UT-ANS-NO-2",
+      "utterance": "không",
+      "interpretation": { "kind": "answer", "classification": "negative" },
+      "acs": ["AC-10"],
+      "notes": "Negative in Vietnamese."
+    },
+    {
+      "id": "UT-ANS-AMBIG-1",
+      "utterance": "hmm maybe",
+      "interpretation": { "kind": "answer", "classification": "unclassifiable" },
+      "acs": ["AC-10"],
+      "notes": "SPEC-MANDATED ambiguous-answer row: not affirmative, not negative, not a command. MUST assert ZERO deletion; question stays pending (turn outcome kind=unclassifiable)."
+    },
+    {
+      "id": "UT-ANS-AMBIG-2",
+      "utterance": "what do you mean",
+      "interpretation": { "kind": "answer", "classification": "unclassifiable" },
+      "acs": ["AC-10"],
+      "notes": "SPEC-MANDATED ambiguous-answer row #2: assert zero deletion, question still resolvable afterwards by exactly D2's events."
+    },
+    {
+      "id": "UT-SUPERSEDE-1",
+      "utterance": "add a task qaapi-call-dentist",
+      "interpretation": { "kind": "create", "tasks": [{ "title": "qaapi-call-dentist" }] },
+      "acs": ["AC-10", "AC-13"],
+      "notes": "Unrelated interpretable command sent while a question is pending → question declined_superseded, this create proceeds normally. Same row doubles as a plain create when no question is pending."
+    },
+    {
+      "id": "UT-NOMATCH-1",
+      "utterance": "delete the unicorn task",
+      "interpretation": { "kind": "no_match" },
+      "acs": ["AC-14"],
+      "notes": "No matching task: zero task mutations; outcome quotes the heard transcript verbatim so a misheard word is distinguishable from an absent task."
+    },
+    {
+      "id": "UT-LISTQ-1",
+      "utterance": "what's on Sunday?",
+      "interpretation": { "kind": "unsupported_query" },
+      "acs": ["AC-15"],
+      "notes": "Question ABOUT the list: unsupported_query naming the working alternative, contract-fixed as \"danh sách và bộ lọc trên màn hình\" (glosses as 'the on-screen list and its filters'); zero mutations; no fabricated answer."
+    },
+    {
+      "id": "UT-INTREF-1",
+      "utterance": "rename #d1 to qaapi-final-report",
+      "interpretation": { "kind": "edit", "target_titles": ["qaapi-draft-report"], "match_count": 1, "changes": { "title": "qaapi-final-report" } },
+      "acs": ["AC-4"],
+      "notes": "SPEC-MANDATED internal-ref row: the utterance carries a draft-ref-style token and the interpretation resolves to a real task uuid internally. Assert NO raw task uuid and NO #d-style draft-ref token appears in any rendered outcome string (titles, options, message text, heard_transcript) of any response or of GET /assistant/session."
+    },
+    {
+      "id": "UT-UNDO-EN",
+      "utterance": "undo",
+      "interpretation": { "kind": "undo_guard" },
+      "expect_no_interpreter_call": true,
+      "acs": ["AC-5"],
+      "notes": "SPEC-MANDATED undo-phrase row (ADR-006): short-circuits before the model — the AI-call counter must not move; no turn row created; never becomes a task named 'undo'."
+    },
+    {
+      "id": "UT-UNDO-VI",
+      "utterance": "hoàn tác",
+      "interpretation": { "kind": "undo_guard" },
+      "expect_no_interpreter_call": true,
+      "acs": ["AC-5"],
+      "notes": "SPEC-MANDATED undo-phrase row (Vietnamese). Same guard semantics."
+    },
+    {
+      "id": "UT-UNDO-NORM-1",
+      "utterance": "  Undo.  ",
+      "interpretation": { "kind": "undo_guard" },
+      "expect_no_interpreter_call": true,
+      "acs": ["AC-5"],
+      "notes": "Normalization probe: trim + lowercase + strip terminal punctuation (ADR-006) still matches the closed phrase list."
+    },
+    {
+      "id": "UT-UNDO-NORM-2",
+      "utterance": "HOÀN TÁC",
+      "interpretation": { "kind": "undo_guard" },
+      "expect_no_interpreter_call": true,
+      "acs": ["AC-5"],
+      "notes": "Normalization probe: uppercase + Unicode NFC on the Vietnamese phrase."
+    },
+    {
+      "id": "UT-UNDO-NOT-GUARD",
+      "utterance": "undo the last thing",
+      "interpretation": { "kind": "no_match" },
+      "acs": ["AC-5"],
+      "notes": "Longer paraphrase is NOT in the closed list — it is a normal turn, goes to the model (counter +1) and falls out as no_match/clarify (ADR-006 consequence). Boundary partner of UT-UNDO-EN."
+    },
+    {
+      "id": "UT-FAIL-1",
+      "utterance": "qaapi trigger model failure",
+      "interpretation": { "kind": "error", "error": "injected interpreter failure" },
+      "acs": ["AC-23", "AC-24", "AC-16"],
+      "notes": "Failure injection: the stub raises → 502 AI_ERROR; turn persisted status=failed with transcript_raw; retry with the SAME client_turn_id re-attempts (harness swaps this row to UT-CREATE-1's interpretation for the retry, modelling timeout-then-late-success)."
+    }
+  ]
+}

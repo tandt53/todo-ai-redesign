@@ -1,0 +1,48 @@
+{
+  "_readme": [
+    "F-001 web QA fixtures — qa-web-agent, phase execute, 2026-08-16 (T-007e).",
+    "REWRITTEN from the authoring-phase draft. The authoring draft invented its own utterances (e.g. 'push the qaweb budget review to 4pm...'); the real server's Interpreter port is FixtureInterpreter bound to a STATIC canonical table (src/assistant/api/ports/fixture-table.ts) — an unmatched utterance always interprets as no_match. This file now maps every scenario onto that canonical table, extended by QA_EXTRA_ROWS (qa/assistant/automation/harness/qa-test-server.ts) for the handful of shapes the canonical table doesn't enumerate (exact 2-task delete boundary; two delayed rows for the cancel-while-thinking race). Both are the spec's own sanctioned extension mechanism (Test strategy: 'QA may extend it with their own rows via the FixtureInterpreter constructor').",
+    "Namespacing: seeded task titles use a qaweb-recognizable prefix WHERE the canonical/QA_EXTRA utterance lets us choose the title; utterances that target the canonical table's OWN fixed titles (e.g. 'Buy milk', 'Team meeting') necessarily use those exact strings — isolation still holds because task data is scoped per X-User-Id, not by title, and every TC uses its own qaweb-tc{n}@qa.example.com account.",
+    "normalizeTranscript (src/assistant/api/engine/normalize.ts) lowercases + trims + strips terminal punctuation — utterance casing in this file is cosmetic; the server normalizes before matching."
+  ],
+  "users": {
+    "pattern": "qaweb-tc{nnn}[{suffix}]@qa.example.com",
+    "note": "one account per TC (per sub-case where a TC has several); server state is in-memory per harness process, scoped per X-User-Id — no cross-test collision even when two TCs reuse the same canonical task title."
+  },
+  "canonical_rows_used": {
+    "add a task to buy milk": { "kind": "create", "creates": ["Buy milk"], "tc": ["TC-006", "TC-008", "TC-011", "TC-014", "TC-019", "TC-025", "TC-031", "TC-032"] },
+    "plan the week": { "kind": "create", "creates": ["Plan Monday", "Plan Tuesday", "Plan Wednesday", "Plan Thursday"], "tc": ["TC-001"] },
+    "add a task to buy cheese": { "kind": "create", "creates": ["Buy cheese"], "delay_ms": 60, "tc": ["TC-005", "TC-011", "TC-031"] },
+    "fail once then add wine": { "kind": "create", "creates": ["Buy wine"], "fail_times": 1, "tc": ["TC-028"] },
+    "rename buy milk to buy oat milk": { "kind": "edit", "requires_seed": ["Buy milk"], "tc": ["TC-006"] },
+    "mark the shopping done": { "kind": "edit", "requires_seed": ["Buy milk", "Buy eggs", "Buy bread"], "changes": "status: done, all 3 in one turn", "tc": ["TC-007", "TC-009", "TC-010"] },
+    "delete the meeting": { "kind": "delete", "requires_seed": ["Team meeting"], "count": 1, "tc": ["TC-012"] },
+    "delete the shopping tasks": { "kind": "delete", "requires_seed": ["Buy milk", "Buy eggs", "Buy bread"], "count": 3, "tc": ["TC-002", "TC-012", "TC-013", "TC-014", "TC-015", "TC-016", "TC-021", "TC-022", "TC-023", "TC-024", "TC-031", "TC-032"] },
+    "delete the report task": { "kind": "clarify", "requires_seed": ["Report Q1", "Report Q2"], "candidates": 2, "tc": ["TC-014", "TC-017"] },
+    "cause an ai error": { "kind": "fail", "note": "always fails, no retry limit — not used (TC-028 uses the fail_times:1 row instead so retry can succeed)", "tc": [] },
+    "undo": { "kind": "voice-undo-guard tripwire", "note": "must NEVER reach interpretation — ADR-006 guard intercepts first", "tc": ["TC-008"] },
+    "hoàn tác": { "kind": "voice-undo-guard tripwire", "tc": ["TC-008"] },
+    "yes": { "kind": "answer", "when": "question", "class": "affirmative", "tc": ["TC-013"] },
+    "no": { "kind": "answer", "when": "question", "class": "negative", "tc": ["TC-013"] },
+    "the weather is nice": { "kind": "answer", "when": "question", "class": "unclassifiable", "tc": ["TC-015"] },
+    "hmm maybe": { "kind": "answer", "when": "question", "class": "unclassifiable", "tc": ["TC-015"] }
+  },
+  "qa_extra_rows": {
+    "_defined_in": "qa/assistant/automation/harness/qa-test-server.ts (QA_EXTRA_ROWS)",
+    "delete the qaweb pair": { "kind": "delete", "requires_seed": ["qaweb Cake A", "qaweb Cake B"], "count": 2, "reason": "canonical table has 1-target and 3-target delete rows but no exact 2-target row — needed for AC-9's >1-vs-1 boundary at its tightest edge", "tc": ["TC-012"] },
+    "qaweb delayed bulk delete": { "kind": "delete", "requires_seed": ["qaweb Delay Shop A", "qaweb Delay Shop B", "qaweb Delay Shop C"], "delay_ms": 150, "reason": "canonical table's only delay row is a create; AC-3 cancel-while-thinking needs a delayed QUESTION outcome too", "tc": ["TC-005"] },
+    "qaweb delayed failure": { "kind": "fail", "delay_ms": 150, "reason": "AC-3 cancel-while-thinking needs a delayed FAILED outcome too", "tc": ["TC-005"] }
+  },
+  "no_fixture_needed": {
+    "_note": "any utterance NOT in the canonical table or QA_EXTRA_ROWS naturally interprets as no_match — no dedicated row required.",
+    "cross off the badminton game": { "used_for": "AC-14 no-match verbatim echo", "tc": ["TC-018"] },
+    "arbitrary partial transcripts while still listening (never sent)": { "used_for": "AC-2 live transcript streaming, AC-3 cancel-while-listening", "tc": ["TC-003", "TC-004"] }
+  },
+  "clarify_answers": {
+    "_note": "a clarify question's candidate SELECTION (tap OR typed OR voice) resolves via FixtureInterpreter's early-return path — it matches the utterance against ctx.question.options directly (case-insensitive), before consulting any fixture row. Typing/saying the exact candidate title (e.g. 'Report Q1') resolves it with no dedicated row needed.",
+    "tc": ["TC-013", "TC-017"]
+  },
+  "web_only_ac_out_of_scope_here": {
+    "AC-15": "list-question honesty ('what's on sunday' → unsupported_query) is api-tagged only per the spec's rev-3 retag (web-first decision); not exercised at the web layer"
+  }
+}

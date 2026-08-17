@@ -1,0 +1,6 @@
+node_modules/
+data/
+dist/
+
+# playwright-cli scratch: console logs, screenshots, the published flow page
+.playwright-cli/

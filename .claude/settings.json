@@ -1,0 +1,98 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "Bash(bash .claude/tools/qa-crawler/run-crawl.sh:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run test:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run build:*)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm typecheck:*)",
+      "Bash(pnpm build:*)",
+      "Bash(yarn test:*)",
+      "Bash(npx playwright test:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npx jest:*)",
+      "Bash(pytest:*)",
+      "Bash(go test:*)",
+      "Bash(cargo test:*)",
+      "Bash(mkdir -p:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(npm install:*)",
+      "Bash(pnpm install:*)",
+      "Bash(yarn install:*)",
+      "Bash(pnpm format:*)",
+      "Bash(npm run format:*)",
+      "Bash(npx playwright install:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /:*)",
+      "Bash(git push --force:*)",
+      "Bash(git reset --hard:*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Task|Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/capture-agent-metrics.sh",
+            "timeout": 10,
+            "statusMessage": "Capturing agent metrics..."
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/capture-events.sh",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/capture-quality-signals.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/capture-session-digest.sh",
+            "timeout": 15,
+            "statusMessage": "Saving session digest..."
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/capture-events.sh",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/validate-state.sh",
+            "timeout": 15,
+            "statusMessage": "Validating state files..."
+          }
+        ]
+      }
+    ]
+  }
+}

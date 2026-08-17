@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F-{id} — {Feature Name} — {platform}</title>
+<!--
+  Screen mockup template.
+  Written by: design-agent
+  Lives at: {design}/{module}/screens/{slug}.html (web)
+            {design}/{module}/screens/{slug}-ios.html (iOS)
+            {design}/{module}/screens/{slug}-android.html (Android)
+
+  Requirements:
+  1. Self-contained — no external dependencies except Google Fonts (optional)
+  2. Tokens from tokens.json inlined as CSS variables below
+  3. Every interactive element has data-testid="[screen]-[element]"
+  4. Every state from the feature spec: default, loading, empty, error
+  5. Realistic placeholder content (real names, real data — not "Lorem ipsum")
+  6. Responsive: mobile (375px), tablet (768px), desktop (1280px)
+-->
+<style>
+  /* === DESIGN TOKENS (from {design}/_shared/tokens.json) === */
+  :root {
+    --color-primary: #3B82F6;
+    --color-secondary: #8B5CF6;
+    --color-danger: #EF4444;
+    --color-success: #10B981;
+    --color-text-primary: #111827;
+    --color-text-secondary: #6B7280;
+    --color-bg-primary: #FFFFFF;
+    --color-bg-secondary: #F9FAFB;
+    --spacing-1: 4px;
+    --spacing-2: 8px;
+    --spacing-3: 12px;
+    --spacing-4: 16px;
+    --spacing-6: 24px;
+    --spacing-8: 32px;
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --font-body: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-body); color: var(--color-text-primary); background: var(--color-bg-primary); }
+
+  /* === STATE SWITCHER === */
+  .state-bar {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; gap: var(--spacing-2); padding: var(--spacing-2) var(--spacing-4);
+    background: var(--color-bg-secondary); border-bottom: 1px solid #e5e7eb;
+    font-size: 12px;
+  }
+  .state-bar button {
+    padding: var(--spacing-1) var(--spacing-3);
+    border: 1px solid #d1d5db; border-radius: var(--radius-sm);
+    background: white; cursor: pointer; font-size: 12px;
+  }
+  .state-bar button.active { background: var(--color-primary); color: white; border-color: var(--color-primary); }
+
+  .state { display: none; }
+  .state.active { display: block; }
+
+  /* === SCREEN LAYOUT === */
+  .screen {
+    max-width: 480px; margin: var(--spacing-8) auto; padding: var(--spacing-6);
+  }
+
+  /* === REPLACE BELOW WITH YOUR FEATURE-SPECIFIC STYLES === */
+</style>
+</head>
+<body>
+
+<!-- State switcher bar — shows all states from the feature spec -->
+<div class="state-bar">
+  <button class="active" onclick="showState('default')">Default</button>
+  <button onclick="showState('loading')">Loading</button>
+  <button onclick="showState('empty')">Empty</button>
+  <button onclick="showState('error')">Error</button>
+  <button onclick="showState('success')">Success</button>
+  <span style="margin-left:auto; color: var(--color-text-secondary)">F-{id} {slug} — {platform}</span>
+</div>
+
+<!-- === DEFAULT STATE === -->
+<div class="state active" id="state-default">
+  <div class="screen">
+    <h1 style="font-size: 24px; margin-bottom: var(--spacing-4);">{Feature Title}</h1>
+
+    <!-- REPLACE: Add your feature UI here -->
+    <!-- Every interactive element MUST have data-testid="[screen]-[element]" -->
+    <form>
+      <label for="email" style="display:block; font-size:14px; margin-bottom:var(--spacing-1); color:var(--color-text-secondary);">Email</label>
+      <input data-testid="{screen}-email-input" id="email" type="email" placeholder="you@example.com"
+        style="width:100%; padding:var(--spacing-3); border:1px solid #d1d5db; border-radius:var(--radius-sm); margin-bottom:var(--spacing-4);" />
+
+      <button data-testid="{screen}-submit-button" type="submit"
+        style="width:100%; padding:var(--spacing-3); background:var(--color-primary); color:white; border:none; border-radius:var(--radius-sm); cursor:pointer; font-size:16px;">
+        Submit
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- === LOADING STATE === -->
+<div class="state" id="state-loading">
+  <div class="screen">
+    <h1 style="font-size: 24px; margin-bottom: var(--spacing-4);">{Feature Title}</h1>
+    <div data-testid="{screen}-loading-indicator" style="text-align:center; padding:var(--spacing-8); color:var(--color-text-secondary);">
+      Loading...
+    </div>
+  </div>
+</div>
+
+<!-- === EMPTY STATE === -->
+<div class="state" id="state-empty">
+  <div class="screen">
+    <div style="text-align:center; padding:var(--spacing-8); color:var(--color-text-secondary);">
+      <p style="font-size:18px; margin-bottom:var(--spacing-2);">No items yet</p>
+      <p style="font-size:14px;">Create your first item to get started.</p>
+    </div>
+  </div>
+</div>
+
+<!-- === ERROR STATE === -->
+<div class="state" id="state-error">
+  <div class="screen">
+    <h1 style="font-size: 24px; margin-bottom: var(--spacing-4);">{Feature Title}</h1>
+    <div data-testid="{screen}-error-message" role="alert"
+      style="padding:var(--spacing-3); background:#FEF2F2; border:1px solid var(--color-danger); border-radius:var(--radius-sm); color:var(--color-danger); margin-bottom:var(--spacing-4);">
+      Something went wrong. Please try again.
+    </div>
+  </div>
+</div>
+
+<!-- === SUCCESS STATE === -->
+<div class="state" id="state-success">
+  <div class="screen">
+    <div data-testid="{screen}-success-message"
+      style="text-align:center; padding:var(--spacing-8);">
+      <div style="font-size:48px; margin-bottom:var(--spacing-4);">&#10003;</div>
+      <p style="font-size:18px; color:var(--color-success);">Done!</p>
+    </div>
+  </div>
+</div>
+
+<script>
+function showState(id) {
+  document.querySelectorAll('.state').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.state-bar button').forEach(b => b.classList.remove('active'));
+  document.getElementById('state-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>

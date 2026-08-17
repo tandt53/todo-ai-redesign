@@ -1,0 +1,944 @@
+<!doctype html>
+<!--
+  F-001 voice-assistant-view — iOS mockup · design-agent T-005
+  SF-style structure (status bar, large-title nav, home indicator, iMessage-family composer) with
+  100% token-driven visuals — tokens.json wins over platform paint. Type stays Space Grotesk /
+  Be Vietnam Pro per the design system; body line-height 1.5 keeps Vietnamese diacritics safe.
+
+  OQ-1 DECISION (same as web): INLINE LIST + DRAWER KEPT — the task list is pinned above the
+  conversation (AC-1/AC-4 need same-turn, same-screen visibility); the lists drawer stays reachable
+  from the nav-bar sidebar button, carried unchanged (UC-52 AC-52.9).
+
+  iOS specifics honoured here:
+  - Accessibility IDs ride accessibilityIdentifier attributes (same values as data-testid — one
+    contract, four attribute spellings; see testid-contract.sh). data-testid kept so design-check
+    can verify uniqueness/visibility per file.
+  - AC-21 dual permission: Microphone + Speech Recognition, CTA deep-links to Settings.
+  - Audio interruption (call / Siri / focus loss) = cancel-while-listening, words kept (AC-3, AC-26).
+
+  STATES: same 17 as web, via showState(). Dev bar = mockup tooling, excluded from the contract.
+  TESTID CANON: exemplar-once per file; the app applies the same id to every dynamic instance
+  (rows, clarify chips, newest-applied Undo).
+-->
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>F-001 · Voice Assistant — iOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============ tokens.json → :root (generated; names/values verbatim) ============ */
+:root {
+  --color-dark-bg-base: #0C0E16;
+  --color-dark-bg-raised: #161A28;
+  --color-dark-bg-hairline: #232741;
+  --color-dark-text-primary: #F2F4FA;
+  --color-dark-text-secondary: #A9B0CC;
+  --color-dark-text-muted: #8189A8;
+  --color-dark-text-onAccent: #0C0E16;
+  --color-dark-primary: #9D8CFF;
+  --color-dark-primaryTint: #1B1833;
+  --color-dark-voice-listening: #3EE6D2;
+  --color-dark-voice-listeningTint: #0E2724;
+  --color-dark-voice-thinking: #9D8CFF;
+  --color-dark-voice-thinkingTint: #1B1833;
+  --color-dark-danger: #FF7A8A;
+  --color-dark-success: #4ADE9E;
+  --color-dark-question: #FFC24B;
+  --color-dark-questionTint: #2A2113;
+  --color-dark-diff-add: #4ADE9E;
+  --color-dark-diff-addTint: #10261C;
+  --color-dark-diff-remove: #FF7A8A;
+  --color-dark-diff-removeTint: #2C161A;
+  --color-dark-focusRing: #3EE6D2;
+  --color-light-bg-base: #F6F7FB;
+  --color-light-bg-raised: #FFFFFF;
+  --color-light-bg-hairline: #E4E6F0;
+  --color-light-text-primary: #191D33;
+  --color-light-text-secondary: #454C6E;
+  --color-light-text-muted: #5D6486;
+  --color-light-text-onAccent: #FFFFFF;
+  --color-light-primary: #5646D6;
+  --color-light-primaryTint: #EAE7FB;
+  --color-light-voice-listening: #0A7473;
+  --color-light-voice-listeningTint: #DFF2F1;
+  --color-light-voice-thinking: #5646D6;
+  --color-light-voice-thinkingTint: #EAE7FB;
+  --color-light-danger: #C7223A;
+  --color-light-success: #0E7B4F;
+  --color-light-question: #8A5A00;
+  --color-light-questionTint: #F7EDD8;
+  --color-light-diff-add: #0E7B4F;
+  --color-light-diff-addTint: #E3F4EA;
+  --color-light-diff-remove: #C7223A;
+  --color-light-diff-removeTint: #FBE7EA;
+  --color-light-focusRing: #5646D6;
+  --gradient-voice-angle_deg: 135;
+  --font-family-display: 'Space Grotesk', 'Be Vietnam Pro', sans-serif;
+  --font-family-body: 'Be Vietnam Pro', system-ui, sans-serif;
+  --font-size-display: 34;
+  --font-size-title: 22;
+  --font-size-stateLabel: 17;
+  --font-size-body: 15;
+  --font-size-meta: 13;
+  --font-size-label: 11;
+  --font-weight-display: 700;
+  --font-weight-title: 600;
+  --font-weight-body: 400;
+  --font-weight-emphasis: 600;
+  --font-weight-label: 700;
+  --font-lineHeight-display: 1.2;
+  --font-lineHeight-title: 1.3;
+  --font-lineHeight-body: 1.5;
+  --font-lineHeight-meta: 1.4;
+  --font-letterSpacing-display: -0.03em;
+  --font-letterSpacing-label: 0.06em;
+  --font-numeric: tabular-nums;
+  --spacing-xs: 4;
+  --spacing-sm: 8;
+  --spacing-md: 12;
+  --spacing-lg: 16;
+  --spacing-xl: 24;
+  --spacing-xxl: 32;
+  --spacing-gutter_mobile: 20;
+  --spacing-gutter_web: 24;
+  --radius-sm: 8;
+  --radius-md: 14;
+  --radius-bubble: 18;
+  --radius-sheet: 20;
+  --radius-pill: 999;
+  --radius-orb: 50%;
+  --radius-taskRow: 0;
+  --shadow-raised: 0 8px 24px -8px rgba(4, 6, 16, 0.50);
+  --shadow-raisedLight: 0 8px 24px -10px rgba(25, 29, 51, 0.18);
+  --shadow-glowListening: 0 0 24px rgba(62, 230, 210, 0.35);
+  --shadow-glowThinking: 0 0 24px rgba(157, 140, 255, 0.35);
+  --motion-duration_ms-micro: 120;
+  --motion-duration_ms-standard: 200;
+  --motion-duration_ms-emphasis: 320;
+  --motion-duration_ms-celebrate: 600;
+  --motion-duration_ms-auroraBreath: 2400;
+  --motion-duration_ms-diffFlashHold: 1600;
+  --motion-duration_ms-diffFlashFade: 400;
+  --motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --motion-easing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --motion-easing-exit: cubic-bezier(0.4, 0, 1, 1);
+  --icon-stroke: 1.8;
+  --icon-size-sm: 16;
+  --icon-size-md: 20;
+  --icon-size-lg: 24;
+}
+
+/* ============ derived units + theme aliases ============ */
+html {
+  --fs-display: calc(var(--font-size-display) * 1px);
+  --fs-title: calc(var(--font-size-title) * 1px);
+  --fs-state: calc(var(--font-size-stateLabel) * 1px);
+  --fs-body: calc(var(--font-size-body) * 1px);
+  --fs-meta: calc(var(--font-size-meta) * 1px);
+  --fs-label: calc(var(--font-size-label) * 1px);
+  --sp-xs: calc(var(--spacing-xs) * 1px);
+  --sp-sm: calc(var(--spacing-sm) * 1px);
+  --sp-md: calc(var(--spacing-md) * 1px);
+  --sp-lg: calc(var(--spacing-lg) * 1px);
+  --sp-xl: calc(var(--spacing-xl) * 1px);
+  --sp-xxl: calc(var(--spacing-xxl) * 1px);
+  --gutter: calc(var(--spacing-gutter_mobile) * 1px);
+  --r-sm: calc(var(--radius-sm) * 1px);
+  --r-md: calc(var(--radius-md) * 1px);
+  --r-bubble: calc(var(--radius-bubble) * 1px);
+  --r-pill: calc(var(--radius-pill) * 1px);
+  --r-row: calc(var(--radius-taskRow) * 1px);
+  --dur-micro: calc(var(--motion-duration_ms-micro) * 1ms);
+  --dur-standard: calc(var(--motion-duration_ms-standard) * 1ms);
+  --dur-emphasis: calc(var(--motion-duration_ms-emphasis) * 1ms);
+  --dur-breath: calc(var(--motion-duration_ms-auroraBreath) * 1ms);
+  --dur-flash: calc((var(--motion-duration_ms-diffFlashHold) + var(--motion-duration_ms-diffFlashFade)) * 1ms);
+  --icon-sm: calc(var(--icon-size-sm) * 1px);
+  --icon-md: calc(var(--icon-size-md) * 1px);
+  --icon-lg: calc(var(--icon-size-lg) * 1px);
+  --grad-voice: linear-gradient(calc(var(--gradient-voice-angle_deg) * 1deg), var(--color-dark-voice-listening), var(--color-dark-voice-thinking));
+}
+html[data-theme="dark"] {
+  --bg-base: var(--color-dark-bg-base); --bg-raised: var(--color-dark-bg-raised); --hairline: var(--color-dark-bg-hairline);
+  --tx: var(--color-dark-text-primary); --tx-2: var(--color-dark-text-secondary); --tx-muted: var(--color-dark-text-muted); --tx-onaccent: var(--color-dark-text-onAccent);
+  --primary: var(--color-dark-primary); --primary-tint: var(--color-dark-primaryTint);
+  --listening: var(--color-dark-voice-listening); --listening-tint: var(--color-dark-voice-listeningTint);
+  --thinking: var(--color-dark-voice-thinking); --thinking-tint: var(--color-dark-voice-thinkingTint);
+  --danger: var(--color-dark-danger); --success: var(--color-dark-success);
+  --question: var(--color-dark-question); --question-tint: var(--color-dark-questionTint);
+  --add: var(--color-dark-diff-add); --add-tint: var(--color-dark-diff-addTint);
+  --remove: var(--color-dark-diff-remove); --remove-tint: var(--color-dark-diff-removeTint);
+  --focus: var(--color-dark-focusRing);
+  --shadow-card: var(--shadow-raised);
+  color-scheme: dark;
+}
+html[data-theme="light"] {
+  --bg-base: var(--color-light-bg-base); --bg-raised: var(--color-light-bg-raised); --hairline: var(--color-light-bg-hairline);
+  --tx: var(--color-light-text-primary); --tx-2: var(--color-light-text-secondary); --tx-muted: var(--color-light-text-muted); --tx-onaccent: var(--color-light-text-onAccent);
+  --primary: var(--color-light-primary); --primary-tint: var(--color-light-primaryTint);
+  --listening: var(--color-light-voice-listening); --listening-tint: var(--color-light-voice-listeningTint);
+  --thinking: var(--color-light-voice-thinking); --thinking-tint: var(--color-light-voice-thinkingTint);
+  --danger: var(--color-light-danger); --success: var(--color-light-success);
+  --question: var(--color-light-question); --question-tint: var(--color-light-questionTint);
+  --add: var(--color-light-diff-add); --add-tint: var(--color-light-diff-addTint);
+  --remove: var(--color-light-diff-remove); --remove-tint: var(--color-light-diff-removeTint);
+  --focus: var(--color-light-focusRing);
+  --shadow-card: var(--shadow-raisedLight);
+  color-scheme: light;
+}
+
+/* ============ base ============ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: var(--font-family-body);
+  font-size: var(--fs-body);
+  font-weight: var(--font-weight-body);
+  line-height: var(--font-lineHeight-body);
+  color: var(--tx);
+  background: var(--bg-base);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--r-sm); }
+svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; stroke-width: var(--icon-stroke); stroke-linecap: round; stroke-linejoin: round; fill: none; flex: none; }
+
+/* ============ dev chrome (mockup only) ============ */
+.dev-bar {
+  flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+  padding: 6px 10px; background: var(--bg-raised); border-bottom: 1px solid var(--hairline);
+  font-size: 11px; color: var(--tx-muted); z-index: 40;
+}
+.dev-bar .dev-tag { font-family: var(--font-family-display); font-weight: 600; color: var(--tx-2); margin-right: 6px; }
+.dev-bar button { padding: 3px 8px; border-radius: var(--r-pill); border: 1px solid var(--hairline); color: var(--tx-2); font-size: 11px; }
+.dev-bar button.on { border-color: var(--primary); color: var(--primary); }
+.dev-bar .dev-theme { margin-left: auto; }
+
+/* ============ phone frame ============ */
+.stage { flex: 1; min-height: 0; display: flex; justify-content: center; }
+.app {
+  width: 100%; max-width: 430px; min-height: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg-base);
+}
+@media (min-width: 480px) { .app { border-left: 1px solid var(--hairline); border-right: 1px solid var(--hairline); } }
+
+/* iOS status bar */
+.statusbar {
+  flex: none; display: flex; align-items: center;
+  height: 34px; padding: 0 var(--sp-lg); font-size: var(--fs-meta);
+  font-weight: var(--font-weight-emphasis); font-variant-numeric: var(--font-numeric);
+}
+.statusbar .sb-icons { margin-left: auto; display: inline-flex; gap: var(--sp-xs); align-items: center; color: var(--tx-2); }
+.statusbar .sb-icons svg { width: 16px; height: 12px; }
+
+/* iOS nav bar — large title + sidebar (lists) button */
+.navbar { flex: none; padding: var(--sp-xs) var(--sp-lg) var(--sp-sm); display: flex; align-items: flex-end; gap: var(--sp-md); }
+.navbar h1 {
+  font-family: var(--font-family-display); font-size: var(--fs-display); font-weight: var(--font-weight-display);
+  line-height: var(--font-lineHeight-display); letter-spacing: var(--font-letterSpacing-display);
+}
+.navbar .navdate { font-size: var(--fs-meta); color: var(--tx-muted); margin-bottom: 6px; font-variant-numeric: var(--font-numeric); }
+.icon-btn {
+  width: 40px; height: 40px; border-radius: var(--r-sm); margin-left: auto;
+  display: inline-flex; align-items: center; justify-content: center; color: var(--primary);
+}
+.icon-btn:active { background: var(--bg-raised); }
+
+.panes { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+/* ============ task list panel (pinned above the conversation) ============ */
+.list-pane { flex: none; display: flex; flex-direction: column; min-height: 0; max-height: 36%; border-bottom: 1px solid var(--hairline); }
+.list-head { flex: none; display: flex; align-items: baseline; gap: var(--sp-sm); padding: var(--sp-sm) var(--gutter) var(--sp-xs); }
+.list-head .count { font-size: var(--fs-meta); color: var(--tx-muted); font-variant-numeric: var(--font-numeric); }
+.add-btn {
+  margin-left: auto; display: inline-flex; align-items: center; gap: var(--sp-xs);
+  color: var(--primary); font-size: var(--fs-meta); font-weight: var(--font-weight-emphasis);
+  padding: var(--sp-xs) var(--sp-sm); border-radius: var(--r-pill);
+}
+.add-btn:active { background: var(--primary-tint); }
+.add-btn svg.ic { width: var(--icon-sm); height: var(--icon-sm); }
+.list-scroll { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: var(--sp-sm); }
+.day-head {
+  padding: var(--sp-sm) var(--gutter) var(--sp-xs);
+  font-size: var(--fs-label); font-weight: var(--font-weight-label);
+  letter-spacing: var(--font-letterSpacing-label); text-transform: uppercase; color: var(--tx-muted);
+}
+.tasks { list-style: none; }
+.task-row {
+  display: flex; align-items: flex-start; gap: var(--sp-md);
+  padding: var(--sp-sm) var(--gutter);
+  border-radius: var(--r-row);
+  border-bottom: 1px solid var(--hairline);
+}
+.task-row:last-child { border-bottom: 0; }
+.checkbox {
+  flex: none; width: 22px; height: 22px; margin-top: 1px;
+  border: 1.8px solid var(--tx-muted); border-radius: var(--r-pill); /* iOS: round check */
+  display: inline-flex; align-items: center; justify-content: center; color: transparent;
+}
+.checkbox svg.ic { width: 12px; height: 12px; }
+.task-row.done .checkbox { border-color: var(--tx-muted); color: var(--tx-muted); }
+.task-main { flex: 1; min-width: 0; }
+.task-title { display: inline; font-size: var(--fs-body); }
+.task-row.done .task-title { text-decoration: line-through; }
+.task-row.done { opacity: 0.6; }
+.task-meta { display: block; font-size: var(--fs-meta); line-height: var(--font-lineHeight-meta); color: var(--tx-muted); font-variant-numeric: var(--font-numeric); margin-top: 1px; }
+.badge {
+  display: none; vertical-align: 2px; margin-left: var(--sp-sm);
+  font-size: var(--fs-label); font-weight: var(--font-weight-label);
+  letter-spacing: var(--font-letterSpacing-label); text-transform: uppercase;
+}
+.badge-new { color: var(--add); }
+.badge-edited { color: var(--primary); }
+.row-diff { display: none; margin-top: var(--sp-xs); font-size: var(--fs-meta); line-height: var(--font-lineHeight-meta); }
+.list-empty { display: none; padding: var(--sp-lg) var(--gutter); color: var(--tx-muted); }
+.list-empty strong { display: block; color: var(--tx-2); font-weight: var(--font-weight-emphasis); margin-bottom: var(--sp-xs); }
+
+.st-idle-empty .list-scroll { display: none; }
+.st-idle-empty .list-empty { display: block; }
+.st-idle-empty .count { display: none; }
+.row-t10, .row-t11 { display: none; }
+.meta-after { display: none; }
+.st-applied-diff .row-t10, .st-nothing-reverted .row-t10, .st-declined-superseded .row-t11 { display: flex; }
+.st-applied-diff .row-t2 .meta-before, .st-reverted .row-t2 .meta-before, .st-nothing-reverted .row-t2 .meta-before { display: none; }
+.st-applied-diff .row-t2 .meta-after, .st-reverted .row-t2 .meta-after, .st-nothing-reverted .row-t2 .meta-after { display: block; }
+.st-applied-diff .row-t2 .badge-edited, .st-applied-diff .row-t10 .badge-new, .st-declined-superseded .row-t11 .badge-new { display: inline; }
+.st-applied-diff .row-t2 .row-diff { display: block; }
+.st-applied-diff .row-t2, .st-applied-diff .row-t10, .st-declined-superseded .row-t11 {
+  animation: rowFlash var(--dur-flash) var(--motion-easing-standard) forwards;
+}
+@keyframes rowFlash { 0%, 80% { background-color: var(--add-tint); } 100% { background-color: transparent; } }
+.st-idle-tasks .row-t3 .badge-new { display: inline; }
+.st-idle-tasks .row-t3 { animation: rowFlash var(--dur-flash) var(--motion-easing-standard) forwards; }
+
+/* ============ conversation ============ */
+.conv-pane { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.conv-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: var(--sp-lg) var(--gutter); }
+.conv { display: flex; flex-direction: column; gap: var(--sp-lg); }
+.conv[hidden] { display: none; }
+
+.invite { margin: auto; text-align: center; padding: var(--sp-xl) var(--sp-sm); }
+.invite h3 {
+  font-family: var(--font-family-display); font-size: var(--fs-display); font-weight: var(--font-weight-display);
+  line-height: var(--font-lineHeight-display); letter-spacing: var(--font-letterSpacing-display);
+  margin-bottom: var(--sp-md);
+}
+.invite p { color: var(--tx-muted); }
+.invite p + p { margin-top: var(--sp-xs); }
+
+.msg { display: flex; flex-direction: column; align-items: flex-start; }
+.msg.user { align-items: flex-end; }
+.bubble {
+  max-width: 86%;
+  background: var(--bg-raised); border-radius: var(--r-bubble);
+  padding: var(--sp-md) var(--sp-lg);
+  border-bottom-left-radius: var(--r-sm);
+}
+.msg.user .bubble { border-radius: var(--r-bubble); border-bottom-right-radius: var(--r-sm); border: 1px solid var(--hairline); background: var(--bg-base); }
+.msg-meta { font-size: var(--fs-label); line-height: var(--font-lineHeight-meta); color: var(--tx-muted); margin-top: var(--sp-xs); padding: 0 var(--sp-xs); font-variant-numeric: var(--font-numeric); }
+.bubble-head { font-weight: var(--font-weight-emphasis); margin-bottom: var(--sp-sm); }
+.bubble p + p { margin-top: var(--sp-xs); }
+.quote { font-style: italic; }
+
+.diff-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-sm); padding: var(--sp-xs) 0; }
+.diff-task { font-weight: var(--font-weight-emphasis); margin-right: var(--sp-xs); }
+.chip-old, .chip-new {
+  font-size: var(--fs-meta); line-height: var(--font-lineHeight-meta);
+  padding: 2px var(--sp-sm); border-radius: var(--r-sm); font-variant-numeric: var(--font-numeric);
+}
+.chip-old { color: var(--remove); background: var(--remove-tint); text-decoration: line-through; }
+.chip-new { color: var(--add); background: var(--add-tint); }
+.diff-arrow { color: var(--tx-muted); }
+.mini-label {
+  font-size: var(--fs-label); font-weight: var(--font-weight-label);
+  letter-spacing: var(--font-letterSpacing-label); text-transform: uppercase;
+}
+.mini-label.add { color: var(--add); }
+.mini-label.edit { color: var(--primary); }
+.undo-btn {
+  display: inline-flex; align-items: center; gap: var(--sp-xs);
+  margin-top: var(--sp-sm); padding: var(--sp-xs) var(--sp-md);
+  border-radius: var(--r-pill); color: var(--primary); font-weight: var(--font-weight-emphasis);
+}
+.undo-btn:active { background: var(--primary-tint); }
+.undo-btn svg.ic { width: var(--icon-sm); height: var(--icon-sm); }
+.bubble.undone { color: var(--tx-muted); }
+.bubble.undone .chip-old, .bubble.undone .chip-new { opacity: 0.6; }
+.undone-tag { font-size: var(--fs-label); font-weight: var(--font-weight-label); letter-spacing: var(--font-letterSpacing-label); text-transform: uppercase; color: var(--tx-muted); margin-top: var(--sp-sm); display: block; }
+
+.bubble.q { background: var(--question-tint); border-left: 3px solid var(--question); }
+.bubble.q.resolved { background: var(--bg-raised); border-left-color: var(--hairline); color: var(--tx-muted); }
+.chips { display: flex; flex-wrap: wrap; gap: var(--sp-sm); margin-top: var(--sp-md); }
+.chip {
+  padding: var(--sp-xs) var(--sp-lg); border-radius: var(--r-pill);
+  border: 1px solid var(--primary); color: var(--primary); font-weight: var(--font-weight-emphasis);
+}
+.chip:active { transform: scale(0.96); background: var(--primary-tint); }
+.chip.chip-danger { border-color: var(--danger); color: var(--danger); }
+.chip[disabled] { border-color: var(--hairline); color: var(--tx-muted); cursor: default; }
+
+.bubble.err { border-left: 3px solid var(--danger); }
+.bubble.err .bubble-head { color: var(--danger); }
+.retry-btn {
+  display: inline-flex; align-items: center; gap: var(--sp-xs);
+  margin-top: var(--sp-sm); padding: var(--sp-sm) var(--sp-lg);
+  border-radius: var(--r-pill); background: var(--primary); color: var(--tx-onaccent); font-weight: var(--font-weight-emphasis);
+}
+.retry-btn:active { transform: scale(0.96); }
+
+.boundary { display: flex; align-items: flex-start; gap: var(--sp-md); color: var(--tx-muted); }
+/* M3: rules anchor to the TITLE line (half a meta line-box down), not the block's vertical
+   centre — centring them on a 3-line marker drew them straight through the body copy. */
+.boundary::before, .boundary::after {
+  content: ""; flex: 1; height: 1px; background: var(--hairline);
+  margin-top: calc(var(--fs-meta) * var(--font-lineHeight-meta) / 2);
+}
+.boundary-body { max-width: 80%; text-align: center; font-size: var(--fs-meta); line-height: var(--font-lineHeight-meta); }
+.boundary-body strong { display: block; font-weight: var(--font-weight-emphasis); color: var(--tx-2); }
+.boundary-body p { margin-top: var(--sp-xs); }
+
+.queued-note { display: inline-flex; align-items: center; gap: var(--sp-xs); margin-top: var(--sp-xs); padding: 0 var(--sp-xs); font-size: var(--fs-meta); color: var(--tx-muted); }
+.queued-note .dot-pulse { width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--question); animation: qPulse var(--dur-breath) var(--motion-easing-standard) infinite; }
+@keyframes qPulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+.thinking-msg { display: inline-flex; align-items: center; gap: var(--sp-sm); }
+.tdots { display: inline-flex; gap: 5px; }
+.tdots i { width: 7px; height: 7px; border-radius: var(--r-pill); background: var(--thinking); animation: tBlink var(--dur-breath) var(--motion-easing-standard) infinite; }
+.tdots i:nth-child(2) { animation-delay: calc(var(--dur-breath) / 6); }
+.tdots i:nth-child(3) { animation-delay: calc(var(--dur-breath) / 3); }
+@keyframes tBlink { 0%, 100% { opacity: 0.25; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-2px); } }
+
+/* ============ voice surface ============ */
+.voice-surface { display: none; position: relative; flex: none; padding: var(--sp-md) var(--gutter); overflow: hidden; }
+.st-listening .voice-surface, .st-thinking .voice-surface { display: block; }
+.aurora-band {
+  position: absolute; inset: var(--sp-sm) 10%;
+  background: var(--grad-voice); opacity: 0.32; filter: blur(22px); border-radius: var(--r-pill);
+  animation: bandBreath var(--dur-breath) var(--motion-easing-standard) infinite;
+}
+.st-thinking .aurora-band { inset: var(--sp-md) 26%; opacity: 0.22; background: var(--color-dark-voice-thinking); }
+@keyframes bandBreath { 0%, 100% { transform: scaleX(0.96); opacity: 0.22; } 50% { transform: scaleX(1); opacity: 0.36; } }
+.state-indicator { position: relative; display: flex; align-items: center; justify-content: center; gap: var(--sp-md); min-height: 44px; }
+.state-word { font-family: var(--font-family-display); font-size: var(--fs-state); font-weight: var(--font-weight-title); }
+.si-listening, .si-thinking { display: none; align-items: center; gap: var(--sp-md); }
+.cancel-btn {
+  display: inline-flex; align-items: center; padding: var(--sp-xs) var(--sp-md);
+  border-radius: var(--r-pill); background: var(--bg-raised); border: 1px solid var(--hairline);
+  color: var(--primary); font-weight: var(--font-weight-emphasis); font-size: var(--fs-meta);
+}
+.cancel-btn:active { background: var(--primary-tint); }
+.st-listening .si-listening { display: inline-flex; }
+.st-thinking .si-thinking { display: inline-flex; }
+.waveform { display: inline-flex; align-items: center; gap: 3px; height: 24px; }
+.waveform i { width: 3px; border-radius: var(--r-pill); background: var(--tx); animation: wave var(--dur-breath) var(--motion-easing-standard) infinite; }
+.waveform i:nth-child(1) { height: 8px; animation-delay: 0ms; }
+.waveform i:nth-child(2) { height: 16px; animation-delay: 120ms; }
+.waveform i:nth-child(3) { height: 22px; animation-delay: 240ms; }
+.waveform i:nth-child(4) { height: 12px; animation-delay: 360ms; }
+.waveform i:nth-child(5) { height: 18px; animation-delay: 480ms; }
+.waveform i:nth-child(6) { height: 9px; animation-delay: 600ms; }
+@keyframes wave { 0%, 100% { transform: scaleY(0.5); } 50% { transform: scaleY(1); } }
+
+/* ============ offline banner ============ */
+.offline-banner {
+  display: none; align-items: center; gap: var(--sp-sm); flex: none;
+  padding: var(--sp-sm) var(--gutter);
+  background: var(--bg-raised); border-top: 1px solid var(--hairline);
+  color: var(--question); font-size: var(--fs-meta); line-height: var(--font-lineHeight-meta);
+}
+.st-offline .offline-banner { display: flex; }
+.offline-banner svg.ic { width: var(--icon-sm); height: var(--icon-sm); }
+.offline-banner .queued-count { margin-left: auto; font-variant-numeric: var(--font-numeric); }
+
+/* ============ composer (iMessage-family) + home indicator ============ */
+.composer {
+  flex: none; display: flex; align-items: center; gap: var(--sp-md);
+  padding: var(--sp-md) var(--gutter) var(--sp-sm);
+  background: var(--bg-raised); border-top: 1px solid var(--hairline);
+}
+.composer-input {
+  flex: 1; min-width: 0; height: 40px;
+  background: var(--bg-base); border: 1px solid var(--hairline); border-radius: var(--r-pill);
+  padding: 0 var(--sp-lg); color: var(--tx);
+  font-family: var(--font-family-body); font-size: var(--fs-body);
+  caret-color: var(--primary);
+}
+.composer-input::placeholder { color: var(--tx-muted); }
+.composer-input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.st-listening .composer-input { color: var(--listening); caret-color: var(--listening); border-color: var(--listening); }
+
+.mic {
+  position: relative; flex: none; width: 52px; height: 52px; border-radius: var(--radius-orb);
+  background: var(--bg-raised); border: 1px solid var(--hairline);
+  display: inline-flex; align-items: center; justify-content: center; color: var(--tx);
+  transition: transform var(--dur-micro) var(--motion-easing-spring), box-shadow var(--dur-standard) var(--motion-easing-standard);
+}
+.mic::after {
+  content: ""; position: absolute; inset: 0; border-radius: var(--radius-orb);
+  background: var(--grad-voice); opacity: 0.08; pointer-events: none;
+  transition: opacity var(--dur-standard) var(--motion-easing-standard);
+}
+.mic:active { transform: scale(0.94); }
+.mic svg.ic { width: var(--icon-lg); height: var(--icon-lg); position: relative; z-index: 1; }
+.st-listening .mic { background: var(--grad-voice); border-color: transparent; box-shadow: var(--shadow-glowListening); color: var(--tx-onaccent); }
+html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); }
+.st-listening .mic::after { opacity: 0; }
+.st-thinking .mic { border-color: var(--thinking); box-shadow: var(--shadow-glowThinking); animation: orbBreath var(--dur-breath) var(--motion-easing-standard) infinite; }
+.st-thinking .mic::after { opacity: 0.3; }
+@keyframes orbBreath { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+.st-error .mic { border-color: var(--danger); }
+.st-mic-permission .mic, .st-mic-transient .mic { opacity: 0.4; }
+.st-mic-hidden .mic { display: none; }
+.mic-slash { display: none; position: absolute; inset: 0; z-index: 2; align-items: center; justify-content: center; }
+.st-mic-permission .mic-slash { display: flex; }
+.mic-slash svg { width: 100%; height: 100%; }
+.mic-slash line { stroke: var(--danger); stroke-width: var(--icon-stroke); stroke-linecap: round; }
+
+.send {
+  flex: none; width: 36px; height: 36px; border-radius: var(--radius-orb);
+  background: var(--primary); color: var(--tx-onaccent);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.send:active { transform: scale(0.96); }
+.send[aria-disabled="true"] { opacity: 0.4; }
+.send svg.ic { width: var(--icon-sm); height: var(--icon-sm); }
+
+.homebar { flex: none; display: flex; justify-content: center; padding: var(--sp-xs) 0 var(--sp-sm); background: var(--bg-raised); }
+.homebar i { width: 120px; height: 5px; border-radius: var(--r-pill); background: var(--tx-muted); opacity: 0.5; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 80ms !important; animation-iteration-count: 1 !important; transition-duration: 80ms !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- dev chrome: state switcher — mockup tooling, excluded from testid contract -->
+<div class="dev-bar" aria-label="Mockup state switcher (dev chrome)">
+  <span class="dev-tag">F-001 iOS</span>
+  <button data-s="idle-empty" onclick="showState('idle-empty')">idle-empty</button>
+  <button data-s="idle-tasks" onclick="showState('idle-tasks')">idle-tasks</button>
+  <button data-s="listening" onclick="showState('listening')">listening</button>
+  <button data-s="thinking" onclick="showState('thinking')">thinking</button>
+  <button data-s="applied-diff" onclick="showState('applied-diff')">applied-diff</button>
+  <button data-s="question-confirm" onclick="showState('question-confirm')">question-confirm</button>
+  <button data-s="question-clarify" onclick="showState('question-clarify')">question-clarify</button>
+  <button data-s="declined-superseded" onclick="showState('declined-superseded')">declined-superseded</button>
+  <button data-s="reverted" onclick="showState('reverted')">reverted</button>
+  <button data-s="nothing-reverted" onclick="showState('nothing-reverted')">nothing-reverted</button>
+  <button data-s="no-match" onclick="showState('no-match')">no-match</button>
+  <button data-s="error" onclick="showState('error')">error</button>
+  <button data-s="offline" onclick="showState('offline')">offline</button>
+  <button data-s="boundary" onclick="showState('boundary')">boundary</button>
+  <button data-s="mic-permission" onclick="showState('mic-permission')">mic-permission</button>
+  <button data-s="mic-transient" onclick="showState('mic-transient')">mic-transient</button>
+  <button data-s="mic-hidden" onclick="showState('mic-hidden')">mic-hidden</button>
+  <button class="dev-theme" onclick="toggleTheme()">dark / light</button>
+</div>
+
+<div class="stage">
+<div id="app" class="app st-idle-empty">
+
+  <div class="statusbar" aria-hidden="true">
+    9:41
+    <span class="sb-icons">
+      <svg viewBox="0 0 18 12" fill="currentColor" stroke="none"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg>
+      <svg viewBox="0 0 26 12"><rect x="0.9" y="0.9" width="20" height="10.2" rx="3" fill="none" stroke="currentColor" stroke-width="1"/><rect x="2.8" y="2.8" width="14" height="6.4" rx="1.6" fill="currentColor" stroke="none"/><path d="M23 4v4a2.2 2.2 0 0 0 0-4Z" fill="currentColor" stroke="none"/></svg>
+    </span>
+  </div>
+
+  <div class="navbar">
+    <h1>todo-ai</h1>
+    <span class="navdate">Th 7, 16 thg 8</span>
+    <button class="icon-btn" data-testid="assistant-drawer-button" accessibilityIdentifier="assistant-drawer-button" aria-label="Mở danh sách">
+      <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="9" y1="4" x2="9" y2="20"/></svg>
+    </button>
+  </div>
+
+  <div class="panes">
+
+    <aside class="list-pane" aria-label="Việc của bạn">
+      <div class="list-head">
+        <span class="count">Còn 3 việc hôm nay</span>
+        <button class="add-btn" data-testid="assistant-add-task-button" accessibilityIdentifier="assistant-add-task-button">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          Thêm việc
+        </button>
+      </div>
+
+      <div class="list-empty">
+        <strong>Chưa có việc nào — nói đi.</strong>
+        Nói một câu là việc nằm ngay đây — hoặc tự thêm bằng tay.
+      </div>
+
+      <div class="list-scroll">
+        <div class="day-head">Hôm nay</div>
+        <ul class="tasks">
+          <li class="task-row done row-t1">
+            <button class="checkbox" aria-label="Đánh dấu “Họp nhanh đầu ngày” chưa xong" aria-pressed="true"><svg class="ic" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <div class="task-main"><span class="task-title">Họp nhanh đầu ngày</span><span class="task-meta">9:30</span></div>
+          </li>
+          <li class="task-row row-t2" data-testid="assistant-task-row" accessibilityIdentifier="assistant-task-row">
+            <button class="checkbox" data-testid="assistant-task-checkbox" accessibilityIdentifier="assistant-task-checkbox" aria-label="Đánh dấu “Duyệt bản nháp ngân sách Q3” xong" aria-pressed="false"></button>
+            <div class="task-main">
+              <span class="task-title">Duyệt bản nháp ngân sách Q3</span><span class="badge badge-edited" data-testid="assistant-row-badge" accessibilityIdentifier="assistant-row-badge">Đã sửa</span>
+              <span class="task-meta meta-before">14:00</span>
+              <span class="task-meta meta-after">16:00</span>
+              <span class="row-diff"><span class="chip-old">14:00</span> <span class="diff-arrow">→</span> <span class="chip-new">16:00</span></span>
+            </div>
+          </li>
+          <li class="task-row row-t3">
+            <button class="checkbox" aria-label="Đánh dấu “Đóng tiền điện” xong" aria-pressed="false"></button>
+            <div class="task-main"><span class="task-title">Đóng tiền điện</span><span class="badge badge-new">Mới</span><span class="task-meta">đến hạn hôm nay</span></div>
+          </li>
+          <li class="task-row row-t4">
+            <button class="checkbox" aria-label="Đánh dấu “1:1 với Hà” xong" aria-pressed="false"></button>
+            <div class="task-main"><span class="task-title">1:1 với Hà</span><span class="task-meta">16:30</span></div>
+          </li>
+        </ul>
+        <div class="day-head">Ngày mai</div>
+        <ul class="tasks">
+          <li class="task-row row-t5">
+            <button class="checkbox" aria-label="Đánh dấu “Đi chợ cho cả tuần” xong" aria-pressed="false"></button>
+            <div class="task-main"><span class="task-title">Đi chợ cho cả tuần</span><span class="task-meta">buổi sáng</span></div>
+          </li>
+          <li class="task-row row-t6">
+            <button class="checkbox" aria-label="Đánh dấu “Gọi cho mẹ” xong" aria-pressed="false"></button>
+            <div class="task-main"><span class="task-title">Gọi cho mẹ</span><span class="task-meta">10:00</span></div>
+          </li>
+          <li class="task-row row-t7">
+            <button class="checkbox" aria-label="Đánh dấu “Đặt bánh sinh nhật” xong" aria-pressed="false"></button>
+            <div class="task-main"><span class="task-title">Đặt bánh sinh nhật</span><span class="task-meta">trước trưa</span></div>
+          </li>
+          <li class="task-row row-t11">
+            <button class="checkbox" aria-label="Đánh dấu “Gọi cho ngân hàng” xong" aria-pressed="false"></button>
+            <div class="task-main"><span class="task-title">Gọi cho ngân hàng</span><span class="badge badge-new">Mới</span><span class="task-meta">9:00</span></div>
+          </li>
+        </ul>
+        <div class="day-head">Tuần sau</div>
+        <ul class="tasks">
+          <li class="task-row row-t8">
+            <button class="checkbox" aria-label="Đánh dấu “Lấy đồ giặt khô” xong" aria-pressed="false"></button>
+            <div class="task-main"><span class="task-title">Lấy đồ giặt khô</span><span class="task-meta">Th 2</span></div>
+          </li>
+          <li class="task-row row-t9">
+            <button class="checkbox" aria-label="Đánh dấu “Hẹn nha sĩ” xong" aria-pressed="false"></button>
+            <div class="task-main"><span class="task-title">Hẹn nha sĩ</span><span class="task-meta">Th 4, 15:00</span></div>
+          </li>
+          <li class="task-row row-t10">
+            <button class="checkbox" aria-label="Đánh dấu “Lấy bánh sinh nhật” xong" aria-pressed="false"></button>
+            <div class="task-main"><span class="task-title">Lấy bánh sinh nhật</span><span class="badge badge-new">Mới</span><span class="task-meta">Th 7, 22 thg 8</span></div>
+          </li>
+        </ul>
+      </div>
+    </aside>
+
+    <main class="conv-pane">
+      <div class="conv-scroll">
+
+        <section class="conv" data-conv="idle-empty">
+          <div class="invite">
+            <h3>Nói đi.<br>Tôi ghi.</h3>
+            <p>Nhấn micro rồi thử nói “họp nhóm ngày mai lúc 2 giờ”.</p>
+            <p>Gõ tay cũng y hệt.</p>
+          </div>
+        </section>
+
+        <section class="conv" data-conv="idle-tasks" hidden>
+          <div class="msg user"><div class="bubble">Thêm đóng tiền điện hôm nay</div><span class="msg-meta">Bạn · 13:58</span></div>
+          <div class="msg ai">
+            <div class="bubble">
+              <div class="bubble-head">Đã thêm 1 việc</div>
+              <div class="diff-row"><span class="diff-task">Đóng tiền điện</span><span class="chip-new">đến hạn hôm nay</span><span class="mini-label add">Mới</span></div>
+              <button class="undo-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>Hoàn tác</button>
+            </div>
+            <span class="msg-meta">13:58</span>
+          </div>
+        </section>
+
+        <section class="conv" data-conv="listening" hidden>
+          <div class="msg user"><div class="bubble">Thêm đóng tiền điện hôm nay</div><span class="msg-meta">Bạn · 13:58</span></div>
+          <div class="msg ai">
+            <div class="bubble">
+              <div class="bubble-head">Đã thêm 1 việc</div>
+              <div class="diff-row"><span class="diff-task">Đóng tiền điện</span><span class="chip-new">đến hạn hôm nay</span><span class="mini-label add">Mới</span></div>
+              <button class="undo-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>Hoàn tác</button>
+            </div>
+            <span class="msg-meta">13:58</span>
+          </div>
+        </section>
+
+        <section class="conv" data-conv="thinking" hidden>
+          <div class="msg user"><div class="bubble">Dời duyệt ngân sách sang 4 giờ chiều và thêm lấy bánh sinh nhật thứ bảy</div><span class="msg-meta">Bạn · 14:04</span></div>
+          <div class="msg ai"><div class="bubble thinking-msg"><span class="tdots"><i></i><i></i><i></i></span></div></div>
+        </section>
+
+        <section class="conv" data-conv="applied-diff" hidden>
+          <div class="msg user"><div class="bubble">Dời duyệt ngân sách sang 4 giờ chiều và thêm lấy bánh sinh nhật thứ bảy</div><span class="msg-meta">Bạn · 14:04</span></div>
+          <div class="msg ai">
+            <div class="bubble" data-testid="assistant-message-bubble" accessibilityIdentifier="assistant-message-bubble">
+              <div class="bubble-head">Đã sửa 1 việc · thêm 1</div>
+              <div class="diff-row"><span class="diff-task">Duyệt bản nháp ngân sách Q3</span><span class="chip-old" data-testid="assistant-diff-old" accessibilityIdentifier="assistant-diff-old">14:00</span><span class="diff-arrow">→</span><span class="chip-new" data-testid="assistant-diff-new" accessibilityIdentifier="assistant-diff-new">16:00</span><span class="mini-label edit">Đã sửa</span></div>
+              <div class="diff-row"><span class="diff-task">Lấy bánh sinh nhật</span><span class="chip-new">Th 7, 22 thg 8</span><span class="mini-label add">Mới</span></div>
+              <button class="undo-btn" data-testid="assistant-undo-button" accessibilityIdentifier="assistant-undo-button"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>Hoàn tác</button>
+            </div>
+            <span class="msg-meta">14:04</span>
+          </div>
+        </section>
+
+        <section class="conv" data-conv="question-confirm" hidden>
+          <div class="msg user"><div class="bubble">Xoá mấy việc mua sắm</div><span class="msg-meta">Bạn · 14:10</span></div>
+          <div class="msg ai">
+            <div class="bubble q">
+              <div class="bubble-head">Xoá 3 việc?</div>
+              <p>Sẽ xoá: Đi chợ cho cả tuần, Đặt bánh sinh nhật, Lấy đồ giặt khô.</p>
+              <div class="chips">
+                <button class="chip chip-danger" data-testid="assistant-chip-affirm" accessibilityIdentifier="assistant-chip-affirm">Xoá 3 việc</button>
+                <button class="chip" data-testid="assistant-chip-negative" accessibilityIdentifier="assistant-chip-negative">Giữ lại</button>
+              </div>
+            </div>
+            <span class="msg-meta">14:10 · trả lời bằng cách chạm, nói hoặc gõ — danh sách vẫn dùng được</span>
+          </div>
+        </section>
+
+        <section class="conv" data-conv="question-clarify" hidden>
+          <div class="msg user"><div class="bubble">Huỷ cuộc họp</div><span class="msg-meta">Bạn · 14:12</span></div>
+          <div class="msg ai">
+            <div class="bubble q">
+              <div class="bubble-head">“Cuộc họp” khớp với hai việc — việc nào?</div>
+              <div class="chips">
+                <button class="chip" data-testid="assistant-option-chip" accessibilityIdentifier="assistant-option-chip">Họp nhanh đầu ngày — 9:30</button>
+                <button class="chip">1:1 với Hà — 16:30</button>
+              </div>
+            </div>
+            <span class="msg-meta">14:12 · trả lời bằng cách chạm, nói hoặc gõ — danh sách vẫn dùng được</span>
+          </div>
+        </section>
+
+        <section class="conv" data-conv="declined-superseded" hidden>
+          <div class="msg ai">
+            <div class="bubble q resolved">
+              <div class="bubble-head">Xoá 3 việc?</div>
+              <p>Sẽ xoá: Đi chợ cho cả tuần, Đặt bánh sinh nhật, Lấy đồ giặt khô.</p>
+              <div class="chips">
+                <button class="chip" disabled>Xoá 3 việc</button>
+                <button class="chip" disabled>Giữ lại</button>
+              </div>
+            </div>
+            <span class="msg-meta">14:10</span>
+          </div>
+          <div class="msg user"><div class="bubble">Thêm gọi ngân hàng ngày mai lúc 9 giờ</div><span class="msg-meta">Bạn · 14:11</span></div>
+          <div class="msg ai">
+            <div class="bubble">
+              <div class="bubble-head">Đã giữ nguyên 3 việc</div>
+              <p>Lệnh xoá được gác lại vì bạn đã chuyển sang việc khác. Không có gì bị xoá.</p>
+            </div>
+            <span class="msg-meta">14:11</span>
+          </div>
+          <div class="msg ai">
+            <div class="bubble">
+              <div class="bubble-head">Đã thêm 1 việc</div>
+              <div class="diff-row"><span class="diff-task">Gọi cho ngân hàng</span><span class="chip-new">Ngày mai, 9:00</span><span class="mini-label add">Mới</span></div>
+              <button class="undo-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>Hoàn tác</button>
+            </div>
+            <span class="msg-meta">14:11</span>
+          </div>
+        </section>
+
+        <section class="conv" data-conv="reverted" hidden>
+          <div class="msg ai">
+            <div class="bubble undone">
+              <div class="bubble-head">Đã sửa 1 việc · thêm 1</div>
+              <div class="diff-row"><span class="diff-task">Duyệt bản nháp ngân sách Q3</span><span class="chip-old">14:00</span><span class="diff-arrow">→</span><span class="chip-new">16:00</span></div>
+              <div class="diff-row"><span class="diff-task">Lấy bánh sinh nhật</span><span class="chip-new">Th 7, 22 thg 8</span></div>
+              <span class="undone-tag">Đã hoàn tác</span>
+            </div>
+            <span class="msg-meta">14:04</span>
+          </div>
+          <div class="msg user"><div class="bubble">Hoàn tác</div><span class="msg-meta">Bạn · 14:06 · giọng nói</span></div>
+          <div class="msg ai">
+            <div class="bubble">
+              <div class="bubble-head">Đã hoàn tác — trừ một việc</div>
+              <p>Đã bỏ: Lấy bánh sinh nhật.</p>
+              <p>Bỏ qua: Duyệt bản nháp ngân sách Q3 — việc này đã đổi sau khi tôi sửa, nên tôi để nguyên.</p>
+            </div>
+            <span class="msg-meta">14:06</span>
+          </div>
+        </section>
+
+        <section class="conv" data-conv="nothing-reverted" hidden>
+          <div class="msg user"><div class="bubble">Hoàn tác</div><span class="msg-meta">Bạn · 14:08 · giọng nói</span></div>
+          <div class="msg ai">
+            <div class="bubble">
+              <div class="bubble-head">Không có gì được hoàn tác</div>
+              <p>Cả hai việc đó đều đã đổi sau khi tôi sửa: Duyệt bản nháp ngân sách Q3, Lấy bánh sinh nhật. Tôi giữ nguyên.</p>
+            </div>
+            <span class="msg-meta">14:08</span>
+          </div>
+          <div class="msg user"><div class="bubble">Hoàn tác</div><span class="msg-meta">Bạn · 14:09 · giọng nói</span></div>
+          <div class="msg ai">
+            <div class="bubble">
+              <p>Không có gì để hoàn tác — phiên này chưa áp dụng thay đổi nào.</p>
+            </div>
+            <span class="msg-meta">14:09</span>
+          </div>
+        </section>
+
+        <section class="conv" data-conv="no-match" hidden>
+          <div class="msg user"><div class="bubble">Gạch trận cầu lông</div><span class="msg-meta">Bạn · 14:15 · giọng nói</span></div>
+          <div class="msg ai">
+            <div class="bubble">
+              <p>Tôi nghe <span class="quote">“gạch trận cầu lông”</span> — không có việc nào trong danh sách khớp.</p>
+              <p>Không có gì thay đổi. Nếu tôi nghe nhầm, nói lại hoặc gõ ra.</p>
+            </div>
+            <span class="msg-meta">14:15</span>
+          </div>
+        </section>
+
+        <section class="conv" data-conv="error" hidden>
+          <div class="msg user"><div class="bubble">Dời buổi tập gym sang thứ hai lúc 7 giờ</div><span class="msg-meta">Bạn · 14:20</span></div>
+          <div class="msg ai">
+            <div class="bubble err">
+              <div class="bubble-head">Chưa gửi được</div>
+              <p>Trợ lý chưa xử lý được câu đó. Không có gì thay đổi — lời bạn vẫn nằm ở ô nhập bên dưới.</p>
+              <button class="retry-btn" data-testid="assistant-retry-button" accessibilityIdentifier="assistant-retry-button">Thử lại</button>
+            </div>
+            <span class="msg-meta">14:20 · danh sách vẫn dùng tay được</span>
+          </div>
+        </section>
+
+        <section class="conv" data-conv="offline" hidden>
+          <div class="msg user">
+            <div class="bubble">Đánh dấu tiền điện đã xong</div>
+            <span class="queued-note" data-testid="assistant-queued-notice" accessibilityIdentifier="assistant-queued-notice"><span class="dot-pulse"></span>Đang chờ mạng — sẽ gửi lại</span>
+          </div>
+        </section>
+
+        <section class="conv" data-conv="boundary" hidden>
+          <div class="boundary" data-testid="assistant-boundary-marker" accessibilityIdentifier="assistant-boundary-marker">
+            <div class="boundary-body">
+              <strong>Phiên đã kết thúc — không hoạt động · Th 6, 23:42</strong>
+              <p>Đóng phiên nên đã từ chối: “Xoá 3 việc?” — vẫn giữ Đi chợ cho cả tuần, Đặt bánh sinh nhật, Lấy đồ giặt khô.</p>
+              <p>Lúc bạn vắng mặt: đã thêm “Gọi cho ngân hàng” — Ngày mai, 9:00.</p>
+            </div>
+          </div>
+          <div class="invite">
+            <p>Bắt đầu lại. Nói đi — tôi ghi.</p>
+          </div>
+        </section>
+
+        <!-- AC-21 iOS: DUAL permission — Microphone + Speech Recognition, both asked before first talk.
+             Exemplar depicts row IOS-SPEECH of components.md §Permission copy (speech denied, mic
+             granted). AC-2 requires the message to NAME the missing capability, so this state must
+             never say only "one of them is off". -->
+        <section class="conv" data-conv="mic-permission" hidden>
+          <div class="msg ai">
+            <div class="bubble">
+              <div class="bubble-head">Micro cần quyền truy cập</div>
+              <p>Quyền <strong>Nhận dạng giọng nói</strong> đang tắt (Micro đã được cho phép). Bật Nhận dạng giọng nói trong Cài đặt là micro sáng lại ngay.</p>
+              <p>Gõ tay vẫn dùng bình thường.</p>
+              <button class="retry-btn" data-testid="assistant-permission-cta" accessibilityIdentifier="assistant-permission-cta">Mở Cài đặt</button>
+            </div>
+            <span class="msg-meta">14:24</span>
+          </div>
+        </section>
+
+        <section class="conv" data-conv="mic-transient" hidden>
+          <div class="msg ai">
+            <div class="bubble">
+              <div class="bubble-head">Nhận dạng giọng nói đang bận</div>
+              <p>Dịch vụ nhận dạng chưa phản hồi. Thường chỉ một lát là xong — micro sẽ tự bật lại.</p>
+              <p>Gõ tay vẫn dùng bình thường.</p>
+            </div>
+            <span class="msg-meta">14:26</span>
+          </div>
+        </section>
+
+        <section class="conv" data-conv="mic-hidden" hidden>
+          <div class="msg user"><div class="bubble">Thêm đóng tiền điện hôm nay</div><span class="msg-meta">Bạn · 13:58</span></div>
+          <div class="msg ai">
+            <div class="bubble">
+              <div class="bubble-head">Đã thêm 1 việc</div>
+              <div class="diff-row"><span class="diff-task">Đóng tiền điện</span><span class="chip-new">đến hạn hôm nay</span><span class="mini-label add">Mới</span></div>
+              <button class="undo-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>Hoàn tác</button>
+            </div>
+            <span class="msg-meta">13:58</span>
+          </div>
+        </section>
+
+      </div>
+
+      <div class="voice-surface">
+        <div class="aurora-band"></div>
+        <div class="state-indicator" data-testid="assistant-state-indicator" accessibilityIdentifier="assistant-state-indicator" aria-live="polite">
+          <span class="si-listening"><span class="waveform"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="state-word">Đang nghe…</span></span>
+          <span class="si-thinking"><span class="state-word">Đang nghĩ…</span><button class="cancel-btn" data-testid="assistant-cancel-button" accessibilityIdentifier="assistant-cancel-button" aria-label="Huỷ — lời bạn vẫn nằm trong ô nhập">Huỷ</button></span>
+        </div>
+      </div>
+
+      <div class="offline-banner" data-testid="assistant-offline-banner" accessibilityIdentifier="assistant-offline-banner">
+        <svg class="ic" viewBox="0 0 24 24"><line x1="2" y1="2" x2="22" y2="22"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M2 8.82a15 15 0 0 1 4.17-2.65"/><path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/><path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/><path d="M5 13a10 10 0 0 1 5.24-2.76"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+        Mất mạng — danh sách vẫn dùng được.
+        <span class="queued-count">1 câu chờ gửi</span>
+      </div>
+
+      <footer class="composer">
+        <input class="composer-input" data-testid="assistant-composer-input" accessibilityIdentifier="assistant-composer-input" type="text" placeholder="Nói hoặc nhập việc cần làm…" aria-label="Nói hoặc nhập việc cần làm">
+        <button class="mic" data-testid="assistant-mic-button" accessibilityIdentifier="assistant-mic-button" aria-label="Nhấn để nói" aria-pressed="false">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+          <span class="mic-slash" aria-hidden="true"><svg viewBox="0 0 52 52"><line x1="14" y1="14" x2="38" y2="38"/></svg></span>
+        </button>
+        <button class="send" data-testid="assistant-composer-send" accessibilityIdentifier="assistant-composer-send" aria-label="Gửi" aria-disabled="true">
+          <svg class="ic" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+        </button>
+      </footer>
+
+      <div class="homebar" aria-hidden="true"><i></i></div>
+    </main>
+
+  </div>
+</div>
+</div>
+
+<script>
+var COMPOSER_VALUE = {
+  'listening': 'dời duyệt ngân sách sang bốn gi',
+  'error': 'Dời buổi tập gym sang thứ hai lúc 7 giờ'
+};
+function showState(name) {
+  document.querySelectorAll('[data-conv]').forEach(function (el) {
+    el.hidden = el.getAttribute('data-conv') !== name;
+  });
+  var app = document.getElementById('app');
+  app.className = 'app st-' + name;
+  var input = document.querySelector('.composer-input');
+  if (input) input.value = COMPOSER_VALUE[name] || '';
+  var send = document.querySelector('.send');
+  if (send) send.setAttribute('aria-disabled', COMPOSER_VALUE[name] ? 'false' : 'true');
+  var mic = document.querySelector('.mic');
+  if (mic) {
+    mic.setAttribute('aria-pressed', name === 'listening' ? 'true' : 'false');
+    mic.setAttribute('aria-label',
+      name === 'listening' ? 'Đang nghe — nhấn để dừng' :
+      name === 'mic-permission' ? 'Micro cần quyền truy cập' :
+      name === 'mic-transient' ? 'Micro tạm thời không dùng được' : 'Nhấn để nói');
+  }
+  document.querySelectorAll('.dev-bar [data-s]').forEach(function (b) {
+    b.classList.toggle('on', b.getAttribute('data-s') === name);
+  });
+  var scroller = document.querySelector('.conv-scroll');
+  if (scroller) scroller.scrollTop = scroller.scrollHeight;
+}
+function toggleTheme() {
+  var h = document.documentElement;
+  h.setAttribute('data-theme', h.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+}
+showState('idle-empty');
+</script>
+</body>
+</html>

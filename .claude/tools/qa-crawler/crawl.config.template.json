@@ -1,0 +1,13 @@
+{
+  "baseUrl": "http://localhost:3000",
+  "outputDir": "./output",
+  "excludePaths": [],
+  "auth": {
+    "loginUrl": "/login",
+    "usernameSelector": "#email",
+    "passwordSelector": "#password",
+    "username": "your-admin@example.com",
+    "password": "your-password",
+    "submitSelector": "button[type=submit]"
+  }
+}

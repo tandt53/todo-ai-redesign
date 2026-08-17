@@ -1,0 +1,12 @@
+{
+  "_meta": {
+    "owner": "qa-api-agent",
+    "purpose": "Reserved X-User-Id values for the API suite. User ids are uuids, so the qaapi- namespace (_qa-foundations §10) cannot live in the id itself — traceability lives in this registry and in the qaapi- prefix on every task title the suite creates. Other QA agents must NOT send these ids.",
+    "rule": "All destructive assertions are scoped to tasks whose title starts with 'qaapi-' and to these user ids only. No unscoped global mutations."
+  },
+  "users": {
+    "QAAPI-U1": { "x_user_id": "aa11a291-0000-4000-8000-000000000001", "role": "primary test account — most TCs" },
+    "QAAPI-U2": { "x_user_id": "aa11a291-0000-4000-8000-000000000002", "role": "second account — cross-account isolation probes (TC-33): owns tasks/sessions the U1 requests must see as 404" },
+    "QAAPI-U3": { "x_user_id": "aa11a291-0000-4000-8000-000000000003", "role": "clean account — session-lifecycle TCs needing a virgin open/close history (TC-27, TC-29, TC-31)" }
+  }
+}
