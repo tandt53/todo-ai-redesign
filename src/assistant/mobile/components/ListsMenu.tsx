@@ -26,7 +26,7 @@ import { Check, Clock, Inbox, Settings, X } from 'lucide-react-native'
 import type { AppState } from '../../_shared/model/reducer.ts'
 import { SHELL_A11Y_IDS, a11yProps } from '../model/a11y.ts'
 import type { MobilePlatform } from '../model/permissions.ts'
-import { COLLECTIONS, COLLECTION_NAME, tasksIn } from '../model/tasks-view.ts'
+import { COLLECTIONS, collectionCount, collectionName } from '../model/tasks-view.ts'
 import type { Collection } from '../model/tasks-view.ts'
 import { tokens } from '../model/theme.ts'
 import { touchProps } from '../model/touch.ts'
@@ -78,12 +78,12 @@ export function ListsMenu({
         {COLLECTIONS.map((c) => {
           const Icon = ICON[c]
           const active = c === collection
-          const count = tasksIn(c, state.tasks).length
+          const count = collectionCount(state.tasks, c)
           return (
             <Pressable
               key={c}
               {...a11yProps(SHELL_A11Y_IDS.menuCollectionRow, {
-                label: count === 0 ? COLLECTION_NAME[c] : `${COLLECTION_NAME[c]}, ${count}`,
+                label: count === 0 ? collectionName(c) : `${collectionName(c)}, ${count}`,
                 role: 'button',
                 state: { selected: active },
               })}
@@ -97,7 +97,7 @@ export function ListsMenu({
                 strokeWidth={tokens.icon.stroke}
               />
               <Text style={[styles.menuRowText, active ? styles.menuRowTextActive : null]}>
-                {COLLECTION_NAME[c]}
+                {collectionName(c)}
               </Text>
               {/* counts are omitted at zero, for the same reason PS-TASKS omits
                   its badge */}

@@ -14,7 +14,6 @@
 // full-surface failure for the read itself, which had no design at all because
 // there is no thread to put an error bubble in.
 
-import { useSyncExternalStore } from 'react'
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native'
 import type { AppState } from '../../_shared/model/reducer.ts'
 import { undoableTurnId } from '../../_shared/model/reducer.ts'
@@ -22,7 +21,7 @@ import type { MobileAssistantController } from '../controller.ts'
 import { SHELL_A11Y_IDS, a11yProps } from '../model/a11y.ts'
 import type { MobilePlatform } from '../model/permissions.ts'
 import { SURFACE_ERROR, talkView } from '../model/shell.ts'
-import type { PathSwitchView, SessionLoad } from '../model/shell.ts'
+import type { PathSwitchView } from '../model/shell.ts'
 import { touchProps } from '../model/touch.ts'
 import { OfflineBanner } from './Chrome.tsx'
 import { Composer } from './Composer.tsx'
@@ -51,7 +50,6 @@ export function TalkSurface({
   state,
   controller,
   platform,
-  sessionLoad,
   pathView,
   onGoTasks,
   onOpenTask,
@@ -60,7 +58,6 @@ export function TalkSurface({
   state: AppState
   controller: MobileAssistantController
   platform: MobilePlatform
-  sessionLoad: SessionLoad
   pathView: PathSwitchView
   onGoTasks: () => void
   /** AC-31 — activating a task named in a message. One routine; this prop is
@@ -71,7 +68,7 @@ export function TalkSurface({
   canOpenTask: (taskId: string) => boolean
 }) {
   const { styles } = useStyles()
-  const view = talkView(state, sessionLoad)
+  const view = talkView(state)
   const follow = useNewMessageFollow(controller, state)
   const retryTouch = touchProps(SHELL_A11Y_IDS.talkSessionRetryButton, platform)
 
@@ -141,15 +138,5 @@ export function TalkSurface({
         <Composer state={state} controller={controller} platform={platform} />
       </KeyboardAvoidingView>
     </View>
-  )
-}
-
-/** Kept so a caller that only needs the conversation subscription does not have
- * to re-derive it. */
-export function useControllerState(controller: MobileAssistantController): AppState {
-  return useSyncExternalStore(
-    (cb) => controller.subscribe(cb),
-    () => controller.state,
-    () => controller.state,
   )
 }

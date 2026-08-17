@@ -11,8 +11,8 @@ import { View } from 'react-native'
 import type { AppState } from '../../_shared/model/reducer.ts'
 import type { MobileAssistantController } from '../controller.ts'
 import type { MobilePlatform } from '../model/permissions.ts'
-import type { PathSwitchView, SessionLoad, ShellState } from '../model/shell.ts'
-import type { Collection, TasksLoad } from '../model/tasks-view.ts'
+import type { PathSwitchView, ShellState } from '../model/shell.ts'
+import type { Collection } from '../model/tasks-view.ts'
 import { ListsMenu } from './ListsMenu.tsx'
 import { SettingsSurface } from './SettingsSurface.tsx'
 import { TalkSurface } from './TalkSurface.tsx'
@@ -25,7 +25,6 @@ export function AssistantSurfaceHost({
   controller,
   platform,
   shell,
-  load,
   pathView,
   theme,
   onThemeChange,
@@ -36,7 +35,6 @@ export function AssistantSurfaceHost({
   controller: MobileAssistantController
   platform: MobilePlatform
   shell: ShellState
-  load: { session: SessionLoad; tasks: TasksLoad }
   pathView: PathSwitchView
   theme: ThemeChoice
   onThemeChange: (t: ThemeChoice) => void
@@ -62,7 +60,6 @@ export function AssistantSurfaceHost({
         state={state}
         controller={controller}
         platform={platform}
-        sessionLoad={load.session}
         pathView={pathView}
         onGoTasks={() => controller.shellDispatch({ type: 'go', surface: 'tasks' })}
         onOpenTask={onOpenTask}
@@ -74,7 +71,6 @@ export function AssistantSurfaceHost({
         controller={controller}
         platform={platform}
         collection={shell.collection}
-        load={load.tasks}
         pathView={pathView}
         revealTaskId={shell.reveal === null ? null : shell.reveal.taskId}
         onGoTalk={() => controller.shellDispatch({ type: 'go', surface: 'talk' })}

@@ -25,22 +25,32 @@ import {
   shellReducer,
   talkView,
 } from '../model/shell.ts'
-import type { PeerSurface, SessionLoad, ShellState } from '../model/shell.ts'
+import type { PeerSurface, ShellState } from '../model/shell.ts'
 import {
   EMPTY_TASKS,
   INLINE_RETRY_BANNER,
-  dayGroups,
-  openToday,
+  DEFAULT_COLLECTION,
+  groupTasks,
+  openTodayCount,
   tasksHeadline,
   tasksSurfaceView,
 } from '../model/tasks-view.ts'
+import type { LoadState } from '../../_shared/model/reducer.ts'
 import { task } from './_helpers.ts'
 
 const ROOT = resolve(import.meta.dirname, '../../../..')
 const MOBILE_SRC = resolve(ROOT, 'src/assistant/mobile')
 
 function stateWith(over: Partial<AppState> = {}): AppState {
-  return { ...initialState('available'), sessionId: 'sess-1', ...over }
+  // `ok` by default: most cases below are about what renders once a read has
+  // landed, and the reads themselves get their own cases.
+  return {
+    ...initialState('available'),
+    sessionId: 'sess-1',
+    sessionLoad: 'ok',
+    tasksLoad: 'ok',
+    ...over,
+  }
 }
 
 const AT = '2026-08-17T09:00:00.000Z'
@@ -53,6 +63,10 @@ function message(over: Partial<Message> = {}): Message {
 // ---------------------------------------------------------------------------
 
 describe('OQ9 — what a phone lands on is ONE declared value', () => {
+  it('the shell opens on the shared default collection, not a second answer', () => {
+    expect(initialShellState().collection).toBe(DEFAULT_COLLECTION)
+  })
+
   it('the mount reads the constant rather than restating its value', () => {
     // Both possible answers, driven through the same function. If the mount
     // path ever hardcodes one of them this goes red for the other.
@@ -186,8 +200,8 @@ describe('PathSwitch carries the open count, and the count is not the guarantee'
 
   it('the badge and the Tasks header publish ONE number, not two definitions', () => {
     const tasks = [task({ id: 'a' }), task({ id: 'b', status: 'inbox' }), task({ id: 'c' })]
-    expect(pathSwitch('talk', tasks).badge).toBe(openToday(tasks))
-    expect(tasksHeadline(openToday(tasks))).toBe('2 tasks left today')
+    expect(pathSwitch('talk', tasks).badge).toBe(openTodayCount(tasks))
+    expect(tasksHeadline(openTodayCount(tasks))).toBe('2 tasks left today')
   })
 })
 
@@ -200,24 +214,24 @@ describe('AC-24 / AC-25 — the by-hand list is at most ONE action from every co
   // quantifier over all of them ("from EVERY conversation failure state").
   // These are the three, each reached its own way rather than through a shared
   // setup — the shape L-005 warns about is exactly one door left unguarded.
-  const failures: { name: string; state: AppState; load: SessionLoad }[] = [
+  const failures: { name: string; state: AppState; isFailing: (s: AppState) => boolean }[] = [
     {
       name: 'a failed turn (AC-24)',
+      isFailing: (s) => s.surface === 'error',
       state: stateWith({
         surface: 'error',
         messages: [message({ kind: 'error', head: "Couldn't send", body: [], retryTurnId: 'cid-1' })],
       }),
-      load: 'ready',
     },
     {
       name: 'offline (AC-25)',
+      isFailing: (s) => s.offline && s.queuedTurnId !== null,
       state: stateWith({ offline: true, queuedTurnId: 'cid-9' }),
-      load: 'ready',
     },
     {
       name: 'the session read failing, with no thread to render at all (IA §6)',
-      state: stateWith({ messages: [] }),
-      load: 'failed',
+      isFailing: (s) => talkView(s) === 'failed',
+      state: stateWith({ messages: [], sessionLoad: 'failed' }),
     },
   ]
 
@@ -227,8 +241,11 @@ describe('AC-24 / AC-25 — the by-hand list is at most ONE action from every co
       expect(actionsToList(shell)).toBeLessThanOrEqual(1)
       expect(reachesListAffordance(shell)).toBe(true)
       expect(listAffordanceEnabled(f.state)).toBe(true)
-      // and the state really is the failure it claims to be
-      expect(['idle', 'failed']).toContain(talkView(f.state, f.load) === 'empty' ? 'idle' : talkView(f.state, f.load))
+      // …and the fixture really is the failure it claims to be. Each case says
+      // so in its own terms rather than through one shared predicate: the three
+      // failures have three different observables, and a shared one would pass
+      // for a fixture that had drifted into being none of them.
+      expect(f.isFailing(f.state), 'the fixture is not actually failing').toBe(true)
     })
   }
 
@@ -259,57 +276,63 @@ describe('AC-24 / AC-25 — the by-hand list is at most ONE action from every co
 
 describe('S1 Talk — a loading surface never renders its empty state', () => {
   it('loading shows skeletons, not the invitation', () => {
-    expect(talkView(stateWith(), 'loading')).toBe('loading')
+    expect(talkView(stateWith({ sessionLoad: 'loading' }))).toBe('loading')
+  })
+
+  it('a read never attempted is loading too — the invitation must not beat the answer', () => {
+    expect(talkView(stateWith({ sessionLoad: 'idle' }))).toBe('loading')
   })
 
   it('a failed session read is its own surface, not an empty conversation', () => {
-    expect(talkView(stateWith(), 'failed')).toBe('failed')
+    expect(talkView(stateWith({ sessionLoad: 'failed' }))).toBe('failed')
   })
 
   it('the invitation needs a read that actually completed', () => {
-    expect(talkView(stateWith(), 'ready')).toBe('empty')
+    expect(talkView(stateWith({ sessionLoad: 'ok' }))).toBe('empty')
   })
 
   it('with a thread on screen there is somewhere to put an error bubble, so SE-SESSION does not take the surface', () => {
-    const withThread = stateWith({ messages: [message()] })
-    expect(talkView(withThread, 'failed')).toBe('idle')
-    expect(talkView(withThread, 'loading')).toBe('idle')
+    for (const load of ['failed', 'loading'] as LoadState[]) {
+      expect(talkView(stateWith({ messages: [message()], sessionLoad: load }))).toBe('idle')
+    }
   })
 })
 
 describe('S2 Tasks — the list is never replaced by an error', () => {
   it('a failed refresh with tasks on device keeps every row and adds a retry banner', () => {
-    const v = tasksSurfaceView(stateWith({ tasks: [task()] }), 'failed', 'today')
+    const v = tasksSurfaceView(stateWith({ tasks: [task()], tasksLoad: 'failed' }), 'today')
     expect(v.view).toBe('default')
     expect(v.banner).toBe('retry')
     expect(v.tasks).toHaveLength(1)
   })
 
   it('a failed refresh with nothing anywhere IS the error surface', () => {
-    const v = tasksSurfaceView(stateWith(), 'failed', 'today')
+    const v = tasksSurfaceView(stateWith({ tasksLoad: 'failed' }), 'today')
     expect(v.view).toBe('error')
   })
 
   it('offline is not a failure: the list works and the banner carries the news', () => {
-    const v = tasksSurfaceView(stateWith({ tasks: [task()], offline: true }), 'ready', 'today')
+    const v = tasksSurfaceView(stateWith({ tasks: [task()], offline: true }), 'today')
     expect(v.view).toBe('default')
     expect(v.banner).toBe('offline')
   })
 
   it('loading shows skeletons rather than "No tasks yet"', () => {
-    expect(tasksSurfaceView(stateWith(), 'loading', 'today').view).toBe('loading')
+    expect(tasksSurfaceView(stateWith({ tasksLoad: 'loading' }), 'today').view).toBe('loading')
   })
 
   it('three empty states, because they are three different facts', () => {
     // ET-FIRST — nothing anywhere
-    expect(tasksSurfaceView(stateWith(), 'ready', 'today').empty).toBe('ET-FIRST')
+    expect(tasksSurfaceView(stateWith(), 'today').empty).toBe('ET-FIRST')
     // ET-COLLECTION — this collection only. Telling a user with tasks that
     // they have none is the lie the generic empty state tells.
-    expect(tasksSurfaceView(stateWith({ tasks: [task()] }), 'ready', 'inbox').empty).toBe(
+    // a task that is `done` is in no open collection, so Inbox is empty while
+    // the list as a whole is not
+    expect(tasksSurfaceView(stateWith({ tasks: [task({ status: 'done' })] }), 'inbox').empty).toBe(
       'ET-COLLECTION',
     )
     // ET-DONE — and it offers no action, because none fills this list
-    expect(tasksSurfaceView(stateWith({ tasks: [task()] }), 'ready', 'done').empty).toBe('ET-DONE')
+    expect(tasksSurfaceView(stateWith({ tasks: [task()] }), 'done').empty).toBe('ET-DONE')
     expect(EMPTY_TASKS['ET-DONE'].action).toBe(null)
   })
 })
@@ -317,26 +340,26 @@ describe('S2 Tasks — the list is never replaced by an error', () => {
 describe('day headers stack above their rows', () => {
   it('today and tomorrow are named; a task with no date gets its own group', () => {
     const now = new Date('2026-08-16T09:00:00.000Z')
-    const groups = dayGroups(
+    const groups = groupTasks(
       [
-        task({ id: 'a', due_at: '2026-08-16T16:00:00.000Z' }),
-        task({ id: 'b', due_at: '2026-08-17T10:00:00.000Z' }),
-        task({ id: 'c', due_at: null }),
+        task({ id: 'a', status: 'today', due_at: '2026-08-16T16:00:00.000Z' }),
+        task({ id: 'b', status: 'inbox', due_at: '2026-08-17T10:00:00.000Z' }),
+        task({ id: 'c', status: 'inbox', due_at: null }),
       ],
       now,
     )
-    expect(groups.map((g) => g.key)).toHaveLength(3)
-    expect(groups[0]?.head.startsWith('Today · ')).toBe(true)
-    expect(groups[1]?.head.startsWith('Tomorrow · ')).toBe(true)
-    expect(groups[2]?.head).toBe('No date')
+    expect(groups).toHaveLength(3)
+    expect(groups[0]?.label.startsWith('Today · ')).toBe(true)
+    expect(groups[1]?.label.startsWith('Tomorrow · ')).toBe(true)
+    expect(groups[2]?.label).toBe('Anytime')
   })
 
   it('tasks due the same day share one group', () => {
     const now = new Date('2026-08-16T09:00:00.000Z')
-    const groups = dayGroups(
+    const groups = groupTasks(
       [
-        task({ id: 'a', due_at: '2026-08-16T10:00:00.000Z' }),
-        task({ id: 'b', due_at: '2026-08-16T12:00:00.000Z' }),
+        task({ id: 'a', status: 'today', due_at: '2026-08-16T10:00:00.000Z' }),
+        task({ id: 'b', status: 'today', due_at: '2026-08-16T12:00:00.000Z' }),
       ],
       now,
     )

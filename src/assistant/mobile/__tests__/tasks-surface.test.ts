@@ -143,7 +143,7 @@ describe('F-001 AC-32 — the task list tells the truth after a turn', () => {
     await h.controller.send('typed')
     await drain()
 
-    const view = tasksSurfaceView(h.controller.state, h.controller.tasksLoad(), shell.collection)
+    const view = tasksSurfaceView(h.controller.state, shell.collection)
     expect(view.tasks.map((t) => t.title)).toContain('grown in the turn')
     // nothing navigated: the shell is the object it was before the turn
     expect(h.controller.shellState().surface).toBe('talk')
@@ -172,7 +172,7 @@ describe('F-001 AC-32 — the task list tells the truth after a turn', () => {
     expect(after).toBe(before)
 
     const shell = h.controller.shellState()
-    const view = tasksSurfaceView(h.controller.state, h.controller.tasksLoad(), shell.collection)
+    const view = tasksSurfaceView(h.controller.state, shell.collection)
     expect(view.tasks.map((t) => t.title)).toContain('applied while away')
   })
 })

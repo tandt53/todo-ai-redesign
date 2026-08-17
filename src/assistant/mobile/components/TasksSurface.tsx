@@ -19,13 +19,13 @@ import type { MobilePlatform } from '../model/permissions.ts'
 import { SURFACE_ERROR } from '../model/shell.ts'
 import { flashDurationMs } from '../model/task-link.ts'
 import {
-  COLLECTION_NAME,
   INLINE_RETRY_BANNER,
-  openToday,
+  collectionName,
+  openTodayCount,
   tasksHeadline,
   tasksSurfaceView,
 } from '../model/tasks-view.ts'
-import type { Collection, TasksLoad } from '../model/tasks-view.ts'
+import type { Collection } from '../model/tasks-view.ts'
 import { tokens } from '../model/theme.ts'
 import { touchProps } from '../model/touch.ts'
 import { OfflineBanner } from './Chrome.tsx'
@@ -39,7 +39,6 @@ export function TasksSurface({
   controller,
   platform,
   collection,
-  load,
   pathView,
   revealTaskId,
   onGoTalk,
@@ -50,7 +49,6 @@ export function TasksSurface({
   controller: MobileAssistantController
   platform: MobilePlatform
   collection: Collection
-  load: TasksLoad
   pathView: PathSwitchView
   revealTaskId: string | null
   onGoTalk: () => void
@@ -60,7 +58,7 @@ export function TasksSurface({
   const { styles, colors } = useStyles()
   const [draft, setDraft] = useState('')
   const [adding, setAdding] = useState(false)
-  const view = tasksSurfaceView(state, load, collection)
+  const view = tasksSurfaceView(state, collection)
   const menuTouch = touchProps(SHELL_A11Y_IDS.listsMenuButton, platform)
   const addTouch = touchProps(A11Y_IDS.addTaskButton, platform)
   const retryTouch = touchProps(SHELL_A11Y_IDS.tasksListRetryButton, platform)
@@ -99,7 +97,7 @@ export function TasksSurface({
       </ShellBar>
 
       <Text style={styles.largeTitle} accessibilityRole="header">
-        {COLLECTION_NAME[collection]}
+        {collectionName(collection)}
       </Text>
 
       {/* § InlineRetryBanner — the list is NEVER replaced by an error while
@@ -153,7 +151,7 @@ export function TasksSurface({
       ) : (
         <>
           <View style={styles.listHead}>
-            <Text style={styles.listCount}>{tasksHeadline(openToday(state.tasks))}</Text>
+            <Text style={styles.listCount}>{tasksHeadline(openTodayCount(state.tasks))}</Text>
             <Pressable
               {...a11yProps(A11Y_IDS.addTaskButton, { label: 'Add task', role: 'button' })}
               hitSlop={addTouch.hitSlop}

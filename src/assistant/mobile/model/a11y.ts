@@ -35,10 +35,9 @@ import { undoableTurnId } from '../../_shared/model/reducer.ts'
 import { affordanceFor } from './follow.ts'
 import type { MobilePlatform } from './permissions.ts'
 import { talkView } from './shell.ts'
-import type { SessionLoad, ShellState } from './shell.ts'
+import type { ShellState } from './shell.ts'
 import { linkableTaskIds, taskLinkState } from './task-link.ts'
 import { EMPTY_TASKS, tasksSurfaceView } from './tasks-view.ts'
-import type { TasksLoad } from './tasks-view.ts'
 import {
   chipRole,
   showCancel,
@@ -318,13 +317,11 @@ export function expectedIds(state: AppState, ctx: SurfaceContext): Set<A11yId> {
 export function expectedShellIds(
   shell: ShellState,
   state: AppState,
-  load: {
-    session: SessionLoad
-    tasks: TasksLoad
-    /** the row whose title was tapped — rename is entered by TAPPING THE TITLE
-     * on touch, so there is no separate control and no id for one */
-    renaming?: string | null
-  },
+  /** the row whose title was tapped — rename is entered by TAPPING THE TITLE
+   * on touch, so there is no separate control and no id for one. Every other
+   * input this function needs is already in `state` (the two read statuses
+   * included). */
+  ui: { renaming?: string | null } = {},
 ): Set<ShellA11yId> {
   const ids = new Set<ShellA11yId>()
 
@@ -344,7 +341,7 @@ export function expectedShellIds(
     // AC-24's reachability bound: present in EVERY Talk state, failures
     // included, and never disabled.
     ids.add(SHELL_A11Y_IDS.pathTasks)
-    const view = talkView(state, load.session)
+    const view = talkView(state)
     if (view === 'failed') ids.add(SHELL_A11Y_IDS.talkSessionRetryButton)
     // AC-31: a task title is a control only when the list currently holds it.
     for (const m of state.messages) {
@@ -359,7 +356,7 @@ export function expectedShellIds(
 
   ids.add(SHELL_A11Y_IDS.pathTalk)
   ids.add(SHELL_A11Y_IDS.listsMenuButton)
-  const tasks = tasksSurfaceView(state, load.tasks, shell.collection)
+  const tasks = tasksSurfaceView(state, shell.collection)
   if (tasks.banner === 'retry' || tasks.view === 'error') {
     ids.add(SHELL_A11Y_IDS.tasksListRetryButton)
   }
@@ -370,7 +367,7 @@ export function expectedShellIds(
     // touch is not hover: the delete control is ALWAYS visible in the row's
     // trailing slot (components.md § Platform variants)
     ids.add(SHELL_A11Y_IDS.tasksDeleteButton)
-    const renaming = load.renaming ?? null
+    const renaming = ui.renaming ?? null
     if (renaming !== null && tasks.tasks.some((t) => t.id === renaming)) {
       ids.add(SHELL_A11Y_IDS.tasksRenameInput)
     }

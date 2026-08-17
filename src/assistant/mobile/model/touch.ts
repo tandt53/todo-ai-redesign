@@ -229,10 +229,23 @@ export const INTERACTIVE_IDS = [
   A11Y_IDS.chipNegative,
   A11Y_IDS.optionChip,
   A11Y_IDS.newMessageAffordance,
-  // app shell — every control a finger can activate on S1/S2/S3/S4. The eight
-  // shell ids absent here are the ones `SHELL_IDS_BLOCKED` records as drawn and
-  // deliberately unbuilt; a hit area for a control that does not exist would be
-  // a measurement of nothing.
+] as const
+
+/**
+ * The app shell's interactive controls, kept in a SECOND list rather than
+ * appended to the one above — for the same reason `SHELL_A11Y_IDS` is a second
+ * catalogue. `INTERACTIVE_IDS` is asserted against the
+ * `voice-assistant-view-ios` mockup by a suite this module does not own
+ * (`qa/assistant/automation/mobile/F-003-mobile-surface.spec.ts`: "every
+ * interactive element is drawn from the catalogue"), and that assertion is
+ * correct — a conversation control that is not in the conversation mockup is a
+ * real defect. Shell controls are drawn in the shell mockups instead.
+ *
+ * The eight shell ids absent from this list are the ones `SHELL_IDS_BLOCKED`
+ * records as drawn and deliberately unbuilt; a hit area for a control that does
+ * not exist would be a measurement of nothing.
+ */
+export const SHELL_INTERACTIVE_IDS = [
   SHELL_A11Y_IDS.pathTasks,
   SHELL_A11Y_IDS.pathTalk,
   SHELL_A11Y_IDS.listsMenuButton,
@@ -249,10 +262,15 @@ export const INTERACTIVE_IDS = [
   SHELL_A11Y_IDS.tasksRenameInput,
 ] as const
 
-export type InteractiveId = (typeof INTERACTIVE_IDS)[number]
+/** Both halves, for anything that means "every control a finger can hit". */
+export const ALL_INTERACTIVE_IDS = [...INTERACTIVE_IDS, ...SHELL_INTERACTIVE_IDS] as const
+
+export type InteractiveId =
+  | (typeof INTERACTIVE_IDS)[number]
+  | (typeof SHELL_INTERACTIVE_IDS)[number]
 
 export function isInteractive(id: A11yId): id is InteractiveId {
-  return (INTERACTIVE_IDS as readonly A11yId[]).includes(id)
+  return (ALL_INTERACTIVE_IDS as readonly A11yId[]).includes(id)
 }
 
 /** Symmetric slop that lifts a painted size to the platform minimum. Zero on

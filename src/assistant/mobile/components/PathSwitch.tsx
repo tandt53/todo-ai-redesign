@@ -11,6 +11,7 @@
 // `disabled` prop, which is a cheaper guarantee than remembering not to pass
 // one.
 
+import type { ReactNode } from 'react'
 import { Pressable, Text, View } from 'react-native'
 import { List, Mic } from 'lucide-react-native'
 import { SHELL_A11Y_IDS, a11yProps } from '../model/a11y.ts'
@@ -57,7 +58,7 @@ export function PathSwitch({
 
 /** The bar PathSwitch sits in: wordmark left, control right. Shared by both
  * peers so the control cannot end up in two different places. */
-export function ShellBar({ left, children }: { left?: React.ReactNode; children: React.ReactNode }) {
+export function ShellBar({ left, children }: { left?: ReactNode; children: ReactNode }) {
   const { styles } = useStyles()
   return (
     <View style={styles.topBar}>

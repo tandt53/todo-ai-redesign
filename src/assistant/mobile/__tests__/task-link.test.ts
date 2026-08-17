@@ -60,10 +60,14 @@ function deleteOutcome(): Message {
 }
 
 function stateWith(over: Partial<AppState> = {}): AppState {
-  return { ...initialState('available'), sessionId: 'sess-1', ...over }
+  return {
+    ...initialState('available'),
+    sessionId: 'sess-1',
+    sessionLoad: 'ok',
+    tasksLoad: 'ok',
+    ...over,
+  }
 }
-
-const LOAD = { session: 'ready', tasks: 'ready' } as const
 
 describe('AC-31 — the door, when the list holds the row', () => {
   const held = task({ id: 'task-1', title: 'Review the Q3 budget draft', status: 'today' })
@@ -81,7 +85,7 @@ describe('AC-31 — the door, when the list holds the row', () => {
 
   it('the surface declares the link id only when a named task is openable', () => {
     const openable = stateWith({ tasks: [held], messages: [appliedMessage('task-1', held.title)] })
-    expect(expectedShellIds(initialShellState('talk'), openable, LOAD)).toContain(
+    expect(expectedShellIds(initialShellState('talk'), openable)).toContain(
       SHELL_A11Y_IDS.talkTaskLink,
     )
   })
@@ -99,7 +103,7 @@ describe('AC-31 — a task the list does not hold is NOT ACTIVATABLE AT ALL', ()
     const state = stateWith({ tasks: [], messages: [deleteOutcome()] })
     // nothing in a delete outcome is linkable, so there is no id to guard
     expect(linkableTaskIds(deleteOutcome())).toEqual([])
-    expect(expectedShellIds(initialShellState('talk'), state, LOAD)).not.toContain(
+    expect(expectedShellIds(initialShellState('talk'), state)).not.toContain(
       SHELL_A11Y_IDS.talkTaskLink,
     )
   })
@@ -108,26 +112,35 @@ describe('AC-31 — a task the list does not hold is NOT ACTIVATABLE AT ALL', ()
     // The row exists. The list on screen does not hold it, so the
     // postcondition — that row is on screen and has flashed once — could not
     // be met by navigating there, and the title is plain text.
-    const elsewhere = task({ id: 'task-9', title: 'Buy milk', status: 'inbox' })
+    // Inbox is a SUPERSET of Today in the shared collection model, so the row
+    // that Today does not hold is an undated one — not an "inbox vs today"
+    // complement, which does not exist.
+    const elsewhere = task({ id: 'task-9', title: 'Buy milk', status: 'inbox', due_at: null })
     const state = stateWith({
       tasks: [elsewhere],
       messages: [appliedMessage('task-9', elsewhere.title)],
     })
-    const shell = initialShellState('talk') // collection: 'today'
-    expect(taskLinkState('task-9', state.tasks, shell.collection)).toBe('inert')
-    expect(expectedShellIds(shell, state, LOAD)).not.toContain(SHELL_A11Y_IDS.talkTaskLink)
+    const onToday = shellReducer(initialShellState('talk'), {
+      type: 'select-collection',
+      collection: 'today',
+    })
+    expect(taskLinkState('task-9', state.tasks, onToday.collection)).toBe('inert')
+    expect(expectedShellIds(onToday, state)).not.toContain(SHELL_A11Y_IDS.talkTaskLink)
 
     // …and it becomes a control again once the collection that holds it is the
     // one on screen. Same row, same message, different list — which is what
     // makes the rule about the LIST rather than about the task.
-    const onInbox = shellReducer(shell, { type: 'select-collection', collection: 'inbox' })
+    const onInbox = shellReducer(onToday, { type: 'select-collection', collection: 'inbox' })
     expect(taskLinkState('task-9', state.tasks, onInbox.collection)).toBe('link')
   })
 
   it('the routine refuses an inert target rather than navigating to a row that is not there', () => {
-    const elsewhere = task({ id: 'task-9', status: 'inbox' })
+    const elsewhere = task({ id: 'task-9', status: 'inbox', due_at: null })
     const state = stateWith({ tasks: [elsewhere] })
-    const shell = initialShellState('talk')
+    const shell = shellReducer(initialShellState('talk'), {
+      type: 'select-collection',
+      collection: 'today',
+    })
     expect(revealTask(shell, 'task-9', state)).toBe(shell)
     expect(revealTask(shell, 'no-such-task', state)).toBe(shell)
   })
@@ -145,6 +158,7 @@ describe('AC-31 — ONE routine, and it flashes exactly once', () => {
       { type: 'go', surface: 'tasks' },
       { type: 'open-menu' },
       { type: 'select-collection', collection: 'today' },
+      { type: 'select-collection', collection: 'inbox' },
       { type: 'open-settings' },
       { type: 'back' },
       { type: 'close-menu' },
@@ -186,21 +200,21 @@ describe('D8 — the row carries a delete control and a rename input on touch', 
     // publish an id no user can reach" (components.md § Platform variants). So
     // the id's condition is the presence of rows and nothing else: there is no
     // focus, hover or long-press term for it to be gated on.
-    expect(expectedShellIds(onTasks, rows, LOAD)).toContain(SHELL_A11Y_IDS.tasksDeleteButton)
-    expect(expectedShellIds(onTasks, stateWith(), LOAD)).not.toContain(
+    expect(expectedShellIds(onTasks, rows)).toContain(SHELL_A11Y_IDS.tasksDeleteButton)
+    expect(expectedShellIds(onTasks, stateWith())).not.toContain(
       SHELL_A11Y_IDS.tasksDeleteButton,
     )
   })
 
   it('rename is entered by tapping the title, so its input appears only for the tapped row', () => {
-    expect(expectedShellIds(onTasks, rows, LOAD)).not.toContain(SHELL_A11Y_IDS.tasksRenameInput)
+    expect(expectedShellIds(onTasks, rows)).not.toContain(SHELL_A11Y_IDS.tasksRenameInput)
     expect(
-      expectedShellIds(onTasks, rows, { ...LOAD, renaming: 'task-1' }),
+      expectedShellIds(onTasks, rows, { renaming: 'task-1' }),
     ).toContain(SHELL_A11Y_IDS.tasksRenameInput)
     // a row that is not in the collection on screen cannot be the one being
     // renamed
     expect(
-      expectedShellIds(onTasks, rows, { ...LOAD, renaming: 'task-9' }),
+      expectedShellIds(onTasks, rows, { renaming: 'task-9' }),
     ).not.toContain(SHELL_A11Y_IDS.tasksRenameInput)
   })
 })

@@ -53,16 +53,17 @@ function Shell({
     () => controller.state,
     () => controller.state,
   )
-  // A SECOND subscription, and it is not redundant: the shell's navigation and
-  // the two read statuses are not in `AppState`, so a failed session read
-  // changes no state object — and that is precisely the case (SE-SESSION) that
-  // most needs to render.
-  const snapshot = useSyncExternalStore(
+  // A SECOND subscription, and it is not redundant: the shell's navigation is
+  // a view fact with no server side, so it lives on the controller (one state,
+  // two doors — see `handleBack`) and notifies separately. The two READ
+  // STATUSES are not here: they are `AppState.sessionLoad` / `tasksLoad`,
+  // dispatched by the shared controller and therefore identical on both
+  // clients.
+  const shell = useSyncExternalStore(
     (cb) => controller.subscribeShell(cb),
-    () => controller.shellSnapshot(),
-    () => controller.shellSnapshot(),
+    () => controller.shellState(),
+    () => controller.shellState(),
   )
-  const shell = snapshot.shell
   const platform = controller.platform
 
   // AC-31 — THE routine, reached from exactly one entry on a phone (a task
@@ -84,7 +85,6 @@ function Shell({
         controller={controller}
         platform={platform}
         shell={shell}
-        load={snapshot.load}
         pathView={pathSwitch(shell.surface, state.tasks)}
         theme={theme}
         onThemeChange={onThemeChange}

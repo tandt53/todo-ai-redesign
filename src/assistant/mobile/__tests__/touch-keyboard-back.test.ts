@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url'
 import { backAction, keyboardChangeAffectsConversation } from '../model/lifecycle.ts'
 import { A11Y_IDS } from '../model/a11y.ts'
 import {
+  ALL_INTERACTIVE_IDS,
   areaOf,
   hitArea,
   hitSlopFor,
@@ -34,8 +35,12 @@ describe('AC-9 — every interactive element reaches the platform minimum as HIT
   })
 
   for (const platform of ['ios', 'android'] as const) {
-    it(`${platform}: all ${INTERACTIVE_IDS.length} interactive ids meet the minimum`, () => {
-      for (const id of INTERACTIVE_IDS) {
+    // ALL of them — the conversation's controls and the app shell's. The two
+    // lists are separate because QA asserts the first against the conversation
+    // mockup (see `SHELL_INTERACTIVE_IDS`); AC-9 is about fingers and does not
+    // care which mockup drew the control.
+    it(`${platform}: all ${ALL_INTERACTIVE_IDS.length} interactive ids meet the minimum`, () => {
+      for (const id of ALL_INTERACTIVE_IDS) {
         const { painted } = touchProps(id, platform)
         const area = hitArea(id, platform)
         expect(

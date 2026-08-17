@@ -25,14 +25,14 @@ import type { DiffLine, TaskView } from '../../_shared/types.ts'
 import type { MobileAssistantController } from '../controller.ts'
 import { A11Y_IDS, SHELL_A11Y_IDS, a11yProps } from '../model/a11y.ts'
 import type { MobilePlatform } from '../model/permissions.ts'
-import { flashDurationMs } from '../model/task-link.ts'
 import { tokens } from '../model/theme.ts'
 import { touchProps } from '../model/touch.ts'
 import {
-  COLLECTION_NAME,
   EMPTY_TASKS,
-  dayGroups,
+  collectionName,
   fillListSlot,
+  groupTasks,
+  todayGroupLabel,
 } from '../model/tasks-view.ts'
 import type { Collection, TasksSurfaceView } from '../model/tasks-view.ts'
 import { useStyles } from './styles.ts'
@@ -218,7 +218,9 @@ export function TaskList({
   if (view.view === 'loading') {
     return (
       <ScrollView keyboardShouldPersistTaps="handled">
-        <Text style={styles.dayHead}>{COLLECTION_NAME[collection]}</Text>
+        {/* SK-ROW sits under a REAL day header, so the placeholder mirrors
+            the real silhouette instead of inventing a second heading format. */}
+        <Text style={styles.dayHead}>{todayGroupLabel()}</Text>
         <RowSkeletons />
       </ScrollView>
     )
@@ -234,9 +236,9 @@ export function TaskList({
 
   return (
     <ScrollView keyboardShouldPersistTaps="handled">
-      {dayGroups(view.tasks).map((g) => (
-        <View key={g.key}>
-          <Text style={styles.dayHead}>{g.head}</Text>
+      {groupTasks(view.tasks, new Date()).map((g) => (
+        <View key={g.label}>
+          <Text style={styles.dayHead}>{g.label}</Text>
           {g.tasks.map((t) => (
             <TaskRow
               key={t.id}
@@ -252,5 +254,3 @@ export function TaskList({
     </ScrollView>
   )
 }
-
-export { flashDurationMs }

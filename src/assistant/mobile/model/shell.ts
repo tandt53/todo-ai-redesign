@@ -16,8 +16,7 @@
 // a pure function here, and `components/` subscribes and arranges.
 
 import type { AppState } from '../../_shared/model/reducer.ts'
-import type { Message } from '../../_shared/types.ts'
-import { openToday } from './tasks-view.ts'
+import { DEFAULT_COLLECTION, openTodayCount } from './tasks-view.ts'
 import type { Collection } from './tasks-view.ts'
 
 // ---------------------------------------------------------------------------
@@ -86,7 +85,7 @@ export function initialShellState(landing: PeerSurface = LANDING_SURFACE): Shell
   return {
     surface: landing,
     overlay: 'none',
-    collection: 'today',
+    collection: DEFAULT_COLLECTION,
     reveal: null,
     revealSeq: 0,
   }
@@ -199,7 +198,7 @@ export function pathSwitch(surface: PeerSurface, tasks: AppState['tasks']): Path
   if (surface === 'tasks') {
     return { row: 'PS-TALK', label: 'Talk', badge: null, accessibleName: 'Talk' }
   }
-  const count = openToday(tasks)
+  const count = openTodayCount(tasks)
   return {
     row: 'PS-TASKS',
     label: 'Tasks',
@@ -250,14 +249,6 @@ export function actionsToList(shell: ShellState): number {
 // S1 Talk — which of the four drawn views renders
 // ---------------------------------------------------------------------------
 
-/**
- * The mobile client's own session-read status. It is NOT part of `AppState`:
- * the shared reducer is web's and mobile's one contract (F-003 AC-1) and this
- * is a mobile-shell rendering fact, not a conversation state — the surface is
- * still `idle` throughout (F-001 AC-29's exclusivity is untouched).
- */
-export type SessionLoad = 'loading' | 'ready' | 'failed'
-
 /** The four Talk views the mockups draw (`app-shell-ios.html`, `-android.html`). */
 export type TalkView = 'idle' | 'empty' | 'loading' | 'failed'
 
@@ -270,15 +261,21 @@ export type TalkView = 'idle' | 'empty' | 'loading' | 'failed'
  * after a failed read is a lie about what happened. So `empty` requires a read
  * that actually completed.
  *
+ * The status comes from `AppState.sessionLoad`, which the SHARED controller
+ * dispatches (`_shared/controller.ts`) — mobile keeps no second copy of it, and
+ * both clients therefore answer this question the same way.
+ *
  * `failed` additionally requires an empty thread, because SE-SESSION is the
  * failure that "has nothing to attach to" (components.md § SurfaceError) — with
  * messages on screen there IS a thread, and a failed refresh belongs in an
  * error bubble (AC-16 / AC-24), not on the whole surface.
  */
-export function talkView(state: AppState, load: SessionLoad): TalkView {
+export function talkView(state: AppState): TalkView {
   if (state.messages.length > 0) return 'idle'
-  if (load === 'loading') return 'loading'
-  if (load === 'failed') return 'failed'
+  // `idle` is "no read attempted yet" and renders as loading for the same
+  // reason `loading` does: the invitation must not appear before the answer.
+  if (state.sessionLoad === 'loading' || state.sessionLoad === 'idle') return 'loading'
+  if (state.sessionLoad === 'failed') return 'failed'
   return 'empty'
 }
 
@@ -294,13 +291,3 @@ export const SURFACE_ERROR = {
     line2: 'Nothing is saved on this device yet. You can still add one by hand.',
   },
 } as const
-
-// ---------------------------------------------------------------------------
-// Which unresolved question, if any, is waiting — used by the Talk bar
-// ---------------------------------------------------------------------------
-
-/** Unchanged F-001 semantics, re-exported here so the shell does not reach
- * into message internals to decide whether Talk has something pending. */
-export function hasPendingQuestion(messages: Message[]): boolean {
-  return messages.some((m) => m.kind === 'question' && !m.resolved)
-}

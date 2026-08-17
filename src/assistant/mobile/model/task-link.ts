@@ -35,7 +35,7 @@ import type { AppState } from '../../_shared/model/reducer.ts'
 import type { Message, TaskView } from '../../_shared/types.ts'
 import { shellReducer } from './shell.ts'
 import type { ShellState } from './shell.ts'
-import { tasksIn } from './tasks-view.ts'
+import { collectionTasks } from './tasks-view.ts'
 import type { Collection } from './tasks-view.ts'
 import { motion } from './theme.ts'
 
@@ -51,8 +51,9 @@ export function taskLinkState(
   taskId: string,
   tasks: readonly TaskView[],
   collection: Collection,
+  now: Date = new Date(),
 ): TaskLinkState {
-  return tasksIn(collection, tasks).some((t) => t.id === taskId) ? 'link' : 'inert'
+  return collectionTasks(tasks, collection, now).some((t) => t.id === taskId) ? 'link' : 'inert'
 }
 
 /** Every task a message names with an id the list could open. Deleted tasks
