@@ -81,9 +81,10 @@ timezone:          string | null # IANA tz, optional interpretation context
    are excluded from the comparison — a post-close replay legitimately
    carries a different session (pinned by TC-25).
 3. **Voice-undo guard** (ADR-006). If the normalized transcript is exactly an
-   undo phrase (`"undo"`, `"hoàn tác"`), the turn is **not** interpreted and
-   **no turn row is created**: the server executes the undo path against the
-   newest applied turn of the open session (identical semantics to
+   undo phrase (`"undo"` — the whole closed list since ADR-006's amendment
+   of 2026-08-17), the turn is **not** interpreted and **no turn row is
+   created**: the server executes the undo path against the newest applied
+   turn of the open session (identical semantics to
    `POST /assistant/turn/{turn_id}/undo` with `via: "voice"`), records the
    outcome under this `client_turn_id` for dedupe, and returns
    `kind: "undo"`. The utterance can never become a task (AC-5).
@@ -126,8 +127,8 @@ timezone:          string | null # IANA tz, optional interpretation context
 9. **No-match honesty.** A command matching no task applies zero task
    mutations and returns `no_match` quoting the heard transcript (AC-14).
    A question **about** the list returns `unsupported_query` naming the
-   working alternative — `alternative: "danh sách và bộ lọc trên màn hình"`
-   ("the on-screen list and its filters") — zero mutations (AC-15).
+   working alternative — `alternative: "the on-screen list and its filters"` —
+   zero mutations (AC-15).
 
 ### Response — 200
 

@@ -92,7 +92,7 @@ kind: "applied" | "question" | "resolution" | "unclassifiable" | "no_match" | "u
 #                      question_turn_id, executed?: <full applied anatomy incl. Undo> }      # AC-11
 # kind=unclassifiable → {question_turn_id}    # nothing executed; question stays pending (AC-10)
 # kind=no_match     → {heard_transcript}      # quotes what was heard (AC-14)
-# kind=unsupported_query → {alternative: "danh sách và bộ lọc trên màn hình"}                 # AC-15
+# kind=unsupported_query → {alternative: "the on-screen list and its filters"}                # AC-15
 ```
 
 ### Question (embedded, `turn.question`)
@@ -131,6 +131,10 @@ only the turn's own changes are marked).
 | `client.pending_input` | `{text: string, updated_at}` | survives process kill (mobile) and tab close/reload (web: durable browser storage) | recognized-so-far text only, never audio; reopens into the composer (AC-26) |
 | `client.outgoing_turn` | the full `POST /assistant/turn` request payload + `{sent_at, attempts}` | held until the server acks its `client_turn_id` (2xx/4xx-terminal); survives kill (mobile) and reload (web) | drives retry-with-same-id (AC-16) and queued offline replay, replayed visibly (AC-25, AC-27) |
 | `client.permission_state` | `{microphone, speech_recognition?}`, each `granted \| denied \| permanently_denied \| undetermined` | persisted per user alongside the other two stores; re-read on every foreground so an out-of-app grant change is picked up | introduced by F-003 (mobile), where it drives the mic mode and the re-grant CTA (F-003 AC-2/AC-3, F-001 AC-21). `speech_recognition` is present on **iOS only** (Android needs one RECORD_AUDIO grant, web one prompt); `permanently_denied` is reachable on **Android only** — it is the state where the OS never prompts again, so the CTA routes to app settings instead of re-requesting |
+| `client.speech_prefs` | `{enabled: bool, updated_at}` | **device-local, never account-scoped** — account scope would ship web speaking without the consent F-002 AC-16 requires. Survives reload and backgrounding on both clients, and **process kill on mobile**; web has no observable for process kill distinct from reload, so the contract is stated per platform rather than claimed for both | introduced by F-002 (AC-6). Default `false` on web (AC-16's opt-in), `true` on mobile |
+| `client.interface_language` | BCP-47 string | **build-time constant this phase** (`en-US`, the language of the shipped copy in `design/_shared/components.md` — ADR-008, *owner decision 2026-08-17*; was `vi-VN`) — not user-editable, because no settings surface is a deliverable | introduced by F-002 (AC-23) as the **single declared source** read by both the synthesiser and the recognizer. It exists to end a live three-way drift, **which ADR-008 does not resolve**: web recognition uses `navigator.language \|\| 'en-US'` (`src/assistant/web/ports/web-speech-source.ts:50`) — the wrong mechanism whatever it resolves to — and mobile hardcodes `'vi-VN'` (`src/assistant/mobile/ports/native/rn-transcript-source.ts:71`), now a per-port constant **and** the wrong language. **Aligning the two recognizer ports is follow-up drift, not F-002's build** — F-002 declares the value; F-001/F-003 surface consumes it |
+
+**Not client stores, and deliberately not listed above:** F-002's `speech.utterance` and `speech.decision_log` are **transient in-memory** state, never persisted and never sent to the server — a slot of size one and an in-process log respectively. Their shapes are declared in `specs/assistant/F-002-talk-back.md ## Data`, which is the single home for them; they are named here only so a reader looking for "where does talk-back keep its state" is not left to conclude the list is incomplete.
 
 Ack rule: a `200` (including `replayed: true`), `409 SESSION_CLOSED`-then-
 successful-replay, or terminal `4xx` clears the store; `502 AI_ERROR` and

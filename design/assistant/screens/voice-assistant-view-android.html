@@ -3,8 +3,7 @@
   F-001 voice-assistant-view — ANDROID mockup · design-agent T-005
   Material 3 structure (status bar, top app bar with nav drawer icon, gesture bar, filled-field
   composer, M3 rounded-square checkboxes) with 100% token-driven visuals — tokens.json wins over
-  platform paint. Type stays Space Grotesk / Be Vietnam Pro; body line-height 1.5 keeps Vietnamese
-  diacritics safe.
+  platform paint. Type stays Space Grotesk / Be Vietnam Pro; body line-height 1.5 per tokens.json.
 
   OQ-1 DECISION (same as web): INLINE LIST + DRAWER KEPT — the task list is pinned above the
   conversation (AC-1/AC-4 need same-turn, same-screen visibility); the nav drawer stays reachable
@@ -21,11 +20,14 @@
   - AC-21 single permission: RECORD_AUDIO — CTA goes to App info → Permissions.
   - Audio interruption (call / assistant / focus loss) = cancel-while-listening, words kept (AC-3, AC-26).
 
-  STATES: same 17 as web, via showState(). Dev bar = mockup tooling, excluded from the contract.
+  STATES: same 19 as web, via showState(). Dev bar = mockup tooling, excluded from the contract.
+  BUG-004 / owner decision 2026-08-17: nma-new / nma-waiting are the ONE affordance
+  for "the view did not move". Both render scrolled to the TOP of the thread on purpose — the
+  affordance only exists while the newest message is off screen.
   TESTID CANON: exemplar-once per file; the app applies the same id to every dynamic instance
   (rows, clarify chips, newest-applied Undo).
 -->
-<html lang="vi" data-theme="dark">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -460,6 +462,42 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 .offline-banner svg.ic { width: var(--icon-sm); height: var(--icon-sm); }
 .offline-banner .queued-count { margin-left: auto; font-variant-numeric: var(--font-numeric); }
 
+/* ============ new-message affordance — BUG-004 / owner decision 2026-08-17 ============ */
+/* components.md §NewMessageAffordance. ONE control, however many messages arrived.
+   Zero-height dock so the pill OVERLAYS the last line instead of reflowing it — an
+   affordance that appears by pushing history upward moves the sentence the user is
+   reading, which is the defect it exists to prevent. Painted size is NOT padded to
+   48dp: §Touch's rule is that the hit area comes from hitSlop, not from paint. */
+.nm-dock { flex: none; position: relative; height: 0; z-index: 6; }
+.nm-wrap { display: none; position: absolute; left: var(--gutter); right: var(--gutter); bottom: var(--sp-sm); justify-content: center; }
+.st-nma-new .nm-wrap, .st-nma-waiting .nm-wrap { display: flex; }
+.nm-pill {
+  display: inline-flex; align-items: center; gap: var(--sp-sm); max-width: 100%;
+  padding: var(--sp-sm) var(--sp-lg); border-radius: var(--r-pill);
+  background: var(--bg-raised); border: 1px solid var(--hairline); color: var(--tx);
+  box-shadow: var(--shadow-card);
+  font-size: var(--fs-body); font-weight: var(--font-weight-emphasis);
+  transition: transform var(--dur-micro) var(--motion-easing-spring), background var(--dur-micro) var(--motion-easing-standard);
+}
+.nm-pill:active { transform: scale(0.96); }
+.nm-pill svg.ic { width: var(--icon-sm); height: var(--icon-sm); color: var(--tx-2); }
+/* One line where it fits, TWO where it does not. The question is the half that
+   matters: at 375px a single nowrap line ellipsises exactly it away, leaving
+   "Waiting for your answer — Delete …", which says something is pending and
+   withholds what. Wrapping to a second line keeps the question; the accessible
+   name carries the whole string either way. */
+.nm-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nm-count, .nm-waiting { display: none; }
+.st-nma-new .nm-count { display: block; }
+.st-nma-waiting .nm-waiting {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  white-space: normal; line-height: var(--font-lineHeight-meta);
+}
+/* NMA-WAITING — the amber that already means "open question" everywhere else here.
+   Colour never carries this alone: the words change too. */
+.st-nma-waiting .nm-pill { background: var(--question-tint); border-color: var(--question); color: var(--question); }
+.st-nma-waiting .nm-pill svg.ic { color: var(--question); }
+
 /* ============ composer (M3 filled field) + gesture bar ============ */
 .composer {
   flex: none; display: flex; align-items: center; gap: var(--sp-md);
@@ -539,6 +577,8 @@ html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); 
   <button data-s="no-match" onclick="showState('no-match')">no-match</button>
   <button data-s="error" onclick="showState('error')">error</button>
   <button data-s="offline" onclick="showState('offline')">offline</button>
+  <button data-s="nma-new" onclick="showState('nma-new')">nma-new</button>
+  <button data-s="nma-waiting" onclick="showState('nma-waiting')">nma-waiting</button>
   <button data-s="boundary" onclick="showState('boundary')">boundary</button>
   <button data-s="mic-permission" onclick="showState('mic-permission')">mic-permission</button>
   <button data-s="mic-transient" onclick="showState('mic-transient')">mic-transient</button>
@@ -559,86 +599,86 @@ html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); 
   </div>
 
   <div class="appbar">
-    <button class="icon-btn" data-testid="assistant-drawer-button" resource-id="assistant-drawer-button" aria-label="Mở danh sách">
+    <button class="icon-btn" data-testid="assistant-drawer-button" resource-id="assistant-drawer-button" aria-label="Open lists">
       <svg class="ic" viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
     </button>
     <h1>todo-ai</h1>
-    <span class="appdate">Th 7, 16 thg 8</span>
+    <span class="appdate">Sat, Aug 16</span>
   </div>
 
   <div class="panes">
 
-    <aside class="list-pane" aria-label="Việc của bạn">
+    <aside class="list-pane" aria-label="Your tasks">
       <div class="list-head">
-        <span class="count">Còn 3 việc hôm nay</span>
+        <span class="count">3 tasks left today</span>
         <button class="add-btn" data-testid="assistant-add-task-button" resource-id="assistant-add-task-button">
           <svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-          Thêm việc
+          Add task
         </button>
       </div>
 
       <div class="list-empty">
-        <strong>Chưa có việc nào — nói đi.</strong>
-        Nói một câu là việc nằm ngay đây — hoặc tự thêm bằng tay.
+        <strong>No tasks yet — say one.</strong>
+        Say one sentence and it lands right here — or add it by hand.
       </div>
 
       <div class="list-scroll">
-        <div class="day-head">Hôm nay</div>
+        <div class="day-head">Today</div>
         <ul class="tasks">
           <li class="task-row done row-t1">
-            <button class="checkbox" aria-label="Đánh dấu “Họp nhanh đầu ngày” chưa xong" aria-pressed="true"><svg class="ic" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></button>
-            <div class="task-main"><span class="task-title">Họp nhanh đầu ngày</span><span class="task-meta">9:30</span></div>
+            <button class="checkbox" aria-label="Mark “Morning stand-up” not done" aria-pressed="true"><svg class="ic" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <div class="task-main"><span class="task-title">Morning stand-up</span><span class="task-meta">9:30 AM</span></div>
           </li>
           <li class="task-row row-t2" data-testid="assistant-task-row" resource-id="assistant-task-row">
-            <button class="checkbox" data-testid="assistant-task-checkbox" resource-id="assistant-task-checkbox" aria-label="Đánh dấu “Duyệt bản nháp ngân sách Q3” xong" aria-pressed="false"></button>
+            <button class="checkbox" data-testid="assistant-task-checkbox" resource-id="assistant-task-checkbox" aria-label="Mark “Review the Q3 budget draft” done" aria-pressed="false"></button>
             <div class="task-main">
-              <span class="task-title">Duyệt bản nháp ngân sách Q3</span><span class="badge badge-edited" data-testid="assistant-row-badge" resource-id="assistant-row-badge">Đã sửa</span>
-              <span class="task-meta meta-before">14:00</span>
-              <span class="task-meta meta-after">16:00</span>
-              <span class="row-diff"><span class="chip-old">14:00</span> <span class="diff-arrow">→</span> <span class="chip-new">16:00</span></span>
+              <span class="task-title">Review the Q3 budget draft</span><span class="badge badge-edited" data-testid="assistant-row-badge" resource-id="assistant-row-badge">EDITED</span>
+              <span class="task-meta meta-before">2:00 PM</span>
+              <span class="task-meta meta-after">4:00 PM</span>
+              <span class="row-diff"><span class="chip-old">2:00 PM</span> <span class="diff-arrow">→</span> <span class="chip-new">4:00 PM</span></span>
             </div>
           </li>
           <li class="task-row row-t3">
-            <button class="checkbox" aria-label="Đánh dấu “Đóng tiền điện” xong" aria-pressed="false"></button>
-            <div class="task-main"><span class="task-title">Đóng tiền điện</span><span class="badge badge-new">Mới</span><span class="task-meta">đến hạn hôm nay</span></div>
+            <button class="checkbox" aria-label="Mark “Pay the electricity bill” done" aria-pressed="false"></button>
+            <div class="task-main"><span class="task-title">Pay the electricity bill</span><span class="badge badge-new">NEW</span><span class="task-meta">due today</span></div>
           </li>
           <li class="task-row row-t4">
-            <button class="checkbox" aria-label="Đánh dấu “1:1 với Hà” xong" aria-pressed="false"></button>
-            <div class="task-main"><span class="task-title">1:1 với Hà</span><span class="task-meta">16:30</span></div>
+            <button class="checkbox" aria-label="Mark “1:1 with Hà” done" aria-pressed="false"></button>
+            <div class="task-main"><span class="task-title">1:1 with Hà</span><span class="task-meta">4:30 PM</span></div>
           </li>
         </ul>
-        <div class="day-head">Ngày mai</div>
+        <div class="day-head">Tomorrow</div>
         <ul class="tasks">
           <li class="task-row row-t5">
-            <button class="checkbox" aria-label="Đánh dấu “Đi chợ cho cả tuần” xong" aria-pressed="false"></button>
-            <div class="task-main"><span class="task-title">Đi chợ cho cả tuần</span><span class="task-meta">buổi sáng</span></div>
+            <button class="checkbox" aria-label="Mark “Grocery run for the week” done" aria-pressed="false"></button>
+            <div class="task-main"><span class="task-title">Grocery run for the week</span><span class="task-meta">morning</span></div>
           </li>
           <li class="task-row row-t6">
-            <button class="checkbox" aria-label="Đánh dấu “Gọi cho mẹ” xong" aria-pressed="false"></button>
-            <div class="task-main"><span class="task-title">Gọi cho mẹ</span><span class="task-meta">10:00</span></div>
+            <button class="checkbox" aria-label="Mark “Call Mum” done" aria-pressed="false"></button>
+            <div class="task-main"><span class="task-title">Call Mum</span><span class="task-meta">10:00 AM</span></div>
           </li>
           <li class="task-row row-t7">
-            <button class="checkbox" aria-label="Đánh dấu “Đặt bánh sinh nhật” xong" aria-pressed="false"></button>
-            <div class="task-main"><span class="task-title">Đặt bánh sinh nhật</span><span class="task-meta">trước trưa</span></div>
+            <button class="checkbox" aria-label="Mark “Order the birthday cake” done" aria-pressed="false"></button>
+            <div class="task-main"><span class="task-title">Order the birthday cake</span><span class="task-meta">before noon</span></div>
           </li>
           <li class="task-row row-t11">
-            <button class="checkbox" aria-label="Đánh dấu “Gọi cho ngân hàng” xong" aria-pressed="false"></button>
-            <div class="task-main"><span class="task-title">Gọi cho ngân hàng</span><span class="badge badge-new">Mới</span><span class="task-meta">9:00</span></div>
+            <button class="checkbox" aria-label="Mark “Call the bank” done" aria-pressed="false"></button>
+            <div class="task-main"><span class="task-title">Call the bank</span><span class="badge badge-new">NEW</span><span class="task-meta">9:00 AM</span></div>
           </li>
         </ul>
-        <div class="day-head">Tuần sau</div>
+        <div class="day-head">Next week</div>
         <ul class="tasks">
           <li class="task-row row-t8">
-            <button class="checkbox" aria-label="Đánh dấu “Lấy đồ giặt khô” xong" aria-pressed="false"></button>
-            <div class="task-main"><span class="task-title">Lấy đồ giặt khô</span><span class="task-meta">Th 2</span></div>
+            <button class="checkbox" aria-label="Mark “Pick up dry cleaning” done" aria-pressed="false"></button>
+            <div class="task-main"><span class="task-title">Pick up dry cleaning</span><span class="task-meta">Mon</span></div>
           </li>
           <li class="task-row row-t9">
-            <button class="checkbox" aria-label="Đánh dấu “Hẹn nha sĩ” xong" aria-pressed="false"></button>
-            <div class="task-main"><span class="task-title">Hẹn nha sĩ</span><span class="task-meta">Th 4, 15:00</span></div>
+            <button class="checkbox" aria-label="Mark “Dentist appointment” done" aria-pressed="false"></button>
+            <div class="task-main"><span class="task-title">Dentist appointment</span><span class="task-meta">Wed, 3:00 PM</span></div>
           </li>
           <li class="task-row row-t10">
-            <button class="checkbox" aria-label="Đánh dấu “Lấy bánh sinh nhật” xong" aria-pressed="false"></button>
-            <div class="task-main"><span class="task-title">Lấy bánh sinh nhật</span><span class="badge badge-new">Mới</span><span class="task-meta">Th 7, 22 thg 8</span></div>
+            <button class="checkbox" aria-label="Mark “Pick up the birthday cake” done" aria-pressed="false"></button>
+            <div class="task-main"><span class="task-title">Pick up the birthday cake</span><span class="badge badge-new">NEW</span><span class="task-meta">Sat, Aug 22</span></div>
           </li>
         </ul>
       </div>
@@ -649,192 +689,274 @@ html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); 
 
         <section class="conv" data-conv="idle-empty">
           <div class="invite">
-            <h3>Nói đi.<br>Tôi ghi.</h3>
-            <p>Nhấn micro rồi thử nói “họp nhóm ngày mai lúc 2 giờ”.</p>
-            <p>Gõ tay cũng y hệt.</p>
+            <h3>Say it.<br>I'll write it down.</h3>
+            <p>Tap the mic and try saying “team meeting tomorrow at 2”.</p>
+            <p>Typing does exactly the same.</p>
           </div>
         </section>
 
         <section class="conv" data-conv="idle-tasks" hidden>
-          <div class="msg user"><div class="bubble">Thêm đóng tiền điện hôm nay</div><span class="msg-meta">Bạn · 13:58</span></div>
+          <div class="msg user"><div class="bubble">Add pay the electricity bill today</div><span class="msg-meta">You · 1:58 PM</span></div>
           <div class="msg ai">
             <div class="bubble">
-              <div class="bubble-head">Đã thêm 1 việc</div>
-              <div class="diff-row"><span class="diff-task">Đóng tiền điện</span><span class="chip-new">đến hạn hôm nay</span><span class="mini-label add">Mới</span></div>
-              <button class="undo-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>Hoàn tác</button>
+              <div class="bubble-head">Added 1 task</div>
+              <div class="diff-row"><span class="diff-task">Pay the electricity bill</span><span class="chip-new">due today</span><span class="mini-label add">NEW</span></div>
+              <button class="undo-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>Undo</button>
             </div>
-            <span class="msg-meta">13:58</span>
+            <span class="msg-meta">1:58 PM</span>
           </div>
         </section>
 
         <section class="conv" data-conv="listening" hidden>
-          <div class="msg user"><div class="bubble">Thêm đóng tiền điện hôm nay</div><span class="msg-meta">Bạn · 13:58</span></div>
+          <div class="msg user"><div class="bubble">Add pay the electricity bill today</div><span class="msg-meta">You · 1:58 PM</span></div>
           <div class="msg ai">
             <div class="bubble">
-              <div class="bubble-head">Đã thêm 1 việc</div>
-              <div class="diff-row"><span class="diff-task">Đóng tiền điện</span><span class="chip-new">đến hạn hôm nay</span><span class="mini-label add">Mới</span></div>
-              <button class="undo-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>Hoàn tác</button>
+              <div class="bubble-head">Added 1 task</div>
+              <div class="diff-row"><span class="diff-task">Pay the electricity bill</span><span class="chip-new">due today</span><span class="mini-label add">NEW</span></div>
+              <button class="undo-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>Undo</button>
             </div>
-            <span class="msg-meta">13:58</span>
+            <span class="msg-meta">1:58 PM</span>
           </div>
         </section>
 
         <section class="conv" data-conv="thinking" hidden>
-          <div class="msg user"><div class="bubble">Dời duyệt ngân sách sang 4 giờ chiều và thêm lấy bánh sinh nhật thứ bảy</div><span class="msg-meta">Bạn · 14:04</span></div>
+          <div class="msg user"><div class="bubble">Move the budget review to 4pm and add pick up the birthday cake on Saturday</div><span class="msg-meta">You · 2:04 PM</span></div>
           <div class="msg ai"><div class="bubble thinking-msg"><span class="tdots"><i></i><i></i><i></i></span></div></div>
         </section>
 
         <section class="conv" data-conv="applied-diff" hidden>
-          <div class="msg user"><div class="bubble">Dời duyệt ngân sách sang 4 giờ chiều và thêm lấy bánh sinh nhật thứ bảy</div><span class="msg-meta">Bạn · 14:04</span></div>
+          <div class="msg user"><div class="bubble">Move the budget review to 4pm and add pick up the birthday cake on Saturday</div><span class="msg-meta">You · 2:04 PM</span></div>
           <div class="msg ai">
             <div class="bubble" data-testid="assistant-message-bubble" resource-id="assistant-message-bubble">
-              <div class="bubble-head">Đã sửa 1 việc · thêm 1</div>
-              <div class="diff-row"><span class="diff-task">Duyệt bản nháp ngân sách Q3</span><span class="chip-old" data-testid="assistant-diff-old" resource-id="assistant-diff-old">14:00</span><span class="diff-arrow">→</span><span class="chip-new" data-testid="assistant-diff-new" resource-id="assistant-diff-new">16:00</span><span class="mini-label edit">Đã sửa</span></div>
-              <div class="diff-row"><span class="diff-task">Lấy bánh sinh nhật</span><span class="chip-new">Th 7, 22 thg 8</span><span class="mini-label add">Mới</span></div>
-              <button class="undo-btn" data-testid="assistant-undo-button" resource-id="assistant-undo-button"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>Hoàn tác</button>
+              <div class="bubble-head">Edited 1 task · added 1</div>
+              <div class="diff-row"><span class="diff-task">Review the Q3 budget draft</span><span class="chip-old" data-testid="assistant-diff-old" resource-id="assistant-diff-old">2:00 PM</span><span class="diff-arrow">→</span><span class="chip-new" data-testid="assistant-diff-new" resource-id="assistant-diff-new">4:00 PM</span><span class="mini-label edit">EDITED</span></div>
+              <div class="diff-row"><span class="diff-task">Pick up the birthday cake</span><span class="chip-new">Sat, Aug 22</span><span class="mini-label add">NEW</span></div>
+              <button class="undo-btn" data-testid="assistant-undo-button" resource-id="assistant-undo-button"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>Undo</button>
             </div>
-            <span class="msg-meta">14:04</span>
+            <span class="msg-meta">2:04 PM</span>
           </div>
         </section>
 
         <section class="conv" data-conv="question-confirm" hidden>
-          <div class="msg user"><div class="bubble">Xoá mấy việc mua sắm</div><span class="msg-meta">Bạn · 14:10</span></div>
+          <div class="msg user"><div class="bubble">Delete the shopping tasks</div><span class="msg-meta">You · 2:10 PM</span></div>
           <div class="msg ai">
             <div class="bubble q">
-              <div class="bubble-head">Xoá 3 việc?</div>
-              <p>Sẽ xoá: Đi chợ cho cả tuần, Đặt bánh sinh nhật, Lấy đồ giặt khô.</p>
+              <div class="bubble-head">Delete 3 tasks?</div>
+              <p>Will delete: Grocery run for the week, Order the birthday cake, Pick up dry cleaning.</p>
               <div class="chips">
-                <button class="chip chip-danger" data-testid="assistant-chip-affirm" resource-id="assistant-chip-affirm">Xoá 3 việc</button>
-                <button class="chip" data-testid="assistant-chip-negative" resource-id="assistant-chip-negative">Giữ lại</button>
+                <button class="chip chip-danger" data-testid="assistant-chip-affirm" resource-id="assistant-chip-affirm">Delete 3 tasks</button>
+                <button class="chip" data-testid="assistant-chip-negative" resource-id="assistant-chip-negative">Keep them</button>
               </div>
             </div>
-            <span class="msg-meta">14:10 · trả lời bằng cách chạm, nói hoặc gõ — danh sách vẫn dùng được</span>
+            <span class="msg-meta">2:10 PM · answer by tapping, speaking or typing — the list still works</span>
           </div>
         </section>
 
         <section class="conv" data-conv="question-clarify" hidden>
-          <div class="msg user"><div class="bubble">Huỷ cuộc họp</div><span class="msg-meta">Bạn · 14:12</span></div>
+          <div class="msg user"><div class="bubble">Cancel the meeting</div><span class="msg-meta">You · 2:12 PM</span></div>
           <div class="msg ai">
             <div class="bubble q">
-              <div class="bubble-head">“Cuộc họp” khớp với hai việc — việc nào?</div>
+              <div class="bubble-head">“Meeting” matches two tasks — which one?</div>
               <div class="chips">
-                <button class="chip" data-testid="assistant-option-chip" resource-id="assistant-option-chip">Họp nhanh đầu ngày — 9:30</button>
-                <button class="chip">1:1 với Hà — 16:30</button>
+                <button class="chip" data-testid="assistant-option-chip" resource-id="assistant-option-chip">Morning stand-up — 9:30 AM</button>
+                <button class="chip">1:1 with Hà — 4:30 PM</button>
               </div>
             </div>
-            <span class="msg-meta">14:12 · trả lời bằng cách chạm, nói hoặc gõ — danh sách vẫn dùng được</span>
+            <span class="msg-meta">2:12 PM · answer by tapping, speaking or typing — the list still works</span>
           </div>
         </section>
 
         <section class="conv" data-conv="declined-superseded" hidden>
           <div class="msg ai">
             <div class="bubble q resolved">
-              <div class="bubble-head">Xoá 3 việc?</div>
-              <p>Sẽ xoá: Đi chợ cho cả tuần, Đặt bánh sinh nhật, Lấy đồ giặt khô.</p>
+              <div class="bubble-head">Delete 3 tasks?</div>
+              <p>Will delete: Grocery run for the week, Order the birthday cake, Pick up dry cleaning.</p>
               <div class="chips">
-                <button class="chip" disabled>Xoá 3 việc</button>
-                <button class="chip" disabled>Giữ lại</button>
+                <button class="chip" disabled>Delete 3 tasks</button>
+                <button class="chip" disabled>Keep them</button>
               </div>
             </div>
-            <span class="msg-meta">14:10</span>
+            <span class="msg-meta">2:10 PM</span>
           </div>
-          <div class="msg user"><div class="bubble">Thêm gọi ngân hàng ngày mai lúc 9 giờ</div><span class="msg-meta">Bạn · 14:11</span></div>
+          <div class="msg user"><div class="bubble">Add call the bank tomorrow at 9</div><span class="msg-meta">You · 2:11 PM</span></div>
           <div class="msg ai">
             <div class="bubble">
-              <div class="bubble-head">Đã giữ nguyên 3 việc</div>
-              <p>Lệnh xoá được gác lại vì bạn đã chuyển sang việc khác. Không có gì bị xoá.</p>
+              <div class="bubble-head">Kept all 3 tasks</div>
+              <p>The delete was set aside because you moved on to something else. Nothing was deleted.</p>
             </div>
-            <span class="msg-meta">14:11</span>
+            <span class="msg-meta">2:11 PM</span>
           </div>
           <div class="msg ai">
             <div class="bubble">
-              <div class="bubble-head">Đã thêm 1 việc</div>
-              <div class="diff-row"><span class="diff-task">Gọi cho ngân hàng</span><span class="chip-new">Ngày mai, 9:00</span><span class="mini-label add">Mới</span></div>
-              <button class="undo-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>Hoàn tác</button>
+              <div class="bubble-head">Added 1 task</div>
+              <div class="diff-row"><span class="diff-task">Call the bank</span><span class="chip-new">Tomorrow, 9:00 AM</span><span class="mini-label add">NEW</span></div>
+              <button class="undo-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>Undo</button>
             </div>
-            <span class="msg-meta">14:11</span>
+            <span class="msg-meta">2:11 PM</span>
           </div>
         </section>
 
         <section class="conv" data-conv="reverted" hidden>
           <div class="msg ai">
             <div class="bubble undone">
-              <div class="bubble-head">Đã sửa 1 việc · thêm 1</div>
-              <div class="diff-row"><span class="diff-task">Duyệt bản nháp ngân sách Q3</span><span class="chip-old">14:00</span><span class="diff-arrow">→</span><span class="chip-new">16:00</span></div>
-              <div class="diff-row"><span class="diff-task">Lấy bánh sinh nhật</span><span class="chip-new">Th 7, 22 thg 8</span></div>
-              <span class="undone-tag">Đã hoàn tác</span>
+              <div class="bubble-head">Edited 1 task · added 1</div>
+              <div class="diff-row"><span class="diff-task">Review the Q3 budget draft</span><span class="chip-old">2:00 PM</span><span class="diff-arrow">→</span><span class="chip-new">4:00 PM</span></div>
+              <div class="diff-row"><span class="diff-task">Pick up the birthday cake</span><span class="chip-new">Sat, Aug 22</span></div>
+              <span class="undone-tag">Undone</span>
             </div>
-            <span class="msg-meta">14:04</span>
+            <span class="msg-meta">2:04 PM</span>
           </div>
-          <div class="msg user"><div class="bubble">Hoàn tác</div><span class="msg-meta">Bạn · 14:06 · giọng nói</span></div>
+          <div class="msg user"><div class="bubble">Undo</div><span class="msg-meta">You · 2:06 PM · voice</span></div>
           <div class="msg ai">
             <div class="bubble">
-              <div class="bubble-head">Đã hoàn tác — trừ một việc</div>
-              <p>Đã bỏ: Lấy bánh sinh nhật.</p>
-              <p>Bỏ qua: Duyệt bản nháp ngân sách Q3 — việc này đã đổi sau khi tôi sửa, nên tôi để nguyên.</p>
+              <div class="bubble-head">Undone — except one task</div>
+              <p>Undone: Pick up the birthday cake.</p>
+              <p>Skipped: Review the Q3 budget draft — it changed after my edit, so I left it alone.</p>
             </div>
-            <span class="msg-meta">14:06</span>
+            <span class="msg-meta">2:06 PM</span>
           </div>
         </section>
 
         <section class="conv" data-conv="nothing-reverted" hidden>
-          <div class="msg user"><div class="bubble">Hoàn tác</div><span class="msg-meta">Bạn · 14:08 · giọng nói</span></div>
+          <div class="msg user"><div class="bubble">Undo</div><span class="msg-meta">You · 2:08 PM · voice</span></div>
           <div class="msg ai">
             <div class="bubble">
-              <div class="bubble-head">Không có gì được hoàn tác</div>
-              <p>Cả hai việc đó đều đã đổi sau khi tôi sửa: Duyệt bản nháp ngân sách Q3, Lấy bánh sinh nhật. Tôi giữ nguyên.</p>
+              <div class="bubble-head">Nothing was undone</div>
+              <p>Both of those changed after my edit: Review the Q3 budget draft, Pick up the birthday cake. I left them as they are.</p>
             </div>
-            <span class="msg-meta">14:08</span>
+            <span class="msg-meta">2:08 PM</span>
           </div>
-          <div class="msg user"><div class="bubble">Hoàn tác</div><span class="msg-meta">Bạn · 14:09 · giọng nói</span></div>
+          <div class="msg user"><div class="bubble">Undo</div><span class="msg-meta">You · 2:09 PM · voice</span></div>
           <div class="msg ai">
             <div class="bubble">
-              <p>Không có gì để hoàn tác — phiên này chưa áp dụng thay đổi nào.</p>
+              <p>There is nothing to undo — nothing has been applied in this session.</p>
             </div>
-            <span class="msg-meta">14:09</span>
+            <span class="msg-meta">2:09 PM</span>
           </div>
         </section>
 
         <section class="conv" data-conv="no-match" hidden>
-          <div class="msg user"><div class="bubble">Gạch trận cầu lông</div><span class="msg-meta">Bạn · 14:15 · giọng nói</span></div>
+          <div class="msg user"><div class="bubble">Cross off bad mitten</div><span class="msg-meta">You · 2:15 PM · voice</span></div>
           <div class="msg ai">
             <div class="bubble">
-              <p>Tôi nghe <span class="quote">“gạch trận cầu lông”</span> — không có việc nào trong danh sách khớp.</p>
-              <p>Không có gì thay đổi. Nếu tôi nghe nhầm, nói lại hoặc gõ ra.</p>
+              <p>I heard <span class="quote">“cross off bad mitten”</span> — nothing in your list matches.</p>
+              <p>Nothing changed. If I misheard, say it again or type it.</p>
             </div>
-            <span class="msg-meta">14:15</span>
+            <span class="msg-meta">2:15 PM</span>
           </div>
         </section>
 
         <section class="conv" data-conv="error" hidden>
-          <div class="msg user"><div class="bubble">Dời buổi tập gym sang thứ hai lúc 7 giờ</div><span class="msg-meta">Bạn · 14:20</span></div>
+          <div class="msg user"><div class="bubble">Move the gym session to Monday at 7</div><span class="msg-meta">You · 2:20 PM</span></div>
           <div class="msg ai">
             <div class="bubble err">
-              <div class="bubble-head">Chưa gửi được</div>
-              <p>Trợ lý chưa xử lý được câu đó. Không có gì thay đổi — lời bạn vẫn nằm ở ô nhập bên dưới.</p>
-              <button class="retry-btn" data-testid="assistant-retry-button" resource-id="assistant-retry-button">Thử lại</button>
+              <div class="bubble-head">Couldn't send</div>
+              <p>The assistant couldn't handle that one. Nothing changed — your words are still in the box below.</p>
+              <button class="retry-btn" data-testid="assistant-retry-button" resource-id="assistant-retry-button">Retry</button>
             </div>
-            <span class="msg-meta">14:20 · danh sách vẫn dùng tay được</span>
+            <span class="msg-meta">2:20 PM · the list still works by hand</span>
           </div>
         </section>
 
         <section class="conv" data-conv="offline" hidden>
           <div class="msg user">
-            <div class="bubble">Đánh dấu tiền điện đã xong</div>
-            <span class="queued-note" data-testid="assistant-queued-notice" resource-id="assistant-queued-notice"><span class="dot-pulse"></span>Đang chờ mạng — sẽ gửi lại</span>
+            <div class="bubble">Mark the electricity bill done</div>
+            <span class="queued-note" data-testid="assistant-queued-notice" resource-id="assistant-queued-notice"><span class="dot-pulse"></span>Waiting for the network — will send again</span>
+          </div>
+        </section>
+
+        <!-- new messages arrived while the user reads history — the view did NOT move (BUG-004).
+             NMA-NEW: nothing is pending, so the pill reports a count. -->
+        <section class="conv" data-conv="nma-new" hidden>
+          <div class="msg user"><div class="bubble">Add pay the electricity bill today</div><span class="msg-meta">You · 1:58 PM</span></div>
+          <div class="msg ai">
+            <div class="bubble">
+              <div class="bubble-head">Added 1 task</div>
+              <div class="diff-row"><span class="diff-task">Pay the electricity bill</span><span class="chip-new">due today</span><span class="mini-label add">NEW</span></div>
+            </div>
+            <span class="msg-meta">1:58 PM</span>
+          </div>
+          <div class="msg user"><div class="bubble">Move the budget review to 4pm and add pick up the birthday cake on Saturday</div><span class="msg-meta">You · 2:04 PM</span></div>
+          <div class="msg ai">
+            <div class="bubble">
+              <div class="bubble-head">Edited 1 task · added 1</div>
+              <div class="diff-row"><span class="diff-task">Review the Q3 budget draft</span><span class="chip-old">2:00 PM</span><span class="diff-arrow">→</span><span class="chip-new">4:00 PM</span><span class="mini-label edit">EDITED</span></div>
+              <div class="diff-row"><span class="diff-task">Pick up the birthday cake</span><span class="chip-new">Sat, Aug 22</span><span class="mini-label add">NEW</span></div>
+            </div>
+            <span class="msg-meta">2:04 PM</span>
+          </div>
+          <div class="msg user"><div class="bubble">Add call the bank tomorrow at 9</div><span class="msg-meta">You · 2:11 PM</span></div>
+          <div class="msg ai">
+            <div class="bubble">
+              <div class="bubble-head">Added 1 task</div>
+              <div class="diff-row"><span class="diff-task">Call the bank</span><span class="chip-new">Tomorrow, 9:00 AM</span><span class="mini-label add">NEW</span></div>
+            </div>
+            <span class="msg-meta">2:11 PM</span>
+          </div>
+          <div class="msg user"><div class="bubble">Order the birthday cake before noon tomorrow</div><span class="msg-meta">You · 2:13 PM</span></div>
+          <div class="msg ai">
+            <div class="bubble">
+              <div class="bubble-head">Added 1 task</div>
+              <div class="diff-row"><span class="diff-task">Order the birthday cake</span><span class="chip-new">Tomorrow, before noon</span><span class="mini-label add">NEW</span></div>
+              <button class="undo-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>Undo</button>
+            </div>
+            <span class="msg-meta">2:13 PM</span>
+          </div>
+        </section>
+
+        <!-- same situation, but a bulk-delete confirmation is pending off screen and the app is
+             waiting on an answer (owner decision rule 5 — no scroll carve-out). NMA-WAITING:
+             the pill stops reporting and asks, quoting the question's own head. -->
+        <section class="conv" data-conv="nma-waiting" hidden>
+          <div class="msg user"><div class="bubble">Add pay the electricity bill today</div><span class="msg-meta">You · 1:58 PM</span></div>
+          <div class="msg ai">
+            <div class="bubble">
+              <div class="bubble-head">Added 1 task</div>
+              <div class="diff-row"><span class="diff-task">Pay the electricity bill</span><span class="chip-new">due today</span><span class="mini-label add">NEW</span></div>
+            </div>
+            <span class="msg-meta">1:58 PM</span>
+          </div>
+          <div class="msg user"><div class="bubble">Move the budget review to 4pm and add pick up the birthday cake on Saturday</div><span class="msg-meta">You · 2:04 PM</span></div>
+          <div class="msg ai">
+            <div class="bubble">
+              <div class="bubble-head">Edited 1 task · added 1</div>
+              <div class="diff-row"><span class="diff-task">Review the Q3 budget draft</span><span class="chip-old">2:00 PM</span><span class="diff-arrow">→</span><span class="chip-new">4:00 PM</span><span class="mini-label edit">EDITED</span></div>
+              <div class="diff-row"><span class="diff-task">Pick up the birthday cake</span><span class="chip-new">Sat, Aug 22</span><span class="mini-label add">NEW</span></div>
+            </div>
+            <span class="msg-meta">2:04 PM</span>
+          </div>
+          <div class="msg user"><div class="bubble">Add call the bank tomorrow at 9</div><span class="msg-meta">You · 2:11 PM</span></div>
+          <div class="msg ai">
+            <div class="bubble">
+              <div class="bubble-head">Added 1 task</div>
+              <div class="diff-row"><span class="diff-task">Call the bank</span><span class="chip-new">Tomorrow, 9:00 AM</span><span class="mini-label add">NEW</span></div>
+            </div>
+            <span class="msg-meta">2:11 PM</span>
+          </div>
+          <div class="msg user"><div class="bubble">Delete the shopping tasks</div><span class="msg-meta">You · 2:16 PM</span></div>
+          <div class="msg ai">
+            <div class="bubble q">
+              <div class="bubble-head">Delete 3 tasks?</div>
+              <p>Will delete: Grocery run for the week, Order the birthday cake, Pick up dry cleaning.</p>
+              <div class="chips">
+                <button class="chip chip-danger">Delete 3 tasks</button>
+                <button class="chip">Keep them</button>
+              </div>
+            </div>
+            <span class="msg-meta">2:16 PM · answer by tapping, speaking or typing — the list still works</span>
           </div>
         </section>
 
         <section class="conv" data-conv="boundary" hidden>
           <div class="boundary" data-testid="assistant-boundary-marker" resource-id="assistant-boundary-marker">
             <div class="boundary-body">
-              <strong>Phiên đã kết thúc — không hoạt động · Th 6, 23:42</strong>
-              <p>Đóng phiên nên đã từ chối: “Xoá 3 việc?” — vẫn giữ Đi chợ cho cả tuần, Đặt bánh sinh nhật, Lấy đồ giặt khô.</p>
-              <p>Lúc bạn vắng mặt: đã thêm “Gọi cho ngân hàng” — Ngày mai, 9:00.</p>
+              <strong>Session closed — no activity · Fri 11:42 PM</strong>
+              <p>Closing the session declined “Delete 3 tasks?” — Grocery run for the week, Order the birthday cake and Pick up dry cleaning were all kept.</p>
+              <p>While you were away: added “Call the bank” — Tomorrow, 9:00 AM.</p>
             </div>
           </div>
           <div class="invite">
-            <p>Bắt đầu lại. Nói đi — tôi ghi.</p>
+            <p>Starting fresh. Say it — I'll write it down.</p>
           </div>
         </section>
 
@@ -844,35 +966,35 @@ html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); 
         <section class="conv" data-conv="mic-permission" hidden>
           <div class="msg ai">
             <div class="bubble">
-              <div class="bubble-head">Micro cần quyền truy cập</div>
-              <p>Quyền Micro của todo-ai đang tắt và Android sẽ không hỏi lại nữa. Bật trong Thông tin ứng dụng → Quyền là micro sáng lại ngay.</p>
-              <p>Gõ tay vẫn dùng bình thường.</p>
-              <button class="retry-btn" data-testid="assistant-permission-cta" resource-id="assistant-permission-cta">Mở cài đặt ứng dụng</button>
+              <div class="bubble-head">Microphone needs permission</div>
+              <p>todo-ai's Microphone permission is off and Android will not ask again. Turn it on in App info → Permissions and the mic lights up again.</p>
+              <p>Typing still works as usual.</p>
+              <button class="retry-btn" data-testid="assistant-permission-cta" resource-id="assistant-permission-cta">Open app settings</button>
             </div>
-            <span class="msg-meta">14:24</span>
+            <span class="msg-meta">2:24 PM</span>
           </div>
         </section>
 
         <section class="conv" data-conv="mic-transient" hidden>
           <div class="msg ai">
             <div class="bubble">
-              <div class="bubble-head">Nhận dạng giọng nói đang bận</div>
-              <p>Dịch vụ nhận dạng chưa phản hồi. Thường chỉ một lát là xong — micro sẽ tự bật lại.</p>
-              <p>Gõ tay vẫn dùng bình thường.</p>
+              <div class="bubble-head">Speech recognition is busy</div>
+              <p>The recognition service isn't answering. It usually clears in a moment — the mic will come back on its own.</p>
+              <p>Typing still works as usual.</p>
             </div>
-            <span class="msg-meta">14:26</span>
+            <span class="msg-meta">2:26 PM</span>
           </div>
         </section>
 
         <section class="conv" data-conv="mic-hidden" hidden>
-          <div class="msg user"><div class="bubble">Thêm đóng tiền điện hôm nay</div><span class="msg-meta">Bạn · 13:58</span></div>
+          <div class="msg user"><div class="bubble">Add pay the electricity bill today</div><span class="msg-meta">You · 1:58 PM</span></div>
           <div class="msg ai">
             <div class="bubble">
-              <div class="bubble-head">Đã thêm 1 việc</div>
-              <div class="diff-row"><span class="diff-task">Đóng tiền điện</span><span class="chip-new">đến hạn hôm nay</span><span class="mini-label add">Mới</span></div>
-              <button class="undo-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>Hoàn tác</button>
+              <div class="bubble-head">Added 1 task</div>
+              <div class="diff-row"><span class="diff-task">Pay the electricity bill</span><span class="chip-new">due today</span><span class="mini-label add">NEW</span></div>
+              <button class="undo-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>Undo</button>
             </div>
-            <span class="msg-meta">13:58</span>
+            <span class="msg-meta">1:58 PM</span>
           </div>
         </section>
 
@@ -881,24 +1003,36 @@ html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); 
       <div class="voice-surface">
         <div class="aurora-band"></div>
         <div class="state-indicator" data-testid="assistant-state-indicator" resource-id="assistant-state-indicator" aria-live="polite">
-          <span class="si-listening"><span class="waveform"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="state-word">Đang nghe…</span></span>
-          <span class="si-thinking"><span class="state-word">Đang nghĩ…</span><button class="cancel-btn" data-testid="assistant-cancel-button" resource-id="assistant-cancel-button" aria-label="Huỷ — lời bạn vẫn nằm trong ô nhập">Huỷ</button></span>
+          <span class="si-listening"><span class="waveform"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="state-word">Listening…</span></span>
+          <span class="si-thinking"><span class="state-word">Thinking…</span><button class="cancel-btn" data-testid="assistant-cancel-button" resource-id="assistant-cancel-button" aria-label="Cancel — your words stay in the box">Cancel</button></span>
+        </div>
+      </div>
+
+      <!-- new-message affordance (BUG-004) — ONE control, near the composer, whatever arrived.
+           Zero-height dock: it floats over the last line rather than pushing history up. -->
+      <div class="nm-dock">
+        <div class="nm-wrap" aria-live="polite">
+          <button class="nm-pill" data-testid="assistant-new-message-affordance" resource-id="assistant-new-message-affordance">
+            <svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+            <span class="nm-label nm-count">3 new messages</span>
+            <span class="nm-label nm-waiting">Waiting for your answer — Delete 3 tasks?</span>
+          </button>
         </div>
       </div>
 
       <div class="offline-banner" data-testid="assistant-offline-banner" resource-id="assistant-offline-banner">
         <svg class="ic" viewBox="0 0 24 24"><line x1="2" y1="2" x2="22" y2="22"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M2 8.82a15 15 0 0 1 4.17-2.65"/><path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/><path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/><path d="M5 13a10 10 0 0 1 5.24-2.76"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
-        Mất mạng — danh sách vẫn dùng được.
-        <span class="queued-count">1 câu chờ gửi</span>
+        No connection — the list still works.
+        <span class="queued-count">1 waiting to send</span>
       </div>
 
       <footer class="composer">
-        <input class="composer-input" data-testid="assistant-composer-input" resource-id="assistant-composer-input" type="text" placeholder="Nói hoặc nhập việc cần làm…" aria-label="Nói hoặc nhập việc cần làm">
-        <button class="mic" data-testid="assistant-mic-button" resource-id="assistant-mic-button" aria-label="Nhấn để nói" aria-pressed="false">
+        <input class="composer-input" data-testid="assistant-composer-input" resource-id="assistant-composer-input" type="text" placeholder="Say or type what needs doing…" aria-label="Say or type what needs doing">
+        <button class="mic" data-testid="assistant-mic-button" resource-id="assistant-mic-button" aria-label="Tap to speak" aria-pressed="false">
           <svg class="ic" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
           <span class="mic-slash" aria-hidden="true"><svg viewBox="0 0 52 52"><line x1="14" y1="14" x2="38" y2="38"/></svg></span>
         </button>
-        <button class="send" data-testid="assistant-composer-send" resource-id="assistant-composer-send" aria-label="Gửi" aria-disabled="true">
+        <button class="send" data-testid="assistant-composer-send" resource-id="assistant-composer-send" aria-label="Send" aria-disabled="true">
           <svg class="ic" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
         </button>
       </footer>
@@ -912,8 +1046,8 @@ html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); 
 
 <script>
 var COMPOSER_VALUE = {
-  'listening': 'dời duyệt ngân sách sang bốn gi',
-  'error': 'Dời buổi tập gym sang thứ hai lúc 7 giờ'
+  'listening': 'move the budget review to four o',
+  'error': 'Move the gym session to Monday at 7'
 };
 function showState(name) {
   document.querySelectorAll('[data-conv]').forEach(function (el) {
@@ -929,15 +1063,25 @@ function showState(name) {
   if (mic) {
     mic.setAttribute('aria-pressed', name === 'listening' ? 'true' : 'false');
     mic.setAttribute('aria-label',
-      name === 'listening' ? 'Đang nghe — nhấn để dừng' :
-      name === 'mic-permission' ? 'Micro cần quyền truy cập' :
-      name === 'mic-transient' ? 'Micro tạm thời không dùng được' : 'Nhấn để nói');
+      name === 'listening' ? 'Listening — tap to stop' :
+      name === 'mic-permission' ? 'Microphone needs permission' :
+      name === 'mic-transient' ? 'Microphone is temporarily unavailable' : 'Tap to speak');
   }
   document.querySelectorAll('.dev-bar [data-s]').forEach(function (b) {
     b.classList.toggle('on', b.getAttribute('data-s') === name);
   });
+  /* NewMessageAffordance — accessible name is the VISIBLE label plus the action
+     (WCAG 2.5.3: the visible text is a prefix of the name, never a replacement). */
+  var nm = document.querySelector('.nm-pill');
+  if (nm) nm.setAttribute('aria-label',
+    name === 'nma-waiting'
+      ? 'Waiting for your answer — Delete 3 tasks? Scroll to newest'
+      : '3 new messages, scroll to newest');
   var scroller = document.querySelector('.conv-scroll');
-  if (scroller) scroller.scrollTop = scroller.scrollHeight;
+  /* The two new-message states depict someone READING HISTORY: the view has not
+     moved and must not, so the mockup stays at the top of the thread. That is the
+     situation the affordance exists for — auto-scrolling here would hide it. */
+  if (scroller) scroller.scrollTop = name.indexOf('nma-') === 0 ? 0 : scroller.scrollHeight;
 }
 function toggleTheme() {
   var h = document.documentElement;
