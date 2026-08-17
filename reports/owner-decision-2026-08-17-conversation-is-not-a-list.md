@@ -56,6 +56,15 @@ holding identically. Both clients, the mockups, the testids and the QA cases tha
 assert on the list-beside-conversation layout are all affected. This is a
 design-led change and should not start in code.
 
+## Confirmed 2026-08-17: no list on the conversation at ANY width
+
+Design raised the ambiguity honestly — the decision was written unconditionally while the
+complaint that prompted it was about a phone, and reinstating a desktop split pane would have
+been cheap and isolated. Put back to the owner, who confirmed: **remove it at every width.**
+
+So the conversation surface has one job on every screen size, and `Tasks` is one tap away from
+all of them. The design as drawn is correct and needs no revision on this point.
+
 ## Order
 
 Design first — the whole app, against the UC coverage map, not one screen. Then

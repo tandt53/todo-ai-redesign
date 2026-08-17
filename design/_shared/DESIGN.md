@@ -14,6 +14,8 @@ Serves F-001 (voice-assistant view): four surface states (idle · listening · t
 
 ## Colour rules (earned colour)
 
+**Minimum contrast ratio 4.5:1** for normal text (AC-19 / WCAG 1.4.3) — stated here as a number, not only as prose, because `.claude/tools/design-check` reads the threshold from this file and skips the check when it finds none. Verified pairs: components.md §Contrast.
+
 1. One signal per meaning: cyan=listening, violet=assistant/thinking, green=added, red=removed/danger, amber=open question. No colour appears without its meaning.
 2. Accent text only on `bg.base`, `bg.raised`, or its own tint token — all pairs verified ≥ 4.5:1 (AC-19 / WCAG 1.4.3); pair list in components.md.
 3. Diff and state are never colour-only: `NEW` / `EDITED` text labels ride every marker (colour-blind safe, carried from v3).

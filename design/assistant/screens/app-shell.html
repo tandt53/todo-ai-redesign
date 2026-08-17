@@ -1,0 +1,907 @@
+<!doctype html>
+<!--
+  APP SHELL — the surfaces outside the conversation · design-agent T-101 · WEB mockup
+  IA: design/_shared/information-architecture.md · components: design/_shared/components.md § App shell
+  Tokens: every :root value below is generated verbatim from design/_shared/tokens.json.
+  ZERO new tokens were added for this pass; semantic aliases + px derivation live in the html{} blocks.
+
+  WHAT THIS FILE IS. The owner's decision of 2026-08-17 removes the task list from the
+  conversation. That makes four surfaces necessary that this repo has never drawn: the task list
+  as a surface of its own, a real navigation menu, Settings, and the sheet that names a list.
+  This file draws those, plus the four Talk states the change touches. It does NOT redraw the
+  Talk states that are unaffected — listening, thinking, questions, outcomes, permissions,
+  boundary, new-message affordance all live in voice-assistant-view.html and keep living there.
+  Two files, no overlap, one source of truth per state.
+
+  THE EXISTING F-001 MOCKUPS ARE UNTOUCHED. src/assistant/web/__tests__/app.test.tsx and
+  src/assistant/mobile/__tests__/a11y.test.ts parse their testid catalogues at run time; this is
+  a proposal the spec pass (T-103) has not yet accepted, so it is additive and nothing is renamed.
+
+  STATES — 20, switchable via the dev bar (showState):
+    talk-idle · talk-empty · talk-loading · talk-failed
+    tasks-default · tasks-rename · tasks-arrived · tasks-empty-first · tasks-empty-list · tasks-loading ·
+    tasks-refresh-failed · tasks-offline · tasks-error
+    menu-default · menu-empty · menu-failed
+    settings-default · settings-save-failed
+    list-new · list-name-taken
+
+  DESKTOP. Talk holds a 760px measure centred at 1280 — deliberately, not by neglect: the
+  reference bar in DESIGN.md ## Identity names ChatGPT voice mode, and a conversation read at a
+  1200px measure is unreadable at any aesthetic. Tasks uses the width instead, with the day
+  headers set in a left gutter beside the rows. The Lists menu is a slide-over at EVERY width —
+  one presentation, one behaviour to spec, build and test.
+
+  TESTID CANON (same rule as voice-assistant-view.html): each contract testid appears exactly
+  ONCE, on an exemplar element; the app applies it to every instance. Two ids are the same
+  logical control in two renderings and carry one id in the app: tasks-list-retry-button is on
+  the inline banner here and also belongs on the full-surface Retry; tasks-delete-button is on
+  one row here and belongs on every row.
+
+  DEV CHROME: the top state-switcher bar and theme toggle are mockup tooling, not design, and
+  are excluded from the testid contract.
+-->
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>App shell · Talk · Tasks · Lists · Settings — web</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============ tokens.json → :root (generated; names/values verbatim) ============ */
+:root {
+  --color-dark-bg-base: #0C0E16;
+  --color-dark-bg-raised: #161A28;
+  --color-dark-bg-hairline: #232741;
+  --color-dark-text-primary: #F2F4FA;
+  --color-dark-text-secondary: #A9B0CC;
+  --color-dark-text-muted: #8189A8;
+  --color-dark-text-onAccent: #0C0E16;
+  --color-dark-primary: #9D8CFF;
+  --color-dark-primaryTint: #1B1833;
+  --color-dark-voice-listening: #3EE6D2;
+  --color-dark-voice-listeningTint: #0E2724;
+  --color-dark-voice-thinking: #9D8CFF;
+  --color-dark-voice-thinkingTint: #1B1833;
+  --color-dark-danger: #FF7A8A;
+  --color-dark-success: #4ADE9E;
+  --color-dark-question: #FFC24B;
+  --color-dark-questionTint: #2A2113;
+  --color-dark-diff-add: #4ADE9E;
+  --color-dark-diff-addTint: #10261C;
+  --color-dark-diff-remove: #FF7A8A;
+  --color-dark-diff-removeTint: #2C161A;
+  --color-dark-focusRing: #3EE6D2;
+  --color-light-bg-base: #F6F7FB;
+  --color-light-bg-raised: #FFFFFF;
+  --color-light-bg-hairline: #E4E6F0;
+  --color-light-text-primary: #191D33;
+  --color-light-text-secondary: #454C6E;
+  --color-light-text-muted: #5D6486;
+  --color-light-text-onAccent: #FFFFFF;
+  --color-light-primary: #5646D6;
+  --color-light-primaryTint: #EAE7FB;
+  --color-light-voice-listening: #0A7473;
+  --color-light-voice-listeningTint: #DFF2F1;
+  --color-light-voice-thinking: #5646D6;
+  --color-light-voice-thinkingTint: #EAE7FB;
+  --color-light-danger: #C7223A;
+  --color-light-success: #0E7B4F;
+  --color-light-question: #8A5A00;
+  --color-light-questionTint: #F7EDD8;
+  --color-light-diff-add: #0E7B4F;
+  --color-light-diff-addTint: #E3F4EA;
+  --color-light-diff-remove: #C7223A;
+  --color-light-diff-removeTint: #FBE7EA;
+  --color-light-focusRing: #5646D6;
+  --gradient-voice-angle_deg: 135;
+  --font-family-display: 'Space Grotesk', 'Be Vietnam Pro', sans-serif;
+  --font-family-body: 'Be Vietnam Pro', system-ui, sans-serif;
+  --font-size-display: 34;
+  --font-size-title: 22;
+  --font-size-stateLabel: 17;
+  --font-size-body: 15;
+  --font-size-meta: 13;
+  --font-size-label: 11;
+  --font-weight-display: 700;
+  --font-weight-title: 600;
+  --font-weight-body: 400;
+  --font-weight-emphasis: 600;
+  --font-weight-label: 700;
+  --font-lineHeight-display: 1.2;
+  --font-lineHeight-title: 1.3;
+  --font-lineHeight-body: 1.5;
+  --font-lineHeight-meta: 1.4;
+  --font-letterSpacing-display: -0.03em;
+  --font-letterSpacing-label: 0.06em;
+  --font-numeric: tabular-nums;
+  --spacing-xs: 4;
+  --spacing-sm: 8;
+  --spacing-md: 12;
+  --spacing-lg: 16;
+  --spacing-xl: 24;
+  --spacing-xxl: 32;
+  --spacing-gutter_mobile: 20;
+  --spacing-gutter_web: 24;
+  --radius-sm: 8;
+  --radius-md: 14;
+  --radius-bubble: 18;
+  --radius-sheet: 20;
+  --radius-pill: 999;
+  --radius-orb: 50%;
+  --radius-taskRow: 0;
+  --shadow-raised: 0 8px 24px -8px rgba(4, 6, 16, 0.50);
+  --shadow-raisedLight: 0 8px 24px -10px rgba(25, 29, 51, 0.18);
+  --shadow-glowListening: 0 0 24px rgba(62, 230, 210, 0.35);
+  --shadow-glowThinking: 0 0 24px rgba(157, 140, 255, 0.35);
+  --motion-duration_ms-micro: 120;
+  --motion-duration_ms-standard: 200;
+  --motion-duration_ms-emphasis: 320;
+  --motion-duration_ms-celebrate: 600;
+  --motion-duration_ms-auroraBreath: 2400;
+  --motion-duration_ms-diffFlashHold: 1600;
+  --motion-duration_ms-diffFlashFade: 400;
+  --motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --motion-easing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --motion-easing-exit: cubic-bezier(0.4, 0, 1, 1);
+  --icon-stroke: 1.8;
+  --icon-size-sm: 16;
+  --icon-size-md: 20;
+  --icon-size-lg: 24;
+}
+
+/* ============ derived units + theme aliases (not raw tokens — kept out of :root) ============ */
+html {
+  --fs-display: calc(var(--font-size-display) * 1px);
+  --fs-title: calc(var(--font-size-title) * 1px);
+  --fs-state: calc(var(--font-size-stateLabel) * 1px);
+  --fs-body: calc(var(--font-size-body) * 1px);
+  --fs-meta: calc(var(--font-size-meta) * 1px);
+  --fs-label: calc(var(--font-size-label) * 1px);
+  --sp-xs: calc(var(--spacing-xs) * 1px);
+  --sp-sm: calc(var(--spacing-sm) * 1px);
+  --sp-md: calc(var(--spacing-md) * 1px);
+  --sp-lg: calc(var(--spacing-lg) * 1px);
+  --sp-xl: calc(var(--spacing-xl) * 1px);
+  --sp-xxl: calc(var(--spacing-xxl) * 1px);
+  --gutter: calc(var(--spacing-gutter_mobile) * 1px);
+  --r-sm: calc(var(--radius-sm) * 1px);
+  --r-md: calc(var(--radius-md) * 1px);
+  --r-bubble: calc(var(--radius-bubble) * 1px);
+  --r-sheet: calc(var(--radius-sheet) * 1px);
+  --r-pill: calc(var(--radius-pill) * 1px);
+  --r-row: calc(var(--radius-taskRow) * 1px);
+  --dur-micro: calc(var(--motion-duration_ms-micro) * 1ms);
+  --dur-standard: calc(var(--motion-duration_ms-standard) * 1ms);
+  --dur-emphasis: calc(var(--motion-duration_ms-emphasis) * 1ms);
+  --dur-flashhold: calc(var(--motion-duration_ms-diffFlashHold) * 1ms);
+  --icon-sm: calc(var(--icon-size-sm) * 1px);
+  --icon-md: calc(var(--icon-size-md) * 1px);
+  --icon-lg: calc(var(--icon-size-lg) * 1px);
+  /* gradient.voice — legal ONLY on the voice surface (the orb). Nowhere else in this file. */
+  --grad-voice: linear-gradient(calc(var(--gradient-voice-angle_deg) * 1deg), var(--color-dark-voice-listening), var(--color-dark-voice-thinking));
+}
+html[data-theme="dark"] {
+  --bg-base: var(--color-dark-bg-base); --bg-raised: var(--color-dark-bg-raised); --hairline: var(--color-dark-bg-hairline);
+  --tx: var(--color-dark-text-primary); --tx-2: var(--color-dark-text-secondary); --tx-muted: var(--color-dark-text-muted); --tx-onaccent: var(--color-dark-text-onAccent);
+  --primary: var(--color-dark-primary); --primary-tint: var(--color-dark-primaryTint);
+  --listening: var(--color-dark-voice-listening);
+  --danger: var(--color-dark-danger); --success: var(--color-dark-success);
+  --question: var(--color-dark-question); --question-tint: var(--color-dark-questionTint);
+  --add: var(--color-dark-diff-add); --add-tint: var(--color-dark-diff-addTint);
+  --remove: var(--color-dark-diff-remove); --remove-tint: var(--color-dark-diff-removeTint);
+  --focus: var(--color-dark-focusRing);
+  --shadow-card: var(--shadow-raised);
+  --scrim: rgba(12, 14, 22, 0.66);
+  color-scheme: dark;
+}
+html[data-theme="light"] {
+  --bg-base: var(--color-light-bg-base); --bg-raised: var(--color-light-bg-raised); --hairline: var(--color-light-bg-hairline);
+  --tx: var(--color-light-text-primary); --tx-2: var(--color-light-text-secondary); --tx-muted: var(--color-light-text-muted); --tx-onaccent: var(--color-light-text-onAccent);
+  --primary: var(--color-light-primary); --primary-tint: var(--color-light-primaryTint);
+  --listening: var(--color-light-voice-listening);
+  --danger: var(--color-light-danger); --success: var(--color-light-success);
+  --question: var(--color-light-question); --question-tint: var(--color-light-questionTint);
+  --add: var(--color-light-diff-add); --add-tint: var(--color-light-diff-addTint);
+  --remove: var(--color-light-diff-remove); --remove-tint: var(--color-light-diff-removeTint);
+  --focus: var(--color-light-focusRing);
+  --shadow-card: var(--shadow-raisedLight);
+  --scrim: rgba(25, 29, 51, 0.44);
+  color-scheme: light;
+}
+
+/* ============ base ============ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: var(--font-family-body);
+  font-size: var(--fs-body);
+  font-weight: var(--font-weight-body);
+  line-height: var(--font-lineHeight-body);
+  color: var(--tx);
+  background: var(--bg-base);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+button, input { font: inherit; color: inherit; background: none; border: 0; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--r-sm); }
+svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; stroke-width: var(--icon-stroke); stroke-linecap: round; stroke-linejoin: round; fill: none; flex: none; }
+svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
+.num { font-variant-numeric: var(--font-numeric); }
+
+/* ============ dev chrome (mockup only — not part of the design) ============ */
+.dev-bar {
+  flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+  padding: 6px 10px; background: var(--bg-raised); border-bottom: 1px solid var(--hairline);
+  font-size: 11px; color: var(--tx-muted); z-index: 60;
+}
+.dev-bar .dev-tag { font-family: var(--font-family-display); font-weight: 600; color: var(--tx-2); margin-right: 6px; }
+.dev-bar button { padding: 3px 8px; border-radius: var(--r-pill); border: 1px solid var(--hairline); color: var(--tx-2); font-size: 11px; }
+.dev-bar button.on { border-color: var(--primary); color: var(--primary); }
+.dev-bar .dev-theme { margin-left: auto; }
+
+/* ============ app shell ============ */
+.app { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; background: var(--bg-base); }
+.surface { display: none; flex: 1; min-height: 0; flex-direction: column; }
+.app[data-surface="talk"]     .s-talk     { display: flex; }
+.app[data-surface="tasks"]    .s-tasks    { display: flex; }
+.app[data-surface="settings"] .s-settings { display: flex; }
+
+/* top bar — one bar, three arrangements */
+.topbar {
+  flex: none; display: flex; align-items: center; gap: var(--sp-sm);
+  padding: var(--sp-sm) var(--gutter);
+  border-bottom: 1px solid var(--hairline);
+  background: var(--bg-base);
+  min-height: 56px;
+}
+.wordmark { font-family: var(--font-family-display); font-weight: var(--font-weight-title); font-size: var(--fs-body); letter-spacing: 0.01em; }
+.topbar h1 { font-family: var(--font-family-display); font-size: var(--fs-title); font-weight: var(--font-weight-title); line-height: var(--font-lineHeight-title); letter-spacing: var(--font-letterSpacing-display); }
+.spacer { flex: 1; }
+.icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: var(--r-sm); color: var(--tx); flex: none; }
+.icon-btn:hover { background: var(--bg-raised); }
+
+/* PathSwitch — PS-TASKS / PS-TALK */
+.path {
+  display: inline-flex; align-items: center; gap: var(--sp-sm);
+  padding: var(--sp-xs) var(--sp-md) var(--sp-xs) var(--sp-sm);
+  border-radius: var(--r-pill); color: var(--tx);
+  font-size: var(--fs-body); font-weight: var(--font-weight-emphasis);
+  transition: background var(--dur-micro) var(--motion-easing-standard);
+}
+.path:hover { background: var(--bg-raised); }
+.path .badge {
+  min-width: 22px; padding: 1px var(--sp-sm); border-radius: var(--r-pill);
+  background: var(--primary-tint); color: var(--primary);
+  font-size: var(--fs-meta); font-weight: var(--font-weight-emphasis);
+  font-variant-numeric: var(--font-numeric); text-align: center;
+}
+
+/* ============ TALK ============ */
+.talk-body { flex: 1; min-height: 0; overflow-y: auto; display: flex; justify-content: center; }
+.talk-col { width: 100%; max-width: 760px; padding: var(--sp-xl) var(--gutter) var(--sp-lg); }
+.v { display: none; }
+.app[data-talk="idle"]    .v-talk-idle    { display: block; }
+.app[data-talk="empty"]   .v-talk-empty   { display: block; }
+.app[data-talk="loading"] .v-talk-loading { display: block; }
+.app[data-talk="failed"]  .v-talk-failed  { display: block; }
+
+.msg { display: flex; flex-direction: column; margin-bottom: var(--sp-lg); max-width: 88%; }
+.msg.user { align-self: flex-end; align-items: flex-end; margin-left: auto; }
+.msg.ai { align-self: flex-start; align-items: flex-start; }
+.bubble { background: var(--bg-raised); border-radius: var(--r-bubble); padding: var(--sp-md) var(--sp-lg); }
+.msg.user .bubble { background: var(--primary-tint); }
+.msg-meta { font-size: var(--fs-meta); color: var(--tx-muted); margin-top: var(--sp-xs); }
+.bubble-head { font-weight: var(--font-weight-emphasis); margin-bottom: var(--sp-sm); }
+
+/* MessageTaskLink — the task named in a bubble is a door to the list */
+.diff-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-sm); padding: var(--sp-xs) 0; }
+.tasklink {
+  color: var(--tx); text-decoration: underline; text-decoration-color: var(--tx-muted);
+  text-underline-offset: 2px; text-decoration-thickness: 1px; padding: 0;
+}
+.tasklink:hover { text-decoration-color: var(--tx-2); }
+.chip-old { background: var(--remove-tint); color: var(--remove); border-radius: var(--r-sm); padding: 1px var(--sp-sm); font-size: var(--fs-meta); text-decoration: line-through; }
+.chip-new { background: var(--add-tint); color: var(--add); border-radius: var(--r-sm); padding: 1px var(--sp-sm); font-size: var(--fs-meta); }
+.arrow { color: var(--tx-muted); }
+.mini-label { font-size: var(--fs-label); font-weight: var(--font-weight-label); letter-spacing: var(--font-letterSpacing-label); }
+.mini-label.edit { color: var(--remove); }
+.mini-label.add { color: var(--add); }
+.undo-btn { display: inline-flex; align-items: center; gap: var(--sp-sm); margin-top: var(--sp-sm); padding: var(--sp-xs) var(--sp-md); border-radius: var(--r-pill); color: var(--primary); font-weight: var(--font-weight-emphasis); }
+.undo-btn:hover { background: var(--primary-tint); }
+
+/* Talk empty — the invitation, now carrying the second door */
+.invite { padding: var(--sp-xxl) 0; }
+.invite h2 { font-family: var(--font-family-display); font-size: var(--fs-display); font-weight: var(--font-weight-display); line-height: var(--font-lineHeight-display); letter-spacing: var(--font-letterSpacing-display); }
+.invite p { color: var(--tx-2); margin-top: var(--sp-md); max-width: 42ch; }
+.invite p.second-door { color: var(--tx-muted); font-size: var(--fs-meta); margin-top: var(--sp-xl); }
+
+/* Skeletons — SK-BUBBLE / SK-ROW / SK-LISTROW */
+.sk { background: var(--hairline); border-radius: var(--r-sm); animation: pulse 1600ms ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .55 } }
+@media (prefers-reduced-motion: reduce) { .sk { animation: none; opacity: .78; } }
+.sk-bubble { height: 64px; border-radius: var(--r-bubble); margin-bottom: var(--sp-lg); }
+.sk-bubble.a { width: 70%; }
+.sk-bubble.b { width: 45%; margin-left: auto; height: 44px; }
+.sk-bubble.c { width: 80%; }
+.sk-rowline { display: flex; align-items: center; gap: var(--sp-md); padding: var(--sp-md) 0; }
+.sk-box { width: 22px; height: 22px; border-radius: var(--r-sm); flex: none; }
+.sk-bar { height: 12px; }
+
+/* SurfaceError — SE-SESSION / SE-TASKS */
+.surface-error { padding: var(--sp-xxl) 0; max-width: 46ch; }
+.surface-error h2 { font-family: var(--font-family-display); font-size: var(--fs-title); font-weight: var(--font-weight-title); line-height: var(--font-lineHeight-title); }
+.surface-error p { color: var(--tx-2); margin-top: var(--sp-sm); }
+.btn-primary { display: inline-flex; align-items: center; gap: var(--sp-sm); margin-top: var(--sp-lg); padding: var(--sp-sm) var(--sp-lg); border-radius: var(--r-pill); background: var(--primary); color: var(--tx-onaccent); font-weight: var(--font-weight-emphasis); }
+.btn-ghost { display: inline-flex; align-items: center; gap: var(--sp-sm); padding: var(--sp-xs) var(--sp-md); border-radius: var(--r-pill); color: var(--primary); font-weight: var(--font-weight-emphasis); }
+.btn-ghost:hover { background: var(--primary-tint); }
+
+/* Composer */
+.composer { flex: none; border-top: 1px solid var(--hairline); background: var(--bg-raised); }
+.composer-inner { max-width: 760px; margin: 0 auto; display: flex; align-items: center; gap: var(--sp-md); padding: var(--sp-md) var(--gutter); }
+.composer input { flex: 1; min-width: 0; color: var(--tx); }
+.composer input::placeholder { color: var(--tx-muted); }
+.orb {
+  width: 44px; height: 44px; border-radius: var(--radius-orb); flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--bg-base); color: var(--tx); border: 1px solid var(--hairline);
+}
+.app[data-mic="dimmed"] .orb { opacity: .4; }
+.mic-note { display: none; font-size: var(--fs-meta); color: var(--tx-2); padding: 0 var(--gutter) var(--sp-sm); width: 100%; max-width: 760px; margin: 0 auto; }
+.app[data-mic="dimmed"] .mic-note { display: block; }
+
+/* ============ TASKS ============ */
+.tasks-body { flex: 1; min-height: 0; overflow-y: auto; }
+.tasks-col { max-width: 900px; padding: var(--sp-lg) var(--gutter) var(--sp-xxl); }
+.app[data-tasks="default"] .v-tasks-default,
+.app[data-tasks="rename"]  .v-tasks-default,
+.app[data-tasks="arrived"] .v-tasks-default { display: block; }
+.app[data-tasks="empty-first"] .v-tasks-empty-first { display: block; }
+.app[data-tasks="empty-list"]  .v-tasks-empty-list  { display: block; }
+.app[data-tasks="loading"] .v-tasks-loading { display: block; }
+.app[data-tasks="error"]   .v-tasks-error   { display: block; }
+
+.tasks-head { display: flex; align-items: baseline; gap: var(--sp-md); padding-bottom: var(--sp-md); }
+.tasks-head .count { font-size: var(--fs-meta); color: var(--tx-muted); font-variant-numeric: var(--font-numeric); }
+.add-btn { display: inline-flex; align-items: center; gap: var(--sp-xs); margin-left: auto; padding: var(--sp-xs) var(--sp-sm); border-radius: var(--r-pill); border: 1px solid var(--hairline); color: var(--tx); font-size: var(--fs-meta); }
+.add-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+.day-group { display: block; padding-top: var(--sp-lg); }
+.day-head { font-size: var(--fs-label); font-weight: var(--font-weight-label); letter-spacing: var(--font-letterSpacing-label); text-transform: uppercase; color: var(--tx-muted); padding-bottom: var(--sp-sm); }
+.tasks { list-style: none; }
+.task-row {
+  display: flex; align-items: center; gap: var(--sp-md);
+  padding: var(--sp-md) 0; border-radius: var(--r-row);
+  border-bottom: 1px solid var(--hairline);
+}
+.task-row:last-child { border-bottom: 0; }
+.checkbox { width: 22px; height: 22px; border-radius: var(--r-sm); border: 1px solid var(--tx-muted); flex: none; display: inline-flex; align-items: center; justify-content: center; color: transparent; }
+.task-row.done .checkbox { border-color: var(--success); color: var(--success); }
+.task-main { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: var(--sp-sm); flex-wrap: wrap; }
+.task-title { }
+.task-row.done .task-title { text-decoration: line-through; opacity: .6; }
+.task-meta { font-size: var(--fs-meta); color: var(--tx-muted); font-variant-numeric: var(--font-numeric); }
+.row-del { color: var(--tx-muted); opacity: 0; padding: var(--sp-xs); border-radius: var(--r-sm); }
+.task-row:hover .row-del, .task-row:focus-within .row-del { opacity: 1; }
+.row-del:hover { color: var(--danger); }
+.rename-input { flex: 1; min-width: 0; color: var(--tx); background: var(--bg-raised); border: 1px solid var(--primary); border-radius: var(--r-sm); padding: var(--sp-xs) var(--sp-sm); }
+.row-rename { display: none; }
+.app[data-tasks="rename"] .row-editing .row-static { display: none; }
+.app[data-tasks="rename"] .row-editing .row-rename { display: flex; flex: 1; min-width: 0; gap: var(--sp-sm); align-items: center; }
+
+/* arrival flash — AC-4's cue, moved to the moment of arrival from a message.
+   It is a MOMENT, so it renders only in its own state: a permanent green row in the
+   default rendering would read as a selection and spend the one signal add-green carries. */
+.app[data-tasks="arrived"] .on-arrival { background: var(--add-tint); }
+
+/* empty states — ET-FIRST / ET-COLLECTION / ET-DONE */
+.empty { padding: var(--sp-xxl) 0; max-width: 44ch; }
+.empty h2 { font-family: var(--font-family-display); font-size: var(--fs-title); font-weight: var(--font-weight-title); }
+.empty p { color: var(--tx-2); margin-top: var(--sp-sm); }
+.empty .second-door { color: var(--tx-muted); font-size: var(--fs-meta); margin-top: var(--sp-md); }
+
+/* banners */
+.banner { display: none; align-items: center; gap: var(--sp-md); padding: var(--sp-sm) var(--gutter); background: var(--bg-raised); font-size: var(--fs-meta); }
+.app[data-banner="retry"]   .banner-retry   { display: flex; }
+.app[data-banner="offline"] .banner-offline { display: flex; }
+.banner-retry { border-top: 1px solid var(--danger); border-bottom: 1px solid var(--danger); color: var(--tx); }
+.banner-retry .ic { color: var(--danger); }
+.banner-offline { border-bottom: 1px solid var(--hairline); color: var(--question); }
+.banner .btn-ghost { margin-left: auto; font-size: var(--fs-meta); }
+
+/* ============ LISTS MENU — slide-over at every width ============ */
+.scrim { position: absolute; inset: 0; background: var(--scrim); z-index: 30; display: none; }
+.app[data-menu] .scrim { display: block; }
+.menu {
+  position: absolute; inset: 0 auto 0 0; width: min(320px, 86vw); z-index: 31;
+  background: var(--bg-raised); border-right: 1px solid var(--hairline);
+  box-shadow: var(--shadow-card);
+  display: none; flex-direction: column; padding: var(--sp-md) 0;
+}
+.app[data-menu] .menu { display: flex; }
+.menu-head { display: flex; align-items: center; gap: var(--sp-sm); padding: 0 var(--sp-md) var(--sp-md); }
+.menu-head .wordmark { flex: 1; }
+.menu-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 0 var(--sp-sm); }
+.menu-section { font-size: var(--fs-label); font-weight: var(--font-weight-label); letter-spacing: var(--font-letterSpacing-label); text-transform: uppercase; color: var(--tx-muted); padding: var(--sp-lg) var(--sp-md) var(--sp-sm); }
+.menu-row { display: flex; align-items: center; gap: var(--sp-md); width: 100%; padding: var(--sp-sm) var(--sp-md); border-radius: var(--r-sm); color: var(--tx); text-align: left; }
+.menu-row:hover { background: var(--primary-tint); }
+.menu-row .mcount { margin-left: auto; font-size: var(--fs-meta); color: var(--tx-muted); font-variant-numeric: var(--font-numeric); }
+.menu-row.active { background: color-mix(in srgb, var(--primary) 7%, transparent); color: var(--primary); }
+.menu-foot { border-top: 1px solid var(--hairline); padding: var(--sp-sm) var(--sp-sm) 0; margin-top: var(--sp-sm); }
+.menu-lists { display: none; }
+.menu-lists-sk { display: none; }
+.menu-lists-fail { display: none; }
+.app[data-menu="default"] .menu-lists { display: block; }
+.app[data-menu="failed"]  .menu-lists-fail { display: flex; align-items: center; gap: var(--sp-sm); padding: var(--sp-sm) var(--sp-md); color: var(--tx-2); font-size: var(--fs-meta); }
+.app[data-menu="empty"]   .menu-empty-note { display: block; }
+.menu-empty-note { display: none; padding: var(--sp-sm) var(--sp-md) 0; color: var(--tx-muted); font-size: var(--fs-meta); }
+
+/* ============ SETTINGS ============ */
+.set-col { max-width: 640px; padding: var(--sp-lg) var(--gutter) var(--sp-xxl); }
+.set-row { display: flex; align-items: center; gap: var(--sp-lg); padding: var(--sp-md) 0; border-bottom: 1px solid var(--hairline); flex-wrap: wrap; }
+.set-label { flex: 1; min-width: 140px; }
+.set-sub { display: block; font-size: var(--fs-meta); color: var(--tx-muted); }
+.seg { display: inline-flex; border: 1px solid var(--hairline); border-radius: var(--r-pill); overflow: hidden; }
+.seg button { padding: var(--sp-xs) var(--sp-md); font-size: var(--fs-meta); color: var(--tx-2); }
+.seg button.on { background: var(--primary-tint); color: var(--primary); font-weight: var(--font-weight-emphasis); }
+.switch { width: 46px; height: 26px; border-radius: var(--r-pill); background: var(--primary); position: relative; flex: none; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 23px; width: 20px; height: 20px; border-radius: var(--radius-orb); background: var(--tx-onaccent); }
+.app[data-settings="failed"] .switch { background: var(--hairline); }
+.app[data-settings="failed"] .switch::after { left: 3px; background: var(--tx-2); }
+.set-fail { display: none; width: 100%; align-items: center; gap: var(--sp-sm); color: var(--danger); font-size: var(--fs-meta); }
+.app[data-settings="failed"] .set-fail { display: flex; }
+.set-fail .btn-ghost { color: var(--danger); font-size: var(--fs-meta); padding: 0 var(--sp-xs); }
+
+/* ============ NEW LIST SHEET ============ */
+.sheet-wrap { position: absolute; inset: 0; z-index: 40; display: none; align-items: flex-end; justify-content: center; background: var(--scrim); }
+.app[data-sheet] .sheet-wrap { display: flex; }
+.sheet { width: 100%; max-width: 420px; background: var(--bg-raised); border-radius: var(--r-sheet) var(--r-sheet) 0 0; padding: var(--sp-lg) var(--gutter) var(--sp-xl); box-shadow: var(--shadow-card); }
+.sheet h2 { font-family: var(--font-family-display); font-size: var(--fs-title); font-weight: var(--font-weight-title); }
+.field { margin-top: var(--sp-lg); }
+.field input { width: 100%; padding: var(--sp-sm) var(--sp-md); border-radius: var(--r-sm); border: 1px solid var(--hairline); background: var(--bg-base); color: var(--tx); }
+.app[data-sheet="taken"] .field input { border-color: var(--danger); }
+.field-err { display: none; color: var(--danger); font-size: var(--fs-meta); margin-top: var(--sp-sm); }
+.app[data-sheet="taken"] .field-err { display: block; }
+.sheet-actions { display: flex; justify-content: flex-end; gap: var(--sp-sm); margin-top: var(--sp-lg); align-items: center; }
+.sheet-actions .btn-primary { margin-top: 0; }
+.app[data-sheet="new"] .btn-primary[disabled] { opacity: .4; cursor: not-allowed; }
+
+/* ============ 1024px and up — the width is used, not floated in ============ */
+@media (min-width: 1024px) {
+  html { --gutter: calc(var(--spacing-gutter_web) * 1px); }
+  .topbar { padding-left: var(--sp-xxl); padding-right: var(--sp-xxl); }
+  .talk-col { padding-top: var(--sp-xxl); }
+  .tasks-col { max-width: none; padding-left: var(--sp-xxl); padding-right: var(--sp-xxl); }
+  /* day headers set in a left gutter beside their rows */
+  .day-group { display: grid; grid-template-columns: 180px minmax(0, 720px); gap: var(--sp-xl); align-items: start; }
+  .day-head { padding-top: var(--sp-md); text-align: right; }
+  .tasks-head { display: grid; grid-template-columns: 180px minmax(0, 720px); gap: var(--sp-xl); align-items: baseline; }
+  .tasks-head .count { text-align: right; }
+  .tasks-head .add-btn { justify-self: end; }
+  .set-col { padding-left: var(--sp-xxl); }
+}
+</style>
+</head>
+<body>
+
+<!-- dev chrome: state switcher — mockup tooling, excluded from the testid contract -->
+<div class="dev-bar" aria-label="Mockup state switcher (dev chrome)">
+  <span class="dev-tag">app shell</span>
+  <button data-s="talk-idle" onclick="showState('talk-idle')">talk-idle</button>
+  <button data-s="talk-empty" onclick="showState('talk-empty')">talk-empty</button>
+  <button data-s="talk-loading" onclick="showState('talk-loading')">talk-loading</button>
+  <button data-s="talk-failed" onclick="showState('talk-failed')">talk-failed</button>
+  <button data-s="tasks-default" onclick="showState('tasks-default')">tasks-default</button>
+  <button data-s="tasks-rename" onclick="showState('tasks-rename')">tasks-rename</button>
+  <button data-s="tasks-arrived" onclick="showState('tasks-arrived')">tasks-arrived</button>
+  <button data-s="tasks-empty-first" onclick="showState('tasks-empty-first')">tasks-empty-first</button>
+  <button data-s="tasks-empty-list" onclick="showState('tasks-empty-list')">tasks-empty-list</button>
+  <button data-s="tasks-loading" onclick="showState('tasks-loading')">tasks-loading</button>
+  <button data-s="tasks-refresh-failed" onclick="showState('tasks-refresh-failed')">tasks-refresh-failed</button>
+  <button data-s="tasks-offline" onclick="showState('tasks-offline')">tasks-offline</button>
+  <button data-s="tasks-error" onclick="showState('tasks-error')">tasks-error</button>
+  <button data-s="menu-default" onclick="showState('menu-default')">menu-default</button>
+  <button data-s="menu-empty" onclick="showState('menu-empty')">menu-empty</button>
+  <button data-s="menu-failed" onclick="showState('menu-failed')">menu-failed</button>
+  <button data-s="settings-default" onclick="showState('settings-default')">settings-default</button>
+  <button data-s="settings-save-failed" onclick="showState('settings-save-failed')">settings-save-failed</button>
+  <button data-s="list-new" onclick="showState('list-new')">list-new</button>
+  <button data-s="list-name-taken" onclick="showState('list-name-taken')">list-name-taken</button>
+  <button class="dev-theme" onclick="toggleTheme()">dark / light</button>
+</div>
+
+<div id="app" class="app" data-surface="talk" data-talk="idle">
+
+  <!-- ==================== S1 · TALK ==================== -->
+  <div class="surface s-talk">
+    <header class="topbar">
+      <span class="wordmark">todo-ai</span>
+      <span class="spacer"></span>
+      <!-- PS-TASKS. Visible and enabled in EVERY Talk state, failures included — that is the whole point of it. -->
+      <button class="path" data-testid="shell-tasks-button" aria-label="Tasks, 3 left today">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
+        Tasks <span class="badge num">3</span>
+      </button>
+    </header>
+
+    <main class="talk-body">
+      <div class="talk-col">
+
+        <!-- talk-idle: the conversation carries the whole result. No list beside it. -->
+        <section class="v v-talk-idle">
+          <div class="msg user"><div class="bubble">Move the budget review to 4 and add pay the electricity bill</div><span class="msg-meta">You · 2:04 PM</span></div>
+          <div class="msg ai">
+            <div class="bubble">
+              <div class="bubble-head">Edited 1 task · added 1</div>
+              <div class="diff-row">
+                <button class="tasklink" data-testid="talk-task-link">Review the Q3 budget draft</button>
+                <span class="chip-old">2:00 PM</span><span class="arrow">→</span><span class="chip-new">4:00 PM</span>
+                <span class="mini-label edit">EDITED</span>
+              </div>
+              <div class="diff-row">
+                <button class="tasklink">Pay the electricity bill</button>
+                <span class="chip-new">today</span><span class="mini-label add">NEW</span>
+              </div>
+              <button class="undo-btn" data-testid="assistant-undo-button"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>Undo</button>
+            </div>
+            <span class="msg-meta">2:04 PM · tap a task to open it in Tasks</span>
+          </div>
+        </section>
+
+        <!-- talk-empty: first run. The invitation gains the second door — a user whose mic is
+             denied or absent otherwise sees one control they cannot use and no sign of the rest. -->
+        <section class="v v-talk-empty">
+          <div class="invite">
+            <h2>Say it.<br>I'll write it down.</h2>
+            <p>Tap the mic and try saying “team meeting tomorrow at 2”. Typing does exactly the same.</p>
+            <p class="second-door">No mic? Everything works by hand in Tasks, top right.</p>
+          </div>
+        </section>
+
+        <!-- talk-loading: the session read. Skeletons, NOT the empty invitation — a returning
+             user who reads “Say it. I'll write it down.” while their history loads reads it as lost. -->
+        <section class="v v-talk-loading" aria-busy="true">
+          <div class="sk sk-bubble a"></div>
+          <div class="sk sk-bubble b"></div>
+          <div class="sk sk-bubble c"></div>
+        </section>
+
+        <!-- talk-failed: SE-SESSION. There is no thread, so there is nowhere to put an error
+             bubble. This is the exact moment ADR-11's second path is supposed to exist. -->
+        <section class="v v-talk-failed">
+          <div class="surface-error">
+            <h2>Couldn't load your conversation</h2>
+            <p>Your tasks are still here — open Tasks, or try again.</p>
+            <button class="btn-primary" data-testid="talk-session-retry-button">Retry</button>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <div class="mic-note">Getting your conversation…</div>
+    <footer class="composer">
+      <div class="composer-inner">
+        <input data-testid="assistant-composer-input" placeholder="Say or type what needs doing…" aria-label="Say or type what needs doing">
+        <button class="orb" data-testid="assistant-mic-button" aria-label="Tap to speak">
+          <svg class="ic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v5"/></svg>
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ==================== S2 · TASKS ==================== -->
+  <div class="surface s-tasks">
+    <header class="topbar">
+      <button class="icon-btn" data-testid="shell-lists-menu-button" aria-label="Lists">
+        <svg class="ic" viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+      </button>
+      <h1>Today</h1>
+      <span class="spacer"></span>
+      <button class="path" data-testid="shell-talk-button" aria-label="Talk">
+        <svg class="ic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v5"/></svg>
+        Talk
+      </button>
+    </header>
+
+    <!-- InlineRetryBanner: the list is NEVER replaced by an error while anything is known. -->
+    <div class="banner banner-retry">
+      <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+      Couldn't refresh your tasks — showing what's on this device.
+      <button class="btn-ghost" data-testid="tasks-list-retry-button">Retry</button>
+    </div>
+    <div class="banner banner-offline" data-testid="assistant-offline-banner">
+      <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M2 2 22 22"/><path d="M8.5 16.4a5 5 0 0 1 7 0"/><path d="M5 12.9a10 10 0 0 1 4-2.5"/><path d="M15 10.4a10 10 0 0 1 4 2.5"/><path d="M12 20h.01"/></svg>
+      No connection — the list still works, and what you type is saved on the device.
+    </div>
+
+    <div class="tasks-body">
+      <div class="tasks-col">
+
+        <!-- tasks-default (and tasks-rename, which differs by one row) -->
+        <section class="v v-tasks-default">
+          <div class="tasks-head">
+            <span class="count num">3 tasks left today</span>
+            <button class="add-btn" data-testid="assistant-add-task-button">
+              <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Add task
+            </button>
+          </div>
+
+          <div class="day-group">
+            <div class="day-head">Today · Sat, Aug 16</div>
+            <ul class="tasks">
+              <li class="task-row done">
+                <button class="checkbox" aria-label="Mark “Morning stand-up” not done" aria-pressed="true"><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></button>
+                <div class="task-main"><span class="task-title">Morning stand-up</span><span class="task-meta">9:30 AM</span></div>
+              </li>
+              <!-- on-arrival: the row a user lands on after tapping this task inside its message.
+                   Tinted only in the tasks-arrived state — see the note by .on-arrival in the CSS. -->
+              <li class="task-row on-arrival" data-testid="assistant-task-row">
+                <button class="checkbox" data-testid="assistant-task-checkbox" aria-label="Mark “Review the Q3 budget draft” done" aria-pressed="false"></button>
+                <div class="task-main"><span class="task-title">Review the Q3 budget draft</span><span class="task-meta">4:00 PM</span></div>
+                <button class="row-del" data-testid="tasks-delete-button" aria-label="Delete “Review the Q3 budget draft”">
+                  <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                </button>
+              </li>
+              <li class="task-row row-editing">
+                <button class="checkbox" aria-label="Mark “Pay the electricity bill” done" aria-pressed="false"></button>
+                <div class="task-main row-static"><span class="task-title">Pay the electricity bill</span><span class="task-meta">due today</span></div>
+                <div class="row-rename">
+                  <input class="rename-input" data-testid="tasks-rename-input" value="Pay the electricity bill" aria-label="Task name">
+                </div>
+                <button class="row-del" aria-label="Delete “Pay the electricity bill”">
+                  <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                </button>
+              </li>
+              <li class="task-row">
+                <button class="checkbox" aria-label="Mark “1:1 with Hà” done" aria-pressed="false"></button>
+                <div class="task-main"><span class="task-title">1:1 with Hà</span><span class="task-meta">4:30 PM</span></div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="day-group">
+            <div class="day-head">Tomorrow · Sun, Aug 17</div>
+            <ul class="tasks">
+              <li class="task-row">
+                <button class="checkbox" aria-label="Mark “Grocery run for the week” done" aria-pressed="false"></button>
+                <div class="task-main"><span class="task-title">Grocery run for the week</span><span class="task-meta">morning</span></div>
+              </li>
+              <li class="task-row">
+                <button class="checkbox" aria-label="Mark “Call Mum” done" aria-pressed="false"></button>
+                <div class="task-main"><span class="task-title">Call Mum</span><span class="task-meta">10:00 AM</span></div>
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- ET-FIRST: both doors, because a user arriving from a broken assistant needs the
+             hand path and a user arriving by curiosity needs to know the fast one exists. -->
+        <section class="v v-tasks-empty-first">
+          <div class="empty">
+            <h2>No tasks yet</h2>
+            <p>Add one by hand and it lands right here.</p>
+            <button class="btn-primary" data-testid="tasks-empty-add-button">
+              <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Add task
+            </button>
+            <p class="second-door">Or say one, on Talk.</p>
+          </div>
+        </section>
+
+        <!-- ET-COLLECTION: a different fact, so different words. Telling a user with 40 tasks
+             that they have none is the lie the generic empty state tells. -->
+        <section class="v v-tasks-empty-list">
+          <div class="empty">
+            <h2>Nothing in Groceries</h2>
+            <p>This list is empty. Your other tasks are still where you left them.</p>
+            <button class="btn-primary">
+              <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Add task
+            </button>
+          </div>
+        </section>
+
+        <!-- SK-ROW: five rows in the row's own silhouette, under a real day header. No spinner. -->
+        <section class="v v-tasks-loading" aria-busy="true">
+          <div class="day-group">
+            <div class="day-head">Today · Sat, Aug 16</div>
+            <div>
+              <div class="sk-rowline"><div class="sk sk-box"></div><div class="sk sk-bar" style="width:62%"></div></div>
+              <div class="sk-rowline"><div class="sk sk-box"></div><div class="sk sk-bar" style="width:48%"></div></div>
+              <div class="sk-rowline"><div class="sk sk-box"></div><div class="sk sk-bar" style="width:66%"></div></div>
+              <div class="sk-rowline"><div class="sk sk-box"></div><div class="sk sk-bar" style="width:40%"></div></div>
+              <div class="sk-rowline"><div class="sk sk-box"></div><div class="sk sk-bar" style="width:56%"></div></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SE-TASKS: nothing on device. Add task stays LIVE — the local no-AI path works
+             offline (AC-25), and disabling a working control to look consistent is a lie. -->
+        <section class="v v-tasks-error">
+          <div class="surface-error">
+            <h2>Couldn't load your tasks</h2>
+            <p>Nothing is saved on this device yet. You can still add one by hand.</p>
+            <button class="btn-primary">Retry</button>
+            <button class="btn-ghost" style="margin-left:var(--sp-sm)">
+              <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Add task
+            </button>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== S4 · SETTINGS ==================== -->
+  <div class="surface s-settings">
+    <header class="topbar">
+      <button class="icon-btn" data-testid="settings-back-button" aria-label="Back to Lists">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <h1>Settings</h1>
+    </header>
+    <div class="tasks-body">
+      <div class="set-col">
+
+        <div class="set-row">
+          <span class="set-label">Theme<span class="set-sub">Dark is the default. Both are fully drawn.</span></span>
+          <div class="seg" data-testid="settings-theme-control" role="group" aria-label="Theme">
+            <button class="on" aria-pressed="true">Dark</button>
+            <button aria-pressed="false">Light</button>
+            <button aria-pressed="false">System</button>
+          </div>
+        </div>
+
+        <div class="set-row">
+          <span class="set-label">Talk back<span class="set-sub">The assistant reads its answer aloud.</span></span>
+          <button class="switch" data-testid="settings-talkback-switch" role="switch" aria-checked="true" aria-label="Talk back"></button>
+          <!-- SettingsRow failed: the control REVERTS visibly and the row says so. Never a toast. -->
+          <span class="set-fail">
+            <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+            Couldn't save —
+            <button class="btn-ghost" data-testid="settings-row-retry">tap to try again</button>
+          </span>
+        </div>
+
+        <div class="set-row">
+          <span class="set-label">About</span>
+          <span class="task-meta num">todo-ai · 0.3.0</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== S3 · LISTS MENU (slide-over at every width) ==================== -->
+  <div class="scrim"></div>
+  <nav class="menu" aria-label="Lists">
+    <div class="menu-head">
+      <span class="wordmark">todo-ai</span>
+      <button class="icon-btn" data-testid="menu-close-button" aria-label="Close">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="menu-scroll">
+      <button class="menu-row active" data-testid="menu-collection-row">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>
+        Today <span class="mcount num">3</span>
+      </button>
+      <button class="menu-row">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M4 5h16v9l-4 5H4z"/><path d="M4 12h16"/></svg>
+        Inbox <span class="mcount num">7</span>
+      </button>
+      <button class="menu-row">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+        Done
+      </button>
+
+      <div class="menu-lists">
+        <div class="menu-section">Your lists</div>
+        <button class="menu-row" data-testid="menu-list-row">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
+          Work <span class="mcount num">5</span>
+        </button>
+        <button class="menu-row">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
+          Home <span class="mcount num">2</span>
+        </button>
+        <button class="menu-row">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
+          Groceries
+        </button>
+      </div>
+
+      <div class="menu-lists-fail">
+        <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+        Couldn't load your lists
+        <button class="btn-ghost" data-testid="menu-retry-button">Retry</button>
+      </div>
+
+      <p class="menu-empty-note">Lists group tasks the way you think about them.</p>
+
+      <button class="menu-row" data-testid="menu-new-list-button">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+        New list
+      </button>
+    </div>
+    <div class="menu-foot">
+      <button class="menu-row" data-testid="menu-settings-row">
+        <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg>
+        Settings
+      </button>
+    </div>
+  </nav>
+
+  <!-- ==================== S5 · NEW LIST ==================== -->
+  <div class="sheet-wrap">
+    <div class="sheet" role="dialog" aria-label="New list">
+      <h2>New list</h2>
+      <div class="field">
+        <input id="listName" data-testid="list-editor-name-input" placeholder="List name" aria-label="List name">
+        <p class="field-err">A list called Work already exists.</p>
+      </div>
+      <div class="sheet-actions">
+        <button class="btn-ghost" data-testid="list-editor-cancel-button">Cancel</button>
+        <button class="btn-primary" id="listCreate" data-testid="list-editor-create-button">Create</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* state → the data-attributes the CSS reads. One map, so a state cannot half-apply. */
+var STATES = {
+  'talk-idle':            { surface: 'talk',  talk: 'idle' },
+  'talk-empty':           { surface: 'talk',  talk: 'empty' },
+  'talk-loading':         { surface: 'talk',  talk: 'loading', mic: 'dimmed' },
+  'talk-failed':          { surface: 'talk',  talk: 'failed' },
+  'tasks-default':        { surface: 'tasks', tasks: 'default' },
+  'tasks-rename':         { surface: 'tasks', tasks: 'rename' },
+  'tasks-arrived':        { surface: 'tasks', tasks: 'arrived' },
+  'tasks-empty-first':    { surface: 'tasks', tasks: 'empty-first' },
+  'tasks-empty-list':     { surface: 'tasks', tasks: 'empty-list' },
+  'tasks-loading':        { surface: 'tasks', tasks: 'loading' },
+  'tasks-refresh-failed': { surface: 'tasks', tasks: 'default', banner: 'retry' },
+  'tasks-offline':        { surface: 'tasks', tasks: 'default', banner: 'offline' },
+  'tasks-error':          { surface: 'tasks', tasks: 'error' },
+  'menu-default':         { surface: 'tasks', tasks: 'default', menu: 'default' },
+  'menu-empty':           { surface: 'tasks', tasks: 'default', menu: 'empty' },
+  'menu-failed':          { surface: 'tasks', tasks: 'default', menu: 'failed' },
+  'settings-default':     { surface: 'settings', settings: 'default' },
+  'settings-save-failed': { surface: 'settings', settings: 'failed' },
+  'list-new':             { surface: 'tasks', tasks: 'default', menu: 'default', sheet: 'new' },
+  'list-name-taken':      { surface: 'tasks', tasks: 'default', menu: 'default', sheet: 'taken' }
+};
+var KEYS = ['surface', 'talk', 'tasks', 'menu', 'settings', 'sheet', 'banner', 'mic'];
+
+function showState(name) {
+  var cfg = STATES[name];
+  if (!cfg) return;
+  var app = document.getElementById('app');
+  for (var i = 0; i < KEYS.length; i++) {
+    var k = KEYS[i];
+    if (cfg[k]) { app.setAttribute('data-' + k, cfg[k]); } else { app.removeAttribute('data-' + k); }
+  }
+  app.setAttribute('data-state', name);
+  var btns = document.querySelectorAll('.dev-bar button[data-s]');
+  for (var j = 0; j < btns.length; j++) {
+    btns[j].classList.toggle('on', btns[j].getAttribute('data-s') === name);
+  }
+  var create = document.getElementById('listCreate');
+  if (create) { if (cfg.sheet === 'new') { create.setAttribute('disabled', ''); } else { create.removeAttribute('disabled'); } }
+  var nameInput = document.getElementById('listName');
+  if (nameInput) { nameInput.value = cfg.sheet === 'taken' ? 'Work' : ''; }
+}
+
+function toggleTheme() {
+  var h = document.documentElement;
+  h.setAttribute('data-theme', h.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+}
+
+showState('talk-idle');
+</script>
+</body>
+</html>

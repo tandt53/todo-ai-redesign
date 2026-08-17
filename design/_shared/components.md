@@ -198,6 +198,13 @@ Standard copy for standard actions: "Undo", "Retry", "Send", "Cancel" — no the
 | the user's own typing | **type** | enter, write, input |
 | the OS Settings app | **Settings**, capitalised | preferences, options — and lowercase when it is a section rather than the app: "site settings", "system settings" |
 | the hardware, when naming an OS permission | **Microphone**, capitalised | mic (which is right everywhere else: "the mic lights up again") |
+| the conversation surface, when named as a place | **Talk** | Chat, Assistant, Conversation, Home |
+| the list surface, when named as a place | **Tasks** | List, My list, To-do, Todos |
+| a grouping the user made | **list** | project, folder, category, tag, label |
+| making one | **New list** (the row and the sheet title); the button says **Create** | Add list, Create new list — *"add" belongs to tasks ("Add task") and nothing else* |
+| putting a task in a different list | **move** | assign, file, categorise |
+| the dark/light choice | **theme** | appearance mode, dark mode toggle, colour scheme |
+| **todo-ai's own settings screen** | **Settings** — see the collision note in § App shell | — |
 
 ## Drawer (carried, pending Open Question 1)
 
@@ -229,3 +236,253 @@ Heights are not published here: they are derived from `font.size` + `spacing` to
 
 Computed (not eyeballed) via WCAG 2.1 relative-luminance formula; every pair passed. Dark theme: `text.primary`(17.5/15.8), `text.secondary`(9.0/8.1), `text.muted`(5.6/5.0) on `bg.base`/`bg.raised`; `primary` 7.0/6.3; `voice.listening` 12.3/11.1; `danger` 7.7/6.9; `success`&`diff.add` 11.2/10.1; `question` 12.0/10.8 on base/raised; `text.onAccent` on `primary` 7.0, on `voice.listening` 12.3, on `danger` 7.7; accents on own tints: add 9.3, remove 6.8, question 9.9, listening 10.1, `text.primary` on `primaryTint` 15.6. Light theme: `text.primary` 15.5/16.6, `text.secondary` 7.8/8.4, `text.muted` 5.4/5.8 on `bg.base`/`bg.raised`; `primary` 6.1/6.5; `voice.listening` 4.6/4.8; `danger` 5.3/5.7; `success` 5.0/5.3; `question` 5.5/5.9; white on `primary` 6.5; accents on own tints: add 4.6, remove 4.8, question 5.1, listening 4.8, `text.primary` on `primaryTint` 13.7.
 Rule for implementers: accent text is legal only on `bg.base`, `bg.raised`, or its own tint token — any new pairing must be re-verified before use. The `gradient.voice` surface never carries body text; the live transcript renders on `bg.base` beside it, `text.primary`.
+
+---
+
+# App shell — the surfaces outside the conversation
+
+**Added 2026-08-17 (T-101), additive.** Nothing above this line changed except the § Buttons
+house-word table, which gained rows at its foot. Structure, purpose and per-surface states are
+in `design/_shared/information-architecture.md`; this section is the component half — what each
+new thing renders and in which states. Mockup: `design/assistant/screens/app-shell.html`.
+
+**Zero new tokens.** Every value below resolves to an existing entry in `tokens.json`. No new
+colour, size, radius, shadow or motion token was added, so § Contrast is unchanged and complete
+for these components: they reuse pairs it already verified.
+
+**The "Settings" collision, and the tripwire.** § Buttons fixes **Settings** as the OS Settings
+app, and four § MicControl permission rows send the user there in those words. todo-ai now has a
+Settings screen of its own, also **Settings**. The two never co-occur on a rendered screen —
+permission messages live on Talk, our Settings row lives in the Lists menu — so the ambiguity is
+in the vocabulary and not in the pixels, and the permission strings are left byte-identical
+(they are parsed by row ID at run time, L-008). **The moment a permission message renders inside
+our Settings screen, the OS one must be qualified** — "system Settings" on iOS, "App info" on
+Android. Whoever adds that row owes the qualification in the same change.
+
+## PathSwitch
+
+Purpose: the reciprocal one-tap move between the two paths, `todo-ai ADR-11`'s second path made
+reachable from a failure. One control per surface, top bar, right-aligned. It is **not** a tab
+bar: the bottom of the Talk surface belongs to the Composer and the mic orb.
+
+| ID | On surface | Label | Rendering |
+|---|---|---|---|
+| **PS-TASKS** | Talk | `Tasks` + count badge | ghost button, list icon, `text.primary`; badge is a `radius.pill` `primaryTint` fill with `primary` text, `font.size.meta` tabular |
+| **PS-TALK** | Tasks | `Talk` | ghost button, mic icon, `text.primary` |
+
+**The count is open tasks due today** — the same number § TaskList's header publishes, never a
+second definition of it. **Zero renders no badge**; the zero case is stated in words on the Tasks
+surface ("Nothing left today"), where there is room to say it properly. A badge reading `0` is a
+number pretending to be news.
+
+States: default · hover · focused · pressed — § Buttons behaviours, unchanged.
+A11y: `role=button`; accessible name is the visible label plus the count as a sentence —
+`Tasks, 3 left today` / `Tasks` when there is no badge; `Talk`. The badge is never the whole
+accessible name: a screen reader user must not have to guess what "3" counts.
+
+**PS-TASKS is visible and enabled in every Talk failure state**, including the session-read
+failure below. That is the whole point of it; a fallback control that disappears with the
+surface it is meant to escape is not a fallback.
+
+## ListsMenu
+
+Purpose: choose which collection Tasks renders, make a list, reach Settings. Opened by the
+hamburger on the Tasks surface. **A slide-over panel from the left at every width** — scrim,
+`shadow.raised`, an explicit close control. Considered and rejected: a permanent rail at
+≥ 1024px. It is navigation you visit and leave, not a frame you work inside, and two
+presentations mean two behaviours to spec, build and test — one of which (the rail) has no close
+control, so its testid can never resolve at desktop. One presentation, one contract.
+
+Three row families, one rendering, different sources:
+
+| ID | Family | Rows | Source |
+|---|---|---|---|
+| **LM-COLLECTION** | built-in | Inbox · Today · Done | `task.status` — works today |
+| **LM-LIST** | personal | the user's lists | **needs `lists` + `tasks.list_id`; no field exists** |
+| **LM-ACTION** | actions | New list · Settings | New list needs the field; Settings does not |
+
+Row anatomy: icon (`icon.size.md`) + name + count, `font.size.body`, `padding: sm md`,
+`radius.sm`. Active row = 7% `primary` tint — the one legal chrome tint, carried unchanged from
+§ Drawer. Counts are `text.muted`, tabular, and omitted at zero for the same reason PS-TASKS
+omits its badge.
+
+States: default · hover · focused · pressed · active (the collection now rendered) ·
+**loading** (built-ins render immediately — they are derivable on device and must never wait on
+a network; only the personal section skeletons, two rows) · **failed** (one line in the personal
+section, "Couldn't load your lists" + Retry; built-ins and Settings still work) · **empty** (no
+personal lists: the section is absent, `New list` carries the invitation — the menu is never
+empty, it always holds the built-ins, New list and Settings).
+
+**Navigation must never be the thing that breaks.** Every failure state above keeps the built-in
+collections and the Settings row live, because a menu that fails closed strands the user with no
+route to the second path.
+
+## SettingsRow
+
+Purpose: one preference per row on the Settings surface. Flat rows on `bg.base`, hairline
+between, `padding: md lg` — no cards.
+
+| Variant | Control | Used by |
+|---|---|---|
+| segmented | three-segment control, active segment `primaryTint` fill + `primary` text | Theme — Dark / Light / System |
+| switch | pill track; on = `primary` fill, knob `text.onAccent`; off = `bg.hairline` track, knob `text.secondary` | Talk back (F-002 AC-6/AC-17) |
+| static | label + `text.muted` value, not interactive | About |
+
+States: default · hover · focused · pressed · **saving** (control shows the § Buttons loading
+treatment in place) · **failed**.
+
+**Failed is the row's most important state and it is not a toast.** The control **reverts
+visibly** to its previous value and the row grows a second line in `danger`: "Couldn't save — tap
+to try again". A preference that silently does not stick is the quietest failure an app can have;
+the user finds out days later and blames the feature.
+
+**Talk back ships with F-002, not before.** F-002 is written to revision 3 and unbuilt
+(`uc-coverage-map.md` UC-20). The row is drawn so the surface has somewhere for it to land; a
+switch that toggles nothing is worse than an absent one.
+
+## ListEditorSheet
+
+Purpose: name a new list. Bottom sheet on phones, centred dialog ≥ 1024px, `radius.sheet`,
+`bg.raised`, `shadow.raised`. Title **New list**; text field; **Create** (primary) and **Cancel**
+(ghost).
+
+States: default (field focused, `Create` disabled until a name is typed) · typing · saving
+(`Create` loading, width locked) · **failed** — inline under the field, `danger`, *"A list called
+Work already exists."* — **and the sheet does not close.** The typed name is never discarded.
+
+Depends entirely on a field that does not exist. Do not build this without `lists`.
+
+## MessageTaskLink
+
+Purpose: a task named inside a message bubble is a **door to the list** — tap it and the Tasks
+surface opens with that row scrolled into view and flashed once. This is what makes the owner's
+*"gắn các todo tại các message"* complete: a task you cannot open is only a description of one.
+
+Rendering: the task title inside § Message bubbles gains an underline in `text.muted` at
+1px offset 2px — the standard "this is a link" cue, no colour change, because the diff colours in
+that bubble already carry meaning and a second signal on the same text would collide with
+§ Colour rules 1. Hit area follows the platform minimum via `hitSlop`.
+
+The arrival flash reuses AC-4's existing treatment — `motion.duration_ms.diffFlashHold` then
+`diffFlashFade`, `addTint` / `removeTint` — moved from "whenever a turn applies" to "on arrival
+from the message that changed it". Same cue, attached to the moment it informs.
+
+States: default · hover (underline to `text.secondary`) · focused (ring) · pressed ·
+**inert** (the task was deleted by this or a later turn — no underline, not focusable; a link to
+a row that no longer exists is a promise the list cannot keep).
+
+New behaviour, in no F-doc. It is the smallest useful part of `UC-52 AC-52.5 / 52.6`.
+
+## Skeletons
+
+Purpose: loading mirrors the real content's silhouette. **No spinner in a void anywhere in this
+app** — the only spinner is the one § Buttons puts inside a button that was pressed.
+
+| ID | Mirrors | Shape |
+|---|---|---|
+| **SK-ROW** | § TaskRow | checkbox square + two bars (title 62%, meta 24%), five rows under a real day header |
+| **SK-BUBBLE** | § Message bubbles | three bubbles, alternating sides, 70% / 45% / 80% width |
+| **SK-LISTROW** | LM-LIST | icon square + one bar at 55%, two rows |
+
+Fill `bg.hairline` on `bg.raised`, `radius.sm`, a 1600ms opacity pulse between 100% and 55%.
+Under `prefers-reduced-motion` the pulse stops and the bars hold at 78% — still visibly
+placeholder, no motion. Skeletons carry no text and no testid: nothing about them is assertable
+except that they are not the empty state.
+
+**A loading surface never renders its empty state.** A returning user who sees "Say it. I'll
+write it down." while their conversation is still loading reads it as history lost.
+
+## InlineRetryBanner
+
+Purpose: the failure that must not take the surface. Full-width strip at the top of a list,
+`bg.raised`, 1px `danger` top-and-bottom hairline, `danger` icon, `text.primary` message,
+ghost **Retry**.
+
+Used when a refresh fails **and the known content is still worth showing**: "Couldn't refresh
+your tasks — showing what's on this device" + Retry, with every locally-known task still
+rendered and still editable.
+
+**The list is never replaced by an error.** The Tasks surface is the fallback path for the whole
+app (F-001 AC-24, AC-25); a fallback that blanks itself on a network error has failed at the one
+job it has. The full-surface treatment below is only for the case where there is genuinely
+nothing to show.
+
+States: default · retrying (Retry takes the § Buttons loading treatment) · hidden.
+
+## SurfaceError
+
+Purpose: the failure that has nothing to attach to — the conversation's own session read fails,
+so there is no thread to put an Error bubble in; or the task list fails with nothing on device.
+
+Anatomy, centred, `bg.base`: one line at `font.size.title` naming what happened in plain words,
+one `text.secondary` line naming the next thing to do, one primary **Retry**, and — this is the
+part that is not decoration — **the other path stays reachable**: PS-TASKS / PS-TALK remains
+visible and enabled in the top bar, and on the Tasks variant `Add task` stays live, because the
+local no-AI path works offline (AC-25) and disabling a working control to look consistent is a
+lie about what the app can do.
+
+| ID | Surface | Line 1 | Line 2 |
+|---|---|---|---|
+| **SE-SESSION** | Talk | Couldn't load your conversation | Your tasks are still here — open Tasks, or try again. |
+| **SE-TASKS** | Tasks | Couldn't load your tasks | Nothing is saved on this device yet. You can still add one by hand. |
+
+It looks **calm**: body-size supporting text, one accent, one button. An error state that shouts
+makes users abandon.
+
+## Empty states — Tasks
+
+Three, because they are three different facts and one message for all of them tells at least two
+users something untrue.
+
+| ID | When | Head | Action |
+|---|---|---|---|
+| **ET-FIRST** | no tasks anywhere | No tasks yet | `Add task`, plus one line offering the other path ("or say one, on Talk") — both doors: a user who arrived from a broken assistant needs the hand path, a user who arrived by curiosity needs to know the fast one exists |
+| **ET-COLLECTION** | this collection is empty, others are not | Nothing in {list} | `Add task`. Never ET-FIRST's wording — telling a user with 40 tasks that they have none is the lie the generic empty state tells |
+| **ET-DONE** | the Done collection is empty | Nothing completed yet | **none.** No action fills this list directly; inventing one would be a shrug dressed as an invitation |
+
+`{list}` is a `verbatim` slot (§ Spoken frames' vocabulary) — the list's own name, never
+re-worded.
+
+## Testid catalogue — app shell
+
+Controls that already exist keep their ids and simply render on a different surface:
+`assistant-task-row`, `assistant-task-checkbox`, `assistant-add-task-button`,
+`assistant-undo-button`, `assistant-retry-button`, `assistant-permission-cta`. **They are not
+renamed** — § Touch publishes width floors against them which `src/assistant/mobile/model/touch.ts`
+adopts and a test asserts row by row.
+
+Genuinely new controls, and only those, take new ids:
+
+| Testid | Control |
+|---|---|
+| `shell-tasks-button` | PS-TASKS |
+| `shell-talk-button` | PS-TALK |
+| `shell-lists-menu-button` | the hamburger on Tasks |
+| `menu-collection-row` | LM-COLLECTION exemplar |
+| `menu-list-row` | LM-LIST exemplar |
+| `menu-new-list-button` | LM-ACTION — New list |
+| `menu-settings-row` | LM-ACTION — Settings |
+| `menu-retry-button` | ListsMenu failed state |
+| `menu-close-button` | the panel's close control (≤ 1023px only) |
+| `settings-back-button` | Settings → Lists menu |
+| `settings-theme-control` | SettingsRow segmented |
+| `settings-talkback-switch` | SettingsRow switch |
+| `settings-row-retry` | SettingsRow failed |
+| `list-editor-name-input` | ListEditorSheet field |
+| `list-editor-create-button` | Create |
+| `list-editor-cancel-button` | Cancel |
+| `talk-session-retry-button` | SE-SESSION Retry |
+| `talk-task-link` | MessageTaskLink exemplar |
+| `tasks-list-retry-button` | InlineRetryBanner / SE-TASKS Retry |
+| `tasks-empty-add-button` | ET-FIRST / ET-COLLECTION CTA (distinct from the header's `assistant-add-task-button`) |
+| `tasks-rename-input` | inline rename, which ships on web today with no testid |
+| `tasks-delete-button` | the row's delete control, which ships on web today with no testid |
+
+**`assistant-drawer-button` is retired by this IA** — the hamburger stops toggling a pane and
+becomes navigation to a different surface, which is a different control wearing the same glyph.
+Its retirement lands with the spec pass, not before: the three existing F-001 mockups and the
+tests that parse them are untouched by this section.
+
+No content-width floor is published for any control above. § Touch's floors are measured from a
+shipped control; none of these has shipped, and publishing a floor measured only in Chromium
+would put a number into a table whose whole value is that its numbers are checkable.
