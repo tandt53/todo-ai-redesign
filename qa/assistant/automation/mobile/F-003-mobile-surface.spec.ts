@@ -14,7 +14,8 @@
  * them into one coverage number.
  *
  *   PART A — contract preconditions. Parses the design mockups, the TC files and
- *            the fixtures. Proves the 22-id selector contract, the enumerated
+ *            the fixtures. Proves the selector contract (whose SIZE the mockups
+ *            own — never a literal here, L-004), the enumerated
  *            permission matrix and the device-lab debt list are intact. Needs no
  *            implementation; goes red when design or the spec drifts.
  *
@@ -137,6 +138,54 @@ function idsUnder(file: string, attr: string): Set<string> {
   return ids
 }
 
+/**
+ * A button's visible label exactly as DESIGN publishes it, read out of a
+ * platform mockup at run time and stripped of the inline icon markup.
+ *
+ * Retyping a label into a test makes the check a self-agreement one: the test
+ * and the implementation can both drift away from design and still agree with
+ * each other (L-008). That is precisely what happened when ADR-008 turned the
+ * copy English — the retyped Vietnamese labels in this file kept asserting
+ * strings the product could no longer emit, and the two that were *negative*
+ * assertions went on passing while protecting nothing. Parsing means a copy
+ * change lands in this suite by itself.
+ *
+ * Throws rather than returning empty on a miss: a parser that silently matches
+ * nothing yields the same green as one that works (L-007).
+ */
+function mockupButtonLabel(file: string, id: string): string {
+  const html = readFileSync(file, 'utf8')
+  const m = new RegExp(
+    `<button[^>]*(?:data-testid|accessibilityIdentifier|resource-id)="${id}"[^>]*>([\\s\\S]*?)</button>`,
+  ).exec(html)
+  if (m === null) throw new Error(`no ${id} button found in ${file}`)
+  const label = m[1]!.replace(/<[^>]*>/g, '').trim()
+  if (label === '') throw new Error(`${id} in ${file} publishes no text label`)
+  return label
+}
+
+const mockupPermissionCtaLabel = (file: string): string =>
+  mockupButtonLabel(file, A11Y_IDS.permissionCta)
+const mockupUndoButtonLabel = (file: string): string => mockupButtonLabel(file, A11Y_IDS.undoButton)
+
+/**
+ * One row's utterance from the canonical F-001 utterance→intent table.
+ *
+ * The undo vocabulary is the case this exists for. ADR-008 retired the
+ * Vietnamese phrase, leaving `undo` as the whole closed list — and a phrase
+ * spelled out in a test body is a second home for a fact the table owns
+ * (L-004), which is how TC-033 came to drive an utterance the guard no longer
+ * recognises. Reading the row means the vocabulary has one home.
+ */
+function canonicalUtterance(id: string): string {
+  const canonical = JSON.parse(readFileSync(CANONICAL_UTTERANCES, 'utf8')) as {
+    rows: { id: string; utterance: string }[]
+  }
+  const row = canonical.rows.find((r) => r.id === id)
+  if (row === undefined) throw new Error(`canonical row ${id} is gone from ${CANONICAL_UTTERANCES}`)
+  return row.utterance
+}
+
 const sorted = (s: Set<string> | string[]) => [...s].sort()
 const tcFileNames = () => readdirSync(TC_DIR).filter((n) => n.startsWith('TC-') && n.endsWith('.md'))
 
@@ -144,7 +193,7 @@ const tcFileNames = () => readdirSync(TC_DIR).filter((n) => n.startsWith('TC-') 
 // PART A — contract preconditions (no implementation required)
 // ═══════════════════════════════════════════════════════════════════════════
 
-describe('A. selector contract — the 22-id catalogue (AC-12, AC-1)', () => {
+describe('A. selector contract — the mockup-owned id catalogue (AC-12, AC-1)', () => {
   let ios: Set<string>
   let android: Set<string>
   let web: Set<string>
@@ -155,8 +204,24 @@ describe('A. selector contract — the 22-id catalogue (AC-12, AC-1)', () => {
     web = catalogueOf(MOCKUPS.web)
   })
 
-  it('the iOS mockup declares exactly 22 accessibility ids', () => {
-    expect(sorted(ios)).toHaveLength(22)
+  it('the iOS mockup publishes a NON-VACUOUS catalogue — the parse matched something', () => {
+    // This assertion used to read `toHaveLength(22)`. That literal was a second
+    // home for a fact the mockup already owns (L-004): the catalogue grew by one
+    // when § NewMessageAffordance added `assistant-new-message-affordance`, and
+    // the number here went red for a legitimate addition instead of following
+    // along. The size is PARSED now, and what the case actually guards is the
+    // thing a literal was standing in for — that `catalogueOf()` matched
+    // something at all.
+    //
+    // Without this guard the three equality assertions below are vacuously
+    // green: if the regexes ever stop matching, `ios`, `android` and `web` are
+    // all the empty set and all three comparisons pass while proving nothing.
+    // That is exactly L-007's defect, and it is why the count check exists.
+    const count = catalogueOf(MOCKUPS.ios).size
+    expect(count).toBeGreaterThan(0)
+    expect(sorted(ios)).toHaveLength(count)
+    // Every value is a real catalogue id, not markup the regex over-matched.
+    for (const id of ios) expect(id, `${id} is not a catalogue id`).toMatch(/^assistant-[a-z-]+$/)
   })
 
   it('iOS and Android carry the SAME values — one contract, three attribute spellings (AC-12)', () => {
@@ -438,17 +503,40 @@ describe('B. touch targets are measured against the MOCKUP, not against a hand-c
 
   /**
    * `design/_shared/components.md` § Touch, parsed at test time. Rows look like:
-   *   | `assistant-retry-button` | **80** | "Thử lại" … — mockup renders 81.9 |
+   *   | `assistant-retry-button` | **68** | "Retry" … — mockup renders 72.4 |
    * The rendered figure in the Basis cell is what makes the rounding direction
    * checkable; task-row deliberately has none.
+   *
+   * The row above is an ILLUSTRATION of the shape, not a fixture — it is written
+   * out only so the regexes below are readable. Nothing asserts against it, which
+   * is the point: when the English re-measure (T-062) moved every floor, this
+   * comment was the one place the old numbers could go stale without a test
+   * noticing, so treat it as prose and read § Touch for the live figures.
    */
-  function publishedTouchFloors(): Map<string, { floor: number; renders: number | null }> {
+  function publishedTouchFloors(): Map<
+    string,
+    { floor: number; renders: number | null; labelWidths: number[] }
+  > {
     const md = readFileSync(join(ROOT, 'design/_shared/components.md'), 'utf8')
     const section = md.split('## Touch —')[1]?.split('\n## ')[0] ?? ''
-    const rows = new Map<string, { floor: number; renders: number | null }>()
+    const rows = new Map<string, { floor: number; renders: number | null; labelWidths: number[] }>()
     for (const m of section.matchAll(/\|\s*`([a-z-]+)`\s*\|\s*\*\*(\d+)\*\*\s*\|([^|]*)\|/g)) {
-      const renders = /renders\s+(\d+(?:\.\d+)?)/.exec(m[3]!)
-      rows.set(m[1]!, { floor: Number(m[2]), renders: renders === null ? null : Number(renders[1]) })
+      const basis = m[3]!
+      // The binding measurement is anchored on the word "renders", which is
+      // what keeps `assistant-task-row`'s "paints 428 at its 430 design width"
+      // — explicitly NOT a floor basis — out of the comparison.
+      const renders = /renders\s+(\d+(?:\.\d+)?)/.exec(basis)
+      // Every width attributed to a quoted label. For a control whose label
+      // varies by state this is all of them, which is what makes the
+      // shortest-label rule checkable rather than merely stated.
+      const labelWidths = [...basis.matchAll(/"[^"]+"\s*(?:renders\s+)?(\d+(?:\.\d+)?)/g)].map((x) =>
+        Number(x[1]),
+      )
+      rows.set(m[1]!, {
+        floor: Number(m[2]),
+        renders: renders === null ? null : Number(renders[1]),
+        labelWidths,
+      })
     }
     return rows
   }
@@ -533,7 +621,7 @@ describe('B. touch targets are measured against the MOCKUP, not against a hand-c
    */
   it('the published content-width floors are the ones PAINTED uses (AC-9 layout floors, L-008)', () => {
     const floors = publishedTouchFloors()
-    expect(floors.size, 'the § Touch table parsed to nothing — a dead regex proves nothing').toBe(4)
+    expect(floors.size, 'the § Touch table parsed to nothing — a dead regex proves nothing').toBe(5)
 
     for (const [id, row] of floors) {
       const painted = (PAINTED as Record<string, { width: number; height: number }>)[id]
@@ -559,19 +647,36 @@ describe('B. touch targets are measured against the MOCKUP, not against a hand-c
         )
         measured += 1
       }
-      // Deliberately NOT asserted: that the floor is the LARGEST multiple of 4
-      // below the render. Only `assistant-retry-button` (80 ≤ 81.9) satisfies
-      // that; add-task publishes 96 where 100 was available and undo 108 where
-      // 112 was. Both under-state, which is the direction the section calls
-      // load-bearing, so neither is wrong — but "rounded down to a multiple of
-      // 4" reads mechanical and is not, so asserting the tighter form would
-      // encode a rule design never made. Flagged upward instead.
-      // The lower bound comes from the platform-minimum test below: a floor
-      // could not be absurdly small without failing that one.
+      // Deliberately NOT asserted: that the floor is the TIGHTEST multiple of 4
+      // below the render. § Touch now says outright that it is not the rule —
+      // the floors are measured in an HTML mockup while the control ships
+      // through React Native's text shaping, so the slack absorbs a real engine
+      // difference and pinning tight would be brittle for no gain. The floor's
+      // job is to catch a collapsed control, not to describe it to a tenth of a
+      // point. The lower bound comes from the platform-minimum test below.
     }
     // task-row is documented as NOT mockup-derived (it is the narrowest
-    // supported device width), so it has no render figure — 3 of 4 do.
-    expect(measured, 'no floor was checked against a rendered measurement').toBe(3)
+    // supported device width), so it has no render figure — 4 of 5 do.
+    expect(measured, 'no floor was checked against a rendered measurement').toBe(4)
+  })
+
+  it('a control whose label varies takes its floor from the SHORTEST label it can carry', () => {
+    // § Touch's general clause. `assistant-permission-cta` is the case that
+    // produced it: its label is one of three, and the published floor must sit
+    // under the narrowest of them. The old 140 sat BETWEEN shortest (114.3) and
+    // longest (183.9) — the signature of a floor read off the wrong label, and
+    // exactly what this assertion catches.
+    let varying = 0
+    for (const [id, row] of publishedTouchFloors()) {
+      if (row.labelWidths.length < 2) continue
+      varying += 1
+      const shortest = Math.min(...row.labelWidths)
+      expect(
+        row.floor,
+        `${id}: floor ${row.floor} exceeds its shortest label (${shortest}) — taken from a longer one?`,
+      ).toBeLessThanOrEqual(shortest)
+    }
+    expect(varying, 'no varying-label control was found to check').toBeGreaterThanOrEqual(1)
   })
 
   it('the floors sit above both platform minimums, as § Touch claims they always do', () => {
@@ -581,18 +686,59 @@ describe('B. touch targets are measured against the MOCKUP, not against a hand-c
     }
   })
 
-  it('assistant-permission-cta is NOT asserted here — its floor is unsettled (T-042)', () => {
-    // Its label varies across the three permission rows, so the floor is the
-    // shortest of the three and only design can measure it. `PAINTED` carries a
-    // known over-claim (140 vs 114.3 rendered), harmless today because both are
-    // far above the minimums. Asserting 140 would freeze a number nobody has
-    // measured, so this asserts only that it is still OUTSIDE the published
-    // table — if design publishes it, this fails and the floor gets asserted
-    // properly instead of silently staying wrong.
+  /**
+   * Was an ABSENCE assertion: while the floor was unsettled (T-042) this
+   * required `assistant-permission-cta` to stay out of the published table,
+   * rather than freezing `PAINTED`'s unmeasured 140. Design published it and the
+   * absence check fired, which is exactly what it was there for.
+   *
+   * It then hand-copied the published figure — **112** — into both the body and
+   * the test NAME. The English re-measure (T-062, ADR-008) moved this one floor
+   * UP, to 136, because "Open Settings" renders wider than the label it
+   * replaced. A retyped floor is a second home for a number design owns (L-004),
+   * and here the stale copy pointed the *dangerous* way: it would have held the
+   * suite to a control narrower than its own shortest label — the under-sized
+   * tap target the floors exist to prevent — instead of merely mis-describing
+   * one. The number and the title are gone; every figure below is parsed from
+   * `design/_shared/components.md` § Touch at run time (L-008), so a re-measure
+   * lands here by itself and only a real disagreement can go red.
+   */
+  it('assistant-permission-cta takes its floor from its shortest label, parsed — never re-typed (T-042, closed)', () => {
+    const row = publishedTouchFloors().get(A11Y_IDS.permissionCta)
+    expect(row, 'assistant-permission-cta is no longer published in § Touch').toBeDefined()
+
+    const painted = (PAINTED as Record<string, { width: number }>)[A11Y_IDS.permissionCta]!
     expect(
-      publishedTouchFloors().has(A11Y_IDS.permissionCta),
-      'a floor for assistant-permission-cta was published — assert it and drop this test (T-042)',
-    ).toBe(false)
+      painted.width,
+      `PAINTED carries ${painted.width}; the published floor is ${row!.floor}`,
+    ).toBe(row!.floor)
+
+    // Three labels, and the SHORTEST binds — § Touch's varying-label clause,
+    // stated for this control by name. The superseded 140 was not merely stale:
+    // it sat BETWEEN shortest and longest, which is what a floor read off the
+    // wrong label looks like, so `<= shortest` is the assertion that caught it.
+    expect(row!.labelWidths.length, 'the three label widths are no longer published').toBe(3)
+    const shortest = Math.min(...row!.labelWidths)
+    expect(painted.width).toBeLessThanOrEqual(shortest)
+
+    // The published rendered figure for this row must BE the shortest label's.
+    // A basis cell that quotes a wider label as the binding one is the same
+    // wrong-label defect one artifact upstream, and nothing else would see it.
+    expect(row!.renders, 'the binding "renders" figure is not the shortest label').toBe(shortest)
+
+    // How far below the render a floor may sit: § Touch fixes the direction
+    // ("at or below", never the tightest) and its retry row fixes the distance
+    // it is willing to travel — 72.4 → 72 → "one step down keeps the slack this
+    // section calls deliberate". So: the tightest multiple of 4 below, or one
+    // 4-step under that. This is the assertion that replaces the hand-copied
+    // number, and it is the one a carried-over floor fails: 112 sits SIX steps
+    // below 138.3, which is a stale number rather than deliberate slack.
+    const tightest = Math.floor(shortest / 4) * 4
+    expect(
+      row!.floor,
+      `floor ${row!.floor} is more than one 4-step below the tightest multiple (${tightest}) under its shortest label (${shortest})`,
+    ).toBeGreaterThanOrEqual(tightest - 4)
+    expect(row!.floor).toBeLessThanOrEqual(tightest)
   })
 
   it('the sizes NOT stated in the mockup are token-derived, not hand-numbers', () => {
@@ -650,10 +796,31 @@ describe('B. permissions — the platform split (AC-2, AC-3)', () => {
   })
 
   it('TC-015 / TC-020 · the CTA label matches the mockup copy on each platform', () => {
-    // iOS mockup: "Mở Cài đặt" (app Settings page).
-    expect(permissionCtaLabel('ios', { microphone: 'denied', speech_recognition: 'granted' })).toBe('Mở Cài đặt')
-    // Android mockup: "Mở cài đặt ứng dụng" (App info → Permissions).
-    expect(permissionCtaLabel('android', { microphone: 'permanently_denied' })).toBe('Mở cài đặt ứng dụng')
+    // The labels were retyped here (as "Mở Cài đặt" / "Mở cài đặt ứng dụng")
+    // until ADR-008 made them English, at which point the test was asserting
+    // copy the product could no longer produce. A retyped label turns a contract
+    // check into a self-agreement check (L-008) and goes stale the moment design
+    // moves, so both sides are PARSED from the mockup that publishes them.
+    //
+    // Each mobile mockup renders exactly one permission state — iOS the
+    // mic-denied one, Android the permanently-denied one — so the button it
+    // paints is the CTA for the state asserted beside it.
+    //
+    // The other publisher of these strings is `design/_shared/components.md`
+    // § MicControl (the copy-deck CTA column). That side is already parsed one
+    // tier down by `src/assistant/mobile/__tests__/permissions.test.ts`, so this
+    // reads the mockup rather than making a second reader of the same table:
+    // between them both artifacts are held, neither is retyped.
+    const iosLabel = mockupPermissionCtaLabel(MOCKUPS.ios)
+    const androidLabel = mockupPermissionCtaLabel(MOCKUPS.android)
+    expect(iosLabel, 'the iOS mockup publishes an empty CTA label').not.toBe('')
+    expect(androidLabel, 'the Android mockup publishes an empty CTA label').not.toBe('')
+    // iOS routes to the app's Settings page; Android to App info → Permissions.
+    // If the two ever parse identical, one of them was not really read.
+    expect(iosLabel, 'both mockups now publish the same CTA label').not.toBe(androidLabel)
+
+    expect(permissionCtaLabel('ios', { microphone: 'denied', speech_recognition: 'granted' })).toBe(iosLabel)
+    expect(permissionCtaLabel('android', { microphone: 'permanently_denied' })).toBe(androidLabel)
   })
 })
 
@@ -778,10 +945,14 @@ describe('B. kill survival — TC-024, TC-026 (AC-5, AC-6)', () => {
 // mobile controller plus the four port doubles. React Native is never imported.
 //
 // EXPECTED VALUES still come from the spec, the mockups and api-contracts.md.
-// Where a Vietnamese string is asserted it is asserted as a *distinguishing*
-// property (three denial messages differ; a nothing-reverted head is not a
-// success head), never as a copy fixture — the product ships Vietnamese and the
-// spec's English is concept names (F-001 ## Conversation model).
+// User-visible copy is asserted as a *distinguishing* property (three denial
+// messages differ; a nothing-reverted head is not a success head) or PARSED
+// from the artifact that publishes it, never retyped as a copy fixture.
+// The product ships English (owner decision 2026-08-17 / ADR-008); the
+// Vietnamese literals this block used to defend were retired with it, and the
+// pair that survived as `not.toBe(<Vietnamese>)` are the reason the rule is now
+// "parse it" rather than "assert a property of it" — a negative assertion on a
+// string the product cannot emit passes for free.
 // ═══════════════════════════════════════════════════════════════════════════
 
 ;(globalAgent as unknown as { keepAlive: boolean }).keepAlive = false
@@ -1062,6 +1233,10 @@ describe('C. the canonical rows this suite realizes still exist upstream (L-004)
       'UT-NOMATCH-1',
       'UT-LISTQ-1',
       'UT-FAIL-1',
+      // TC-033's voice half now READS this row's utterance rather than
+      // spelling the phrase out (ADR-008 retired the Vietnamese one). Losing
+      // the row must go red here, not silently strand the parity claim.
+      'UT-UNDO-EN',
     ]) {
       expect(ids.has(id), `canonical row ${id} is gone`).toBe(true)
     }
@@ -1376,6 +1551,22 @@ describe('C. TC-005 — undo names every skipped task; all-skipped never reads a
   })
 
   it('when EVERY task was modified, the message is the nothing-reverted shape and the list is unchanged', async () => {
+    // The success head this outcome must NOT wear, OBSERVED rather than typed:
+    // a clean create-then-undo on a throwaway user, whose head is by definition
+    // the one a real revert produces. The assertion used to name the head as a
+    // literal ("Đã hoàn tác"), which ADR-008 turned into a string the product
+    // can no longer emit — so `not.toBe` was satisfied by every possible head
+    // and the case stopped protecting anything. Observing it also catches the
+    // harmonising edit in either direction, which naming one literal never did.
+    const clean = surfaceFor(newUser())
+    await clean.start()
+    await say(clean, 'add qamob-tc005-control')
+    await until(() => clean.tasks.length === 1, 'the control turn')
+    await clean.tapUndo()
+    await until(() => newest(clean).kind === 'reverted', 'the control revert')
+    const successHead = String(newest(clean).head)
+    expect(successHead, 'the control revert produced no head to compare against').not.toBe('')
+
     const u = newUser()
     const s = surfaceFor(u)
     await s.start()
@@ -1397,7 +1588,7 @@ describe('C. TC-005 — undo names every skipped task; all-skipped never reads a
     // kind uses when something actually reverted (TC-004 asserts that one).
     expect(text).toContain('qamob-tc005-e-touched')
     expect(text).toContain('qamob-tc005-f-touched')
-    expect(msg.head).not.toBe('Đã hoàn tác')
+    expect(String(msg.head), 'a nothing-reverted outcome is wearing the success head').not.toBe(successHead)
     expect((await serverTasks(u)).sort(), 'the list moved on a nothing-reverted outcome').toEqual(before)
   })
 
@@ -2605,7 +2796,14 @@ describe('C. TC-033 — undo stays ONE gesture by touch (AC-9, F-001 AC-5)', () 
       await s.start()
       await say(s, 'add a task qamob-tc033-x')
       await until(() => s.tasks.length === 1, 'the turn')
-      await say(s, 'hoàn tác', 'voice')
+      // The phrase is READ from the canonical table's undo row, not spelled out
+      // here. ADR-008 retired "hoàn tác" and left `undo` as the entire closed
+      // list; this line carried the retired phrase, so the voice half of the
+      // parity claim was driving an utterance the AC-5 guard no longer knows —
+      // it went to the model as an ordinary turn and nothing reverted. What
+      // TC-033 protects is unchanged: undo by voice is still ONE gesture and
+      // still reaches the same outcome as the tap. Only its vocabulary moved.
+      await say(s, canonicalUtterance('UT-UNDO-EN'), 'voice')
       await until(() => s.tasks.length === 0, 'the revert by voice')
       return [newest(s).kind, String(newest(s).head)]
     }
@@ -2889,7 +3087,9 @@ describe('C. TC-035 — send is reachable with the keyboard open, and the keyboa
 // IS node-testable is the announcement PAYLOAD — the text the screen reader
 // would receive — and the priority flag that decides whether an error is spoken
 // immediately or queued behind the backlog. Asserting the payload here is what
-// stops the device pass from discovering that the announcement said "Đã xong".
+// stops the device pass from discovering that the announcement said "Done" and
+// nothing else — a state word where AC-12 requires what changed, how many,
+// which tasks by title, and that undo is available.
 
 describe('C. TC-037 — the announcement payload carries what changed, how many, which tasks, and that undo exists (AC-12)', () => {
   it('an applied turn announces the count, every task by title, and the undo affordance', async () => {
@@ -2904,7 +3104,16 @@ describe('C. TC-037 — the announcement payload carries what changed, how many,
     expect(spoken).toContain('2')
     expect(spoken).toContain('qamob-tc037-a')
     expect(spoken).toContain('qamob-tc037-b')
-    expect(spoken.toLowerCase()).toContain('hoàn tác') // undo is available
+    // "…and that undo is available" — AC-12's fourth required element. The word
+    // is design's, published as the `assistant-undo-button` label in the iOS
+    // mockup, so it is parsed rather than typed: the retyped "hoàn tác" here was
+    // a second home for the same word (L-004) and ADR-008 stranded it. The
+    // affordance the announcement must name is exactly the one the button
+    // carries, which is why the button's own label is the right source.
+    const undoLabel = mockupUndoButtonLabel(MOCKUPS.ios)
+    expect(spoken.toLowerCase(), 'the announcement never names the undo affordance').toContain(
+      undoLabel.toLowerCase(),
+    )
     // …and it is not merely the catalogue id being read out (the AC-12 trap).
     expect(spoken).not.toContain('assistant-message-bubble')
   })

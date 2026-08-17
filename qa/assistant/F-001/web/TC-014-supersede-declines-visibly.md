@@ -13,10 +13,10 @@
 | Automation | automated |
 | Automation file | qa/assistant/automation/e2e/F-001-voice-assistant-view.spec.ts |
 | Created | 2026-08-16 by qa-web-agent |
-| Last updated | 2026-08-16 by qa-web-agent |
+| Last updated | 2026-08-17 by qa-web-agent (T-070b — ADR-008 English copy sync) |
 
 ## Summary
-Any unrelated new command supersedes a pending question: the delete is declined (declined_superseded) and the new command proceeds normally — both visibly (mockup `declined-superseded` state: resolved question with disabled chips, "Đã giữ nguyên N việc … vì bạn đã chuyển sang chuyện khác" outcome, then the new command's applied message). Applies to confirm AND clarify questions (same D2 rule, AC-13).
+Any unrelated new command supersedes a pending question: the delete is declined (declined_superseded) and the new command proceeds normally — both visibly (mockup `declined-superseded` state: resolved question with disabled chips, "Kept all N tasks" head with the body "The delete was set aside because you moved on to something else. Nothing was deleted." outcome, then the new command's applied message). Applies to confirm AND clarify questions (same D2 rule, AC-13).
 
 ## Preconditions
 - Open session. User `qaweb-tc014@qa.example.com`; baseline seed tasks; pending bulk-delete question over 3 named tasks.

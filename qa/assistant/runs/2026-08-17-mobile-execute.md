@@ -42,9 +42,9 @@ After the Gate 3 follow-up (M1 + M2 below):
 
 ```
 $ npx vitest run qa/assistant/automation/mobile
-      Tests  123 passed (123)
+      Tests  124 passed (124)
 $ npm run test:all
-      Tests  468 passed (468)
+      Tests  469 passed (469)
 $ npx tsc --noEmit
 (exit 0)
 ```
@@ -107,19 +107,41 @@ each floor under-states its rendered measurement (the direction § Touch calls
 load-bearing) and each sits above both platform minimums, so none can bind the
 hit-area calculation.
 
-**One thing deliberately not asserted, and one flagged upward.**
-`assistant-permission-cta`'s floor is unsettled — its label varies across three
-catalogue rows, so only design can measure it (T-042). Rather than freeze the
-known over-claim of 140, the test asserts the id stays *absent* from the
-published table, so it fails when design publishes a floor instead of leaving
-140 quietly wrong.
+**One thing deliberately not asserted, and one flagged upward — both since
+resolved.** See §5d.
 
-And § Touch reads as if "rounded down to a multiple of 4" were mechanical, but
-only `retry` (80 ≤ 81.9) is the largest such multiple: `add-task` publishes 96
-where 100 was available, `undo` 108 where 112 was. All three under-state, which
-is the safe direction, so nothing is wrong — but the tighter rule is not the one
-the numbers follow, and asserting it would encode a rule design never made. The
-suite asserts the stated invariants only.
+`assistant-permission-cta`'s floor was unsettled (T-042), so rather than freeze
+the known over-claim of 140 the test asserted the id stayed *absent* from the
+published table. And § Touch read as if "rounded down to a multiple of 4" were
+mechanical, while only `retry` (80 ≤ 81.9) was the largest such multiple.
+
+## 5d. Both resolved the same day (T-042 + a § Touch restatement)
+
+**The absence assertion fired.** Design measured all three labels the permission
+CTA can carry and published **112**, taken from the shortest ("Mở Cài đặt",
+renders 114.3) rather than from whichever mockup rendered. It is now a real
+assertion; `PAINTED` was corrected 140 → 112 by mobile-agent concurrently, and
+both had landed by the time this ran.
+
+The interesting part is *why* 140 was wrong. It was not simply stale: it sat
+**between** the shortest label (114.3) and the longest (183.9), which is what a
+floor read off the wrong label looks like. A number below the longest label looks
+entirely reasonable and is wrong for every state but one. So the suite now
+asserts design's **general clause** rather than this one number — for any
+published row carrying two or more label widths, the floor must be at or below
+the smallest. Mutation: republishing the floor as 156 (a multiple of 4,
+comfortably below the longest label, and wrong) reddens 3 tests. The next
+varying-label control inherits that check without another round trip.
+
+**The rounding slack is deliberate, and now documented rather than tightened.**
+Design restated § Touch instead of changing the numbers: the floors are measured
+in an HTML mockup while the control ships through React Native's text shaping, so
+the same string does not resolve to the same pixel, and the slack absorbs a real
+engine difference. The floor exists to catch a collapsed control, not to describe
+it to a tenth of a point. That vindicates removing the tight-multiple assertion
+last pass — it would have encoded a rule design never made, and would now be
+fighting a documented one. The three stated invariants (`% 4 === 0`,
+`<= rendered`, `> 48`) are all asserted; the tighter form still is not.
 
 `test:all` breakdown — the mobile automation tier is the one this task owns; the
 rest is regression evidence that the shared extraction did not cost anything:

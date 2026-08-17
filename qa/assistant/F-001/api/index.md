@@ -3,6 +3,7 @@
 **Authored:** 2026-08-16 by qa-api-agent (T-007b, phase: author) — from spec rev 3 + api-contracts + data-model + ADR-004/005/006 only; no source code read.
 **Automation draft:** `qa/assistant/automation/api/F-001-voice-assistant-view.spec.ts` (vitest + supertest in-process, per `specs/_shared/platform/backend.md`).
 **Canonical fixture table:** [`utterance-intent-fixtures.json`](utterance-intent-fixtures.json) — shared by QA and implementers; the stub Interpreter resolves interpretation (incl. answer classification) from these rows. Carries the spec-mandated rows: ambiguous answers (UT-ANS-AMBIG-1/2, zero-deletion assertions), internal-ref (UT-INTREF-1), undo phrases (UT-UNDO-*).
+**Language re-sync 2026-08-17 (T-070a):** ADR-008 makes English the product language and ADR-006's amendment shrinks `UNDO_PHRASES` to `{"undo"}`. QA expectations follow design and the implementers (ADR-008 § Sequencing). Touched here: TC-14 + UT-LISTQ-1 (`alternative` literal, re-synced from api-contracts.md §9), TC-23 + TC-24 + the UT-UNDO-* rows (undo vocabulary). No case was deleted — the retired Vietnamese phrase became `UT-UNDO-RETIRED-VI` and TC-23 step 7, which assert the ordinary-turn path it now takes.
 **Test data namespace:** task titles `qaapi-*`; reserved user uuids in `qa/_shared/fixtures/api/users.json` (QAAPI-U1/U2/U3). No unscoped destructive operations.
 
 ## Test cases
@@ -55,7 +56,7 @@
 | AC | TCs | Note |
 |----|-----|------|
 | AC-1 | TC-01, TC-02, TC-03 (+32/33/34/35 guard rails) | atomicity, carve-out, read-back |
-| AC-5 | TC-04, TC-15, TC-16, TC-23, TC-24, TC-40 | tap + voice undo, never-a-task |
+| AC-5 | TC-04, TC-15, TC-16, TC-23, TC-24, TC-40 | tap + voice undo, never-a-task; TC-23 step 7 pins the closed list's **boundary from the outside** — a phrase no longer in it is not short-circuited |
 | AC-6 | TC-15, TC-16, TC-17, TC-18, TC-19, TC-20, TC-40 | 3 revert shapes + 3 refusals + idempotency |
 | AC-7 | TC-21, TC-22 | skip + all-skipped |
 | AC-8 | TC-18, TC-19, TC-24, TC-29, TC-40 | window mechanics (mutating-only key), both close reasons |
@@ -63,7 +64,7 @@
 | AC-10 | TC-05, TC-06, TC-07, TC-08, TC-09, TC-10 (+29/30 close-declines) | full D2 decision table |
 | AC-12 | TC-11 | ask-time snapshot re-validation |
 | AC-13 | TC-07, TC-12 | clarify + supersede |
-| AC-14 | TC-13 | |
+| AC-14 | TC-13, TC-23 (step 7) | no-match honesty; step 7 covers the retired undo phrase falling through to no_match |
 | AC-15 | TC-14 | |
 | AC-16 | TC-25, TC-26, TC-27, TC-28 (+02 step 4, 23 dedupe) | per-status, cross-close, concurrency |
 | AC-20 | TC-37 (+34) | text-only api half |

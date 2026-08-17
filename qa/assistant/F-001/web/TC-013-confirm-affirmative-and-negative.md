@@ -13,7 +13,7 @@
 | Automation | automated |
 | Automation file | qa/assistant/automation/e2e/F-001-voice-assistant-view.spec.ts |
 | Created | 2026-08-16 by qa-web-agent |
-| Last updated | 2026-08-16 by qa-web-agent |
+| Last updated | 2026-08-17 by qa-web-agent (T-070b — ADR-008 English copy sync) |
 
 ## Summary
 Decision-table rows for D2 resolution at the web layer: (a) tap affirm chip → delete executes with the FULL applied-message anatomy (rows marked, actual count and titles, Undo — AC-11's executed clause); (b) tap negative chip → visible declined outcome, nothing deleted; (c) typed affirmative and (d) typed negative behave identically to taps (the answer travels as a normal turn). The pending question blocks nothing meanwhile.
@@ -38,7 +38,7 @@ Decision-table rows for D2 resolution at the web layer: (a) tap affirm chip → 
 
 ## Expected behaviour
 - **Executed rows**: outcome message with actual count + titles; the 3 rows leave the list; `assistant-undo-button` on the executed outcome (AC-5 applies unchanged); question bubble renders resolved (chips disabled per mockup resolved shape).
-- **Declined rows**: visible declined outcome ("Đã giữ nguyên 3 việc" shape); all 3 rows remain; no undo button (nothing applied).
+- **Declined rows**: visible declined outcome ("Kept all 3 tasks" shape, body "Nothing was deleted."); all 3 rows remain; no undo button (nothing applied).
 - **Nothing resolves silently** (AC-11): every row ends with an outcome message.
 - **Non-blocking**: manual checkbox toggle succeeds while the question is pending; list, edits, other commands all live.
 

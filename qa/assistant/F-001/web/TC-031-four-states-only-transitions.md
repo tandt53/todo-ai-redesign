@@ -13,7 +13,7 @@
 | Automation | automated |
 | Automation file | qa/assistant/automation/e2e/F-001-voice-assistant-view.spec.ts |
 | Created | 2026-08-16 by qa-web-agent |
-| Last updated | 2026-08-16 by qa-web-agent |
+| Last updated | 2026-08-17 by qa-web-agent (T-070b — ADR-008 English copy sync) |
 
 ## Summary
 The surface is always in exactly one of four states (idle / listening / thinking / error); questions and outcomes are messages, never blocking states. Bounded transition rule, asserted in its bounded form: each edge of the spec flowchart is driven and its visible cue asserted; and at every observation point the surface exhibits exactly one state's cue-set (never zero, never two). Includes the first-run idle-empty surface.
@@ -41,7 +41,7 @@ The surface is always in exactly one of four states (idle / listening / thinking
 
 ## Test steps
 1. First run, empty list: assert idle-empty rendering — invitation copy visible, empty-list message in the list pane, no state indicator, mic available.
-2. Drive each table row in order, asserting the visible cue after each: listening (indicator "Đang nghe…", mic pressed, waveform surface), thinking (indicator "Đang xử lý…", thinking bubble), idle (no indicator, composer resting), error (danger-edged bubble + retry).
+2. Drive each table row in order, asserting the visible cue after each: listening (indicator "Listening…", mic pressed, waveform surface), thinking (indicator "Thinking…", thinking bubble), idle (no indicator, composer resting), error (danger-edged bubble + retry).
 3. At each observation point, run the exclusivity probe: exactly one of {listening cue-set, thinking cue-set, error cue-set, idle (none-of-the-above + interactive composer)} holds.
 4. While a question message is pending (rows 7/8): assert NO modal/overlay/blocked input exists — composer focusable, list clickable, mic tappable (questions are messages, not states).
 

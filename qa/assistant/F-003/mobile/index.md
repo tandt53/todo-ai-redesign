@@ -3,7 +3,7 @@
 **Authored:** 2026-08-16 (T-020, `phase: author`) · **Executed:** 2026-08-17 (T-021, `phase: execute`) — both by qa-mobile-agent · **Spec:** `specs/assistant/F-003-mobile-surface.md` rev 1 · **Parity source:** `specs/assistant/F-001-voice-assistant-view.md` rev 3
 **Mockups:** `design/assistant/screens/voice-assistant-view-ios.html` + `-android.html` (22 ids, 17 states, copy in Vietnamese)
 **Automation:** `qa/assistant/automation/mobile/F-003-mobile-surface.spec.ts` — run with `npx vitest run qa/assistant/automation/mobile`
-**Last executed:** 2026-08-17 (T-021, `phase: execute`; + Gate 3 follow-up; + T-040/T-041 re-point) — 123 passed, 0 failed
+**Last executed:** 2026-08-17 (T-021, `phase: execute`; + Gate 3 follow-up; + T-040/T-041/T-042 re-point) — 124 passed, 0 failed
 **Fixtures:** `qa/_shared/fixtures/mobile/F-003-mobile-fixtures.json` · **Namespace:** `qamob-` (users `qamob-tc{nnn}@qa.example.com`)
 **Test cases:** 40, all P1 — 35 `active` + `automated`, 5 `manual` (device-lab / screen-reader debt)
 
@@ -15,10 +15,10 @@
 
 ```
 npx vitest run qa/assistant/automation/mobile
-→ Tests  123 passed (123)                 (re-run 2026-08-17 after T-040's de-duplication)
+→ Tests  124 passed (124)                 (re-run 2026-08-17 after T-042 closed the CTA floor)
 
 npm run test:all
-→ Tests  468 passed (468)
+→ Tests  469 passed (469)
 
 npx tsc --noEmit
 → exit 0
@@ -102,11 +102,18 @@ Flow-typed `react-native`). Verified by mutation that the check really moved:
 re-introducing a literal leaves this suite green and reddens that unit test.
 
 In its place the suite parses `components.md` § Touch and asserts `PAINTED`'s
-four floors against it, that each under-states its rendered measurement, and that
-each sits above both platform minimums. `assistant-permission-cta` is
-deliberately **not** asserted — its floor is unsettled (T-042), so the test
-instead requires it to stay absent from the table, and fails when design
-publishes one.
+floors against it, that each under-states its rendered measurement, and that each
+sits above both platform minimums.
+
+`assistant-permission-cta` was held out while its floor was unsettled — the test
+asserted its **absence** from the table rather than freezing `PAINTED`'s
+unmeasured 140. Design published **112** on 2026-08-17 and that absence check
+fired, which is what it was for. It is now a real assertion, and the suite also
+asserts the general clause design added: **a control whose label varies by state
+takes its floor from the shortest label it can carry.** The old 140 sat *between*
+the shortest label (114.3) and the longest (183.9) — the signature of a floor read
+off the wrong label, and a class of error the next varying-label control now
+inherits a check against.
 
 ## Test cases
 

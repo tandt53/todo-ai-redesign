@@ -13,10 +13,10 @@
 | Automation | automated |
 | Automation file | qa/assistant/automation/e2e/F-001-voice-assistant-view.spec.ts |
 | Created | 2026-08-16 by qa-web-agent |
-| Last updated | 2026-08-16 by qa-web-agent |
+| Last updated | 2026-08-17 by qa-web-agent (T-070b — ADR-008 English copy sync) |
 
 ## Summary
-The newest applied turn has a one-gesture undo by tap. Undo covers the whole turn: a multi-task turn reverts all its tasks. After undo the list shows the prior values (read-back, not just a chat claim), the undone bubble stays visible marked "Đã hoàn tác", and the reverted-outcome message renders. Design canon: the Undo button is violet (assistant's own act) — never danger red.
+The newest applied turn has a one-gesture undo by tap. Undo covers the whole turn: a multi-task turn reverts all its tasks. After undo the list shows the prior values (read-back, not just a chat claim), the undone bubble stays visible marked "Undone", and the reverted-outcome message renders. Design canon: the Undo button is violet (assistant's own act) — never danger red.
 
 ## Preconditions
 - Open session. User `qaweb-tc007@qa.example.com`; baseline seed tasks.
@@ -32,7 +32,7 @@ The newest applied turn has a one-gesture undo by tap. Undo covers the whole tur
 ## Expected behaviour
 - **AC-5 (one gesture, whole turn)**: One tap reverts BOTH operations: edited task shows 2:00 PM again; created task's row is gone from the list.
 - **AC-7 (no skips case)**: The outcome message reports the revert; with nothing modified since apply, no task is skipped and none is named as skipped.
-- The undone bubble stays visible, visually marked "Đã hoàn tác" (mockup `.bubble.undone` + "Đã hoàn tác" tag); its Undo affordance is gone.
+- The undone bubble stays visible, visually marked "Undone" (mockup `.bubble.undone` + "Undone" tag); its Undo affordance is gone. The reverted-outcome message head is "Undone" when nothing was skipped.
 - Read-back: list values assert PRIOR field values (text content), not merely a "reverted" toast.
 - Style probe (design canon): the undo control renders in the primary/violet treatment, not danger red.
 

@@ -13,7 +13,7 @@
 | Automation | automated |
 | Automation file | qa/assistant/automation/e2e/F-001-voice-assistant-view.spec.ts |
 | Created | 2026-08-16 by qa-web-agent |
-| Last updated | 2026-08-16 by qa-web-agent |
+| Last updated | 2026-08-17 by qa-web-agent (T-070b — ADR-008 English copy sync) |
 
 ## Summary
 Offline there is no half-running conversation: the surface states it and hands over to the list (ADR-7). Input made while offline creates tasks through the local no-AI path. A turn already in flight when the connection drops queues and replays VISIBLY when the network returns (UC-13 AC-13.2) — the queued state is shown, and so is its eventual outcome.
@@ -30,8 +30,8 @@ Offline there is no half-running conversation: the surface states it and hands o
 5. Restore the network. Watch the queued turn replay; read its outcome and the list.
 
 ## Expected behaviour
-- **Surface says so**: `assistant-offline-banner` renders (mockup `offline` state: "Mất mạng — danh sách vẫn dùng được, việc nhập sẽ lưu tại máy.", queued count); the conversation does NOT sit in a permanent thinking state — no half-running conversation.
-- **Queued visibly**: the in-flight turn's bubble shows the queued notice `assistant-queued-notice` ("Đang chờ mạng — sẽ gửi lại" + pulse); the banner's queued count reflects it ("1 câu đang chờ gửi").
+- **Surface says so**: `assistant-offline-banner` renders (mockup `offline` state: "No connection — the list still works, and what you type is saved on the device.", queued count); the conversation does NOT sit in a permanent thinking state — no half-running conversation.
+- **Queued visibly**: the in-flight turn's bubble shows the queued notice `assistant-queued-notice` ("Waiting for the network — will send again" + pulse); the banner's queued count reflects it ("1 waiting to send").
 - **Local no-AI path**: the offline-entered input becomes a task in the list WITHOUT any AI call (counter delta 0 while offline; zero `/assistant/*` requests); list manual ops keep working.
 - **Visible replay**: on reconnect the queued turn is re-sent (same `client_turn_id` on the wire), the queued notice resolves into the turn's real outcome message, and the list updates accordingly. The user can see the replay happened — notice disappears, outcome appears.
 

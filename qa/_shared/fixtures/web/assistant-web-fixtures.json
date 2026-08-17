@@ -1,6 +1,7 @@
 {
   "_readme": [
-    "F-001 web QA fixtures — qa-web-agent, phase execute, 2026-08-16 (T-007e).",
+    "F-001 web QA fixtures — qa-web-agent, phase execute, 2026-08-16 (T-007e); English copy sync 2026-08-17 (T-070b).",
+    "T-070b (ADR-008 / owner decision 2026-08-17): the `hoàn tác` row was REMOVED from canonical_rows_used, not merely relabelled. It described itself as a 'voice-undo-guard tripwire', which was false after the decision retired the phrase: UNDO_PHRASES is now ['undo'] alone and src/assistant/api/ports/fixture-table.ts carries no row behind the Vietnamese phrase, so feeding it now yields no_match rather than an undo. This file is DERIVED — it is a map of which canonical/QA_EXTRA rows each web TC leans on, and fixture-table.ts + qa-test-server.ts's QA_EXTRA_ROWS are the sources of truth. Where the two disagree, they are the L-004 twin problem and the executable table wins; this file was corrected against it, never the other way round.",
     "REWRITTEN from the authoring-phase draft. The authoring draft invented its own utterances (e.g. 'push the qaweb budget review to 4pm...'); the real server's Interpreter port is FixtureInterpreter bound to a STATIC canonical table (src/assistant/api/ports/fixture-table.ts) — an unmatched utterance always interprets as no_match. This file now maps every scenario onto that canonical table, extended by QA_EXTRA_ROWS (qa/assistant/automation/harness/qa-test-server.ts) for the handful of shapes the canonical table doesn't enumerate (exact 2-task delete boundary; two delayed rows for the cancel-while-thinking race). Both are the spec's own sanctioned extension mechanism (Test strategy: 'QA may extend it with their own rows via the FixtureInterpreter constructor').",
     "Namespacing: seeded task titles use a qaweb-recognizable prefix WHERE the canonical/QA_EXTRA utterance lets us choose the title; utterances that target the canonical table's OWN fixed titles (e.g. 'Buy milk', 'Team meeting') necessarily use those exact strings — isolation still holds because task data is scoped per X-User-Id, not by title, and every TC uses its own qaweb-tc{n}@qa.example.com account.",
     "normalizeTranscript (src/assistant/api/engine/normalize.ts) lowercases + trims + strips terminal punctuation — utterance casing in this file is cosmetic; the server normalizes before matching."
@@ -20,8 +21,7 @@
     "delete the shopping tasks": { "kind": "delete", "requires_seed": ["Buy milk", "Buy eggs", "Buy bread"], "count": 3, "tc": ["TC-002", "TC-012", "TC-013", "TC-014", "TC-015", "TC-016", "TC-021", "TC-022", "TC-023", "TC-024", "TC-031", "TC-032"] },
     "delete the report task": { "kind": "clarify", "requires_seed": ["Report Q1", "Report Q2"], "candidates": 2, "tc": ["TC-014", "TC-017"] },
     "cause an ai error": { "kind": "fail", "note": "always fails, no retry limit — not used (TC-028 uses the fail_times:1 row instead so retry can succeed)", "tc": [] },
-    "undo": { "kind": "voice-undo-guard tripwire", "note": "must NEVER reach interpretation — ADR-006 guard intercepts first", "tc": ["TC-008"] },
-    "hoàn tác": { "kind": "voice-undo-guard tripwire", "tc": ["TC-008"] },
+    "undo": { "kind": "voice-undo-guard tripwire", "note": "must NEVER reach interpretation — ADR-006 guard intercepts first. Since ADR-008 this is the ONLY member of AC-5's undo vocabulary (UNDO_PHRASES = ['undo'], src/assistant/api/engine/normalize.ts:9), so it is the only tripwire the guard can be probed with.", "tc": ["TC-008"] },
     "yes": { "kind": "answer", "when": "question", "class": "affirmative", "tc": ["TC-013"] },
     "no": { "kind": "answer", "when": "question", "class": "negative", "tc": ["TC-013"] },
     "the weather is nice": { "kind": "answer", "when": "question", "class": "unclassifiable", "tc": ["TC-015"] },
@@ -31,7 +31,8 @@
     "_defined_in": "qa/assistant/automation/harness/qa-test-server.ts (QA_EXTRA_ROWS)",
     "delete the qaweb pair": { "kind": "delete", "requires_seed": ["qaweb Cake A", "qaweb Cake B"], "count": 2, "reason": "canonical table has 1-target and 3-target delete rows but no exact 2-target row — needed for AC-9's >1-vs-1 boundary at its tightest edge", "tc": ["TC-012"] },
     "qaweb delayed bulk delete": { "kind": "delete", "requires_seed": ["qaweb Delay Shop A", "qaweb Delay Shop B", "qaweb Delay Shop C"], "delay_ms": 150, "reason": "canonical table's only delay row is a create; AC-3 cancel-while-thinking needs a delayed QUESTION outcome too", "tc": ["TC-005"] },
-    "qaweb delayed failure": { "kind": "fail", "delay_ms": 150, "reason": "AC-3 cancel-while-thinking needs a delayed FAILED outcome too", "tc": ["TC-005"] }
+    "qaweb delayed failure": { "kind": "fail", "delay_ms": 150, "reason": "AC-3 cancel-while-thinking needs a delayed FAILED outcome too", "tc": ["TC-005"] },
+    "qaweb delayed create": { "kind": "create", "creates": ["qaweb Delayed Create"], "delay_ms": 150, "reason": "added T-070b. TC-005 sub-case (a) used the canonical 60ms create row; 60ms is shorter than a Playwright click round-trip against the in-process server, so the thinking indicator (which owns the cancel pill) unmounted mid-click and the test failed ~1 run in 3 with 'element was detached from the DOM'. Triaged as a script race, not a product bug. Same 150ms remedy the two rows above already use — the assertion is unchanged in strength.", "tc": ["TC-005"] }
   },
   "no_fixture_needed": {
     "_note": "any utterance NOT in the canonical table or QA_EXTRA_ROWS naturally interprets as no_match — no dedicated row required.",

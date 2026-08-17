@@ -13,7 +13,7 @@
 | Automation | automated |
 | Automation file | qa/assistant/automation/e2e/F-001-voice-assistant-view.spec.ts |
 | Created | 2026-08-16 by qa-web-agent |
-| Last updated | 2026-08-16 by qa-web-agent |
+| Last updated | 2026-08-17 by qa-web-agent (T-070b — ADR-008 English copy sync) |
 
 ## Summary
 An unclassifiable utterance — not affirmative, not negative, not an interpretable command — executes nothing and the question stays pending, still resolvable by exactly D2's events (answer, supersede, session close). Uses the spec's ambiguous-answer fixture rows, which assert ZERO deletion (spec Test strategy: "ambiguous-answer rows asserting zero deletion").
@@ -23,7 +23,7 @@ An unclassifiable utterance — not affirmative, not negative, not an interpreta
 - Stub: unclassifiable answer → turn outcome `unclassifiable`, `resolutions: []`, no mutation. Classification comes from the canonical ambiguous-answer fixture rows.
 
 ## Test steps
-1. With the question pending, send ambiguous answer 1 ("ừm để tôi nghĩ đã" — fixture `AMB-1`).
+1. With the question pending, send ambiguous answer 1 ("the weather is nice" — fixture `AMB-1`).
 2. Read the reply, the question bubble, and the list.
 3. Send ambiguous answer 2 ("hmm maybe" — fixture `AMB-2`). Re-read.
 4. Then resolve properly: tap `assistant-chip-affirm`. Read the outcome.

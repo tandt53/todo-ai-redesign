@@ -13,7 +13,7 @@
 | Automation | automated |
 | Automation file | qa/assistant/automation/e2e/F-001-voice-assistant-view.spec.ts |
 | Created | 2026-08-16 by qa-web-agent |
-| Last updated | 2026-08-16 by qa-web-agent |
+| Last updated | 2026-08-17 by qa-web-agent (T-070b — ADR-008 English copy sync) |
 
 ## Summary
 Permission is requested before the FIRST talk attempt with a short explanation — not at app open. On denial: mic stays visible but dimmed; activating it leads the user to (or tells them) where to re-grant; typing fully works. The message must state the PERMISSION cause (distinguishable from TC-027's transient cause).
@@ -31,7 +31,7 @@ Permission is requested before the FIRST talk attempt with a short explanation �
 
 ## Expected behaviour
 - **Timing**: zero permission requests before the first talk attempt; exactly one at first tap, with the short explanation visible.
-- **Denied**: mic visible but dimmed (mockup `mic-permission`: reduced opacity + slash overlay + aria-label "Micro cần quyền truy cập"); a message states the mic is BLOCKED BY PERMISSION ("Trình duyệt đang chặn micro cho trang này…" shape) — permission wording, not transient wording.
+- **Denied**: mic visible but dimmed (mockup `mic-permission`: reduced opacity + slash overlay + aria-label "Microphone needs permission"); a message states the mic is BLOCKED BY PERMISSION (head "Microphone needs permission", body "Your browser is blocking the microphone for this page. Allow it in the site settings and the mic lights up again.") — permission wording, not transient wording. Per components.md §Buttons the hardware is capitalised "Microphone" when it names an OS permission and lowercase "mic" everywhere else; both spellings above are deliberate.
 - **Re-grant path**: activating the dimmed mic (or the message's `assistant-permission-cta`) tells/leads where to re-grant — the guidance renders.
 - **Typing intact**: the typed turn completes normally (full anatomy).
 - **Recovery**: after re-grant, the mic returns to available and listening starts on tap.

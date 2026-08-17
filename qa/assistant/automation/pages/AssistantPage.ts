@@ -2,6 +2,7 @@
  * F-001 voice-assistant-view — Page Object (web).
  * qa-web-agent · phase: execute · 2026-08-16 (T-007e)
  * qa-web-agent · phase: execute v2 · 2026-08-16 (T-016) — copy sync + 4.1.3
+ * qa-web-agent · phase: execute v3 · 2026-08-17 (T-070b) — English copy sync
  *
  * SELECTOR CONTRACT: every locator below comes from the design mockup's
  * 22-testid catalogue (design/assistant/screens/voice-assistant-view.html),
@@ -11,17 +12,18 @@
  * (src/assistant/web/components/*.tsx) during this execute pass — every
  * testid used here exists in the running app.
  *
- * COPY CONTRACT (T-016): the product's user-visible wording is Vietnamese.
- * The spec is explicit that it does not own it — F-001 ## Conversation model
- * ("Naming convention"): the spec's English words are concept names, and
- * "the user-visible wording of every label, message and accessible name — and
- * the language it is written in — is the design system's to specify
- * (design/_shared/components.md)". So every literal string asserted below is
- * traceable to components.md or to the design mockup, NOT to whatever the
- * implementation happens to render; where the two disagree, the disagreement
- * is recorded as drift in the run record rather than absorbed into an
- * assertion. Task TITLES ("Buy milk") are fixture data, not copy, and stay as
- * they are.
+ * COPY CONTRACT (T-070b): the product's user-visible wording is ENGLISH
+ * (ADR-008 / reports/owner-decision-2026-08-17-english-first.md, superseding
+ * T-016's Vietnamese sync). The spec is explicit that it does not own the
+ * wording — F-001 ## Conversation model ("Naming convention"): the spec's
+ * English words are concept names, and "the user-visible wording of every
+ * label, message and accessible name — and the language it is written in — is
+ * the design system's to specify (design/_shared/components.md)". So every
+ * literal string asserted below is traceable to components.md or to the design
+ * mockup, NOT to whatever the implementation happens to render; where the two
+ * disagree, the disagreement is recorded as drift in the run record rather
+ * than absorbed into an assertion. Task TITLES ("Buy milk") are fixture data,
+ * not copy, and stay as they are.
  *
  * HARNESS SEAMS (execute-phase binding): the spec's Test strategy names
  * three seams.
@@ -126,20 +128,19 @@ const DRAFT_REF_RE = /#d\d+/;
 /**
  * State words (AC-29's visible cue per state).
  *
- * `listening` is fixed: the mockup and the app both say "Đang nghe…".
- *
- * `thinking` is NOT pinned to one literal. The design mockup's state word is
- * "Đang nghĩ…"; the running app renders "Đang xử lý…". No AC fixes either
- * string (F-001 "Naming convention"), so pinning one would make this test fail
- * on a wording difference that violates no requirement — and pinning the app's
- * word would be writing the assertion from the implementation. What AC-29
- * actually requires is that the thinking state carry a visible cue, so the
- * alternation below asserts exactly that much and no more. The
- * design↔implementation divergence is reported as drift, not silently
- * absorbed. Same reasoning for the cancel pill ("Huỷ" mockup / "Hủy" app).
+ * T-070b: both are now pinned to a single literal, which is a STRENGTHENING,
+ * not a relaxation. Under the Vietnamese copy `thinking` had to be an
+ * alternation (`/Đang xử lý|Đang nghĩ/`) because the mockup said "Đang nghĩ…"
+ * and the app rendered "Đang xử lý…"; no AC fixed either string, so pinning one
+ * would have failed the test on a wording difference that violated no
+ * requirement. The English catalogue closed that gap: the mockup
+ * (design/assistant/screens/voice-assistant-view.html) and the app both render
+ * "Listening…" and "Thinking…", and the cancel pill agrees too
+ * ("Cancel" / aria-label "Cancel — your words stay in the box"). The T-016
+ * drift note is therefore RESOLVED, not carried forward.
  */
-const LISTENING_WORD = 'Đang nghe';
-const THINKING_WORD = /Đang xử lý|Đang nghĩ/;
+const LISTENING_WORD = 'Listening';
+const THINKING_WORD = 'Thinking';
 
 export interface TaskRowSnapshot {
   /** First innerText line of the row — the task title. */
@@ -307,7 +308,7 @@ export class AssistantPage {
     const indicatorVisible = await this.stateIndicator.isVisible();
     const indicatorText = indicatorVisible ? await this.stateIndicator.innerText() : '';
     const listening = indicatorVisible && indicatorText.includes(LISTENING_WORD);
-    const thinking = indicatorVisible && THINKING_WORD.test(indicatorText);
+    const thinking = indicatorVisible && indicatorText.includes(THINKING_WORD);
     const error = await this.retryButton.isVisible().catch(() => false);
     const flags = [listening, thinking, error].filter(Boolean);
     expect(flags.length, 'at most one non-idle state cue-set may hold (AC-29)').toBeLessThanOrEqual(1);
@@ -350,11 +351,11 @@ export class AssistantPage {
    * proper accessible name (TaskListPane.tsx), which the selector contract
    * ranks above text/CSS. */
   editButtonFor(title: string): Locator {
-    return this.taskRowByTitle(title).getByRole('button', { name: `Sửa “${title}”` });
+    return this.taskRowByTitle(title).getByRole('button', { name: `Edit “${title}”` });
   }
 
   deleteButtonFor(title: string): Locator {
-    return this.taskRowByTitle(title).getByRole('button', { name: `Xóa “${title}”` });
+    return this.taskRowByTitle(title).getByRole('button', { name: `Delete “${title}”` });
   }
 
   checkboxFor(title: string): Locator {
@@ -368,9 +369,9 @@ export class AssistantPage {
     // innerText no longer contains oldTitle once editing starts — a `hasText`
     // filter re-evaluated at this point would find zero rows. The edit
     // input carries the SAME accessible name as the button that opened it
-    // (`Sửa "${task.title}"`, and task.title hasn't changed yet), so query
+    // (`Edit "${task.title}"`, and task.title hasn't changed yet), so query
     // by role+name directly instead of re-filtering the row by its old text.
-    const input = this.page.getByRole('textbox', { name: `Sửa “${oldTitle}”` });
+    const input = this.page.getByRole('textbox', { name: `Edit “${oldTitle}”` });
     await input.fill(newTitle);
     await input.press('Enter');
   }
@@ -410,12 +411,23 @@ export class AssistantPage {
     expect(text).not.toMatch(DRAFT_REF_RE);
   }
 
-  /** Bounded "never a task named undo" check (AC-5/AC-8, TC-008). */
+  /**
+   * Bounded "never a task named undo" check (AC-5/AC-8, TC-008).
+   *
+   * T-070b: the second literal checked here used to be 'hoàn tác'. ADR-008
+   * retired that phrase from AC-5's undo vocabulary — `UNDO_PHRASES` is now
+   * `['undo']` (src/assistant/api/engine/normalize.ts:9) and the fixture table
+   * carries no tripwire row behind it — so no code path can any longer create a
+   * task by that name and the check had become vacuously true. A vacuous
+   * assertion is worse than an absent one: it reads as coverage of a guard that
+   * no longer applies to it. Removed rather than kept. The guarantee itself is
+   * unchanged and is asserted here for every phrase the vocabulary actually
+   * contains.
+   */
   async expectNoUndoNamedTask(): Promise<void> {
     const titles = (await this.listSnapshot()).map((r) => r.title.toLowerCase());
     for (const t of titles) {
       expect(t).not.toBe('undo');
-      expect(t).not.toBe('hoàn tác');
     }
   }
 
@@ -532,6 +544,226 @@ export class AssistantPage {
       const l1 = lum(fg);
       const l2 = lum(bg);
       return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // AC-30 — following new messages (BUG-004 / owner decision 2026-08-17).
+  //
+  // Everything below measures the SCROLL VIEWPORT, which is the whole point of
+  // this AC and the reason BUG-004 survived every tier that shipped before it:
+  // a message rendered 176px below the fold satisfies `toBeVisible()`, satisfies
+  // `toHaveCount(1)`, satisfies every presence assertion in this file, and is
+  // not on the user's screen. `toBeVisible()` in Playwright means "rendered with
+  // a non-empty box and not hidden" — it says nothing about whether the box is
+  // inside the scrolled viewport. So these helpers compare rectangles, and the
+  // AC's own quantity (`distance_from_bottom`) is computed the way the AC
+  // defines it rather than approximated by a visibility check.
+  //
+  // THE SCROLLER IS FOUND, NOT NAMED. The conversation's scroll container has no
+  // entry in the 22-testid catalogue, and the selector contract forbids reaching
+  // for a CSS class (`.conv-scroll`) to get at it. It is instead derived from a
+  // contract element that IS published: the conversation is the WCAG 4.1.3 live
+  // region (`role="log"`, AC-19 / TC-033), so these helpers walk up from the log
+  // to the nearest genuinely-scrollable ancestor. That anchor is semantic and
+  // survives restyling; it fails loudly if the surface stops scrolling at all,
+  // which is itself worth failing on. A `assistant-conversation-scroller` testid
+  // would be better still and is requested in the run record.
+  // -------------------------------------------------------------------------
+
+  /** The one AC-30 control. Testid from the mockup catalogue (design/_shared/components.md
+   * §NewMessageAffordance: `assistant-new-message-affordance`). */
+  get newMessageAffordance(): Locator {
+    return this.page.getByTestId('assistant-new-message-affordance');
+  }
+
+  /** The AC-30(a) quantities, in CSS pixels, read from the live layout.
+   * `distanceFromBottom` is `content_height − (scroll_offset + viewport_height)`
+   * exactly as clause (a) writes it. */
+  async scrollMetrics(): Promise<{
+    scrollTop: number;
+    scrollHeight: number;
+    clientHeight: number;
+    distanceFromBottom: number;
+  }> {
+    return this.page.evaluate(() => {
+      const log = document.querySelector('[role="log"]');
+      let sc: Element | null = log;
+      while (
+        sc !== null &&
+        !(sc.scrollHeight > sc.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(sc).overflowY))
+      ) {
+        sc = sc.parentElement;
+      }
+      if (sc === null) throw new Error('no scrollable ancestor of role=log — the conversation does not scroll');
+      return {
+        scrollTop: sc.scrollTop,
+        scrollHeight: sc.scrollHeight,
+        clientHeight: sc.clientHeight,
+        distanceFromBottom: sc.scrollHeight - (sc.scrollTop + sc.clientHeight),
+      };
+    });
+  }
+
+  /** Park the conversation exactly `px` logical units from the bottom, so
+   * clause (a)'s 48-unit slack can be probed from both sides. Returns the
+   * achieved distance (never assume the browser honoured the request). */
+  async parkAtDistanceFromBottom(px: number): Promise<number> {
+    return this.page.evaluate((want: number) => {
+      const log = document.querySelector('[role="log"]');
+      let sc: Element | null = log;
+      while (
+        sc !== null &&
+        !(sc.scrollHeight > sc.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(sc).overflowY))
+      ) {
+        sc = sc.parentElement;
+      }
+      if (sc === null) throw new Error('no scrollable ancestor of role=log');
+      sc.scrollTop = sc.scrollHeight - sc.clientHeight - want;
+      return sc.scrollHeight - (sc.scrollTop + sc.clientHeight);
+    }, px);
+  }
+
+  /** Jump the conversation to its very top (the "reading history" position). */
+  async parkAtTopOfConversation(): Promise<void> {
+    await this.page.evaluate(() => {
+      const log = document.querySelector('[role="log"]');
+      let sc: Element | null = log;
+      while (
+        sc !== null &&
+        !(sc.scrollHeight > sc.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(sc).overflowY))
+      ) {
+        sc = sc.parentElement;
+      }
+      if (sc === null) throw new Error('no scrollable ancestor of role=log');
+      sc.scrollTop = 0;
+    });
+  }
+
+  /** Reach the bottom without touching the affordance — clause (f)'s SECOND
+   * dismissal path ("the dismissal condition is being at the bottom, not the
+   * gesture that got there"). A real wheel gesture over the conversation, not a
+   * scrollTop assignment, because the gesture is the half under test. */
+  async wheelConversationToBottom(): Promise<void> {
+    const box = await this.conversationLog().boundingBox();
+    if (box === null) throw new Error('conversation log has no box');
+    const viewport = this.page.viewportSize();
+    const cx = box.x + box.width / 2;
+    // The log is TALLER than the viewport (that is why it scrolls), so its own
+    // centre can sit off-screen. Clamp the pointer to the visible strip.
+    const cy = Math.min(Math.max(box.y + 20, 20), (viewport?.height ?? 720) - 20);
+    await this.page.mouse.move(cx, cy);
+    for (let i = 0; i < 12; i++) {
+      const { distanceFromBottom } = await this.scrollMetrics();
+      if (distanceFromBottom <= 0) return;
+      await this.page.mouse.wheel(0, Math.max(120, Math.min(600, distanceFromBottom)));
+      await this.page.waitForTimeout(60);
+    }
+  }
+
+  /** Is this element actually ON SCREEN — inside the conversation's scrolled
+   * viewport — as opposed to merely rendered? This is the distinction BUG-004
+   * lived in. Compares rectangles; `toBeVisible()` cannot answer it. */
+  async isInsideScrollViewport(target: Locator): Promise<boolean> {
+    return target.evaluate((el) => {
+      const log = document.querySelector('[role="log"]');
+      let sc: Element | null = log;
+      while (
+        sc !== null &&
+        !(sc.scrollHeight > sc.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(sc).overflowY))
+      ) {
+        sc = sc.parentElement;
+      }
+      if (sc === null) throw new Error('no scrollable ancestor of role=log');
+      const a = el.getBoundingClientRect();
+      const b = sc.getBoundingClientRect();
+      // Fully inside, both edges — a message half below the fold is not "in view".
+      return a.top >= b.top - 1 && a.bottom <= b.bottom + 1;
+    });
+  }
+
+  /** Clause (c)'s own formulation: which message occupies the top edge of the
+   * viewport, and at what offset from that edge. Compared before and after an
+   * append, this asserts "the view did not move" as the AC states it, rather
+   * than only as `scrollTop` (the two agree on a non-inverted list, and the AC
+   * says so — but the anchor form also survives a list that later inverts). */
+  async topEdgeAnchor(): Promise<{ index: number; offsetFromTopEdge: number }> {
+    return this.page.evaluate(() => {
+      const log = document.querySelector('[role="log"]');
+      let sc: Element | null = log;
+      while (
+        sc !== null &&
+        !(sc.scrollHeight > sc.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(sc).overflowY))
+      ) {
+        sc = sc.parentElement;
+      }
+      if (sc === null) throw new Error('no scrollable ancestor of role=log');
+      const top = sc.getBoundingClientRect().top;
+      const bubbles = Array.from(document.querySelectorAll('[data-testid="assistant-message-bubble"]'));
+      for (let i = 0; i < bubbles.length; i++) {
+        const r = bubbles[i]!.getBoundingClientRect();
+        if (r.bottom > top) return { index: i, offsetFromTopEdge: r.top - top };
+      }
+      throw new Error('no message occupies the top edge — the conversation is empty or unscrolled');
+    });
+  }
+
+  /** Re-read the offset of the bubble at `index` from the viewport's top edge. */
+  async offsetFromTopEdge(index: number): Promise<number> {
+    return this.page.evaluate((i: number) => {
+      const log = document.querySelector('[role="log"]');
+      let sc: Element | null = log;
+      while (
+        sc !== null &&
+        !(sc.scrollHeight > sc.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(sc).overflowY))
+      ) {
+        sc = sc.parentElement;
+      }
+      if (sc === null) throw new Error('no scrollable ancestor of role=log');
+      const el = document.querySelectorAll('[data-testid="assistant-message-bubble"]')[i];
+      if (el === undefined) throw new Error(`no message bubble at index ${i}`);
+      return el.getBoundingClientRect().top - sc.getBoundingClientRect().top;
+    }, index);
+  }
+
+  /**
+   * Clause (g)'s observable is "the absence of animation, not a shortened
+   * duration", so record every scroll position the container passes through
+   * during an action. An animated scroll emits a long ladder of intermediate
+   * offsets; an instant one lands on its final value and emits nothing else.
+   * Start recording BEFORE the action so the first frame is not missed.
+   */
+  async startScrollTrace(): Promise<void> {
+    await this.page.evaluate(() => {
+      const log = document.querySelector('[role="log"]');
+      let sc: Element | null = log;
+      while (
+        sc !== null &&
+        !(sc.scrollHeight > sc.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(sc).overflowY))
+      ) {
+        sc = sc.parentElement;
+      }
+      if (sc === null) throw new Error('no scrollable ancestor of role=log');
+      const w = window as unknown as { __ac30Trace?: number[]; __ac30Off?: () => void };
+      w.__ac30Off?.();
+      const seen: number[] = [];
+      const onScroll = (): void => {
+        seen.push(sc.scrollTop);
+      };
+      sc.addEventListener('scroll', onScroll);
+      w.__ac30Trace = seen;
+      w.__ac30Off = () => sc.removeEventListener('scroll', onScroll);
+    });
+  }
+
+  /** Stop recording and return every scroll offset observed since the start. */
+  async stopScrollTrace(): Promise<number[]> {
+    return this.page.evaluate(() => {
+      const w = window as unknown as { __ac30Trace?: number[]; __ac30Off?: () => void };
+      w.__ac30Off?.();
+      const out = w.__ac30Trace ?? [];
+      w.__ac30Trace = [];
+      return out;
     });
   }
 

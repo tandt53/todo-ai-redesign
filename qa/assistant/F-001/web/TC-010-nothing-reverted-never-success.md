@@ -13,7 +13,7 @@
 | Automation | automated |
 | Automation file | qa/assistant/automation/e2e/F-001-voice-assistant-view.spec.ts |
 | Created | 2026-08-16 by qa-web-agent |
-| Last updated | 2026-08-16 by qa-web-agent |
+| Last updated | 2026-08-17 by qa-web-agent (T-070b — ADR-008 English copy sync) |
 
 ## Summary
 If every task of the turn was modified after apply, undo reverts nothing — and the outcome message must SAY nothing was reverted, naming the untouched tasks. It must never render as a successful revert (mockup `nothing-reverted` state; api-contracts `nothing_reverted: true`).
@@ -29,7 +29,7 @@ If every task of the turn was modified after apply, undo reverts nothing — and
 3. Read the outcome message text and the task list.
 
 ## Expected behaviour
-- **AC-7**: Outcome message states nothing was reverted ("Không hoàn tác được gì" head per mockup) and names BOTH tasks as unchanged/skipped. It contains no success phrasing ("Đã hoàn tác", "Đã khôi phục") as its headline.
+- **AC-7**: Outcome message states nothing was reverted ("Nothing was undone" head per mockup) and names BOTH tasks as unchanged/skipped ("They all changed after my edit: … I left them as they are."). It contains no success phrasing ("Undone", "Put back") as its headline.
 - The list is unchanged by the undo: both hand-edited values persist (read-back assertion).
 - The original bubble's undone/undo affordance state matches the contract (turn not reverted — spec/api: `already_undone` false, turn stays `applied`; the affordance behaviour on a fully-skipped undo follows the newest-applied rule of AC-8).
 
@@ -40,4 +40,4 @@ If every task of the turn was modified after apply, undo reverts nothing — and
 | undo response | fixture row `WEB-UNDO-3` (all skipped, nothing_reverted) |
 
 ## Notes
-False-green guard: assert the message head text explicitly, not just message presence — a generic "Đã hoàn tác" bubble would pass a weaker assertion while violating the AC.
+False-green guard: assert the message head text explicitly, not just message presence — a generic "Undone" bubble would pass a weaker assertion while violating the AC.

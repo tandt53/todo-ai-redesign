@@ -13,7 +13,7 @@
 | Automation | automated |
 | Automation file | qa/assistant/automation/e2e/F-001-voice-assistant-view.spec.ts |
 | Created | 2026-08-16 by qa-web-agent |
-| Last updated | 2026-08-16 by qa-web-agent |
+| Last updated | 2026-08-17 by qa-web-agent (T-070b — ADR-008 English copy sync) |
 
 ## Summary
 A transient recognition failure (service busy, language pack unavailable) shows a visible message; while the capability is down the mic renders DIMMED with a message stating the transient cause — distinguishable from permission-denied — and returns to available when recognition recovers. Typing is unaffected throughout.
@@ -28,10 +28,10 @@ A transient recognition failure (service busy, language pack unavailable) shows 
 4. Inject recovery. Read the mic; tap it and confirm listening starts.
 
 ## Expected behaviour
-- **Dimmed + transient wording**: mic visible, dimmed (mockup `mic-transient` — dimmed WITHOUT the permission slash; aria-label "Micro tạm thời không dùng được"); the message states the transient cause and expected self-recovery ("Dịch vụ nhận dạng chưa phản hồi lúc này… micro sẽ tự bật lại" shape).
+- **Dimmed + transient wording**: mic visible, dimmed (mockup `mic-transient` — dimmed WITHOUT the permission slash; aria-label "Microphone is temporarily unavailable"); the message states the transient cause and expected self-recovery (head "Speech recognition is busy", body "The recognition service isn't answering. It usually clears in a moment — the mic will come back on its own.").
 - **Distinguishable**: the transient message ≠ the permission message (explicit inequality assertion on the two rendered texts AND the two aria-label variants; the transient state lacks the permission slash/CTA).
 - **Typing unaffected**: typed turn completes with full anatomy while recognition is down.
-- **Recovery is visible**: mic returns to available (dimming gone, "Nhấn để nói"), and listening actually starts on the next tap (functional recovery, not just styling).
+- **Recovery is visible**: mic returns to available (dimming gone, "Tap to speak"), and listening actually starts on the next tap (functional recovery, not just styling).
 
 ## Test data
 | Field | Value |

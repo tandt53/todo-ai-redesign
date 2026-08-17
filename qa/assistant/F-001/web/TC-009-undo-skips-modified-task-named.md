@@ -13,10 +13,10 @@
 | Automation | automated |
 | Automation file | qa/assistant/automation/e2e/F-001-voice-assistant-view.spec.ts |
 | Created | 2026-08-16 by qa-web-agent |
-| Last updated | 2026-08-16 by qa-web-agent |
+| Last updated | 2026-08-17 by qa-web-agent (T-070b — ADR-008 English copy sync) |
 
 ## Summary
-A task modified after the turn (by hand or by a later turn) is skipped on undo, and the reverted-outcome message names every skipped task. Zero silent overwrites. Mirrors the mockup `reverted` state: "Đã hoàn tác — trừ 1 việc … Bỏ qua: … — việc này đã thay đổi sau đó nên tôi giữ nguyên."
+A task modified after the turn (by hand or by a later turn) is skipped on undo, and the reverted-outcome message names every skipped task. Zero silent overwrites. Mirrors the mockup `reverted` state: "Undone — except one task … Skipped: {title} — it changed after my edit, so I left it alone."
 
 ## Preconditions
 - Open session. User `qaweb-tc009@qa.example.com`; baseline seed tasks.
@@ -31,7 +31,7 @@ A task modified after the turn (by hand or by a later turn) is skipped on undo, 
 
 ## Expected behaviour
 - **AC-7**: The created task is removed (reverted); the hand-modified task KEEPS its hand-edited value — the undo did not touch it.
-- The outcome message names the skipped task by title ("Bỏ qua: {title}") and distinguishes reverted from skipped. Naming is per-task and complete: every skipped task appears by title.
+- The outcome message names the skipped task by title ("Skipped: {title} — it changed after my edit, so I left it alone.") and distinguishes reverted from skipped (head "Undone — except one task"). Naming is per-task and complete: every skipped task appears by title.
 - Read-back: list row for the skipped task shows the HAND-EDITED value, not the pre-turn value, not the turn's value.
 
 ## Test data

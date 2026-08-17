@@ -13,7 +13,7 @@
 | Automation | automated |
 | Automation file | qa/assistant/automation/e2e/F-001-voice-assistant-view.spec.ts |
 | Created | 2026-08-16 by qa-web-agent |
-| Last updated | 2026-08-16 by qa-web-agent |
+| Last updated | 2026-08-17 by qa-web-agent (T-070b — ADR-008 English copy sync) |
 
 ## Summary
 Session lifecycle is visible. On a clean start after a close, the surface renders exactly ONE boundary message carrying the closed session's terminal outcomes: the close marker (reason + time), every question declined by close named with its task titles, and any turn that resolved between last foreground and close (applied or failed, tasks named). A stale/closed session starts clean — never pointing at yesterday's conversation as if open. An open session resumes visibly.
@@ -31,7 +31,7 @@ Session lifecycle is visible. On a clean start after a close, the surface render
 
 ## Expected behaviour
 - **Exactly one** `assistant-boundary-marker` renders (count == 1 — the AC's bounded "exactly one").
-- **Marker content**: close marker with reason/time ("Phiên đã kết thúc — để lâu không dùng · …"); each declined question named WITH its task titles ("Xóa 3 việc?" + the 3 titles kept); each late outcome with its tasks named ("Trong lúc bạn vắng mặt: đã thêm “…”"). All three parts present when the fixture carries them.
+- **Marker content**: close marker with reason/time ("Session closed — no activity · …"); each declined question named WITH its task titles ("Delete 3 tasks?" + the 3 titles kept); each late outcome with its tasks named ("While you were away: added “…”"). All three parts present when the fixture carries them.
 - **Clean start**: no stale open conversation renders above the marker as current; composer empty; the surface invites fresh input. The late-applied task IS in the list (it happened).
 - **Resume**: an open session's messages render (visibly resumed — history present, no boundary marker for the open session).
 - **Live close**: the question declined by the close appears in the boundary by name on next load (D2: close = declined, visible on next open).

@@ -33,7 +33,7 @@ F-001 AC-6 and AC-8 are server-side ACs in the parity table's "cost the mobile c
 ## Expected behaviour
 - All 3 tasks revert in one gesture — undo is whole-turn, never per-task.
 - Read-back observable: a subsequent task-list read returns the reverted values (create → gone and staying gone; edit → prior field values; delete → restored with all fields intact).
-- The original turn stays **visible, marked undone** (mockup `reverted` state: the prior bubble carries `Đã hoàn tác`), not removed from the conversation.
+- The original turn stays **visible, marked undone** (mockup `reverted` state: the prior bubble carries the `undone-tag` label `Undone`), not removed from the conversation.
 - Step 3 is idempotent: the same success outcome renders again, and the list does **not** change a second time.
 - Step 4 and step 5 render an AC-6 refusal **message** naming the reason (`not_newest`, `session_closed`). Never a silent no-op, never a toast that leaves no conversation record.
 - The undo affordance visibly disappears from the older turn once a newer **mutating** turn exists (F-001 AC-8).

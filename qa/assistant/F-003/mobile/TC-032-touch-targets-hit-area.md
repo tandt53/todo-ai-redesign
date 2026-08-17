@@ -106,26 +106,77 @@ disappear.
 Design published `design/_shared/components.md` § Touch — the single source this
 TC proposed last pass. The automation parses it and asserts:
 
-- `PAINTED`'s four widths equal the published floors (`add-task` 96, `task-row`
-  320, `undo` 108, `retry` **80** — corrected from the copied 96).
+- `PAINTED`'s five widths equal the published floors — **whatever they are**.
+  The figures are deliberately not restated here. This document used to carry
+  them, and that made it a second home for numbers design owns (L-004): when the
+  English re-measure moved every floor, the copy here silently became wrong while
+  reading like a specification. The table in § Touch is the only place they live;
+  read them there.
 - Each floor is a multiple of 4 and **under-states** its rendered measurement,
   the direction § Touch calls load-bearing.
 - Each floor exceeds both platform minimums, so none can bind the hit-area
   calculation — § Touch's own claim, and the reason these are layout truth and
   never the accessibility argument.
-- `assistant-permission-cta` is **not** asserted: its floor is the shortest of
-  three catalogue labels and only design can measure it (T-042). The test asserts
-  it is still absent from the table, so publishing a floor fails here and gets it
-  asserted properly rather than leaving 140 silently wrong.
+- `assistant-permission-cta` gets its own assertion, on the shortest-label rule
+  rather than on a number (see below).
 
-Mutation-verified: drifting a published floor reddens 2, regressing `PAINTED` to
-96 reddens 1, making a floor over-state its render reddens 1, renaming the
-section reddens 2.
+Mutation-verified: drifting a published floor reddens 2, making a floor
+over-state its render reddens 1, renaming the section reddens 2.
+
+### The varying-label rule — general, not one control's special case (2026-08-17)
+
+§ Touch now carries a general clause, and it is worth knowing before the next
+control like this appears:
+
+> Where a control's label varies by state, the floor comes from the **shortest**
+> label it can carry.
+
+`assistant-permission-cta` is the case that produced it. Its label is one of
+three — see § Touch for the current strings and their rendered widths — and the
+floor sits under the **shortest** of them. Before the rule existed, `PAINTED`
+carried a number that sat *between* the shortest and the longest, which is the
+signature of a floor read off the wrong label: a number below the longest label
+looks perfectly reasonable and is wrong for every state but one.
+
+The suite asserts the rule itself, not the number: for any published row carrying
+two or more label widths, the floor must be at or below the smallest of them.
+Verified by mutation — republishing a floor between the shortest and longest
+label (a multiple of 4, comfortably below the longest, and wrong) reddens 3
+tests. A future varying-label control inherits that check for free.
+
+**The English re-measure is why this rule earns its keep (2026-08-17, ADR-008).**
+Every floor moved when every label did, and this one moved **up**: the English
+CTA label is *wider* than the Vietnamese it replaced. Three floors shrank and
+that one grew, which is the direction that matters — a floor carried over
+unchanged would have described a control **narrower than its own shortest
+label**, under-sizing a real tap target rather than merely mis-stating it. That
+is the accessibility failure these floors exist to prevent, and it is precisely
+the failure a hand-copied number cannot report. The automation now parses the
+published figures at run time and asserts the *relationship* (floor ≤ shortest
+label; the binding "renders" figure is the shortest label's; the floor sits at
+the tightest multiple of 4 below it, or one step under). No number is retyped on
+either side, so a future re-measure lands in the suite by itself.
+
+### The rounding rule is deliberately loose, and that is now documented
+
+Last pass this suite flagged that "rounded down to a multiple of 4" read as
+mechanical while only `assistant-retry-button` followed it strictly. Design
+restated the section rather than tightening the numbers, and the reason is a good
+one: the floors are measured in an HTML mockup while the control ships through
+React Native's platform text shaping, so the same string does not resolve to the
+same pixel. The slack absorbs a real engine difference. **The floor's job is to
+catch a control that has collapsed, not to describe it to a tenth of a point.**
+
+The three stated invariants — `floor % 4 === 0`, `floor <= rendered width`,
+`floor > 48` (both platform minimums) — are all asserted. The tighter
+"largest multiple of 4 below the render" is still *not* asserted, deliberately.
 
 ### What is still owed here
 
 - **Measurement on a device remains device-lab debt.** There is no headless
   observable for a hit area; every number above is a declaration, and the device
   pass is what turns it into a measurement.
-- **`assistant-permission-cta`'s floor** is a known over-claim (140 vs 114.3
-  rendered), harmless today and queued as T-042.
+- Nothing else. `assistant-permission-cta` (T-042) closed on 2026-08-17 against
+  the published table — and was re-measured the same day for the English copy —
+  so the only thing outstanding for AC-9 is the device measurement above, which
+  no node-tier work can discharge.

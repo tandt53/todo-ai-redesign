@@ -13,7 +13,7 @@
 | Automation | automated |
 | Automation file | qa/assistant/automation/e2e/F-001-voice-assistant-view.spec.ts |
 | Created | 2026-08-16 by qa-web-agent |
-| Last updated | 2026-08-16 by qa-web-agent |
+| Last updated | 2026-08-17 by qa-web-agent (T-070b — ADR-008 English copy sync) |
 
 ## Summary
 AC-1's carve-out: a turn that produces a question (bulk-delete confirmation or clarification) applies nothing; its visible same-turn result is the question message itself. This is the web half of the server-refusal rule — the UI must show zero list changes while the question is pending.
@@ -29,7 +29,7 @@ AC-1's carve-out: a turn that produces a question (bulk-delete confirmation or c
 4. Re-read the entire task list pane.
 
 ## Expected behaviour
-- **AC-9**: The reply is a question message naming the count ("Xóa 3 việc?") and all 3 task titles; `assistant-chip-affirm` (danger-styled, the only red action) and `assistant-chip-negative` render.
+- **AC-9**: The reply is a question message naming the count ("Delete 3 tasks?") and all 3 task titles ("Will delete: …"); `assistant-chip-affirm` ("Delete 3 tasks", danger-styled, the only red action) and `assistant-chip-negative` ("Keep them") render.
 - **AC-1 carve-out**: The task list is byte-identical to the pre-turn snapshot — no row removed, no badge, no diff, no count change. The question message is the only visible result of the turn.
 - No Undo affordance appears (nothing was applied).
 

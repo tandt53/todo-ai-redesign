@@ -128,7 +128,7 @@
       "utterance": "what's on Sunday?",
       "interpretation": { "kind": "unsupported_query" },
       "acs": ["AC-15"],
-      "notes": "Question ABOUT the list: unsupported_query naming the working alternative, contract-fixed as \"danh sách và bộ lọc trên màn hình\" (glosses as 'the on-screen list and its filters'); zero mutations; no fabricated answer."
+      "notes": "Question ABOUT the list: unsupported_query naming the working alternative, contract-fixed as \"the on-screen list and its filters\" (api-contracts.md §9 processing rule 9 — the source this row copies; English since ADR-008, was Vietnamese between T-015g and T-069); zero mutations; no fabricated answer."
     },
     {
       "id": "UT-INTREF-1",
@@ -146,12 +146,12 @@
       "notes": "SPEC-MANDATED undo-phrase row (ADR-006): short-circuits before the model — the AI-call counter must not move; no turn row created; never becomes a task named 'undo'."
     },
     {
-      "id": "UT-UNDO-VI",
+      "id": "UT-UNDO-RETIRED-VI",
       "utterance": "hoàn tác",
-      "interpretation": { "kind": "undo_guard" },
-      "expect_no_interpreter_call": true,
-      "acs": ["AC-5"],
-      "notes": "SPEC-MANDATED undo-phrase row (Vietnamese). Same guard semantics."
+      "interpretation": { "kind": "no_match" },
+      "expect_no_interpreter_call": false,
+      "acs": ["AC-5", "AC-14"],
+      "notes": "RETIRED undo phrase, kept as the record of the change rather than deleted. Was UT-UNDO-VI (kind=undo_guard, expect_no_interpreter_call: true) until ADR-006 § Amendment (2026-08-17) shrank UNDO_PHRASES to {\"undo\"} per the owner decision in ADR-008. It is now an ORDINARY turn: it reaches the Interpreter (counter +1), matches nothing, and resolves no_match quoting the transcript — the same path ADR-006 § Consequences already described for paraphrased undo intents. Still creates no task (AC-14) and still spends no undo window. Asserted by the automation's 'retired phrase is an ordinary turn' test, whose clauses are the point-for-point negation of UT-UNDO-EN's."
     },
     {
       "id": "UT-UNDO-NORM-1",
@@ -163,11 +163,19 @@
     },
     {
       "id": "UT-UNDO-NORM-2",
-      "utterance": "HOÀN TÁC",
+      "utterance": "UNDO",
       "interpretation": { "kind": "undo_guard" },
       "expect_no_interpreter_call": true,
       "acs": ["AC-5"],
-      "notes": "Normalization probe: uppercase + Unicode NFC on the Vietnamese phrase."
+      "notes": "Normalization probe: lowercasing alone. Was \"HOÀN TÁC\" (uppercase + NFC on the retired Vietnamese phrase) until ADR-006's 2026-08-17 amendment. The NFC half of the normalization contract now has NO fixture row and no assertion anywhere: the closed list is the single ASCII phrase \"undo\", which has no decomposed form. ADR-006 § Amendment keeps NFC deliberately as the engine-wide utterance-normalization contract, so this is an unasserted clause, not a removed one — it becomes testable again the moment a non-ASCII phrase enters the list."
+    },
+    {
+      "id": "UT-UNDO-NORM-3",
+      "utterance": "undo!",
+      "interpretation": { "kind": "undo_guard" },
+      "expect_no_interpreter_call": true,
+      "acs": ["AC-5"],
+      "notes": "Normalization probe: terminal-punctuation stripping alone, isolated from NORM-1's trim+case so a regression in one step cannot be masked by another."
     },
     {
       "id": "UT-UNDO-NOT-GUARD",

@@ -31,9 +31,9 @@ Undo never clobbers later work: a task modified after the turn is **skipped and 
 5. Reset again; with no applied turn in the session at all, say the undo phrase.
 
 ## Expected behaviour
-- Step 3: B reverts, A is left alone, and the message **names A** as skipped (mockup `reverted` state: `Bỏ qua: {title} — việc này đã đổi sau khi tôi sửa, nên tôi để nguyên.`). The skipped task's current value is unchanged — zero silent overwrite.
-- Step 4: the message is the nothing-reverted shape (`Không có gì được hoàn tác`) naming **both** tasks; the list is byte-identical before and after; the message must not carry a success head and must not be styled as an applied outcome.
-- Step 5: `Không có gì để hoàn tác — phiên này chưa áp dụng thay đổi nào.` — a visible refusal, and the utterance never becomes a task titled "hoàn tác".
+- Step 3: B reverts, A is left alone, and the message **names A** as skipped (mockup `reverted` state: `Skipped: {title} — it changed after my edit, so I left it alone.`). The skipped task's current value is unchanged — zero silent overwrite.
+- Step 4: the message is the nothing-reverted shape (mockup `nothing-reverted` state, head `Nothing was undone`) naming **both** tasks; the list is byte-identical before and after; the message must not carry a success head and must not be styled as an applied outcome. The automation asserts this head **against an observed successful revert** rather than against a typed literal — the head must differ from the one a real revert produces, which is the property AC-7 is about and which a named string stops checking the moment the copy moves.
+- Step 5: `There is nothing to undo — nothing has been applied in this session.` — a visible refusal, and the utterance never becomes a task titled `undo`. (ADR-008 retired the Vietnamese phrase `hoàn tác`; `undo` is the whole closed list, and the AC-5 guard short-circuits it before the model.)
 - In every branch the count named in the message equals the count actually reverted. A message claiming 2 reverted while 1 reverted fails this test.
 
 ## Test data

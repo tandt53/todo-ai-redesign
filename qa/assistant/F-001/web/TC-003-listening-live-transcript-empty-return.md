@@ -13,7 +13,7 @@
 | Automation | automated |
 | Automation file | qa/assistant/automation/e2e/F-001-voice-assistant-view.spec.ts |
 | Created | 2026-08-16 by qa-web-agent |
-| Last updated | 2026-08-16 by qa-web-agent |
+| Last updated | 2026-08-17 by qa-web-agent (T-070b — ADR-008 English copy sync) |
 
 ## Summary
 While listening, a live transcript must render as words are recognized (into the composer per the mockup's listening state). Listening that ends with nothing recognized must return to idle visibly and send no turn. Uses the spec's injectable transcript source seam — no real audio.
@@ -24,14 +24,14 @@ While listening, a live transcript must render as words are recognized (into the
 - Network layer instrumented to count `POST /assistant/turn` requests.
 
 ## Test steps
-1. Activate `assistant-mic-button`. Assert listening state: `assistant-state-indicator` visible with "Đang nghe…", mic `aria-pressed="true"`.
+1. Activate `assistant-mic-button`. Assert listening state: `assistant-state-indicator` visible with "Listening…", mic `aria-pressed="true"`.
 2. Feed the transcript source incrementally: "push the" → "push the budget" → "push the budget review".
 3. After each increment, read `assistant-composer-input` value.
 4. Reset; tap mic again, then end the capture with an empty recognition result (seam: end-of-speech, zero words).
 
 ## Expected behaviour
 - **AC-2 (live transcript)**: The composer text grows with each recognized increment — each partial appears while still listening, not only at the end.
-- **AC-2 (empty recognition)**: Surface returns to idle with a visible cue — "Đang nghe…" indicator gone, mic back to available (`aria-pressed="false"`); **zero** `POST /assistant/turn` requests were made.
+- **AC-2 (empty recognition)**: Surface returns to idle with a visible cue — "Listening…" indicator gone, mic back to available (`aria-pressed="false"`); **zero** `POST /assistant/turn` requests were made.
 - **AC-29**: Only idle → listening → idle occurred; no thinking flash, no error, no message added to the conversation.
 
 ## Test data

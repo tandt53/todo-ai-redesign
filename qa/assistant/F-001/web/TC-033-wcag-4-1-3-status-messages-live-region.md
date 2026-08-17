@@ -13,7 +13,7 @@
 | Automation | automated |
 | Automation file | qa/assistant/automation/e2e/F-001-voice-assistant-view.spec.ts |
 | Created | 2026-08-16 by qa-web-agent |
-| Last updated | 2026-08-16 by qa-web-agent |
+| Last updated | 2026-08-17 by qa-web-agent (T-070b — ADR-008 English copy sync) |
 
 ## Summary
 AC-19 names WCAG 4.1.3 (Status Messages): **every message the conversation adds** — applied, reverted / nothing-reverted, undo-refused, clarify question, confirm question, resolution outcome, no-match, session-closed boundary marker, queued-turn notice — must be announced to assistive technology through a live region **on the conversation surface itself, without moving focus**. The AC is explicit about what does *not* count: announcing the state word alone (idle / listening / thinking / error) fails it, because a screen-reader user must receive the same information a sighted user reads — what changed, how many, which tasks by title, and that undo is available. This TC verifies the mechanism that makes that announcement possible and the content that must ride it.
@@ -33,9 +33,9 @@ AC-19 names WCAG 4.1.3 (Status Messages): **every message the conversation adds*
 ## Expected behaviour
 - **Region exists before the first message.** The live region is present and `aria-live="polite"` while the conversation is still empty. A region created together with its first message never announces that message (W3C **F103**) — this is the failure mode the step-1 assertion exists to catch, and it is invisible to any check that only inspects the DOM after messages exist.
 - **AC-19 (containment)**: the outcome message renders **inside** the live region, not as a sibling of it. A visible-but-outside message is silent to a screen reader.
-- **AC-19 (content, not just mechanism)**: the announced text carries all four required facts — what changed, how many ("Đã thêm 4 việc"), which tasks by title ("Plan Monday" … "Plan Thursday"), and that undo is available ("Hoàn tác"). The state word alone is explicitly insufficient.
+- **AC-19 (content, not just mechanism)**: the announced text carries all four required facts — what changed, how many ("Added 4 tasks"), which tasks by title ("Plan Monday" … "Plan Thursday"), and that undo is available ("Undo"). The state word alone is explicitly insufficient.
 - **AC-19 (no focus change)**: the active element is unchanged across the announcement. The conversation never steals focus to make itself heard.
-- **Every message kind, not just the first**: the reverted message ("Đã hoàn tác") lands in the same region under the same rules.
+- **Every message kind, not just the first**: the reverted message ("Undone") lands in the same region under the same rules.
 
 ## Test data
 | Field | Value |

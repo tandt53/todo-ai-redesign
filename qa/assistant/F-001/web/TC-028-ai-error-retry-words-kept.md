@@ -13,7 +13,7 @@
 | Automation | automated |
 | Automation file | qa/assistant/automation/e2e/F-001-voice-assistant-view.spec.ts |
 | Created | 2026-08-16 by qa-web-agent |
-| Last updated | 2026-08-16 by qa-web-agent |
+| Last updated | 2026-08-17 by qa-web-agent (T-070b — ADR-008 English copy sync) |
 
 ## Summary
 When AI errors, the conversation surface says so and offers retry; the user's words are kept (no re-speaking); the FULL todo list remains usable by hand (create, edit, complete, delete — all four verified, not sampled). Retry re-enters thinking and, per the contract, re-sends the same `client_turn_id`.
@@ -29,7 +29,7 @@ When AI errors, the conversation surface says so and offers retry; the user's wo
 4. Tap Retry. Inspect the retry request; read the final outcome + list.
 
 ## Expected behaviour
-- **Says so**: error message renders (mockup `error` state: danger-edged bubble, "Chưa gửi được" head, "Chưa có gì thay đổi — lời của bạn vẫn được giữ bên dưới" body); surface is in the error state with a visible cue (AC-29 — error IS one of the four states); mic/danger treatment per mockup.
+- **Says so**: error message renders (mockup `error` state: danger-edged bubble, "Couldn't send" head, "The assistant couldn't handle that one. Nothing changed — your words are still in the box below." body); surface is in the error state with a visible cue (AC-29 — error IS one of the four states); mic/danger treatment per mockup.
 - **Words kept**: the composer retains the utterance (mockup keeps it: "Move my gym session to Monday at 7") — re-speaking/retyping not required.
 - **Retry**: `assistant-retry-button` visible and operable; the retried request carries the SAME `client_turn_id` (AC-16's web face — asserted on the wire); on success the applied anatomy renders and the surface returns to idle.
 - **List usable during error**: all four manual ops succeed while the error message is showing; zero AI calls for them.

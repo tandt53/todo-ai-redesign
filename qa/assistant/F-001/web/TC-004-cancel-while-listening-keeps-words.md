@@ -13,7 +13,7 @@
 | Automation | automated |
 | Automation file | qa/assistant/automation/e2e/F-001-voice-assistant-view.spec.ts |
 | Created | 2026-08-16 by qa-web-agent |
-| Last updated | 2026-08-16 by qa-web-agent |
+| Last updated | 2026-08-17 by qa-web-agent (T-070b — ADR-008 English copy sync) |
 
 ## Summary
 Cancel is client-local. While listening, cancelling keeps the recognized-so-far text in the composer and sends nothing. A cancelled turn that never reached the server renders nothing in the conversation.
@@ -24,7 +24,7 @@ Cancel is client-local. While listening, cancelling keeps the recognized-so-far 
 
 ## Test steps
 1. Tap `assistant-mic-button`; feed partial transcript "push the budget review to fou" (fixture `WEB-T3`).
-2. Cancel while still listening (tap the mic again — the listening-stop affordance, `aria-label` "Đang nghe — nhấn để dừng").
+2. Cancel while still listening (tap the mic again — the listening-stop affordance, `aria-label` "Listening — tap to stop").
 3. Read composer value, conversation transcript, request counter.
 
 ## Expected behaviour

@@ -28,7 +28,7 @@ F-001 AC-5's one-gesture undo carries onto touch unchanged. Mobile idioms invite
 2. Assert no modal, sheet or dialog was presented between the tap and the revert.
 3. Assert the affordance is visible without any preceding gesture — no long-press, no swipe, no overflow menu.
 4. Repeat for a turn that changed 4 tasks (undo covers the whole turn in the same one gesture).
-5. Repeat via voice ("hoàn tác") and assert parity of outcome.
+5. Repeat via voice, saying the undo phrase — **"undo"**, the whole closed list since ADR-008 retired the Vietnamese "hoàn tác" — and assert parity of outcome. Take the phrase from `qa/assistant/F-001/api/utterance-intent-fixtures.json` row **UT-UNDO-EN** rather than typing it: that table owns the vocabulary, and the automation reads it from there.
 
 ## Expected behaviour
 - Exactly **one** interaction reverts the turn. Two (tap → confirm) fails.

@@ -65,6 +65,71 @@ const QA_EXTRA_ROWS: FixtureRow[] = [
     result: { kind: 'fail', message: 'qa injected delay failure' },
     delay_ms: 150,
   },
+  // TC-005 sub-case (a), added T-070b. The canonical delayed CREATE row ("add
+  // a task to buy cheese") has delay_ms: 60, which is shorter than a single
+  // Playwright click round-trip against this in-process server: the turn
+  // resolves and React unmounts the thinking indicator (which owns the cancel
+  // pill) while the click is still resolving actionability, so the click fails
+  // with "element was detached from the DOM". Triaged as a script race, not a
+  // product bug — reproduced 1 fail in 3 runs, and the cancel path itself is
+  // proven by sub-cases (b) and (c), which already use 150ms rows for exactly
+  // this reason. Same remedy, extended to the create variant: 150ms is long
+  // enough to drive the cancel deterministically and still far below the
+  // 30s test timeout. The 60ms canonical row keeps its own coverage — it is
+  // what TC-011 and TC-031 use for the ordinary thinking transition.
+  {
+    utterance: 'qaweb delayed create',
+    result: { kind: 'create', tasks: [{ title: 'qaweb Delayed Create' }] },
+    delay_ms: 150,
+  },
+  // ---------------------------------------------------------------------
+  // AC-30 (TC-035..TC-047, T-085). Every clause from (c) onward needs a
+  // message to ARRIVE while the user is parked away from the bottom, which
+  // means the test must be able to move the scroll AFTER the submit (which
+  // scrolls to the bottom by clause (h)) and BEFORE the outcome lands. The
+  // existing 150ms rows are far too short for that: the (h) scroll animation
+  // alone has not settled at 150ms, so a test parking the viewport in that
+  // window is racing the app's own scroll rather than observing it.
+  //
+  // 2500ms, and the number is set by the WORST case rather than the typical
+  // one. Clause (d) needs THREE turns in flight at once: three submits cost
+  // ~800ms of real Playwright actionability, the last clause-(h) scroll needs
+  // ~500ms to settle, and only then can the viewport be parked — so an arrival
+  // must not be possible before ~1300ms. Measured at 1500ms, two of the three
+  // outcomes had already landed while the user was still at the bottom, and
+  // the case silently stopped testing what it names. Still two orders below
+  // the 30s test timeout.
+  //
+  // Three distinct create rows rather than one used three times: clause (d)
+  // is a COUNT over N ≥ 2 arrivals, and three turns of the same utterance
+  // would be three identical outcome bubbles — indistinguishable from one
+  // bubble re-rendered, which is the failure the count is meant to catch.
+  {
+    utterance: 'qaweb ac30 slow one',
+    result: { kind: 'create', tasks: [{ title: 'qaweb AC30 Slow One' }] },
+    delay_ms: 2500,
+  },
+  {
+    utterance: 'qaweb ac30 slow two',
+    result: { kind: 'create', tasks: [{ title: 'qaweb AC30 Slow Two' }] },
+    delay_ms: 2500,
+  },
+  {
+    utterance: 'qaweb ac30 slow three',
+    result: { kind: 'create', tasks: [{ title: 'qaweb AC30 Slow Three' }] },
+    delay_ms: 2500,
+  },
+  // Clause (e): an UNRESOLVED QUESTION has to arrive below the fold, so the
+  // affordance can be asked to distinguish "waiting on you" from "something
+  // arrived". A bulk delete of 3 targets asks rather than applies (AC-9).
+  {
+    utterance: 'qaweb ac30 slow confirm',
+    result: {
+      kind: 'delete',
+      targets: ['qaweb AC30 Q A', 'qaweb AC30 Q B', 'qaweb AC30 Q C'],
+    },
+    delay_ms: 2500,
+  },
 ]
 
 /** AC-18/AC-25 seam: a cumulative interpreter-call counter, read over HTTP.

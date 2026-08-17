@@ -45,11 +45,18 @@ const U2 = (usersFixture as any).users['QAAPI-U2'].x_user_id as string;
 const U3 = (usersFixture as any).users['QAAPI-U3'].x_user_id as string;
 
 /** Simple normalization for fixture matching — independent of the engine's
- * own ADR-006 undo-phrase normalizer. Undo phrases ("undo" / "hoàn tác")
- * never reach this interpreter at all: the real voice-undo guard
- * (engine/normalize.ts) intercepts them before interpretation is called, so
- * this class needs no undo-phrase handling of its own — TC-23/24/40's
- * zero-AI-call assertions are proven by the real guard, not simulated here. */
+ * own ADR-006 undo-phrase normalizer. The undo phrase ("undo" — the whole
+ * closed list since ADR-006's amendment of 2026-08-17) never reaches this
+ * interpreter at all: the real voice-undo guard (engine/normalize.ts)
+ * intercepts it before interpretation is called, so this class needs no
+ * undo-phrase handling of its own — TC-23/24/40's zero-AI-call assertions are
+ * proven by the real guard, not simulated here.
+ *
+ * The retired phrase "hoàn tác" is the opposite case and is deliberately NOT
+ * given a rule below: it now takes the ordinary turn path, so it must fall
+ * through matchCommand() to the default `no_match`. TC-23's retirement test
+ * asserts exactly that, and it would silently stop asserting it if a rule for
+ * the phrase were ever added here. */
 const normalize = (s: string): string => s.trim().toLowerCase();
 
 /**
@@ -590,10 +597,11 @@ describe('honesty outcomes (TC-13, TC-14)', () => {
     const res = await postTurn(U1, turn("what's on Sunday?")).expect(200);
     expect(res.body.turn.outcome.kind).toBe('unsupported_query');
     // Contract-fixed literal — api-contracts.md §9 / data-model.md TurnOutcome.
-    // Vietnamese since the T-015g Gate-3 localization pass; glosses as
-    // "the on-screen list and its filters". Pinned verbatim, not imported from
-    // src/, so a silent re-wording of the refusal copy fails here.
-    expect(res.body.turn.outcome.alternative).toBe('danh sách và bộ lọc trên màn hình');
+    // English since ADR-008 (owner decision 2026-08-17: English is the product
+    // language); it was Vietnamese between the T-015g Gate-3 localization pass
+    // and T-069. Pinned verbatim, not imported from src/, so a silent
+    // re-wording of the refusal copy fails here.
+    expect(res.body.turn.outcome.alternative).toBe('the on-screen list and its filters');
     expect(JSON.stringify(res.body.turn.outcome)).not.toContain('qaapi-sunday-brunch'); // no fabricated answer
     expect(await getTasks(U1)).toEqual(before);
   });
@@ -741,17 +749,27 @@ describe('AC-5 voice-undo guard (TC-23, TC-24)', () => {
     expect(res.body.undo).toMatchObject({ undone: true, via: 'voice' });
     expect(h.ai.calls).toBe(before); // interpreter never called
     const tasks = await getTasks(U1);
-    expect(tasks.find((t) => /^(undo|hoàn tác)$/i.test(t.title))).toBeUndefined(); // never a task named undo
+    expect(tasks.find((t) => /^undo$/i.test(t.title))).toBeUndefined(); // never a task named undo
     expect((await getSession(U1).expect(200)).body.session.messages).toHaveLength(msgCount); // no new turn row
   });
 
   it('TC-23 normalization variants all short-circuit; longer paraphrase does NOT', async () => {
-    for (const phrase of ['  Undo.  ', 'HOÀN TÁC', 'hoàn tác']) {
+    // ADR-006 normalization: trim, lowercase, Unicode NFC, strip terminal
+    // punctuation. UT-UNDO-NORM-1/2/3 hit trim+case+punctuation together, case
+    // alone, and punctuation alone. The NFC clause is no longer reachable
+    // through this list: since the amendment of 2026-08-17 the closed list is
+    // the single ASCII phrase "undo", which has no decomposed form. ADR-006
+    // § Amendment keeps NFC deliberately (it is the engine-wide utterance
+    // normalization contract, not a Vietnamese affordance), so it is unasserted
+    // here rather than removed — flagged in the run record, not silently dropped.
+    for (const phrase of ['  Undo.  ', 'UNDO', 'undo!']) {
       const create = await postTurn(U1, turn('add a task qaapi-buy-milk')).expect(200);
       const before = h.ai.calls;
       const res = await postTurn(U1, turn(phrase, { session_id: create.body.session_id })).expect(200);
       expect(res.body.kind).toBe('undo');
+      expect(res.body.undo).toMatchObject({ undone: true, via: 'voice' });
       expect(h.ai.calls).toBe(before);
+      expect(await getTasks(U1)).toHaveLength(0); // the revert really happened
     }
     const before = h.ai.calls;
     const res = await postTurn(U1, turn('undo the last thing')).expect(200);
@@ -760,11 +778,42 @@ describe('AC-5 voice-undo guard (TC-23, TC-24)', () => {
     expect(res.body.turn.outcome.kind).toBe('no_match');
   });
 
+  it('TC-23 the retired phrase "hoàn tác" is an ordinary turn: interpreted, no_match, reverts nothing', async () => {
+    // The change ADR-006 § Amendment (2026-08-17) made, asserted directly.
+    // UNDO_PHRASES was {"undo", "hoàn tác"}; it is now {"undo"}, so the
+    // Vietnamese phrase no longer short-circuits. Every clause below is the
+    // negation of a TC-23 step-1 clause, which is what makes this test able to
+    // fail if the phrase were ever re-added to the list.
+    const create = await postTurn(U1, turn('add a task qaapi-buy-milk')).expect(200);
+    const sid = create.body.session_id;
+    const before = h.ai.calls;
+    const msgCount = (await getSession(U1).expect(200)).body.session.messages.length;
+
+    const res = await postTurn(U1, turn('hoàn tác', { session_id: sid })).expect(200);
+    expect(res.body.kind).toBe('turn'); // NOT 'undo' — the guard does not fire
+    expect(res.body.undo).toBeNull();
+    expect(h.ai.calls).toBe(before + 1); // it reaches the interpreter now
+    expect(res.body.turn.outcome.kind).toBe('no_match');
+    expect(res.body.turn.outcome.heard_transcript).toBe('hoàn tác'); // AC-14 echo
+
+    // AC-14's guarantee survives the retirement, and so does AC-5's shape of it:
+    // the phrase creates nothing and reverts nothing.
+    const tasks = await getTasks(U1);
+    expect(tasks.find((t) => /^hoàn tác$/i.test(t.title))).toBeUndefined();
+    expect(tasks.map((t) => t.title)).toEqual(['qaapi-buy-milk']); // create NOT undone
+    expect(res.body.turn.changed_task_ids).toEqual([]);
+    // a real turn row now exists for it (the guard path creates none)
+    expect((await getSession(U1).expect(200)).body.session.messages).toHaveLength(msgCount + 1);
+    // the create is still the newest applied turn — the phrase spent no undo window
+    const undo = await undoTurn(U1, create.body.turn.id).expect(200);
+    expect(undo.body).toMatchObject({ undone: true, via: 'tap' });
+  });
+
   it('TC-24 voice undo with no applied turn: 409 not_undoable, no task, no AI call, question untouched', async () => {
     const { qid, sid } = await pendingBulkDelete(U3);
     const before = h.ai.calls;
     const id1 = uuid();
-    const refusalBody = turn('hoàn tác', { session_id: sid, client_turn_id: id1 });
+    const refusalBody = turn('undo', { session_id: sid, client_turn_id: id1 });
     const res = await postTurn(U3, refusalBody).expect(409);
     expect(res.body.error).toMatchObject({ code: 'UNDO_REFUSED', detail: { reason: 'not_undoable' } });
     expect(h.ai.calls).toBe(before);

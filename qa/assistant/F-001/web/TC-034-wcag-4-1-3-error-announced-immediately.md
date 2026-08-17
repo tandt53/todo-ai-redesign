@@ -13,7 +13,7 @@
 | Automation | automated |
 | Automation file | qa/assistant/automation/e2e/F-001-voice-assistant-view.spec.ts |
 | Created | 2026-08-16 by qa-web-agent |
-| Last updated | 2026-08-16 by qa-web-agent |
+| Last updated | 2026-08-17 by qa-web-agent (T-070b — ADR-008 English copy sync) |
 
 ## Summary
 AC-19's 4.1.3 clause carves out one message kind: "an error message is announced **immediately** rather than queued behind earlier output". Politeness is the difference — a `polite` announcement waits for the screen reader to finish whatever it is currently saying, which is exactly the wrong behaviour when the user's words failed to send and a retry is on offer. This TC verifies the error announces assertively, and that making it assertive did not make it announce twice.
@@ -31,7 +31,7 @@ AC-19's 4.1.3 clause carves out one message kind: "an error message is announced
 
 ## Expected behaviour
 - **Nothing assertive at rest**: zero `role="alert"` regions before the failure. An always-present empty alert region is a common way to make this criterion appear satisfied while announcing nothing.
-- **AC-19 (immediacy)**: after the failure exactly **one** assertive region exists, containing the error head ("Chưa gửi được") and the retry control ("Thử lại", `assistant-retry-button`).
+- **AC-19 (immediacy)**: after the failure exactly **one** assertive region exists, containing the error head ("Couldn't send") and the retry control ("Retry", `assistant-retry-button`).
 - **AC-19 (nearest-ancestor rule)**: the error bubble's nearest live ancestor resolves to `role="alert"`, not to the surrounding polite `role="log"`. This is the assertion that actually proves immediacy: for an added node the nearest live ancestor wins, so if the alert were placed anywhere but on (or inside) the error bubble, the polite log would win and the announcement would queue behind earlier output — the precise failure the AC names.
 - **Announced once, not twice**: exactly one alert region, so the error is not announced by both the alert and the enclosing log.
 - **History intact**: the polite log still contains the error text, so the message remains readable in conversation history after the announcement.
