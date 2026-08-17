@@ -4,9 +4,12 @@
   Dark-mode-first (DESIGN.md Identity); the light theme is fully tokened and
   selected with data-theme="light".
 -->
-<!-- lang="vi": the UI copy is Vietnamese (components.md), and a screen reader
-     picks its voice/pronunciation from this attribute (WCAG 3.1.1). -->
-<html lang="vi" data-theme="dark">
+<!-- lang="en": the UI copy is English (ADR-008, owner decision 2026-08-17), and
+     a screen reader picks its voice/pronunciation from this attribute
+     (WCAG 3.1.1). The attribute said `vi` for a catalogue that has since been
+     rewritten — a screen reader was pronouncing English copy with Vietnamese
+     phonetics. -->
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

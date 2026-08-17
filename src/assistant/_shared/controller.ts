@@ -184,8 +184,17 @@ export class AssistantController {
    * clean-start boundary (AC-28). Also the seam hook a harness idle-close
    * uses to make the ended undo window visibly disappear (AC-8). */
   async syncSession(): Promise<void> {
+    this.dispatch({ type: 'session-load', load: 'loading' })
     const res = await this.api.getSession()
-    if (res.kind !== 'ok') return
+    if (res.kind !== 'ok') {
+      // The thread cannot render at all, so an error BUBBLE is the wrong shape
+      // — there is no thread to put it in. The surface says so instead
+      // (IA §6 S1, SE-SESSION), and the route to the by-hand list stays live:
+      // AC-24's reachability bound names this exact failure.
+      this.dispatch({ type: 'session-load', load: 'failed' })
+      return
+    }
+    this.dispatch({ type: 'session-load', load: 'ok' })
     const ctx = this.msgContext()
     if (res.value.session !== null) {
       const { messages, marks } = sessionMessages(res.value.session, ctx)
@@ -618,12 +627,23 @@ export class AssistantController {
           tasks: [...this.state.tasks.filter((t) => t.local !== true), ...local],
         })
       }
+      // Offline is not a failed read: the list works untouched and the banner
+      // carries the news (components.md § TaskList / § OfflineBanner). Marking
+      // it `failed` here would stack an error on top of a surface that is
+      // working, which is the "fallback that blanks itself" failure S2 exists
+      // not to have.
+      this.dispatch({ type: 'tasks-load', load: 'ok' })
       return
     }
+    this.dispatch({ type: 'tasks-load', load: 'loading' })
     const res = await this.api.listTasks()
-    if (res.kind !== 'ok') return
+    if (res.kind !== 'ok') {
+      this.dispatch({ type: 'tasks-load', load: 'failed' })
+      return
+    }
     const server = res.value.tasks.filter((t) => t.deleted_at === null)
     this.dispatch({ type: 'tasks', tasks: [...server, ...this.stores.localTasks()] })
+    this.dispatch({ type: 'tasks-load', load: 'ok' })
   }
 
   private createLocalTask(title: string): void {

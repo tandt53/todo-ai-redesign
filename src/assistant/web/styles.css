@@ -164,6 +164,7 @@ html[data-theme="dark"] {
   --remove: var(--color-dark-diff-remove); --remove-tint: var(--color-dark-diff-removeTint);
   --focus: var(--color-dark-focusRing);
   --shadow-card: var(--shadow-raised);
+  --scrim: rgba(12, 14, 22, 0.66);
   color-scheme: dark;
 }
 html[data-theme="light"] {
@@ -178,6 +179,7 @@ html[data-theme="light"] {
   --remove: var(--color-light-diff-remove); --remove-tint: var(--color-light-diff-removeTint);
   --focus: var(--color-light-focusRing);
   --shadow-card: var(--shadow-raisedLight);
+  --scrim: rgba(25, 29, 51, 0.44);
   color-scheme: light;
 }
 
@@ -199,63 +201,79 @@ input { font: inherit; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--r-sm); }
 svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; stroke-width: var(--icon-stroke); stroke-linecap: round; stroke-linejoin: round; fill: none; flex: none; }
 
-/* ============ app shell ============ */
-.app { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+/* ================= app shell — the ONE layout branch =================
+ *
+ * `.app` is the QUERY CONTAINER and `.surfaces` is what the branch restyles.
+ * A container query on the app root, not a viewport media query: it is
+ * equivalent to a media query whenever the app fills the window and stays
+ * correct when it does not (embedded, split-screen), and it is the one line the
+ * design asked implementers for — `container-type: inline-size` on the app root
+ * (components.md § AppFrame).
+ *
+ * The branch is at `tokens.json breakpoints.split` = 1024 and there is exactly
+ * one of it. Tablet (768) is NOT a second case: splitting 768 leaves the panel
+ * ~330px, and the panel loses the diff row, which is the one thing it may not
+ * lose.
+ */
+.app {
+  flex: 1; min-height: 0; position: relative;
+  display: flex; flex-direction: column;
+  container-type: inline-size; container-name: app;
+}
+.surfaces { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.surface { display: none; flex: 1; min-height: 0; flex-direction: column; }
+.app[data-surface="talk"]     .s-talk     { display: flex; }
+.app[data-surface="tasks"]    .s-tasks    { display: flex; }
+.app[data-surface="settings"] .s-settings { display: flex; }
+
 .topbar {
   flex: none; display: flex; align-items: center; gap: var(--sp-md);
-  height: 56px; padding: 0 var(--sp-lg);
+  min-height: 56px; padding: 0 var(--sp-lg);
   background: var(--bg-base); border-bottom: 1px solid var(--hairline);
 }
 .topbar .wordmark { font-family: var(--font-family-display); font-weight: var(--font-weight-display); font-size: var(--fs-state); letter-spacing: var(--font-letterSpacing-display); }
-.topbar .topdate { margin-left: auto; font-size: var(--fs-meta); line-height: var(--font-lineHeight-meta); color: var(--tx-muted); font-variant-numeric: var(--font-numeric); }
+.topbar h1 { font-family: var(--font-family-display); font-size: var(--fs-title); font-weight: var(--font-weight-title); line-height: var(--font-lineHeight-title); letter-spacing: var(--font-letterSpacing-display); }
+/* The panel's own name — hidden below the split, where Talk IS the app. */
+.panel-title { display: none; font-weight: var(--font-weight-emphasis); color: var(--tx-2); }
+.spacer { flex: 1; }
 .icon-btn {
-  width: 40px; height: 40px; border-radius: var(--r-sm);
+  width: 40px; height: 40px; border-radius: var(--r-sm); flex: none;
   display: inline-flex; align-items: center; justify-content: center; color: var(--tx-2);
   transition: background var(--dur-micro) var(--motion-easing-standard);
 }
 .icon-btn:hover { background: var(--bg-raised); }
 
-.panes { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-@media (min-width: 768px) { .panes { flex-direction: row; } }
+/* PathSwitch — PS-TASKS / PS-TALK. Never disabled: AC-24's reachability bound
+   requires the affordance to survive the failure it is escaping from. */
+.path {
+  display: inline-flex; align-items: center; gap: var(--sp-sm); flex: none;
+  padding: var(--sp-xs) var(--sp-md) var(--sp-xs) var(--sp-sm);
+  border-radius: var(--r-pill); color: var(--tx);
+  font-size: var(--fs-body); font-weight: var(--font-weight-emphasis);
+  transition: background var(--dur-micro) var(--motion-easing-standard);
+}
+.path:hover { background: var(--bg-raised); }
+.path-badge {
+  min-width: 22px; padding: 1px var(--sp-sm); border-radius: var(--r-pill);
+  background: var(--primary-tint); color: var(--primary);
+  font-size: var(--fs-meta); font-weight: var(--font-weight-emphasis);
+  font-variant-numeric: var(--font-numeric); text-align: center;
+}
 
-/* drawer (carried, OQ-1: list navigation stays reachable above the assistant) */
-.drawer {
-  flex: none; display: flex; gap: var(--sp-xs);
-  padding: var(--sp-sm) var(--sp-lg);
-  background: var(--bg-base); border-bottom: 1px solid var(--hairline);
-}
-.drawer-row {
-  padding: var(--sp-xs) var(--sp-md); border-radius: var(--r-pill);
-  color: var(--tx-2); font-size: var(--fs-meta); font-weight: var(--font-weight-emphasis);
-}
-.drawer-row:hover { background: var(--bg-raised); }
-.drawer-row.active { background: var(--primary-tint); color: var(--primary); }
-
-/* ============ task list pane — the source of truth ============ */
-.list-pane {
-  flex: none; display: flex; flex-direction: column; min-height: 0;
-  max-height: 38%;
-  border-bottom: 1px solid var(--hairline);
-  background: var(--bg-base);
-}
-@media (min-width: 768px) {
-  .list-pane { width: 320px; max-height: none; height: auto; border-bottom: 0; border-right: 1px solid var(--hairline); }
-}
-@media (min-width: 1024px) { .list-pane { width: 360px; } }
-.list-head {
-  flex: none; display: flex; align-items: baseline; gap: var(--sp-sm);
-  padding: var(--sp-lg) var(--sp-lg) var(--sp-sm);
-}
-.list-head h2 { font-family: var(--font-family-display); font-size: var(--fs-state); font-weight: var(--font-weight-title); line-height: var(--font-lineHeight-title); }
-.list-head .count { font-size: var(--fs-meta); color: var(--tx-muted); font-variant-numeric: var(--font-numeric); }
+/* ============ S2 · Tasks — the second path, as a surface ============ */
+.tasks-body { flex: 1; min-height: 0; overflow-y: auto; }
+.tasks-col { max-width: 900px; padding: var(--sp-lg) var(--gutter) var(--sp-xxl); }
+.tasks-head { display: flex; align-items: baseline; gap: var(--sp-md); padding-bottom: var(--sp-md); }
+.tasks-head .count { font-size: var(--fs-meta); color: var(--tx-muted); font-variant-numeric: var(--font-numeric); }
 .add-btn {
   margin-left: auto; display: inline-flex; align-items: center; gap: var(--sp-xs);
-  color: var(--primary); font-size: var(--fs-meta); font-weight: var(--font-weight-emphasis);
+  color: var(--tx); font-size: var(--fs-meta); font-weight: var(--font-weight-emphasis);
   padding: var(--sp-xs) var(--sp-sm); border-radius: var(--r-pill);
+  border: 1px solid var(--hairline);
 }
-.add-btn:hover { background: var(--primary-tint); }
+.add-btn:hover { border-color: var(--primary); color: var(--primary); }
 .add-btn svg.ic { width: var(--icon-sm); height: var(--icon-sm); }
-.add-form { flex: none; display: flex; gap: var(--sp-sm); padding: 0 var(--sp-lg) var(--sp-sm); }
+.add-form { flex: none; display: flex; gap: var(--sp-sm); padding: 0 0 var(--sp-md); }
 .add-input {
   flex: 1; min-width: 0; height: 36px;
   background: var(--bg-raised); border: 1px solid var(--hairline); border-radius: var(--r-sm);
@@ -266,16 +284,18 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
   padding: 0 var(--sp-md); border-radius: var(--r-sm);
   background: var(--primary); color: var(--tx-onaccent); font-weight: var(--font-weight-emphasis); font-size: var(--fs-meta);
 }
-.list-scroll { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: var(--sp-lg); }
+/* Day headers stack ABOVE their rows at every width — the 180px gutter T-101
+   drew was withdrawn by T-105 (components.md § AppFrame). */
+.day-group { display: block; padding-top: var(--sp-lg); }
 .day-head {
-  padding: var(--sp-md) var(--sp-lg) var(--sp-xs);
+  padding-bottom: var(--sp-sm);
   font-size: var(--fs-label); font-weight: var(--font-weight-label);
   letter-spacing: var(--font-letterSpacing-label); text-transform: uppercase; color: var(--tx-muted);
 }
 .tasks { list-style: none; }
 .task-row {
   display: flex; align-items: flex-start; gap: var(--sp-md);
-  padding: var(--sp-md) var(--sp-lg);
+  padding: var(--sp-md) 0;
   border-radius: var(--r-row); /* flat rows, carried from v3 */
   border-bottom: 1px solid var(--hairline);
 }
@@ -318,15 +338,112 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 .row-diff { display: none; margin-top: var(--sp-xs); font-size: var(--fs-meta); line-height: var(--font-lineHeight-meta); }
 .row-diff.show { display: block; }
 .row-diff-pair + .row-diff-pair { margin-left: var(--sp-sm); }
-.list-empty { padding: var(--sp-xl) var(--sp-lg); color: var(--tx-muted); }
-.list-empty strong { display: block; color: var(--tx-2); font-weight: var(--font-weight-emphasis); margin-bottom: var(--sp-xs); }
 
-/* AI-change flash — one-time tint, hold then fade (AC-4) */
-.task-row.flashing { animation: rowFlash var(--dur-flash) var(--motion-easing-standard) forwards; }
-@keyframes rowFlash { 0%, 80% { background-color: var(--add-tint); } 100% { background-color: transparent; } }
+/* AC-31's ARRIVAL cue. AC-4 rev 4 moved this treatment from "whenever a turn
+   applies" to "on arrival from the message that changed it" — the same
+   diffFlashHold/diffFlashFade tint, now at the moment it informs. Two names for
+   one animation so a second tap on the same row restarts it; `.on-arrival` is
+   the stable marker the tests read. */
+.task-row.on-arrival-a { animation: rowFlashA var(--dur-flash) var(--motion-easing-standard) forwards; }
+.task-row.on-arrival-b { animation: rowFlashB var(--dur-flash) var(--motion-easing-standard) forwards; }
+@keyframes rowFlashA { 0%, 80% { background-color: var(--add-tint); } 100% { background-color: transparent; } }
+@keyframes rowFlashB { 0%, 80% { background-color: var(--add-tint); } 100% { background-color: transparent; } }
+
+/* Empty states — ET-FIRST / ET-COLLECTION / ET-DONE */
+.empty { padding: var(--sp-xxl) 0; max-width: 44ch; }
+.empty h2 { font-family: var(--font-family-display); font-size: var(--fs-title); font-weight: var(--font-weight-title); }
+.empty p { color: var(--tx-2); margin-top: var(--sp-sm); }
+.empty .second-door, .invite .second-door { color: var(--tx-muted); font-size: var(--fs-meta); margin-top: var(--sp-md); }
+
+/* SurfaceError — SE-SESSION / SE-TASKS. Calm: body-size supporting text, one
+   accent, one button. An error state that shouts makes users abandon. */
+.surface-error { padding: var(--sp-xxl) 0; max-width: 46ch; }
+.surface-error h2 { font-family: var(--font-family-display); font-size: var(--fs-title); font-weight: var(--font-weight-title); line-height: var(--font-lineHeight-title); }
+.surface-error p { color: var(--tx-2); margin-top: var(--sp-sm); }
+.btn-primary {
+  display: inline-flex; align-items: center; gap: var(--sp-sm); margin-top: var(--sp-lg);
+  padding: var(--sp-sm) var(--sp-lg); border-radius: var(--r-pill);
+  background: var(--primary); color: var(--tx-onaccent); font-weight: var(--font-weight-emphasis);
+}
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: var(--sp-sm);
+  padding: var(--sp-xs) var(--sp-md); border-radius: var(--r-pill);
+  color: var(--primary); font-weight: var(--font-weight-emphasis);
+}
+.btn-ghost:hover { background: var(--primary-tint); }
+.surface-error .btn-ghost { margin-left: var(--sp-sm); }
+
+/* InlineRetryBanner — the list is NEVER replaced by an error while anything is
+   known (components.md § InlineRetryBanner). */
+.banner {
+  flex: none; display: flex; align-items: center; gap: var(--sp-md);
+  padding: var(--sp-sm) var(--gutter); background: var(--bg-raised);
+  font-size: var(--fs-meta);
+}
+.banner-retry { border-top: 1px solid var(--danger); border-bottom: 1px solid var(--danger); color: var(--tx); }
+.banner-retry svg.ic { color: var(--danger); width: var(--icon-sm); height: var(--icon-sm); }
+.banner .btn-ghost { margin-left: auto; font-size: var(--fs-meta); }
+
+/* Skeletons — SK-ROW / SK-BUBBLE. No spinner in a void anywhere in this app;
+   no text and no testid, because nothing about a skeleton is assertable except
+   that it is not the empty state. */
+.sk { background: var(--hairline); border-radius: var(--r-sm); animation: skPulse 1600ms ease-in-out infinite; }
+@keyframes skPulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+.sk-thread { display: flex; flex-direction: column; width: 100%; max-width: 720px; margin: 0 auto; }
+.sk-bubble { height: 64px; border-radius: var(--r-bubble); margin-bottom: var(--sp-lg); }
+.sk-bubble.a { width: 70%; }
+.sk-bubble.b { width: 45%; margin-left: auto; height: 44px; }
+.sk-bubble.c { width: 80%; }
+.sk-rowline { display: flex; align-items: center; gap: var(--sp-md); padding: var(--sp-md) 0; }
+.sk-box { width: 22px; height: 22px; border-radius: var(--r-sm); flex: none; }
+.sk-bar { height: 12px; }
+/* Under reduced motion the pulse stops and the bars hold — still visibly
+   placeholder, no motion (components.md § Skeletons). */
+@media (prefers-reduced-motion: reduce) { .sk { animation: none; opacity: .78; } }
+
+/* MessageTaskLink — AC-31's door. Underline only, no colour change: the diff
+   colours in that bubble already carry meaning and a second signal on the same
+   text would collide with § Colour rules 1. */
+.tasklink {
+  color: var(--tx); text-decoration: underline; text-decoration-color: var(--tx-muted);
+  text-underline-offset: 2px; text-decoration-thickness: 1px; padding: 0;
+}
+.tasklink:hover { text-decoration-color: var(--tx-2); }
+
+/* ============ S3 · Lists menu — a slide-over at EVERY width ============ */
+.scrim { position: absolute; inset: 0; background: var(--scrim); z-index: 30; }
+.menu {
+  position: absolute; inset: 0 auto 0 0; width: min(320px, 86vw); z-index: 31;
+  background: var(--bg-raised); border-right: 1px solid var(--hairline);
+  box-shadow: var(--shadow-card);
+  display: flex; flex-direction: column; padding: var(--sp-md) 0;
+}
+.menu-head { display: flex; align-items: center; gap: var(--sp-sm); padding: 0 var(--sp-md) var(--sp-md); }
+.menu-head .wordmark { flex: 1; font-family: var(--font-family-display); font-weight: var(--font-weight-title); }
+.menu-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 0 var(--sp-sm); }
+.menu-row {
+  display: flex; align-items: center; gap: var(--sp-md); width: 100%;
+  padding: var(--sp-sm) var(--sp-md); border-radius: var(--r-sm);
+  color: var(--tx); text-align: left;
+}
+.menu-row:hover { background: var(--primary-tint); }
+.menu-row .mcount { margin-left: auto; font-size: var(--fs-meta); color: var(--tx-muted); font-variant-numeric: var(--font-numeric); }
+/* active row = 7% primary tint — the one legal chrome tint, carried unchanged
+   from the drawer this menu replaces. */
+.menu-row.active { background: color-mix(in srgb, var(--primary) 7%, transparent); color: var(--primary); }
+.menu-foot { border-top: 1px solid var(--hairline); padding: var(--sp-sm) var(--sp-sm) 0; margin-top: var(--sp-sm); }
+
+/* ============ S4 · Settings ============ */
+.set-col { max-width: 640px; padding: var(--sp-lg) var(--gutter) var(--sp-xxl); }
+.set-row { display: flex; align-items: center; gap: var(--sp-lg); padding: var(--sp-md) 0; border-bottom: 1px solid var(--hairline); flex-wrap: wrap; }
+.set-label { flex: 1; min-width: 140px; }
+.set-sub { display: block; font-size: var(--fs-meta); color: var(--tx-muted); }
+.seg { display: inline-flex; border: 1px solid var(--hairline); border-radius: var(--r-pill); overflow: hidden; }
+.seg button { padding: var(--sp-xs) var(--sp-md); font-size: var(--fs-meta); color: var(--tx-2); }
+.seg button.on { background: var(--primary-tint); color: var(--primary); font-weight: var(--font-weight-emphasis); }
 
 /* ============ conversation pane ============ */
-.conv-pane { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--bg-base); }
+.s-talk { min-width: 0; background: var(--bg-base); }
 .conv-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: var(--sp-xl) var(--gutter); display: flex; flex-direction: column; }
 .conv { max-width: 720px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: var(--sp-lg); }
 
@@ -561,6 +678,59 @@ html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); 
 }
 .send:active { transform: scale(0.96); }
 .send[aria-disabled="true"] { opacity: 0.4; }
+
+/* the session read's cause line, beside a dimmed orb (IA §6 S1) */
+.mic-note {
+  flex: none; font-size: var(--fs-meta); color: var(--tx-2);
+  padding: 0 var(--gutter) var(--sp-sm); width: 100%; max-width: 760px; margin: 0 auto;
+}
+.is-session-loading .mic { opacity: 0.4; }
+
+/* ================= THE ONE LAYOUT BRANCH — tokens.json breakpoints.split =====
+ * Below: one surface at a time, PathSwitch moves between them (375 and 768 are
+ * identical). At and above: Tasks is the centre and the primary object; Talk is
+ * a panel beside it, and the panel keeps the FULL diff bubble. Nothing about
+ * AC-1 branches here; only the frame does.
+ * Owner decision 2026-08-17 — reports/owner-decision-2026-08-17-desktop-list-is-primary.md
+ */
+@container app (min-width: 1024px) {
+  /* --gutter is redefined on .surfaces, not on html: a container query styles
+     the container's DESCENDANTS, and html is an ancestor of the container. */
+  .surfaces {
+    --gutter: calc(var(--spacing-gutter_web) * 1px);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(360px, 420px);
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .surface { grid-row: 1; }
+  .s-tasks, .s-settings { grid-column: 1; }
+  .s-tasks { display: flex; }
+  /* Talk is always mounted at this width — it is a panel, not a destination. */
+  .s-talk { display: flex; grid-column: 2; border-left: 1px solid var(--hairline); }
+  /* Settings is a STACKED surface: it takes the centre, never the panel. The
+     assistant is never dismissed by navigating, which is the difference
+     between a panel and a screen. */
+  .app[data-surface="settings"] .s-tasks { display: none; }
+
+  /* PathSwitch is ABSENT — both paths are on screen, and a control that
+     switches to what the user is already looking at is a dead control. This is
+     what makes `shell-tasks-button` / `shell-talk-button` below-split-only ids:
+     a desktop selector for either will not resolve, and should not
+     (components.md § AppFrame). The fallback guarantee PathSwitch carried is
+     met MORE strongly here — the second path is never left. */
+  .path { display: none; }
+
+  .s-talk .wordmark { display: none; }
+  .s-talk .panel-title { display: inline; }
+
+  .topbar { padding-left: var(--sp-xxl); padding-right: var(--sp-xxl); }
+  .s-talk .topbar { padding-left: var(--gutter); padding-right: var(--gutter); }
+  /* The list keeps a measure, left-anchored against the checkbox rail: a task
+     row is a short line, and running its hairline across 830px makes a list
+     look like a spreadsheet. The canvas is used by the SPLIT. */
+  .tasks-col { max-width: 720px; padding-left: var(--sp-xxl); padding-right: var(--sp-xxl); }
+  .set-col { padding-left: var(--sp-xxl); }
+}
 
 /* ============ reduced motion — end states kept ============ */
 @media (prefers-reduced-motion: reduce) {

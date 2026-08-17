@@ -1,75 +1,96 @@
-// The screen root. Thin by design (platform mobile.md: "components/ — RN
-// screens/components (thin over model)"): every conversation decision already
-// happened in `_shared/model` and the two controllers; this file subscribes and
+// The app shell root. Thin by design (platform mobile.md: "components/ — RN
+// screens/components (thin over model)"): every navigation decision already
+// happened in `model/shell.ts` and the controller; this file subscribes and
 // arranges.
 //
-// F-003 AC-10 lives here structurally: `KeyboardAvoidingView` is what keeps the
-// software keyboard from occluding the composer or the newest message. It
-// changes layout only — no conversation state moves when the keyboard does,
-// which is why `keyboardChanged` on the controller dispatches nothing.
+// **Two peer surfaces, one at a time.** A phone is always below
+// `tokens.json breakpoints.split`, so there is no two-pane layout here at any
+// width and no viewport branch anywhere below this line — what the wide web
+// frame says with position, a phone says with order, and the reciprocal control
+// (§ PathSwitch) is one tap either way.
+//
+// **Which one opens first is F-001 Open Question 9 and it is open.** It is
+// `LANDING_SURFACE`, one declared value in `model/shell.ts`, read here through
+// `initialShellState()` and decided nowhere else — the owner's answer is a
+// one-line change, not a refactor.
+//
+// The name and prop shape of this export are load-bearing beyond this module:
+// `.mobile-app/App.tsx` and `.mobile-preview/main.tsx` mount it.
 
-import { useState, useSyncExternalStore } from 'react'
-import { KeyboardAvoidingView, Platform, View } from 'react-native'
-import { undoableTurnId } from '../../_shared/model/reducer.ts'
+import { useCallback, useState, useSyncExternalStore } from 'react'
+import { View } from 'react-native'
 import type { MobileAssistantController } from '../controller.ts'
-import { OfflineBanner, TopBar } from './Chrome.tsx'
-import { Composer } from './Composer.tsx'
-import { ConversationList } from './ConversationList.tsx'
-import { NewMessageAffordance } from './NewMessageAffordance.tsx'
-import { TaskList } from './TaskList.tsx'
-import { VoiceSurface } from './VoiceSurface.tsx'
-import { useNewMessageFollow } from './useNewMessageFollow.ts'
+import { pathSwitch } from '../model/shell.ts'
+import { revealTask, taskLinkState } from '../model/task-link.ts'
+import { AssistantSurfaceHost } from './ShellHost.tsx'
+import { ThemeChoiceContext } from './styles.ts'
+import type { ThemeChoice } from './styles.ts'
 import { useStyles } from './styles.ts'
 
 export function AssistantScreen({ controller }: { controller: MobileAssistantController }) {
+  // The Theme preference is a device-local view choice with no server side and
+  // no conversation meaning, so it lives here rather than on the controller.
+  const [theme, setTheme] = useState<ThemeChoice>('system')
+  return (
+    <ThemeChoiceContext.Provider value={theme}>
+      <Shell controller={controller} theme={theme} onThemeChange={setTheme} />
+    </ThemeChoiceContext.Provider>
+  )
+}
+
+function Shell({
+  controller,
+  theme,
+  onThemeChange,
+}: {
+  controller: MobileAssistantController
+  theme: ThemeChoice
+  onThemeChange: (t: ThemeChoice) => void
+}) {
   const { styles } = useStyles()
   const state = useSyncExternalStore(
     (cb) => controller.subscribe(cb),
     () => controller.state,
     () => controller.state,
   )
-  // The list is visible by default: F-001 AC-1/AC-4 need an applied turn's
-  // changes to be visible in the list within the same turn, so the drawer
-  // button collapses it rather than the list living behind navigation.
-  const [listOpen, setListOpen] = useState(true)
+  // A SECOND subscription, and it is not redundant: the shell's navigation and
+  // the two read statuses are not in `AppState`, so a failed session read
+  // changes no state object — and that is precisely the case (SE-SESSION) that
+  // most needs to render.
+  const snapshot = useSyncExternalStore(
+    (cb) => controller.subscribeShell(cb),
+    () => controller.shellSnapshot(),
+    () => controller.shellSnapshot(),
+  )
+  const shell = snapshot.shell
   const platform = controller.platform
-  // F-001 AC-30 / BUG-004. The follow state lives here rather than inside
-  // `ConversationList` because the affordance is docked above the Composer
-  // (and above the OfflineBanner when that is showing) while the scroll it
-  // measures belongs to the conversation — one hook, two consumers.
-  const follow = useNewMessageFollow(controller, state)
+
+  // AC-31 — THE routine, reached from exactly one entry on a phone (a task
+  // named inside a message) and never re-implemented. A grep for `revealTask`
+  // returns every caller.
+  const openTask = useCallback(
+    (taskId: string) => {
+      const next = revealTask(shell, taskId, state)
+      if (next === shell) return
+      controller.shellDispatch({ type: 'reveal', taskId })
+    },
+    [controller, shell, state],
+  )
 
   return (
     <View style={styles.screen}>
-      <TopBar
+      <AssistantSurfaceHost
+        state={state}
+        controller={controller}
         platform={platform}
-        drawerOpen={listOpen}
-        onToggleDrawer={() => setListOpen((v) => !v)}
+        shell={shell}
+        load={snapshot.load}
+        pathView={pathSwitch(shell.surface, state.tasks)}
+        theme={theme}
+        onThemeChange={onThemeChange}
+        onOpenTask={openTask}
+        canOpenTask={(taskId) => taskLinkState(taskId, state.tasks, shell.collection) === 'link'}
       />
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        {listOpen && <TaskList state={state} controller={controller} platform={platform} />}
-        <ConversationList
-          state={state}
-          controller={controller}
-          undoableTurnId={undoableTurnId(state)}
-          platform={platform}
-          scrollProps={follow.scrollProps}
-        />
-        <VoiceSurface state={state} controller={controller} platform={platform} />
-        {/* Zero-height dock, so this sits between the voice surface and the
-            banner without reflowing either — the pill floats over the last line
-            of the conversation instead of pushing history upward. */}
-        <NewMessageAffordance
-          view={follow.affordance}
-          platform={platform}
-          onPress={follow.activateAffordance}
-        />
-        <OfflineBanner state={state} />
-        <Composer state={state} controller={controller} platform={platform} />
-      </KeyboardAvoidingView>
     </View>
   )
 }

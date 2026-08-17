@@ -45,10 +45,52 @@ function AiMsg({
   )
 }
 
-function DiffRow({ line }: { line: DiffLine }) {
+/**
+ * AC-31 — a task named in a message is a **door to that task**.
+ *
+ * Two renderings, and the second is the load-bearing one:
+ *
+ * - the list holds it → a real `<button>` (a control under AC-19's 2.1.1, with
+ *   name/role/value under 4.1.2), which calls the one scroll-and-flash routine.
+ * - the list does not hold it — deleted by this or a later turn, or filtered
+ *   out of the collection on screen → **plain text, not a disabled control.**
+ *   "Rendered as an inert control it would be an affordance that does nothing,
+ *   which is worse than none; rendered as plain text it is honest" (AC-31).
+ *   Note what that rules out: `disabled` is not the inert case, because a
+ *   disabled button still announces itself as a button that is temporarily off.
+ */
+function MessageTaskLink({
+  taskId,
+  title,
+  reveal,
+}: {
+  taskId: string
+  title: string
+  reveal: RevealHandle
+}) {
+  if (!reveal.canReveal(taskId)) return <span className="diff-task">{title}</span>
+  return (
+    <button
+      className="diff-task tasklink"
+      data-testid="talk-task-link"
+      onClick={() => reveal.revealTask(taskId)}
+    >
+      {title}
+    </button>
+  )
+}
+
+/** The half of the shell an applied message needs: can this task be opened,
+ * and the routine that opens it. */
+export interface RevealHandle {
+  canReveal: (taskId: string) => boolean
+  revealTask: (taskId: string) => void
+}
+
+function DiffRow({ line, reveal }: { line: DiffLine; reveal: RevealHandle }) {
   return (
     <div className="diff-row">
-      <span className="diff-task">{line.title}</span>
+      <MessageTaskLink taskId={line.taskId} title={line.title} reveal={reveal} />
       {line.chips.map((c, i) => (
         <span className="row-diff-pair" key={`${c.field}-${i}`}>
           {c.old !== null && (
@@ -75,21 +117,34 @@ function AppliedBubble({
   m,
   undoableTurnId,
   controller,
+  reveal,
 }: {
   m: Extract<Message, { kind: 'applied' }>
   undoableTurnId: string | null
   controller: AssistantController
+  reveal: RevealHandle
 }) {
   // AC-5/AC-8: exactly one Undo affordance — on the newest applied-and-still-
   // undoable turn. A newer applied turn or session close removes it visibly;
   // the bubble keeps an honest note so history does not silently change.
   const showUndo = !m.undone && undoableTurnId === m.turnId
+  const anyDoor = m.lines.some((l) => reveal.canReveal(l.taskId))
+  // Width-independent on purpose: below the split this tap navigates, at and
+  // above it only scrolls the centre column. "find it in the list" is true of
+  // both; "open it in Tasks" was true of one and would have needed a second
+  // string selected by viewport (app-shell.html, the note by this line).
+  const meta = anyDoor
+    ? `${formatClock(m.at)} · tap a task to find it in the list`
+    : formatClock(m.at)
   return (
-    <AiMsg meta={formatClock(m.at)} className={m.undone ? 'undone' : undefined}>
+    <AiMsg meta={meta} className={m.undone ? 'undone' : undefined}>
       <div className="bubble-head">{m.head}</div>
       {m.lines.map((l, i) => (
-        <DiffRow key={`${l.taskId}-${i}`} line={l} />
+        <DiffRow key={`${l.taskId}-${i}`} line={l} reveal={reveal} />
       ))}
+      {/* Deleted tasks are named by title and are NEVER links: no row remains
+          anywhere to open, which is the delete case AC-31 decides explicitly
+          and design §5 had no answer for. */}
       {m.deletedTitles.length > 0 && (
         <div className="diff-row">
           <span className="diff-task">{m.deletedTitles.join(', ')}</span>
@@ -166,10 +221,12 @@ function MessageView({
   m,
   undoableTurnId,
   controller,
+  reveal,
 }: {
   m: Message
   undoableTurnId: string | null
   controller: AssistantController
+  reveal: RevealHandle
 }) {
   switch (m.kind) {
     case 'user':
@@ -190,7 +247,14 @@ function MessageView({
       )
 
     case 'applied':
-      return <AppliedBubble m={m} undoableTurnId={undoableTurnId} controller={controller} />
+      return (
+        <AppliedBubble
+          m={m}
+          undoableTurnId={undoableTurnId}
+          controller={controller}
+          reveal={reveal}
+        />
+      )
 
     case 'question':
       return <QuestionBubble m={m} controller={controller} />
@@ -306,21 +370,55 @@ export function ConversationPane({
   state,
   controller,
   undoableTurnId,
+  reveal,
   scrollerRef,
   onScroll,
 }: {
   state: AppState
   controller: AssistantController
   undoableTurnId: string | null
+  reveal: RevealHandle
   /** AC-30: the scroll viewport every clause of that AC measures. Owned by
    * `useFollowNewMessages` in App, because the affordance it drives docks
    * outside this pane, just above the Composer. */
   scrollerRef?: RefObject<HTMLDivElement | null>
   onScroll?: () => void
 }) {
-  const empty = state.messages.length === 0
+  const loading = state.sessionLoad === 'loading'
+  const failed = state.sessionLoad === 'failed'
+  const empty = state.messages.length === 0 && !loading && !failed
   return (
     <div className="conv-scroll" ref={scrollerRef} onScroll={onScroll}>
+      {/* SK-BUBBLE. **A loading surface never renders its empty state**: a
+          returning user who sees "Say it. I'll write it down." while their
+          conversation is still loading reads it as history lost
+          (components.md § Skeletons). That is what `empty` above excludes. */}
+      {loading && (
+        <div className="sk-thread" aria-busy="true">
+          <div className="sk sk-bubble a" />
+          <div className="sk sk-bubble b" />
+          <div className="sk sk-bubble c" />
+        </div>
+      )}
+      {/* SE-SESSION. The thread cannot render at all, so an error BUBBLE is the
+          wrong shape — there is no thread to put it in. This is the exact
+          moment ADR-11's second path is supposed to exist, and AC-24's
+          reachability bound names it: the PathSwitch in the bar above stays
+          visible and enabled through this failure, and at or above the split
+          the whole todo is untouched in the centre beside it. */}
+      {failed && (
+        <div className="surface-error">
+          <h2>Couldn't load your conversation</h2>
+          <p>Your tasks are unaffected. Try again, or carry on by hand.</p>
+          <button
+            className="btn-primary"
+            data-testid="talk-session-retry-button"
+            onClick={() => void controller.syncSession()}
+          >
+            Retry
+          </button>
+        </div>
+      )}
       {empty && (
         <div className="invite">
           <h3>
@@ -328,8 +426,11 @@ export function ConversationPane({
             <br />
             I'll write it down.
           </h3>
-          <p>Tap the mic and try saying “team meeting tomorrow at 2”.</p>
-          <p>Typing does exactly the same.</p>
+          <p>Tap the mic and try saying “team meeting tomorrow at 2”. Typing does exactly the same.</p>
+          {/* The second door. A first-time user whose mic is denied or absent
+              (AC-20 hides it entirely) otherwise sees a screen with one control
+              they cannot use and no evidence the rest of the app exists. */}
+          <p className="second-door">No mic? Everything works by hand in Tasks.</p>
         </div>
       )}
       {/* Always mounted, even while empty: a live region only announces what
@@ -343,7 +444,13 @@ export function ConversationPane({
         aria-label="Conversation with the assistant"
       >
         {state.messages.map((m) => (
-          <MessageView key={m.id} m={m} undoableTurnId={undoableTurnId} controller={controller} />
+          <MessageView
+            key={m.id}
+            m={m}
+            undoableTurnId={undoableTurnId}
+            controller={controller}
+            reveal={reveal}
+          />
         ))}
         {state.surface === 'thinking' && (
           <div className="msg ai">

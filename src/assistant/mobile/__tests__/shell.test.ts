@@ -1,0 +1,417 @@
+// The app shell — two peer surfaces on a phone, the landing question, back,
+// PathSwitch, and the reachability bound F-001 AC-24 / AC-25 state.
+//
+// Node tier: every assertion below is over `model/shell.ts` and
+// `model/tasks-view.ts`, which is where the decisions live precisely so a
+// simulator is not what stands between this build and a red test
+// (platform mobile.md ## Test Harness).
+
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { describe, expect, it } from 'vitest'
+import { readdirSync } from 'node:fs'
+import { initialState } from '../../_shared/model/reducer.ts'
+import type { AppState } from '../../_shared/model/reducer.ts'
+import type { Message } from '../../_shared/types.ts'
+import {
+  LANDING_SURFACE,
+  SURFACE_ERROR,
+  actionsToList,
+  initialShellState,
+  listAffordanceEnabled,
+  pathSwitch,
+  reachesListAffordance,
+  shellBack,
+  shellReducer,
+  talkView,
+} from '../model/shell.ts'
+import type { PeerSurface, SessionLoad, ShellState } from '../model/shell.ts'
+import {
+  EMPTY_TASKS,
+  INLINE_RETRY_BANNER,
+  dayGroups,
+  openToday,
+  tasksHeadline,
+  tasksSurfaceView,
+} from '../model/tasks-view.ts'
+import { task } from './_helpers.ts'
+
+const ROOT = resolve(import.meta.dirname, '../../../..')
+const MOBILE_SRC = resolve(ROOT, 'src/assistant/mobile')
+
+function stateWith(over: Partial<AppState> = {}): AppState {
+  return { ...initialState('available'), sessionId: 'sess-1', ...over }
+}
+
+const AT = '2026-08-17T09:00:00.000Z'
+function message(over: Partial<Message> = {}): Message {
+  return { id: 'm1', kind: 'no-match', heard: 'plan the week', at: AT, ...over } as Message
+}
+
+// ---------------------------------------------------------------------------
+// OQ9 — the landing surface
+// ---------------------------------------------------------------------------
+
+describe('OQ9 — what a phone lands on is ONE declared value', () => {
+  it('the mount reads the constant rather than restating its value', () => {
+    // Both possible answers, driven through the same function. If the mount
+    // path ever hardcodes one of them this goes red for the other.
+    for (const landing of ['talk', 'tasks'] as PeerSurface[]) {
+      expect(initialShellState(landing).surface).toBe(landing)
+    }
+    expect(initialShellState().surface).toBe(LANDING_SURFACE)
+  })
+
+  it('nothing else in src/assistant/mobile decides a landing surface', () => {
+    // A SOURCE SCAN, and labelled as one — but the claim it checks is exactly
+    // what a source scan can see: that the constant has one declaration and
+    // that no other module initialises a shell state of its own. "One line to
+    // change" is worthless if it is one line plus a mount path nobody
+    // remembered, and the owner answers this question in the morning.
+    const files: string[] = []
+    const walk = (dir: string) => {
+      for (const e of readdirSync(dir, { withFileTypes: true })) {
+        const full = resolve(dir, e.name)
+        if (e.isDirectory()) walk(full)
+        else if (/\.tsx?$/.test(e.name) && !full.includes('__tests__')) files.push(full)
+      }
+    }
+    walk(MOBILE_SRC)
+
+    const declarations = files.filter((f) =>
+      readFileSync(f, 'utf8').includes('export const LANDING_SURFACE'),
+    )
+    expect(declarations.map((f) => f.replace(`${MOBILE_SRC}/`, ''))).toEqual(['model/shell.ts'])
+
+    // `initialShellState` is the only constructor of a ShellState, and only the
+    // controller calls it. Anything else building one would be a second answer.
+    // A CALL, not a mention: the comment blocks that explain the design name
+    // the function too, and a scan that counted those would report a second
+    // decision where there is only a second sentence.
+    const callers = files.filter(
+      (f) =>
+        /^(?!\s*(\*|\/\/)).*initialShellState\(/m.test(readFileSync(f, 'utf8')) &&
+        !f.endsWith('model/shell.ts'),
+    )
+    expect(callers.map((f) => f.replace(`${MOBILE_SRC}/`, ''))).toEqual(['controller.ts'])
+  })
+
+  it('no caller passes an override, so the constant is the live answer', () => {
+    const ctrl = readFileSync(resolve(MOBILE_SRC, 'controller.ts'), 'utf8')
+    expect(ctrl).toContain('initialShellState()')
+    expect(/initialShellState\((?!\))/.test(ctrl)).toBe(false)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Two peers, one at a time
+// ---------------------------------------------------------------------------
+
+describe('two peer surfaces, one at a time', () => {
+  it('the switch is reciprocal and costs one action each way', () => {
+    let s = initialShellState('talk')
+    s = shellReducer(s, { type: 'go', surface: 'tasks' })
+    expect(s.surface).toBe('tasks')
+    s = shellReducer(s, { type: 'go', surface: 'talk' })
+    expect(s.surface).toBe('talk')
+  })
+
+  it('leaving Tasks closes what was stacked over it', () => {
+    let s = shellReducer(initialShellState('tasks'), { type: 'open-menu' })
+    s = shellReducer(s, { type: 'open-settings' })
+    s = shellReducer(s, { type: 'go', surface: 'talk' })
+    expect(s.overlay).toBe('none')
+  })
+
+  it('picking a collection closes the menu — "tap the row; the menu closes"', () => {
+    let s = shellReducer(initialShellState('tasks'), { type: 'open-menu' })
+    s = shellReducer(s, { type: 'select-collection', collection: 'inbox' })
+    expect(s).toMatchObject({ collection: 'inbox', overlay: 'none' })
+  })
+})
+
+describe('back means UP ONE LEVEL, never "the previous surface"', () => {
+  // Four cases, one per level, written separately rather than parameterised:
+  // the interesting one is the LAST, and a shared setup is what would hide it
+  // (L-005).
+  it('Settings goes back to the Lists menu, not to the surface underneath', () => {
+    const s: ShellState = { ...initialShellState('tasks'), overlay: 'settings' }
+    expect(shellBack(s)).toEqual({ state: { ...s, overlay: 'menu' }, consumed: true })
+  })
+
+  it('the Lists menu closes onto its peer', () => {
+    const s: ShellState = { ...initialShellState('tasks'), overlay: 'menu' }
+    expect(shellBack(s)).toEqual({ state: { ...s, overlay: 'none' }, consumed: true })
+  })
+
+  it('back on Tasks is NOT a switch to Talk — the peers are not stacked', () => {
+    const s = initialShellState('tasks')
+    const out = shellBack(s)
+    expect(out.state.surface).toBe('tasks')
+    expect(out.consumed).toBe(false)
+  })
+
+  it('back on Talk leaves the app rather than becoming a fourth navigation edge', () => {
+    const s = initialShellState('talk')
+    expect(shellBack(s)).toEqual({ state: s, consumed: false })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// PathSwitch
+// ---------------------------------------------------------------------------
+
+describe('PathSwitch carries the open count, and the count is not the guarantee', () => {
+  it('PS-TASKS names the count as a sentence, never as a bare number', () => {
+    const tasks = [task({ id: 'a' }), task({ id: 'b' }), task({ id: 'c', status: 'done' })]
+    const v = pathSwitch('talk', tasks)
+    expect(v).toMatchObject({ row: 'PS-TASKS', label: 'Tasks', badge: 2 })
+    expect(v.accessibleName).toBe('Tasks, 2 left today')
+  })
+
+  it('zero renders NO badge — a badge reading 0 is a number pretending to be news', () => {
+    const v = pathSwitch('talk', [task({ status: 'done' })])
+    expect(v.badge).toBe(null)
+    expect(v.accessibleName).toBe('Tasks')
+  })
+
+  it('PS-TALK carries no count at all', () => {
+    expect(pathSwitch('tasks', [task()])).toMatchObject({
+      row: 'PS-TALK',
+      label: 'Talk',
+      badge: null,
+      accessibleName: 'Talk',
+    })
+  })
+
+  it('the badge and the Tasks header publish ONE number, not two definitions', () => {
+    const tasks = [task({ id: 'a' }), task({ id: 'b', status: 'inbox' }), task({ id: 'c' })]
+    expect(pathSwitch('talk', tasks).badge).toBe(openToday(tasks))
+    expect(tasksHeadline(openToday(tasks))).toBe('2 tasks left today')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// AC-24 / AC-25 — the reachability bound
+// ---------------------------------------------------------------------------
+
+describe('AC-24 / AC-25 — the by-hand list is at most ONE action from every conversation failure', () => {
+  // The AC names three failure states explicitly, and its own wording is a
+  // quantifier over all of them ("from EVERY conversation failure state").
+  // These are the three, each reached its own way rather than through a shared
+  // setup — the shape L-005 warns about is exactly one door left unguarded.
+  const failures: { name: string; state: AppState; load: SessionLoad }[] = [
+    {
+      name: 'a failed turn (AC-24)',
+      state: stateWith({
+        surface: 'error',
+        messages: [message({ kind: 'error', head: "Couldn't send", body: [], retryTurnId: 'cid-1' })],
+      }),
+      load: 'ready',
+    },
+    {
+      name: 'offline (AC-25)',
+      state: stateWith({ offline: true, queuedTurnId: 'cid-9' }),
+      load: 'ready',
+    },
+    {
+      name: 'the session read failing, with no thread to render at all (IA §6)',
+      state: stateWith({ messages: [] }),
+      load: 'failed',
+    },
+  ]
+
+  for (const f of failures) {
+    it(`${f.name}: one action, and the affordance is neither hidden nor disabled`, () => {
+      const shell = initialShellState('talk')
+      expect(actionsToList(shell)).toBeLessThanOrEqual(1)
+      expect(reachesListAffordance(shell)).toBe(true)
+      expect(listAffordanceEnabled(f.state)).toBe(true)
+      // and the state really is the failure it claims to be
+      expect(['idle', 'failed']).toContain(talkView(f.state, f.load) === 'empty' ? 'idle' : talkView(f.state, f.load))
+    })
+  }
+
+  it('on Tasks the list is already there — zero actions, and the bound still holds', () => {
+    expect(actionsToList(initialShellState('tasks'))).toBe(0)
+  })
+
+  it('nothing in the shell model can disable the affordance', () => {
+    // Stated as a property over every state the conversation can be in rather
+    // than over a list of failures, because the AC is stated that way and a
+    // list is what leaves the next failure state outside the guarantee.
+    for (const surface of ['idle', 'listening', 'thinking', 'error'] as const) {
+      for (const offline of [false, true]) {
+        expect(listAffordanceEnabled(stateWith({ surface, offline }))).toBe(true)
+      }
+    }
+    // The control has no disabling path at all: not a `disabled` prop, not an
+    // `accessibilityState.disabled`. Asserted against the rendered props rather
+    // than against the prose that explains them.
+    const src = readFileSync(resolve(MOBILE_SRC, 'components/PathSwitch.tsx'), 'utf8')
+    expect(/disabled\s*[:=]/.test(src)).toBe(false)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Which view each surface renders
+// ---------------------------------------------------------------------------
+
+describe('S1 Talk — a loading surface never renders its empty state', () => {
+  it('loading shows skeletons, not the invitation', () => {
+    expect(talkView(stateWith(), 'loading')).toBe('loading')
+  })
+
+  it('a failed session read is its own surface, not an empty conversation', () => {
+    expect(talkView(stateWith(), 'failed')).toBe('failed')
+  })
+
+  it('the invitation needs a read that actually completed', () => {
+    expect(talkView(stateWith(), 'ready')).toBe('empty')
+  })
+
+  it('with a thread on screen there is somewhere to put an error bubble, so SE-SESSION does not take the surface', () => {
+    const withThread = stateWith({ messages: [message()] })
+    expect(talkView(withThread, 'failed')).toBe('idle')
+    expect(talkView(withThread, 'loading')).toBe('idle')
+  })
+})
+
+describe('S2 Tasks — the list is never replaced by an error', () => {
+  it('a failed refresh with tasks on device keeps every row and adds a retry banner', () => {
+    const v = tasksSurfaceView(stateWith({ tasks: [task()] }), 'failed', 'today')
+    expect(v.view).toBe('default')
+    expect(v.banner).toBe('retry')
+    expect(v.tasks).toHaveLength(1)
+  })
+
+  it('a failed refresh with nothing anywhere IS the error surface', () => {
+    const v = tasksSurfaceView(stateWith(), 'failed', 'today')
+    expect(v.view).toBe('error')
+  })
+
+  it('offline is not a failure: the list works and the banner carries the news', () => {
+    const v = tasksSurfaceView(stateWith({ tasks: [task()], offline: true }), 'ready', 'today')
+    expect(v.view).toBe('default')
+    expect(v.banner).toBe('offline')
+  })
+
+  it('loading shows skeletons rather than "No tasks yet"', () => {
+    expect(tasksSurfaceView(stateWith(), 'loading', 'today').view).toBe('loading')
+  })
+
+  it('three empty states, because they are three different facts', () => {
+    // ET-FIRST — nothing anywhere
+    expect(tasksSurfaceView(stateWith(), 'ready', 'today').empty).toBe('ET-FIRST')
+    // ET-COLLECTION — this collection only. Telling a user with tasks that
+    // they have none is the lie the generic empty state tells.
+    expect(tasksSurfaceView(stateWith({ tasks: [task()] }), 'ready', 'inbox').empty).toBe(
+      'ET-COLLECTION',
+    )
+    // ET-DONE — and it offers no action, because none fills this list
+    expect(tasksSurfaceView(stateWith({ tasks: [task()] }), 'ready', 'done').empty).toBe('ET-DONE')
+    expect(EMPTY_TASKS['ET-DONE'].action).toBe(null)
+  })
+})
+
+describe('day headers stack above their rows', () => {
+  it('today and tomorrow are named; a task with no date gets its own group', () => {
+    const now = new Date('2026-08-16T09:00:00.000Z')
+    const groups = dayGroups(
+      [
+        task({ id: 'a', due_at: '2026-08-16T16:00:00.000Z' }),
+        task({ id: 'b', due_at: '2026-08-17T10:00:00.000Z' }),
+        task({ id: 'c', due_at: null }),
+      ],
+      now,
+    )
+    expect(groups.map((g) => g.key)).toHaveLength(3)
+    expect(groups[0]?.head.startsWith('Today · ')).toBe(true)
+    expect(groups[1]?.head.startsWith('Tomorrow · ')).toBe(true)
+    expect(groups[2]?.head).toBe('No date')
+  })
+
+  it('tasks due the same day share one group', () => {
+    const now = new Date('2026-08-16T09:00:00.000Z')
+    const groups = dayGroups(
+      [
+        task({ id: 'a', due_at: '2026-08-16T10:00:00.000Z' }),
+        task({ id: 'b', due_at: '2026-08-16T12:00:00.000Z' }),
+      ],
+      now,
+    )
+    expect(groups).toHaveLength(1)
+    expect(groups[0]?.tasks).toHaveLength(2)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Copy — parsed from the owning artifact, never retyped (L-008)
+// ---------------------------------------------------------------------------
+
+describe('published copy is transcribed from components.md, not composed', () => {
+  const md = readFileSync(resolve(ROOT, 'design/_shared/components.md'), 'utf8')
+
+  function tableRows(heading: string): Map<string, string[]> {
+    const section = md.split(`## ${heading}`)[1]
+    expect(section, `${heading} is missing from components.md`).toBeDefined()
+    const rows = new Map<string, string[]>()
+    for (const line of (section as string).split('\n## ')[0]!.split('\n')) {
+      const m = /^\|\s*\*\*([A-Z-]+)\*\*\s*\|(.*)\|\s*$/.exec(line)
+      if (m === null) continue
+      rows.set(
+        m[1] as string,
+        (m[2] as string).split('|').map((c) => c.trim()),
+      )
+    }
+    return rows
+  }
+
+  it('SE-SESSION and SE-TASKS carry design’s exact two lines', () => {
+    // Parsing the OWNING artifact rather than a retyped copy is the direction
+    // drift actually travels: this goes red when components.md moves, which a
+    // check comparing two things the implementation controls never would.
+    const rows = tableRows('SurfaceError')
+    expect(rows.size).toBe(2)
+    for (const [id, cells] of rows) {
+      const copy = SURFACE_ERROR[id as keyof typeof SURFACE_ERROR]
+      expect(copy, `${id} has no literal in the model`).toBeDefined()
+      expect(copy.line1).toBe(cells[1])
+      expect(copy.line2).toBe(cells[2])
+    }
+  })
+
+  it('the three Tasks empty states carry design’s exact heads', () => {
+    const rows = tableRows('Empty states — Tasks')
+    expect(rows.size).toBe(3)
+    for (const [id, cells] of rows) {
+      const copy = EMPTY_TASKS[id as keyof typeof EMPTY_TASKS]
+      expect(copy, `${id} has no literal in the model`).toBeDefined()
+      expect(copy.head).toBe(cells[1])
+    }
+  })
+
+  it('the inline retry banner is design’s sentence, em dash and all', () => {
+    // The sentence wraps across two source lines in the markdown, so the
+    // comparison is on collapsed whitespace — never on a re-typed copy.
+    const section = (md.split('## InlineRetryBanner')[1] as string).replace(/\s+/g, ' ')
+    expect(section).toContain(INLINE_RETRY_BANNER)
+  })
+
+  it('no published body is derived — every literal appears verbatim in the model source', () => {
+    // The assertion that makes "literals, never templates" enforceable rather
+    // than a convention (L-008 rule 3). A template that interpolated the
+    // varying part would serve plausible text for combinations nobody
+    // enumerated, and `{list}` is design's own verbatim slot, not an
+    // interpolation of ours.
+    const src = readFileSync(resolve(MOBILE_SRC, 'model/tasks-view.ts'), 'utf8')
+    for (const row of Object.values(EMPTY_TASKS)) {
+      expect(src).toContain(row.head)
+      if (row.body !== null) expect(src).toContain(row.body)
+    }
+    const shellSrc = readFileSync(resolve(MOBILE_SRC, 'model/shell.ts'), 'utf8')
+    for (const row of Object.values(SURFACE_ERROR)) {
+      expect(shellSrc).toContain(row.line2)
+    }
+  })
+})

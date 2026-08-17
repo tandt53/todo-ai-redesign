@@ -34,6 +34,11 @@ import type { AppState } from '../../_shared/model/reducer.ts'
 import { undoableTurnId } from '../../_shared/model/reducer.ts'
 import { affordanceFor } from './follow.ts'
 import type { MobilePlatform } from './permissions.ts'
+import { talkView } from './shell.ts'
+import type { SessionLoad, ShellState } from './shell.ts'
+import { linkableTaskIds, taskLinkState } from './task-link.ts'
+import { EMPTY_TASKS, tasksSurfaceView } from './tasks-view.ts'
+import type { TasksLoad } from './tasks-view.ts'
 import {
   chipRole,
   showCancel,
@@ -73,9 +78,115 @@ export const A11Y_IDS = {
   undoButton: 'assistant-undo-button',
 } as const
 
-export type A11yId = (typeof A11Y_IDS)[keyof typeof A11Y_IDS]
+export type ConversationA11yId = (typeof A11Y_IDS)[keyof typeof A11Y_IDS]
 
-export const ALL_A11Y_IDS: readonly A11yId[] = Object.values(A11Y_IDS)
+/** The CONVERSATION catalogue only — the 23 ids of the three
+ * `voice-assistant-view*` mockups. QA's mobile automation asserts this set
+ * against that mockup exactly (`F-003-mobile-surface.spec.ts`), so the app
+ * shell's ids live in `SHELL_A11Y_IDS` below and are never folded in here. */
+export const ALL_A11Y_IDS: readonly ConversationA11yId[] = Object.values(A11Y_IDS)
+
+// ---------------------------------------------------------------------------
+// The APP SHELL catalogue — the second half of one contract
+// ---------------------------------------------------------------------------
+
+/**
+ * `design/assistant/screens/app-shell-ios.html` (`accessibilityIdentifier`),
+ * `-android.html` (`resource-id`) and `app-shell.html` (`data-testid`) declare
+ * **29** ids, byte-identical across the three. Seven of them are controls that
+ * already existed and simply render on a different surface now — they keep
+ * their ids and stay in `A11Y_IDS` above ("They are not renamed",
+ * components.md § Testid catalogue — app shell). The **22** genuinely new
+ * controls are here.
+ *
+ * Split rather than merged for a reason that is not tidiness: `ALL_A11Y_IDS` is
+ * compared to the conversation mockup **in both directions** by two suites, one
+ * of which this agent does not own. A merged catalogue would turn every one of
+ * those comparisons into a failure the moment the shell landed.
+ */
+export const SHELL_A11Y_IDS = {
+  // PathSwitch — below-split-only controls (components.md § AppFrame). A phone
+  // is always below the split, so on mobile they are unconditional.
+  pathTasks: 'shell-tasks-button',
+  pathTalk: 'shell-talk-button',
+  listsMenuButton: 'shell-lists-menu-button',
+  // S3 Lists menu
+  menuCollectionRow: 'menu-collection-row',
+  menuListRow: 'menu-list-row',
+  menuNewListButton: 'menu-new-list-button',
+  menuSettingsRow: 'menu-settings-row',
+  menuRetryButton: 'menu-retry-button',
+  menuCloseButton: 'menu-close-button',
+  // S4 Settings
+  settingsBackButton: 'settings-back-button',
+  settingsThemeControl: 'settings-theme-control',
+  settingsTalkbackSwitch: 'settings-talkback-switch',
+  settingsRowRetry: 'settings-row-retry',
+  // S5 New list
+  listEditorNameInput: 'list-editor-name-input',
+  listEditorCreateButton: 'list-editor-create-button',
+  listEditorCancelButton: 'list-editor-cancel-button',
+  // S1 Talk
+  talkSessionRetryButton: 'talk-session-retry-button',
+  talkTaskLink: 'talk-task-link',
+  // S2 Tasks
+  tasksListRetryButton: 'tasks-list-retry-button',
+  tasksEmptyAddButton: 'tasks-empty-add-button',
+  tasksRenameInput: 'tasks-rename-input',
+  tasksDeleteButton: 'tasks-delete-button',
+} as const
+
+export type ShellA11yId = (typeof SHELL_A11Y_IDS)[keyof typeof SHELL_A11Y_IDS]
+
+export const ALL_SHELL_A11Y_IDS: readonly ShellA11yId[] = Object.values(SHELL_A11Y_IDS)
+
+export type A11yId = ConversationA11yId | ShellA11yId
+
+/**
+ * Shell ids that are DRAWN and deliberately NOT BUILT, each with the thing that
+ * blocks it. This is `information-architecture.md § 7` made executable: six of
+ * the drawn surfaces cannot be built from today's data model, and the three
+ * platform variants make that easy to forget by making it look finished
+ * everywhere.
+ *
+ * The wiring test reads this map: an id must be either referenced by a
+ * component **or** recorded here with a reason. So building one without
+ * removing its row fails, and dropping one without recording why fails — which
+ * is the difference between a scope boundary and an oversight.
+ */
+export const SHELL_IDS_BLOCKED: Partial<Record<ShellA11yId, string>> = {
+  [SHELL_A11Y_IDS.menuListRow]:
+    'personal lists — no `lists` table and no `tasks.list_id` (IA §7)',
+  [SHELL_A11Y_IDS.menuNewListButton]:
+    'creates a personal list — needs `lists` (IA §7)',
+  [SHELL_A11Y_IDS.menuRetryButton]:
+    'retries the personal-lists read; the built-in collections are derived on device and never load (components.md § ListsMenu)',
+  [SHELL_A11Y_IDS.listEditorNameInput]:
+    'S5 New list sheet — "Do not build this without `lists`" (components.md § ListEditorSheet)',
+  [SHELL_A11Y_IDS.listEditorCreateButton]:
+    'S5 New list sheet — needs `lists` (components.md § ListEditorSheet)',
+  [SHELL_A11Y_IDS.listEditorCancelButton]:
+    'S5 New list sheet — needs `lists` (components.md § ListEditorSheet)',
+  [SHELL_A11Y_IDS.settingsTalkbackSwitch]:
+    'F-002 talk-back is specced and unbuilt; "a switch that toggles nothing is worse than an absent one" (components.md § SettingsRow)',
+  [SHELL_A11Y_IDS.settingsRowRetry]:
+    'the SettingsRow failed state — the only shipped row is Theme, which is local and cannot fail to save (IA §6, S4)',
+}
+
+/**
+ * RETIRED. `assistant-drawer-button` toggled the task pane inside the
+ * conversation; with the list on its own surface the hamburger becomes
+ * navigation to a different surface, "which is a different control wearing the
+ * same glyph" (components.md § Testid catalogue — app shell), and that control
+ * is `shell-lists-menu-button`.
+ *
+ * The id stays in `A11Y_IDS` because the three `voice-assistant-view*` mockups
+ * still declare it and design owns those files; removing it here would break
+ * the both-directions comparison against a mockup this agent may not edit. What
+ * changes is that **no component renders it** — asserted positively in
+ * `__tests__/a11y.test.ts` so re-adding it fails rather than passing quietly.
+ */
+export const RETIRED_A11Y_IDS: readonly ConversationA11yId[] = [A11Y_IDS.drawerButton]
 
 /** The React Native props that carry one catalogue id (plus its human name,
  * when the element has one). Typed structurally so `model/` stays free of any
@@ -108,7 +219,11 @@ export function a11yProps(
 // ---------------------------------------------------------------------------
 
 export interface SurfaceContext {
-  /** the drawer button lives in the top bar and is always mounted */
+  /** the task list is currently rendered. Before the app shell this meant "the
+   * pane beside the conversation is not collapsed"; it now means "S2 Tasks is
+   * the surface on screen". The predicate it gates is the same one either way —
+   * are the row-level ids on screen — which is why the field keeps its name and
+   * its default. */
   tasksVisible: boolean
   /** at least one task row currently rendered */
   hasTasks: boolean
@@ -130,9 +245,9 @@ export interface SurfaceContext {
  */
 export function expectedIds(state: AppState, ctx: SurfaceContext): Set<A11yId> {
   const ids = new Set<A11yId>()
-  // chrome — always mounted (F-001: the list never leaves the screen)
-  ids.add(A11Y_IDS.drawerButton)
-  ids.add(A11Y_IDS.addTaskButton)
+  // The composer belongs to Talk and is always mounted there. `drawerButton` is
+  // NOT here any more: it is retired (see RETIRED_A11Y_IDS) — the hamburger is
+  // navigation now and carries `shell-lists-menu-button`.
   ids.add(A11Y_IDS.composerInput)
   ids.add(A11Y_IDS.composerSend)
   if (showMic(state)) ids.add(A11Y_IDS.micButton)
@@ -145,6 +260,10 @@ export function expectedIds(state: AppState, ctx: SurfaceContext): Set<A11yId> {
     ids.add(A11Y_IDS.newMessageAffordance)
   }
 
+  if (ctx.tasksVisible) {
+    // the Tasks surface's own header control (F-001 AC-18's create, by hand)
+    ids.add(A11Y_IDS.addTaskButton)
+  }
   if (ctx.tasksVisible && ctx.hasTasks) {
     ids.add(A11Y_IDS.taskRow)
     ids.add(A11Y_IDS.taskCheckbox)
@@ -180,6 +299,80 @@ export function expectedIds(state: AppState, ctx: SurfaceContext): Set<A11yId> {
           if (chip.new !== null) ids.add(A11Y_IDS.diffNew)
         }
       }
+    }
+  }
+  return ids
+}
+
+/**
+ * The SHELL ids on screen for a given shell + conversation state — the same
+ * job `expectedIds` does for the conversation, built from the same predicates
+ * the shell components render from (`shell.ts`, `tasks-view.ts`), so the
+ * catalogue and the rendering are one source rather than two descriptions that
+ * agree.
+ *
+ * Nothing here is gated on width: a phone is always below
+ * `tokens.json breakpoints.split`, so PathSwitch always exists (components.md
+ * § AppFrame).
+ */
+export function expectedShellIds(
+  shell: ShellState,
+  state: AppState,
+  load: {
+    session: SessionLoad
+    tasks: TasksLoad
+    /** the row whose title was tapped — rename is entered by TAPPING THE TITLE
+     * on touch, so there is no separate control and no id for one */
+    renaming?: string | null
+  },
+): Set<ShellA11yId> {
+  const ids = new Set<ShellA11yId>()
+
+  if (shell.overlay === 'settings') {
+    ids.add(SHELL_A11Y_IDS.settingsBackButton)
+    ids.add(SHELL_A11Y_IDS.settingsThemeControl)
+    return ids
+  }
+  if (shell.overlay === 'menu') {
+    ids.add(SHELL_A11Y_IDS.menuCloseButton)
+    ids.add(SHELL_A11Y_IDS.menuCollectionRow)
+    ids.add(SHELL_A11Y_IDS.menuSettingsRow)
+    return ids
+  }
+
+  if (shell.surface === 'talk') {
+    // AC-24's reachability bound: present in EVERY Talk state, failures
+    // included, and never disabled.
+    ids.add(SHELL_A11Y_IDS.pathTasks)
+    const view = talkView(state, load.session)
+    if (view === 'failed') ids.add(SHELL_A11Y_IDS.talkSessionRetryButton)
+    // AC-31: a task title is a control only when the list currently holds it.
+    for (const m of state.messages) {
+      for (const taskId of linkableTaskIds(m)) {
+        if (taskLinkState(taskId, state.tasks, shell.collection) === 'link') {
+          ids.add(SHELL_A11Y_IDS.talkTaskLink)
+        }
+      }
+    }
+    return ids
+  }
+
+  ids.add(SHELL_A11Y_IDS.pathTalk)
+  ids.add(SHELL_A11Y_IDS.listsMenuButton)
+  const tasks = tasksSurfaceView(state, load.tasks, shell.collection)
+  if (tasks.banner === 'retry' || tasks.view === 'error') {
+    ids.add(SHELL_A11Y_IDS.tasksListRetryButton)
+  }
+  if (tasks.empty !== null && EMPTY_TASKS[tasks.empty].action !== null) {
+    ids.add(SHELL_A11Y_IDS.tasksEmptyAddButton)
+  }
+  if (tasks.tasks.length > 0) {
+    // touch is not hover: the delete control is ALWAYS visible in the row's
+    // trailing slot (components.md § Platform variants)
+    ids.add(SHELL_A11Y_IDS.tasksDeleteButton)
+    const renaming = load.renaming ?? null
+    if (renaming !== null && tasks.tasks.some((t) => t.id === renaming)) {
+      ids.add(SHELL_A11Y_IDS.tasksRenameInput)
     }
   }
   return ids

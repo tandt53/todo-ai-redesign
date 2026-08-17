@@ -112,6 +112,76 @@ export function TrashIcon() {
   )
 }
 
+// --- app shell (design/assistant/screens/app-shell.html) ---------------------
+
+/** PS-TASKS' list glyph. */
+export function ListIcon() {
+  return (
+    <Ic>
+      <path d="M8 6h13" />
+      <path d="M8 12h13" />
+      <path d="M8 18h13" />
+      <path d="M3 6h.01" />
+      <path d="M3 12h.01" />
+      <path d="M3 18h.01" />
+    </Ic>
+  )
+}
+
+export function CloseIcon() {
+  return (
+    <Ic>
+      <path d="M18 6 6 18" />
+      <path d="M6 6l12 12" />
+    </Ic>
+  )
+}
+
+export function BackIcon() {
+  return (
+    <Ic>
+      <path d="M15 18l-6-6 6-6" />
+    </Ic>
+  )
+}
+
+export function ClockIcon() {
+  return (
+    <Ic>
+      <path d="M12 8v4l3 2" />
+      <circle cx="12" cy="12" r="9" />
+    </Ic>
+  )
+}
+
+export function InboxIcon() {
+  return (
+    <Ic>
+      <path d="M4 5h16v9l-4 5H4z" />
+      <path d="M4 12h16" />
+    </Ic>
+  )
+}
+
+export function SettingsIcon() {
+  return (
+    <Ic>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z" />
+    </Ic>
+  )
+}
+
+export function AlertIcon() {
+  return (
+    <Ic className="ic-sm">
+      <path d="M12 9v4" />
+      <path d="M12 17h.01" />
+      <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+    </Ic>
+  )
+}
+
 export function MicSlash() {
   return (
     <span className="mic-slash" aria-hidden="true">

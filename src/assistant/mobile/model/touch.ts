@@ -15,7 +15,7 @@
 // which is the part a device pass then confirms in the real world.
 
 import type { MobilePlatform } from './permissions.ts'
-import { A11Y_IDS, type A11yId } from './a11y.ts'
+import { A11Y_IDS, SHELL_A11Y_IDS, type A11yId } from './a11y.ts'
 import { font, lineHeightFor, spacing } from './theme.ts'
 
 /** iOS Human Interface Guidelines: 44×44 pt. Material Design: 48×48 dp.
@@ -158,6 +158,55 @@ export const PAINTED: Record<InteractiveId, Size> = {
     width: MIN_TOUCH_TARGET.android,
     height: textControlHeight(font.size.body, spacing.sm),
   },
+
+  // ── App shell (design/assistant/screens/app-shell-ios.html CSS) ───────────
+  //
+  // WIDTHS. components.md § Testid catalogue — app shell states it plainly:
+  // "No content-width floor is published for any control above. § Touch's
+  // floors are measured from a shipped control; none of these has shipped."
+  // So every shell control below takes the same safe placeholder the
+  // new-message affordance takes and for the same reason — the platform
+  // maximum minimum, which under-states. Under-stating is the safe direction
+  // (see the § at the head of PAINTED): an over-stated width makes
+  // `hitSlopFor` believe the box is wider than it is and under-compute the
+  // slop. When design measures and publishes these rows, the published-floors
+  // test adopts them automatically and these placeholders become failures.
+  //
+  // HEIGHTS are real, read off the mockup CSS rule named on each line.
+
+  // .path { min-height: 44px } — PS-TASKS / PS-TALK
+  [SHELL_A11Y_IDS.pathTasks]: { width: MIN_TOUCH_TARGET.android, height: 44 },
+  [SHELL_A11Y_IDS.pathTalk]: { width: MIN_TOUCH_TARGET.android, height: 44 },
+  // .icon-btn { width: 44px; height: 44px }
+  [SHELL_A11Y_IDS.listsMenuButton]: { width: 44, height: 44 },
+  [SHELL_A11Y_IDS.menuCloseButton]: { width: 44, height: 44 },
+  // .menu-row { min-height: 44px }
+  [SHELL_A11Y_IDS.menuCollectionRow]: { width: MIN_TOUCH_TARGET.android, height: 44 },
+  [SHELL_A11Y_IDS.menuSettingsRow]: { width: MIN_TOUCH_TARGET.android, height: 44 },
+  // .back-btn { height: 44px }
+  [SHELL_A11Y_IDS.settingsBackButton]: { width: MIN_TOUCH_TARGET.android, height: 44 },
+  // .seg button { min-height: 32px } — the id sits on the group, but the
+  // finger lands on a segment, and the segment is what must clear the minimum.
+  [SHELL_A11Y_IDS.settingsThemeControl]: { width: MIN_TOUCH_TARGET.android, height: 32 },
+  // .btn-primary / .btn-ghost { min-height: 44px }
+  [SHELL_A11Y_IDS.talkSessionRetryButton]: { width: MIN_TOUCH_TARGET.android, height: 44 },
+  [SHELL_A11Y_IDS.tasksListRetryButton]: { width: MIN_TOUCH_TARGET.android, height: 44 },
+  [SHELL_A11Y_IDS.tasksEmptyAddButton]: { width: MIN_TOUCH_TARGET.android, height: 44 },
+  // .row-del { width: 44px; height: 44px } — ALWAYS visible on touch, so it is
+  // always a real target rather than one that appears on hover
+  [SHELL_A11Y_IDS.tasksDeleteButton]: { width: 44, height: 44 },
+  // .tasklink — inline text inside the bubble, no padding of its own: one line
+  // box, and everything above the line box is slop. components.md
+  // § MessageTaskLink: "Hit area follows the platform minimum via `hitSlop`."
+  [SHELL_A11Y_IDS.talkTaskLink]: {
+    width: MIN_TOUCH_TARGET.android,
+    height: lineHeightFor(font.size.body),
+  },
+  // .rename-input { padding: var(--sp-sm) } around body text
+  [SHELL_A11Y_IDS.tasksRenameInput]: {
+    width: MIN_TOUCH_TARGET.android,
+    height: textControlHeight(font.size.body, spacing.sm),
+  },
 }
 
 /** The catalogue ids a finger can activate. The rest of the catalogue is
@@ -180,6 +229,24 @@ export const INTERACTIVE_IDS = [
   A11Y_IDS.chipNegative,
   A11Y_IDS.optionChip,
   A11Y_IDS.newMessageAffordance,
+  // app shell — every control a finger can activate on S1/S2/S3/S4. The eight
+  // shell ids absent here are the ones `SHELL_IDS_BLOCKED` records as drawn and
+  // deliberately unbuilt; a hit area for a control that does not exist would be
+  // a measurement of nothing.
+  SHELL_A11Y_IDS.pathTasks,
+  SHELL_A11Y_IDS.pathTalk,
+  SHELL_A11Y_IDS.listsMenuButton,
+  SHELL_A11Y_IDS.menuCloseButton,
+  SHELL_A11Y_IDS.menuCollectionRow,
+  SHELL_A11Y_IDS.menuSettingsRow,
+  SHELL_A11Y_IDS.settingsBackButton,
+  SHELL_A11Y_IDS.settingsThemeControl,
+  SHELL_A11Y_IDS.talkSessionRetryButton,
+  SHELL_A11Y_IDS.tasksListRetryButton,
+  SHELL_A11Y_IDS.tasksEmptyAddButton,
+  SHELL_A11Y_IDS.tasksDeleteButton,
+  SHELL_A11Y_IDS.talkTaskLink,
+  SHELL_A11Y_IDS.tasksRenameInput,
 ] as const
 
 export type InteractiveId = (typeof INTERACTIVE_IDS)[number]

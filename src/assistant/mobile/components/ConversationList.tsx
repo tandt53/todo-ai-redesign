@@ -14,7 +14,7 @@ import type { AppState } from '../../_shared/model/reducer.ts'
 import { formatClock } from '../../_shared/model/format.ts'
 import type { DiffLine, Message } from '../../_shared/types.ts'
 import type { MobileAssistantController } from '../controller.ts'
-import { A11Y_IDS, a11yProps } from '../model/a11y.ts'
+import { A11Y_IDS, SHELL_A11Y_IDS, a11yProps } from '../model/a11y.ts'
 import type { MobilePlatform } from '../model/permissions.ts'
 import { chipRole, showPermissionCta, showQueuedNotice, showRetry, showUndo } from '../model/surface.ts'
 import { tokens } from '../model/theme.ts'
@@ -22,11 +22,46 @@ import { touchProps } from '../model/touch.ts'
 import { useStyles } from './styles.ts'
 import type { NewMessageFollow } from './useNewMessageFollow.ts'
 
-function DiffRow({ line }: { line: DiffLine }) {
+/**
+ * F-001 AC-31 / components.md § MessageTaskLink — the task named in a bubble is
+ * a DOOR to its row. The title gains the standard "this is a link" underline in
+ * `text.muted`, no colour change, because the diff colours in this bubble
+ * already carry meaning.
+ *
+ * The `inert` case is plain text with no `Pressable` around it at all — not a
+ * disabled control: "rendered as an inert control it would be an affordance
+ * that does nothing, which is worse than none; rendered as plain text it is
+ * honest" (AC-31). That is why the branch is on the ELEMENT, not on a prop.
+ */
+function DiffRow({
+  line,
+  platform,
+  canOpen,
+  onOpen,
+}: {
+  line: DiffLine
+  platform: MobilePlatform
+  canOpen: boolean
+  onOpen: () => void
+}) {
   const { styles } = useStyles()
+  const linkTouch = touchProps(SHELL_A11Y_IDS.talkTaskLink, platform)
   return (
     <View style={styles.diffRow}>
-      <Text style={styles.diffTask}>{line.title}</Text>
+      {canOpen ? (
+        <Pressable
+          {...a11yProps(SHELL_A11Y_IDS.talkTaskLink, {
+            label: `Find “${line.title}” in the list`,
+            role: 'button',
+          })}
+          hitSlop={linkTouch.hitSlop}
+          onPress={onOpen}
+        >
+          <Text style={styles.taskLink}>{line.title}</Text>
+        </Pressable>
+      ) : (
+        <Text style={styles.diffTask}>{line.title}</Text>
+      )}
       {line.chips.map((c, i) => (
         <View key={`${c.field}-${i}`} style={styles.diffRow}>
           {c.old !== null && (
@@ -54,9 +89,13 @@ function MessageView({
   undoableTurnId,
   controller,
   platform,
+  onOpenTask,
+  canOpenTask,
 }: {
   m: Message
   undoableTurnId: string | null
+  onOpenTask: (taskId: string) => void
+  canOpenTask: (taskId: string) => boolean
   controller: MobileAssistantController
   platform: MobilePlatform
 }) {
@@ -104,7 +143,13 @@ function MessageView({
           <>
             <Text style={styles.bubbleHead}>{m.head}</Text>
             {m.lines.map((l, i) => (
-              <DiffRow key={`${l.taskId}-${i}`} line={l} />
+              <DiffRow
+                key={`${l.taskId}-${i}`}
+                line={l}
+                platform={platform}
+                canOpen={canOpenTask(l.taskId)}
+                onOpen={() => onOpenTask(l.taskId)}
+              />
             ))}
             {m.deletedTitles.length > 0 && (
               <Text style={styles.bubbleText}>Deleted: {m.deletedTitles.join(', ')}.</Text>
@@ -290,11 +335,17 @@ export function ConversationList({
   undoableTurnId,
   platform,
   scrollProps,
+  onOpenTask,
+  canOpenTask,
 }: {
   state: AppState
   controller: MobileAssistantController
   undoableTurnId: string | null
   platform: MobilePlatform
+  /** AC-31 — the single reveal routine, reached from here and nowhere else on
+   * this surface. */
+  onOpenTask: (taskId: string) => void
+  canOpenTask: (taskId: string) => boolean
   /** F-001 AC-30: the ref, `onScroll` and `onContentSizeChange` this list
    * rendered without until BUG-004 — supplied by `useNewMessageFollow`, which
    * owns the measurement and the decisions. Nothing here samples the viewport
@@ -330,6 +381,8 @@ export function ConversationList({
           undoableTurnId={undoableTurnId}
           controller={controller}
           platform={platform}
+          onOpenTask={onOpenTask}
+          canOpenTask={canOpenTask}
         />
       ))}
     </ScrollView>

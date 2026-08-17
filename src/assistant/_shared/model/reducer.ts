@@ -7,6 +7,17 @@ import type { Marks, Message, Surface, TaskView } from '../types.ts'
 import type { NewMsg } from './messages.ts'
 import type { SpeechCapability } from '../ports/transcript-source.ts'
 
+/**
+ * How a read of a server-owned collection last went.
+ *
+ * Deliberately NOT one of the four surface states (AC-29): those are the
+ * conversation's states, and a task-list read that failed is not a conversation
+ * state at all — it is a fact about a different collection, which is exactly
+ * why `information-architecture.md §6` designs the two surfaces' failures
+ * separately. `idle` = never attempted.
+ */
+export type LoadState = 'idle' | 'loading' | 'ok' | 'failed'
+
 export interface AppState {
   surface: Surface
   capability: SpeechCapability
@@ -14,6 +25,12 @@ export interface AppState {
   sessionId: string | null
   messages: Message[]
   tasks: TaskView[]
+  /** GET /assistant/session — drives the S1 skeletons and SE-SESSION
+   * (IA §6 S1; the failure AC-24's reachability bound names by hand) */
+  sessionLoad: LoadState
+  /** GET /tasks — drives the S2 skeletons, the InlineRetryBanner and
+   * SE-TASKS (IA §6 S2) */
+  tasksLoad: LoadState
   /** AI-change attribution for the newest applied turn only (AC-4) */
   marks: Marks | null
   offline: boolean
@@ -34,6 +51,8 @@ export function initialState(capability: SpeechCapability): AppState {
     sessionId: null,
     messages: [],
     tasks: [],
+    sessionLoad: 'idle',
+    tasksLoad: 'idle',
     marks: null,
     offline: false,
     activeTurnId: null,
@@ -75,6 +94,8 @@ export type Action =
   | { type: 'tasks'; tasks: TaskView[] }
   | { type: 'unmark-task'; taskId: string }
   | { type: 'offline'; offline: boolean }
+  | { type: 'session-load'; load: LoadState }
+  | { type: 'tasks-load'; load: LoadState }
 
 function withIds(state: AppState, msgs: NewMsg[]): { messages: Message[]; nextId: number } {
   let nextId = state.nextId
@@ -294,6 +315,12 @@ export function reducer(state: AppState, action: Action): AppState {
 
     case 'tasks':
       return { ...state, tasks: action.tasks }
+
+    case 'session-load':
+      return state.sessionLoad === action.load ? state : { ...state, sessionLoad: action.load }
+
+    case 'tasks-load':
+      return state.tasksLoad === action.load ? state : { ...state, tasksLoad: action.load }
 
     case 'unmark-task': {
       // a hand-edited row is never attributed to the turn (AC-4)

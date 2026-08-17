@@ -39,13 +39,77 @@ import { distanceFromBottom } from '../../_shared/model/follow.ts'
 afterEach(cleanup)
 
 // jsdom rewrites import.meta.url to an http URL, so resolve from the vitest
-// root instead — the mockup is the contract and must really be read.
-const MOCKUP = resolve(process.cwd(), 'design/assistant/screens/voice-assistant-view.html')
+// root instead — the mockups are the contract and must really be read.
+//
+// TWO mockups now, because the app has two halves. `voice-assistant-view.html`
+// draws the conversation's own states; `app-shell.html` draws the surfaces
+// outside it (Tasks as a surface, the Lists menu, Settings, the New-list
+// sheet). The catalogue is their union.
+const MOCKUPS = [
+  'design/assistant/screens/voice-assistant-view.html',
+  'design/assistant/screens/app-shell.html',
+].map((p) => resolve(process.cwd(), p))
 
-/** The contract, straight from the design mockup — never hand-copied. */
-function catalogue(): Set<string> {
-  const html = readFileSync(MOCKUP, 'utf8')
+function idsIn(file: string): Set<string> {
+  const html = readFileSync(file, 'utf8')
   return new Set([...html.matchAll(/data-testid="([^"]+)"/g)].map((m) => m[1] as string))
+}
+
+/**
+ * Drawn, and deliberately NOT built — each with the artifact that says so.
+ *
+ * This list is the honest half of the contract. Without it the suite has two
+ * dishonest options: drop the second mockup (and stop checking the shell at
+ * all), or quietly widen `missing` to a warning (and stop checking anything).
+ * Naming them here keeps `missing` empty-or-fail for everything else, and makes
+ * the gap a thing a reader can audit rather than a silence.
+ */
+const NOT_BUILT: Record<string, string> = {
+  // Retired, not missing: "the hamburger stops toggling a pane and becomes
+  // navigation to a different surface, which is a different control wearing the
+  // same glyph … Its retirement lands with the spec pass" (components.md
+  // § Testid catalogue — app shell). The spec pass is F-001 revision 4, which
+  // has landed; `shell-lists-menu-button` is the replacement.
+  'assistant-drawer-button': 'retired by F-001 rev 4 / components.md § Testid catalogue',
+  // Personal lists: `lists` and `tasks.list_id` do not exist in
+  // src/assistant/api/types.ts. IA §7 draws the line explicitly, and six drawn
+  // surfaces sit the wrong side of it.
+  'menu-list-row': 'needs `lists` + `tasks.list_id` (IA §7)',
+  'menu-new-list-button': 'needs `lists` + `tasks.list_id` (IA §7)',
+  'menu-retry-button': 'reports a personal-lists read that cannot happen (IA §7)',
+  'list-editor-name-input': 'ListEditorSheet needs `lists` (IA §7, components.md § ListEditorSheet)',
+  'list-editor-create-button': 'ListEditorSheet needs `lists` (IA §7)',
+  'list-editor-cancel-button': 'ListEditorSheet needs `lists` (IA §7)',
+  // "Talk back ships with F-002, not before … a switch that toggles nothing is
+  // worse than an absent one" (components.md § SettingsRow). F-002 is specced
+  // to rev 3 and unbuilt.
+  'settings-talkback-switch': 'needs F-002 (components.md § SettingsRow)',
+  'settings-row-retry': 'the failed state of a row that does not exist yet',
+}
+
+/** The contract, straight from the design mockups — never hand-copied. */
+function catalogue(): Set<string> {
+  const union = new Set<string>()
+  for (const file of MOCKUPS) {
+    const ids = idsIn(file)
+    // L-007: a parser that silently matched nothing yields the same green as
+    // one that worked. Fail loudly instead.
+    if (ids.size === 0) throw new Error(`read no testids from ${file}`)
+    for (const id of ids) union.add(id)
+  }
+  return union
+}
+
+/** The half of the catalogue this build is expected to render. */
+function builtCatalogue(): Set<string> {
+  const all = catalogue()
+  for (const id of Object.keys(NOT_BUILT)) {
+    // Every excuse must name an id the mockups really declare, or the exclusion
+    // list is quietly excusing nothing while looking like it excuses something.
+    if (!all.has(id)) throw new Error(`NOT_BUILT names ${id}, which no mockup declares`)
+    all.delete(id)
+  }
+  return all
 }
 
 function renderedTestids(root: HTMLElement): Set<string> {
@@ -384,6 +448,41 @@ const STATES: { name: string; state: AppState; drive?: (m: Mounted) => void }[] 
     name: 'mic-hidden',
     state: seed({ tasks: TASKS, capability: 'none' }, [userMsg('add pay the electricity bill'), appliedMsg], 'none'),
   },
+  // --- app-shell.html's states (design/assistant/screens/app-shell.html) ------
+  // Three of the shell's states are SITUATIONS rather than model snapshots — a
+  // menu that was opened, a row being renamed — so they are driven, exactly as
+  // the two new-message states are.
+  {
+    name: 'shell-menu',
+    state: seed({ tasks: TASKS }),
+    drive: ({ container }) => {
+      act(() => {
+        fireEvent.click(
+          container.querySelector('[data-testid="shell-lists-menu-button"]') as HTMLElement,
+        )
+      })
+    },
+  },
+  {
+    name: 'shell-rename',
+    state: seed({ tasks: TASKS }),
+    drive: ({ container }) => {
+      act(() => {
+        fireEvent.click(container.querySelector('.row-action') as HTMLElement)
+      })
+    },
+  },
+  {
+    // SE-TASKS: the read failed with nothing on device. `Add task` stays live.
+    name: 'tasks-load-failed',
+    state: seed({ tasks: [], tasksLoad: 'failed' }),
+  },
+  {
+    // SE-SESSION: the thread cannot render at all — the failure AC-24's
+    // reachability bound names by hand.
+    name: 'talk-session-failed',
+    state: seed({ tasks: TASKS, sessionLoad: 'failed' }),
+  },
 ]
 
 function byName(n: string): AppState {
@@ -397,8 +496,8 @@ function byName(n: string): AppState {
 // ---------------------------------------------------------------------------
 
 describe('testid contract (design mockup catalogue)', () => {
-  it('renders all 19 mockup states', () => {
-    expect(STATES).toHaveLength(19)
+  it('renders all 23 mockup states', () => {
+    expect(STATES).toHaveLength(23)
     for (const { name, state, drive } of STATES) {
       const { container } = mount(state, drive)
       expect(container.querySelector('.app'), name).not.toBeNull()
@@ -406,9 +505,13 @@ describe('testid contract (design mockup catalogue)', () => {
     }
   })
 
-  it('applies every one of the mockup’s testids across the states, and invents none', () => {
-    const expected = catalogue()
-    expect(expected.size).toBe(23)
+  it('applies every one of the mockups’ testids across the states, and invents none', () => {
+    // Both size guards are here for L-007's reason: a catalogue that silently
+    // came back empty, or an exclusion list that silently excused everything,
+    // both yield the same green as a working check.
+    expect(catalogue().size).toBe(45)
+    const expected = builtCatalogue()
+    expect(expected.size).toBe(36)
 
     const seen = new Set<string>()
     for (const { state, drive } of STATES) {
@@ -421,6 +524,20 @@ describe('testid contract (design mockup catalogue)', () => {
     const invented = [...seen].filter((id) => !expected.has(id)).sort()
     expect(missing).toEqual([])
     expect(invented).toEqual([])
+  })
+
+  it('renders no id it declared not-built — the exclusions are real, not aspirational', () => {
+    // The other direction of the same contract. Without this, `NOT_BUILT` would
+    // be a list of ids the suite stopped checking in EITHER direction, and a
+    // half-built personal-lists row could ship behind it unnoticed.
+    const seen = new Set<string>()
+    for (const { state, drive } of STATES) {
+      const { container } = mount(state, drive)
+      for (const id of renderedTestids(container)) seen.add(id)
+      cleanup()
+    }
+    const shipped = Object.keys(NOT_BUILT).filter((id) => seen.has(id))
+    expect(shipped).toEqual([])
   })
 
   it('exposes the state indicator only while listening or thinking (AC-29)', () => {
@@ -609,14 +726,31 @@ describe('accessibility (AC-19)', () => {
     }
   })
 
-  it('2.5.3 — the accessible name contains the visible label', () => {
+  it('2.5.3 — the accessible name contains the visible label, in order', () => {
+    // SC 2.5.3 is about the visible WORDS appearing in the accessible name in
+    // the same order — not about the name containing a raw concatenation of the
+    // label's text nodes. The distinction became load-bearing with PathSwitch:
+    // its visible label is "Tasks" beside a "3" badge, and design fixes the
+    // accessible name as "Tasks, 3 left today" precisely so the badge is never
+    // the whole name ("a screen reader user must not have to guess what 3
+    // counts", components.md § PathSwitch). Concatenation reads that as
+    // "tasks3" and rejects a control that satisfies the criterion.
+    const words = (s: string): string[] => s.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []
     for (const { name, state, drive } of STATES) {
       const { container } = mount(state, drive)
       for (const el of interactive(container)) {
-        const visible = (el.textContent ?? '').trim().toLowerCase()
-        if (visible === '') continue
-        const accName = (el.getAttribute('aria-label') ?? el.textContent ?? '').trim().toLowerCase()
-        expect(accName, `${name}: “${visible}”`).toContain(visible)
+        const visible = words(el.textContent ?? '')
+        if (visible.length === 0) continue
+        const accName = words(el.getAttribute('aria-label') ?? el.textContent ?? '')
+        let at = 0
+        for (const w of visible) {
+          const found = accName.indexOf(w, at)
+          expect(
+            found,
+            `${name}: “${visible.join(' ')}” not in accessible name “${accName.join(' ')}”`,
+          ).toBeGreaterThanOrEqual(0)
+          at = found + 1
+        }
       }
       cleanup()
     }
@@ -875,8 +1009,10 @@ describe('interactions', () => {
     render(<App controller={h.controller} />)
     const assistantBefore = h.server.assistantCalls().length
 
+    // With nothing on the list the header is not drawn at all — the invitation
+    // is (ET-FIRST), and its CTA is the add path from an empty surface.
     await act(async () => {
-      fireEvent.click(screen.getByTestId('assistant-add-task-button'))
+      fireEvent.click(screen.getByTestId('tasks-empty-add-button'))
     })
     const field = screen.getByLabelText('New task name')
     await act(async () => {
@@ -890,7 +1026,10 @@ describe('interactions', () => {
     expect(h.server.assistantCalls()).toHaveLength(assistantBefore)
   })
 
-  it('the drawer stays reachable and switches the list filter (OQ-1)', async () => {
+  it('the Lists menu switches the collection the surface renders (OQ-1, answered)', async () => {
+    // OQ-1's answer is that the two are PEERS, so the hamburger no longer
+    // toggles a pane beside the conversation — it opens navigation to the other
+    // surface's collections. Same data, now addressable (IA §3).
     const h = harness()
     h.server
       .always('GET /assistant/session', 200, { session: session(), boundary: null })
@@ -900,14 +1039,20 @@ describe('interactions', () => {
     })
     render(<App controller={h.controller} />)
 
-    expect(screen.getAllByTestId('assistant-task-row').length).toBe(3)
+    // Inbox — every open task, which is what the shipped default filter showed.
+    expect(screen.getAllByTestId('assistant-task-row').length).toBe(2)
     await act(async () => {
-      fireEvent.click(screen.getByTestId('assistant-drawer-button'))
+      fireEvent.click(screen.getByTestId('shell-lists-menu-button'))
     })
+    const rows = screen.getAllByTestId('menu-collection-row')
+    const done = rows.find((r) => (r.textContent ?? '').includes('Done')) as HTMLElement
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Done' }))
+      fireEvent.click(done)
     })
     expect(screen.getAllByTestId('assistant-task-row').length).toBe(1)
+    // …and picking a collection closes the menu (IA §4: "tap the row; the menu
+    // closes" — one tap, not two).
+    expect(screen.queryByTestId('menu-close-button')).toBeNull()
   })
 })
 

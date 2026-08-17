@@ -1,24 +1,39 @@
-// App shell. Thin by design (platform web.md): every conversation decision
-// already happened in `model/` and `controller.ts`; this component subscribes
-// to the controller and maps state → classes → children.
+// The app shell. Two peer surfaces plus a stacked one, and ONE layout branch.
 //
 // The root className carries the two orthogonal axes the spec keeps separate:
 //   st-{idle|listening|thinking|error}  — the four surface states (AC-29)
 //   mic-{available|dimmed-permission|dimmed-transient|hidden} — mic mode (AC-20..22)
-// plus `is-offline`. The mockup folded the second axis into the first because
-// it could only show one screen at a time; the running app needs both at once.
+// plus `is-offline` and `is-session-loading`. The mockup folded the second axis
+// into the first because it could only show one screen at a time; the running
+// app needs both at once.
+//
+// `data-surface` is the third, and it is what the ONE layout branch reads:
+//
+//   below `tokens.json breakpoints.split`  — exactly one surface on screen,
+//       PathSwitch moves between the two peers in one action.
+//   at or above it — Tasks holds the centre, Talk holds a 360–420px right
+//       panel, BOTH permanently on screen, and Settings replaces the centre
+//       rather than the panel: the assistant is never dismissed by navigating.
+//
+// **Every surface is mounted at every width and the branch lives entirely in
+// CSS — a container query on this element, never a viewport read in JS.** That
+// is not a shortcut: an AC that carries two mechanisms selected by width is one
+// mechanism plus one nobody runs, and the branch nobody runs is the one that
+// rots (owner-decision-2026-08-17-desktop-list-is-primary.md, constraint 2). No
+// behaviour in this tree asks how wide it is.
 
-import { useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 import type { AssistantController } from '../_shared/controller.ts'
 import { micMode, undoableTurnId } from '../_shared/model/reducer.ts'
-import { Drawer, OfflineBanner, TopBar } from './components/Chrome.tsx'
-import { Composer } from './components/Composer.tsx'
-import { ConversationPane } from './components/ConversationPane.tsx'
-import { NewMessageAffordance } from './components/NewMessageAffordance.tsx'
-import { TaskListPane } from './components/TaskListPane.tsx'
-import type { ListFilter } from './components/TaskListPane.tsx'
-import { VoiceSurface } from './components/VoiceSurface.tsx'
+import { OfflineBanner } from './components/Chrome.tsx'
+import { ListsMenu } from './components/ListsMenu.tsx'
+import { SettingsSurface } from './components/SettingsSurface.tsx'
+import { TalkSurface } from './components/TalkSurface.tsx'
+import { TasksSurface } from './components/TasksSurface.tsx'
 import { useFollowNewMessages } from './follow.ts'
+import { useShell } from './shell.ts'
+import { applyTheme, defaultThemeStore, readTheme, writeTheme } from './theme.ts'
+import type { ThemeChoice } from './theme.ts'
 
 export function App({ controller }: { controller: AssistantController }) {
   const state = useSyncExternalStore(
@@ -26,38 +41,54 @@ export function App({ controller }: { controller: AssistantController }) {
     () => controller.state,
     () => controller.state,
   )
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [filter, setFilter] = useState<ListFilter>('all')
+  const shell = useShell(state)
   // AC-30 (BUG-004): follow the newest message only when the user is already at
   // the bottom; otherwise hold the view still and say something is waiting.
   const follow = useFollowNewMessages(state.messages)
 
+  const [theme, setThemeState] = useState<ThemeChoice>(() => readTheme(defaultThemeStore()))
+  useEffect(() => {
+    applyTheme(theme)
+  }, [theme])
+  const setTheme = useCallback((next: ThemeChoice) => {
+    writeTheme(defaultThemeStore(), next)
+    setThemeState(next)
+  }, [])
+
+  const rootClass = [
+    'app',
+    `st-${state.surface}`,
+    `mic-${micMode(state)}`,
+    state.offline ? 'is-offline' : null,
+    state.sessionLoad === 'loading' ? 'is-session-loading' : null,
+  ]
+    .filter((c) => c !== null)
+    .join(' ')
+
   return (
-    <div
-      className={`app st-${state.surface} mic-${micMode(state)}${state.offline ? ' is-offline' : ''}`}
-    >
-      <TopBar drawerOpen={drawerOpen} onToggleDrawer={() => setDrawerOpen((v) => !v)} />
-      {drawerOpen && <Drawer filter={filter} onPick={setFilter} />}
-      <div className="panes">
-        <TaskListPane state={state} controller={controller} filter={filter} />
-        <main className="conv-pane">
-          <ConversationPane
-            state={state}
-            controller={controller}
-            undoableTurnId={undoableTurnId(state)}
-            scrollerRef={follow.scrollerRef}
-            onScroll={follow.onScroll}
-          />
-          <VoiceSurface state={state} controller={controller} />
-          {/* Docked just above the Composer, above the OfflineBanner when that
-              is showing (components.md §NewMessageAffordance). In DOM order it
-              sits between the conversation and the Composer, so Tab out of the
-              conversation reaches it before the input. */}
-          <NewMessageAffordance affordance={follow.affordance} onActivate={follow.activate} />
-          <OfflineBanner state={state} />
-          <Composer state={state} controller={controller} />
-        </main>
+    <div className={rootClass} data-surface={shell.surface}>
+      {/* One banner above both surfaces — see the note on OfflineBanner. */}
+      <OfflineBanner state={state} />
+      <div className="surfaces">
+        <TalkSurface
+          state={state}
+          controller={controller}
+          shell={shell}
+          follow={follow}
+          undoableTurnId={undoableTurnId(state)}
+        />
+        <TasksSurface state={state} controller={controller} shell={shell} />
+        <SettingsSurface theme={theme} onTheme={setTheme} onBack={shell.backFromSettings} />
       </div>
+      {shell.menuOpen && (
+        <ListsMenu
+          state={state}
+          active={shell.collection}
+          onPick={shell.pickCollection}
+          onSettings={shell.openSettings}
+          onClose={() => shell.setMenuOpen(false)}
+        />
+      )}
     </div>
   )
 }

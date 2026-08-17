@@ -6,11 +6,12 @@
 // the light theme is fully tokened and picked up from the OS via
 // `useColorScheme`.
 
-import { useMemo } from 'react'
+import { createContext, useContext, useMemo } from 'react'
 import { StyleSheet, useColorScheme } from 'react-native'
-import { A11Y_IDS } from '../model/a11y.ts'
+import { A11Y_IDS, SHELL_A11Y_IDS } from '../model/a11y.ts'
 import { font, lineHeightFor, orbRadius, palette, radius, spacing } from '../model/theme.ts'
-import { paintedBox } from '../model/touch.ts'
+import type { ThemeName } from '../model/theme.ts'
+import { MIN_TOUCH_TARGET, paintedBox } from '../model/touch.ts'
 
 export type Palette = ReturnType<typeof palette>
 
@@ -36,6 +37,19 @@ const sendBox = paintedBox(A11Y_IDS.composerSend)
 // that id is the documented placeholder standing in for a floor design has not
 // measured yet; spreading the box would pin the control to 48 units wide and
 // truncate the very question it exists to show.
+
+// App-shell boxes, read from `PAINTED` on the same terms as the five above.
+const pathBox = paintedBox(SHELL_A11Y_IDS.pathTasks)
+const rowDeleteBox = paintedBox(SHELL_A11Y_IDS.tasksDeleteButton)
+const menuRowBox = paintedBox(SHELL_A11Y_IDS.menuCollectionRow)
+const segmentBox = paintedBox(SHELL_A11Y_IDS.settingsThemeControl)
+/** `.btn-primary` / `.btn-ghost` / `.back-btn` all declare `min-height: 44px`
+ * in the shell mockups, and 44 is `MIN_TOUCH_TARGET.ios` — the same number, so
+ * it is read from there rather than written down twice. */
+const MIN_BUTTON_HEIGHT = MIN_TOUCH_TARGET.ios
+/** `--scrim` in the shell mockups' own `:root`, dark theme. It is NOT in
+ * `tokens.json`; see the note on `scrim` below. */
+const SCRIM_OPACITY = 0.66
 
 export function makeStyles(c: Palette) {
   return StyleSheet.create({
@@ -285,6 +299,13 @@ export function makeStyles(c: Palette) {
       color: c.primary,
     },
     primaryButton: {
+      // § Buttons, shared with the app shell rather than declared twice — the
+      // shell mockups' `.btn-primary` is this control with an icon slot and an
+      // explicit `min-height: 44px`.
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      minHeight: MIN_BUTTON_HEIGHT,
       alignSelf: 'flex-start',
       marginTop: spacing.sm,
       paddingVertical: spacing.sm,
@@ -292,6 +313,7 @@ export function makeStyles(c: Palette) {
       borderRadius: radius.pill,
       backgroundColor: c.primary,
     },
+    selfCenter: { alignSelf: 'center' },
     primaryButtonText: {
       fontFamily: font.family.body,
       fontSize: font.size.body,
@@ -457,15 +479,291 @@ export function makeStyles(c: Palette) {
       fontSize: font.size.body,
       color: c.text.onAccent,
     },
+
+    // ---- app shell (components.md § App shell) ----
+    surface: { flex: 1, backgroundColor: c.bg.base },
+    barSpacer: { flex: 1 },
+    // § PathSwitch — ghost button, right-aligned, `text.primary`
+    pathButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      minHeight: pathBox.height,
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.sm,
+      borderRadius: radius.pill,
+    },
+    pathLabel: {
+      fontFamily: font.family.body,
+      fontSize: font.size.body,
+      fontWeight: String(font.weight.emphasis) as '600',
+      color: c.text.primary,
+    },
+    // the badge is a `radius.pill` primaryTint fill with `primary` text
+    pathBadge: {
+      minWidth: spacing.lg,
+      paddingHorizontal: spacing.sm,
+      borderRadius: radius.pill,
+      backgroundColor: c.primaryTint,
+      overflow: 'hidden',
+      textAlign: 'center',
+      fontFamily: font.family.body,
+      fontSize: font.size.meta,
+      fontWeight: String(font.weight.emphasis) as '600',
+      color: c.primary,
+    },
+    largeTitle: {
+      paddingHorizontal: spacing.gutter_mobile,
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.md,
+      fontFamily: font.family.display,
+      fontSize: font.size.display,
+      lineHeight: lineHeightFor(font.size.display, 'display'),
+      fontWeight: String(font.weight.title) as '600',
+      color: c.text.primary,
+    },
+    // § SurfaceError — "It looks calm: body-size supporting text, one accent,
+    // one button."
+    surfaceError: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.sm,
+      padding: spacing.gutter_mobile,
+    },
+    surfaceErrorTitle: {
+      fontFamily: font.family.display,
+      fontSize: font.size.title,
+      fontWeight: String(font.weight.title) as '600',
+      color: c.text.primary,
+      textAlign: 'center',
+    },
+    surfaceErrorBody: {
+      fontFamily: font.family.body,
+      fontSize: font.size.body,
+      lineHeight: lineHeightFor(font.size.body),
+      color: c.text.secondary,
+      textAlign: 'center',
+    },
+    ghostButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      minHeight: MIN_BUTTON_HEIGHT,
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.md,
+      borderRadius: radius.pill,
+    },
+    ghostButtonText: {
+      fontFamily: font.family.body,
+      fontSize: font.size.body,
+      fontWeight: String(font.weight.emphasis) as '600',
+      color: c.primary,
+    },
+    // § InlineRetryBanner — full-width strip, danger hairlines, never replaces
+    // the list
+    retryBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      paddingHorizontal: spacing.gutter_mobile,
+      paddingVertical: spacing.sm,
+      backgroundColor: c.bg.raised,
+      borderTopWidth: 1,
+      borderBottomWidth: 1,
+      borderColor: c.danger,
+    },
+    retryBannerText: {
+      flexShrink: 1,
+      fontFamily: font.family.body,
+      fontSize: font.size.meta,
+      lineHeight: lineHeightFor(font.size.meta, 'meta'),
+      color: c.text.primary,
+    },
+    // § Empty states — Tasks
+    emptyState: { padding: spacing.gutter_mobile, gap: spacing.sm, alignItems: 'flex-start' },
+    emptyHead: {
+      fontFamily: font.family.display,
+      fontSize: font.size.title,
+      fontWeight: String(font.weight.title) as '600',
+      color: c.text.primary,
+    },
+    emptyBody: {
+      fontFamily: font.family.body,
+      fontSize: font.size.body,
+      lineHeight: lineHeightFor(font.size.body),
+      color: c.text.secondary,
+    },
+    secondDoor: {
+      fontFamily: font.family.body,
+      fontSize: font.size.meta,
+      color: c.text.muted,
+    },
+    // § Skeletons — no text, no testid, `bg.hairline` on `bg.raised`
+    skeletonRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      paddingHorizontal: spacing.gutter_mobile,
+      paddingVertical: spacing.sm,
+    },
+    skeletonBox: { ...checkboxBox, borderRadius: radius.sm, backgroundColor: c.bg.hairline },
+    skeletonBar: { height: lineHeightFor(font.size.body), borderRadius: radius.sm, backgroundColor: c.bg.hairline },
+    skeletonBubble: {
+      height: lineHeightFor(font.size.body) * 2,
+      marginHorizontal: spacing.gutter_mobile,
+      marginBottom: spacing.md,
+      borderRadius: radius.bubble,
+      backgroundColor: c.bg.hairline,
+    },
+    // § MessageTaskLink — underline in `text.muted`, no colour change
+    taskLink: {
+      fontFamily: font.family.body,
+      fontSize: font.size.body,
+      color: c.text.primary,
+      textDecorationLine: 'underline',
+      textDecorationColor: c.text.muted,
+    },
+    // the row's trailing delete slot — always visible on touch
+    rowDelete: {
+      ...rowDeleteBox,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: radius.sm,
+    },
+    renameInput: {
+      flex: 1,
+      minWidth: 0,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.sm,
+      borderRadius: radius.sm,
+      borderWidth: 1,
+      borderColor: c.primary,
+      backgroundColor: c.bg.raised,
+      fontFamily: font.family.body,
+      fontSize: font.size.body,
+      color: c.text.primary,
+    },
+    // AC-31's arrival cue — AC-4's own diff-flash tint, at the moment it informs
+    rowArrived: { backgroundColor: c.primaryTint },
+    // § ListsMenu — a slide-over panel with a scrim at every width
+    // The mockups declare `--scrim` as `bg.base` at 66% (dark) — the COLOUR is
+    // the token; only the alpha is transcribed, because `tokens.json` publishes
+    // no scrim entry. Reported as a token gap rather than invented here.
+    scrim: {
+      position: 'absolute',
+      top: 0,
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: c.bg.base,
+      opacity: SCRIM_OPACITY,
+    },
+    menuPanel: {
+      position: 'absolute',
+      top: 0,
+      bottom: 0,
+      left: 0,
+      width: '82%',
+      backgroundColor: c.bg.raised,
+      paddingVertical: spacing.md,
+    },
+    menuHead: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.md,
+      paddingBottom: spacing.sm,
+    },
+    menuRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      minHeight: menuRowBox.height,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      marginHorizontal: spacing.sm,
+      borderRadius: radius.sm,
+    },
+    menuRowActive: { backgroundColor: c.primaryTint },
+    menuRowText: {
+      fontFamily: font.family.body,
+      fontSize: font.size.body,
+      color: c.text.primary,
+    },
+    menuRowTextActive: { color: c.primary },
+    menuCount: {
+      marginLeft: 'auto',
+      fontFamily: font.family.body,
+      fontSize: font.size.meta,
+      color: c.text.muted,
+    },
+    menuFoot: { marginTop: 'auto' },
+    // § SettingsRow — flat rows on `bg.base`, hairline between, no cards
+    settingsRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.bg.hairline,
+    },
+    settingsLabel: {
+      fontFamily: font.family.body,
+      fontSize: font.size.body,
+      color: c.text.primary,
+    },
+    settingsSub: {
+      fontFamily: font.family.body,
+      fontSize: font.size.meta,
+      color: c.text.muted,
+    },
+    segment: {
+      flexDirection: 'row',
+      marginLeft: 'auto',
+      borderRadius: radius.sm,
+      backgroundColor: c.bg.raised,
+      padding: spacing.xs / 2,
+    },
+    segmentButton: {
+      minHeight: segmentBox.height,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.md,
+      borderRadius: radius.sm,
+    },
+    segmentButtonOn: { backgroundColor: c.primaryTint },
+    segmentText: {
+      fontFamily: font.family.body,
+      fontSize: font.size.meta,
+      color: c.text.secondary,
+    },
+    segmentTextOn: { color: c.primary, fontWeight: String(font.weight.emphasis) as '600' },
   })
 }
 
 export type Styles = ReturnType<typeof makeStyles>
 
+/** S4's Theme row (`settings-theme-control`). `system` is what the app did
+ * before the Settings surface existed, so it stays the default and the OS
+ * remains the answer until the user says otherwise. `tokens.json` ships both
+ * themes fully; the app simply had no control (IA §3, "a capability that exists
+ * today with no surface"). */
+export type ThemeChoice = ThemeName | 'system'
+
+/** Read by `useStyles` rather than passed down, so the eight components that
+ * already call `useStyles()` need no new prop and cannot each answer the
+ * question differently. */
+export const ThemeChoiceContext = createContext<ThemeChoice>('system')
+
 export function useStyles(): { styles: Styles; colors: Palette } {
   const scheme = useColorScheme()
+  const choice = useContext(ThemeChoiceContext)
   return useMemo(() => {
-    const colors = palette(scheme === 'light' ? 'light' : 'dark')
+    const resolved: ThemeName =
+      choice === 'system' ? (scheme === 'light' ? 'light' : 'dark') : choice
+    const colors = palette(resolved)
     return { styles: makeStyles(colors), colors }
-  }, [scheme])
+  }, [scheme, choice])
 }

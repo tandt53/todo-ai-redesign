@@ -26,7 +26,12 @@
 import { AssistantController } from '../_shared/controller.ts'
 import type { ControllerDeps } from '../_shared/controller.ts'
 import type { PermissionState } from '../_shared/model/client-stores.ts'
+import type { Action } from '../_shared/model/reducer.ts'
 import type { TurnSource } from '../_shared/types.ts'
+import { initialShellState, shellBack, shellReducer } from './model/shell.ts'
+import type { SessionLoad, ShellAction, ShellState } from './model/shell.ts'
+import type { TasksLoad } from './model/tasks-view.ts'
+
 import { affordanceAnnouncement, announcementsFor } from './model/announce.ts'
 import type { AffordanceView } from './model/follow.ts'
 import { backAction } from './model/lifecycle.ts'
@@ -46,6 +51,13 @@ import type { MobilePlatform } from './model/permissions.ts'
 import { FakeReduceMotion } from './ports/app-lifecycle.ts'
 import type { Announcer, AppLifecycle, Connectivity, ReduceMotion } from './ports/app-lifecycle.ts'
 import type { MobileTranscriptSource } from './ports/transcript-source.ts'
+
+/** What the shell subscribes to: navigation plus the two read statuses, as one
+ * identity-stable object. */
+export interface ShellSnapshot {
+  shell: ShellState
+  load: { session: SessionLoad; tasks: TasksLoad }
+}
 
 export interface MobileControllerDeps extends ControllerDeps {
   speech: MobileTranscriptSource
@@ -86,6 +98,46 @@ export class MobileAssistantController extends AssistantController {
    * (components.md) is this imperative announcement — same port, same rule as
    * every other announcement (platform mobile.md). */
   private lastAffordanceAnnouncement: string | null = null
+
+  // ── The two READ STATUSES the app shell renders from ──────────────────────
+  //
+  // `information-architecture.md § 6` gives S1 and S2 a loading state and two
+  // different failure states, and none of them is expressible from `AppState`:
+  // a failed `GET /assistant/session` and a session that is genuinely empty
+  // both leave `messages: []`, and the surface stays `idle` throughout (F-001
+  // AC-29 is untouched — these are not conversation states).
+  //
+  // They are tracked HERE rather than in the shared reducer because the shared
+  // reducer is web's and mobile's one contract (F-003 AC-1) and this is a
+  // mobile-shell rendering fact. The observable is the base controller's own
+  // behaviour: `syncSession` dispatches `session-synced` iff the read landed
+  // and `refreshTasks` dispatches `tasks` iff the read landed — both return
+  // silently on failure. Counting those dispatches ACROSS one awaited call is
+  // therefore exactly "did the read succeed", with no second request and no
+  // copy of the mapping logic (L-004).
+  private sessionSyncs = 0
+  private taskDispatches = 0
+  private sessionLoadState: SessionLoad = 'loading'
+  private tasksLoadState: TasksLoad = 'loading'
+  private loadSnapshotCache: { session: SessionLoad; tasks: TasksLoad } = {
+    session: 'loading',
+    tasks: 'loading',
+  }
+  private readonly shellListeners = new Set<() => void>()
+
+  // ── Shell navigation (IA §1/§4) ──────────────────────────────────────────
+  //
+  // The shell state lives on the CONTROLLER rather than in the screen's own
+  // `useReducer` for one reason, and it is L-005's: system back is a second
+  // door into the same room. Android's hardware back and the on-screen back
+  // control must produce the same transition, and they cannot if one of them
+  // is a React state setter the controller has no reach into. One state, one
+  // reducer, two callers.
+  private shell: ShellState = initialShellState()
+  private shellSnapshotCache: ShellSnapshot = {
+    shell: initialShellState(),
+    load: { session: 'loading', tasks: 'loading' },
+  }
 
   readonly counters: MobileCounters = {
     permissionDenied: { microphone: 0, speech_recognition: 0 },
@@ -160,6 +212,101 @@ export class MobileAssistantController extends AssistantController {
   dispose(): void {
     for (const un of this.unsubscribes) un()
     this.unsubscribes.length = 0
+    this.shellListeners.clear()
+  }
+
+  // -------------------------------------------------------------------------
+  // Read status (app shell — IA §6)
+  // -------------------------------------------------------------------------
+
+  protected override dispatch(action: Action): void {
+    if (action.type === 'session-synced') this.sessionSyncs += 1
+    if (action.type === 'tasks') this.taskDispatches += 1
+    super.dispatch(action)
+  }
+
+  /**
+   * A second subscription, alongside `subscribe`. Neither the read statuses nor
+   * the shell's navigation are in `AppState`, so a failed read changes no state
+   * object and would notify nobody — which is precisely the case (SE-SESSION)
+   * that most needs to render. `shellSnapshot` returns a cached object so
+   * `useSyncExternalStore` sees a stable identity between changes.
+   */
+  subscribeShell(cb: () => void): () => void {
+    this.shellListeners.add(cb)
+    return () => {
+      this.shellListeners.delete(cb)
+    }
+  }
+
+  shellSnapshot(): ShellSnapshot {
+    return this.shellSnapshotCache
+  }
+
+  shellState(): ShellState {
+    return this.shell
+  }
+
+  /** The only writer of shell navigation. `handleBack` calls it too, which is
+   * what makes the hardware and on-screen doors one transition. */
+  shellDispatch(action: ShellAction): void {
+    const next = shellReducer(this.shell, action)
+    if (next === this.shell) return
+    this.shell = next
+    this.publishShell()
+  }
+
+  loadSnapshot(): { session: SessionLoad; tasks: TasksLoad } {
+    return this.loadSnapshotCache
+  }
+
+  sessionLoad(): SessionLoad {
+    return this.sessionLoadState
+  }
+
+  tasksLoad(): TasksLoad {
+    return this.tasksLoadState
+  }
+
+  private setLoad(over: Partial<{ session: SessionLoad; tasks: TasksLoad }>): void {
+    const session = over.session ?? this.sessionLoadState
+    const tasks = over.tasks ?? this.tasksLoadState
+    if (session === this.sessionLoadState && tasks === this.tasksLoadState) return
+    this.sessionLoadState = session
+    this.tasksLoadState = tasks
+    this.loadSnapshotCache = { session, tasks }
+    this.publishShell()
+  }
+
+  private publishShell(): void {
+    this.shellSnapshotCache = { shell: this.shell, load: this.loadSnapshotCache }
+    for (const cb of this.shellListeners) cb()
+  }
+
+  override async refreshTasks(): Promise<void> {
+    // Offline is not a failed read — no read is attempted at all, the list
+    // works untouched and the offline banner carries the news
+    // (`information-architecture.md § 6`, S2 Offline). Reporting `failed` here
+    // would put SE-TASKS on a surface whose whole job is to keep working.
+    const offline = this.state.offline || !this.onlineNow()
+    const before = this.taskDispatches
+    if (!offline) this.setLoad({ tasks: 'loading' })
+    await super.refreshTasks()
+    if (offline) {
+      this.setLoad({ tasks: 'ready' })
+      return
+    }
+    this.setLoad({ tasks: this.taskDispatches > before ? 'ready' : 'failed' })
+  }
+
+  /** SE-SESSION's Retry (`talk-session-retry-button`). */
+  retrySessionRead(): Promise<void> {
+    return this.syncSession()
+  }
+
+  /** InlineRetryBanner's and SE-TASKS' Retry (`tasks-list-retry-button`). */
+  retryTasks(): Promise<void> {
+    return this.refreshTasks()
   }
 
   // -------------------------------------------------------------------------
@@ -308,10 +455,23 @@ export class MobileAssistantController extends AssistantController {
    * in-flight turn, closes the session, or discards composer text.
    *
    * Returns true when the press was consumed (Android's BackHandler contract).
+   *
+   * The shell adds one level between the keyboard and leaving: back means "up
+   * one level" (`information-architecture.md § 4`), so a stacked surface (S4
+   * Settings → S3 Lists menu → the peer beneath) unwinds first. **S1 ⇄ S2 is a
+   * switch between peers and has no back**, so with nothing stacked the press
+   * is not consumed and the OS leaves the app — which keeps back out of § 4's
+   * navigation map as a fourth, undocumented edge.
    */
   handleBack(): boolean {
     if (backAction({ keyboardVisible: this.keyboardVisible }) === 'dismiss-keyboard') {
       this.keyboardVisible = false
+      return true
+    }
+    const { state: next, consumed } = shellBack(this.shell)
+    if (consumed) {
+      this.shell = next
+      this.publishShell()
       return true
     }
     this.onBackground()
@@ -495,11 +655,20 @@ export class MobileAssistantController extends AssistantController {
    * anything that arrives afterwards (including a replayed turn's outcome)
    * announces normally. */
   override async syncSession(): Promise<void> {
+    // ONE override, two obligations — announcements and the shell's read
+    // status. Two overrides of the same method cannot both exist, and two
+    // methods that each wrap `super.syncSession()` would be two reads.
+    const before = this.sessionSyncs
+    this.setLoad({ session: 'loading' })
     this.suppressAnnouncements = true
     try {
       await super.syncSession()
     } finally {
       this.suppressAnnouncements = false
+      // The base dispatches `session-synced` iff the read landed and returns
+      // silently if it did not, so this comparison IS "did the read succeed" —
+      // no second request, no copy of the mapping (L-004).
+      this.setLoad({ session: this.sessionSyncs > before ? 'ready' : 'failed' })
     }
   }
 

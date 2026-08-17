@@ -23,8 +23,20 @@ import { initialState, reducer } from '../../_shared/model/reducer.ts'
 import type { AppState } from '../../_shared/model/reducer.ts'
 import type { Message } from '../../_shared/types.ts'
 import { announcementFor, announcementsFor } from '../model/announce.ts'
-import { A11Y_IDS, ALL_A11Y_IDS, a11yProps, expectedIds, identityAttribute } from '../model/a11y.ts'
-import type { A11yId, SurfaceContext } from '../model/a11y.ts'
+import {
+  A11Y_IDS,
+  ALL_A11Y_IDS,
+  ALL_SHELL_A11Y_IDS,
+  RETIRED_A11Y_IDS,
+  SHELL_A11Y_IDS,
+  SHELL_IDS_BLOCKED,
+  a11yProps,
+  expectedIds,
+  expectedShellIds,
+  identityAttribute,
+} from '../model/a11y.ts'
+import type { A11yId, ShellA11yId, SurfaceContext } from '../model/a11y.ts'
+import { initialShellState } from '../model/shell.ts'
 import { appliedTurn, mobileHarness, settle, task, turnResponse } from './_helpers.ts'
 
 const ROOT = resolve(import.meta.dirname, '../../../..')
@@ -320,15 +332,73 @@ for (const name of ['nma-new', 'nma-waiting']) {
   s.ctx = { ...s.ctx, unseenBelowFold: s.state.messages.length }
 }
 
+describe('the APP SHELL catalogue — one source, three attribute spellings', () => {
+  // Parsed at run time from all three shell mockups, in both directions, for
+  // L-008's reason: a hand-copied list turns a contract check into a
+  // self-agreement check, and it fails in the direction drift does not travel.
+  const ios = catalogueOf('design/assistant/screens/app-shell-ios.html', 'accessibilityIdentifier')
+  const android = catalogueOf('design/assistant/screens/app-shell-android.html', 'resource-id')
+  const web = catalogueOf('design/assistant/screens/app-shell.html', 'data-testid')
+
+  it('all three shell mockups declare the same 29 ids', () => {
+    expect(sorted(ios)).toHaveLength(29)
+    expect(sorted(android)).toEqual(sorted(ios))
+    expect(sorted(web)).toEqual(sorted(ios))
+  })
+
+  it('the shell mockups name nothing the client does not declare somewhere', () => {
+    const known = new Set<string>([...ALL_A11Y_IDS, ...ALL_SHELL_A11Y_IDS])
+    expect(sorted([...ios].filter((id) => !known.has(id)))).toEqual([])
+  })
+
+  it('the shell catalogue invents nothing the mockups do not draw', () => {
+    expect(sorted([...ALL_SHELL_A11Y_IDS].filter((id) => !ios.has(id)))).toEqual([])
+  })
+
+  it('the seven carried-over controls keep their existing ids rather than gaining new ones', () => {
+    // components.md § Testid catalogue — app shell: "Controls that already
+    // exist keep their ids and simply render on a different surface. They are
+    // not renamed" — § Touch publishes width floors against those names.
+    const carried = sorted([...ios].filter((id) => (ALL_A11Y_IDS as readonly string[]).includes(id)))
+    expect(carried).toEqual([
+      'assistant-add-task-button',
+      'assistant-composer-input',
+      'assistant-mic-button',
+      'assistant-offline-banner',
+      'assistant-task-checkbox',
+      'assistant-task-row',
+      'assistant-undo-button',
+    ])
+    expect(sorted([...ALL_SHELL_A11Y_IDS]).filter((id) => carried.includes(id))).toEqual([])
+  })
+})
+
 describe('AC-12 — every catalogue id is reachable, and the surface invents none', () => {
   it('the enumerated surface states between them show every catalogue id', () => {
     const seen = new Set<A11yId>()
     for (const { state, ctx } of STATES) {
       for (const id of expectedIds(state, ctx)) seen.add(id)
     }
-    const declared = new Set<A11yId>(ALL_A11Y_IDS)
+    // RETIRED ids are excluded on purpose and only ever by name. The
+    // conversation catalogue still declares `assistant-drawer-button` because
+    // the three `voice-assistant-view*` mockups do and design owns those files;
+    // what retired it is the app shell, where the list is a peer surface and the
+    // hamburger is navigation (`components.md § Testid catalogue — app shell`).
+    const retired = new Set<A11yId>(RETIRED_A11Y_IDS)
+    const declared = new Set<A11yId>([...ALL_A11Y_IDS].filter((id) => !retired.has(id)))
     expect(sorted([...declared].filter((id) => !seen.has(id)))).toEqual([])
     expect(sorted([...seen].filter((id) => !declared.has(id)))).toEqual([])
+  })
+
+  it('the retired drawer button is shown by NO surface state — asserted, not merely absent', () => {
+    // Positive form on purpose: "we stopped listing it" and "it cannot come
+    // back without a decision" are different claims, and only the second is
+    // worth a test. Re-adding the control fails here.
+    for (const { name, state, ctx } of STATES) {
+      for (const id of RETIRED_A11Y_IDS) {
+        expect(expectedIds(state, ctx).has(id), `${name} still shows ${id}`).toBe(false)
+      }
+    }
   })
 
   it('the mic disappears — never merely dims — when the device has no capability', () => {
@@ -388,11 +458,63 @@ describe('AC-12 — every catalogue id is actually wired into a component', () =
     .map((f) => readFileSync(resolve(ROOT, 'src/assistant/mobile/components', f), 'utf8'))
     .join('\n')
 
-  it('each catalogue id is referenced by name from a component', () => {
+  // APPLIED, not merely MEASURED — and the distinction is not pedantry. The
+  // first version of this check asked only whether the id appeared anywhere in
+  // `components/`, and a mutation that swapped a row's delete id for another
+  // catalogue id sailed through it, because `touchProps(SHELL_A11Y_IDS.
+  // tasksDeleteButton, …)` one line above kept the NAME in the file while
+  // nothing rendered it. So the measurement helpers are stripped before the
+  // scan: an id mentioned only by `touchProps` / `paintedBox` has a hit area
+  // and no element.
+  //
+  // The narrower rule that suggests itself — require the id inside an
+  // `a11yProps(` call — is L-002's mistake in the other direction: three ids
+  // are chosen by a ternary and passed as a variable (`chipRole`, and
+  // PathSwitch's two rows), so that scan reports four correct controls missing.
+  // This one reads what it can actually see.
+  const rendered = sources.replace(/(touchProps|paintedBox)\([^)]*\)/g, '')
+  const applied = (map: 'A11Y_IDS' | 'SHELL_A11Y_IDS', key: string) =>
+    rendered.includes(`${map}.${key}`)
+
+  it('each catalogue id is APPLIED to an element by a component', () => {
+    const retired = new Set<string>(RETIRED_A11Y_IDS)
     const unwired = Object.entries(A11Y_IDS)
-      .filter(([key]) => !sources.includes(`A11Y_IDS.${key}`))
+      .filter(([key]) => !applied('A11Y_IDS', key))
       .map(([, id]) => id)
+      .filter((id) => !retired.has(id))
     expect(unwired).toEqual([])
+  })
+
+  it('every RETIRED id is referenced by no component at all', () => {
+    for (const [key, id] of Object.entries(A11Y_IDS)) {
+      if (!RETIRED_A11Y_IDS.includes(id)) continue
+      expect(applied('A11Y_IDS', key), `${id} is still rendered`).toBe(false)
+    }
+  })
+
+  it('every shell id is either wired into a component or recorded as blocked, never neither', () => {
+    // The two halves of one claim. A drawn control that is neither built nor
+    // recorded is the failure `information-architecture.md § 7` warns about —
+    // "six of the drawn surfaces cannot be built from today's data model, and
+    // the platform variants make that easier to forget by making it look
+    // finished on three platforms".
+    const orphans: string[] = []
+    const builtButStillListedAsBlocked: string[] = []
+    for (const [key, id] of Object.entries(SHELL_A11Y_IDS)) {
+      const wired = applied('SHELL_A11Y_IDS', key)
+      const blocked = Object.hasOwn(SHELL_IDS_BLOCKED, id)
+      if (!wired && !blocked) orphans.push(id)
+      if (wired && blocked) builtButStillListedAsBlocked.push(id)
+    }
+    expect(orphans, 'drawn, unbuilt and unrecorded').toEqual([])
+    expect(builtButStillListedAsBlocked, 'built but still recorded as blocked').toEqual([])
+  })
+
+  it('every blocked shell id states what blocks it', () => {
+    for (const [id, reason] of Object.entries(SHELL_IDS_BLOCKED)) {
+      expect(reason, `${id} has no reason`).toBeTruthy()
+      expect((reason as string).length, `${id}'s reason is not a reason`).toBeGreaterThan(20)
+    }
   })
 
   it('components reference ids through the catalogue constants, never as literals', () => {
