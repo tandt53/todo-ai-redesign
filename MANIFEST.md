@@ -23,6 +23,18 @@ roots:
   design: design/
   src: src/
   qa: qa/
+  # Inherited requirements from `todo-ai`, the app this project redesigns. Copied
+  # verbatim 2026-08-17 and READ-ONLY — see specs/_source/README.md for why editing
+  # them here is L-004's shape, and for the ADR-7 vs ADR-007 namespace rule.
+  # This repo has cited UC-20 / UC-52 / ADR-7 / ADR-11 since F-001 while the
+  # documents lived only in the other repository; this root makes those resolve.
+  source_requirements: specs/_source/
+  # Tooling root, not a product artifact root: the Expo shell that builds and
+  # installs the mobile client onto a simulator/emulator so its screens can be
+  # exercised on a real runtime. Added 2026-08-17 (T-057) — the first device run
+  # found two defects (BUG-003, BUG-004) that no other tier could reach.
+  # It imports src/ and design/ and is never imported BY them.
+  sim_harness: .mobile-app/
 
 shared_dir: _shared       # folder name for cross-cutting artifacts inside each root
 modules: [assistant]               # business domains in this project (e.g. auth, payments). Grows as features are specced.
@@ -118,8 +130,45 @@ ownership:
 
 ```yaml
 writers:
-  orchestrator:      ["reports/", ".claude/state/"]
-  spec-agent:        ["{specs}/"]
+  # The orchestrator also owns the simulator harness (it is orchestration
+  # tooling, owned by no agent) and may file a bug report for a defect it found
+  # itself — T-057 ran the app on a device and hit two. Filing is not the same
+  # as authoring test cases, which stays with the qa-* agents.
+  # Two additions on 2026-08-17, both with reasons that outlive the incident:
+  #
+  # {specs}/{shared_dir}/LEARNINGS.md — the convention says reviewer-agent appends
+  #   durable failure patterns. But L-009 (Gate 1 consolidation silently drops
+  #   single-lens findings) and L-010 (git checkout on a tracked file with
+  #   uncommitted changes) are ORCHESTRATION failures: they happen between
+  #   dispatches, where no reviewer is looking. If only reviewer-agent may write
+  #   here, that whole class of lesson has nowhere to go. This is a gap in the
+  #   ownership model, not an exception to it.
+  #
+  # RESTORE rights on any artifact — the orchestrator is the only party that can
+  #   see one agent destroy another's uncommitted work (T-076: a mutation-check
+  #   restore reverted the copy catalogue by 57 lines and 19 tests failed pointing
+  #   at the parser instead of the cause). This grant is for RESTORATION, never
+  #   authorship; C6 cannot express that distinction, so it is stated here for a
+  #   human to hold the orchestrator to.
+  orchestrator:      ["reports/", ".claude/state/", ".mobile-app/", "{qa}/{shared_dir}/bugs/", "{specs}/{shared_dir}/LEARNINGS.md", "{design}/", "MANIFEST.md", "{specs}/_source/"]
+  #   MANIFEST.md was missing from this list until 2026-08-17 even though the
+  #   project CLAUDE.md states the orchestrator owns it. It went unflagged all
+  #   session because C6 only checks paths a TASKS row names, and no row had
+  #   named it — an ownership fact true in prose and absent from the enforcement.
+  #   {specs}/_source/ is IMPORT-only: the orchestrator is the only party that
+  #   sees across repositories, so it brings inherited material in. Nobody edits
+  #   it afterwards, this agent included — see specs/_source/README.md.
+  #   The list must keep matching the comment above it. It first read
+  #   `{design}/{shared_dir}/components.md` while the comment claimed "any
+  #   artifact", and C6 caught the gap the moment a SECOND destroyed file (an
+  #   iOS mockup) had to be put back. A grant narrower than its own stated
+  #   reason is the same defect this repo keeps finding in ACs.
+  # spec-agent also owns the *structural* half of the spoken-frame catalogue:
+  # F-002 AC-22 designates design/_shared/components.md as the owning artifact
+  # for frame IDs and slot contracts, and the spec must be able to declare them
+  # there. WORDING in that file stays design-agent's — the two never write the
+  # same column. Granted 2026-08-17 (T-052); C6 flagged the write before this line existed.
+  spec-agent:        ["{specs}/", "{design}/{shared_dir}/components.md"]
   architect-agent:   ["{specs}/"]
   design-agent:      ["{design}/"]
   # implementers also own the root build manifests (platform docs make the
