@@ -3,7 +3,7 @@
 **Authored:** 2026-08-16 (T-020, `phase: author`) · **Executed:** 2026-08-17 (T-021, `phase: execute`) — both by qa-mobile-agent · **Spec:** `specs/assistant/F-003-mobile-surface.md` rev 1 · **Parity source:** `specs/assistant/F-001-voice-assistant-view.md` rev 3
 **Mockups:** `design/assistant/screens/voice-assistant-view-ios.html` + `-android.html` (22 ids, 17 states, copy in Vietnamese)
 **Automation:** `qa/assistant/automation/mobile/F-003-mobile-surface.spec.ts` — run with `npx vitest run qa/assistant/automation/mobile`
-**Last executed:** 2026-08-17 (T-021, `phase: execute`) — 111 passed, 0 failed
+**Last executed:** 2026-08-17 (T-021, `phase: execute`; + Gate 3 follow-up; + T-040/T-041 re-point) — 123 passed, 0 failed
 **Fixtures:** `qa/_shared/fixtures/mobile/F-003-mobile-fixtures.json` · **Namespace:** `qamob-` (users `qamob-tc{nnn}@qa.example.com`)
 **Test cases:** 40, all P1 — 35 `active` + `automated`, 5 `manual` (device-lab / screen-reader debt)
 
@@ -15,10 +15,10 @@
 
 ```
 npx vitest run qa/assistant/automation/mobile
-→ Tests  111 passed (111)                 (re-run 2026-08-17 after T-023, T-026 and the BUG-002 fix)
+→ Tests  123 passed (123)                 (re-run 2026-08-17 after T-040's de-duplication)
 
 npm run test:all
-→ Tests  431 passed (431)
+→ Tests  468 passed (468)
 
 npx tsc --noEmit
 → exit 0
@@ -59,6 +59,54 @@ not. The suite enforces this mechanically now: a TC may read `automated` only if
 its primary tier is `node-headless` **and** this automation file names its id,
 and every node-primary TC must read `automated`. Flipping TC-032 to `automated`
 turns the check red (verified by mutation).
+
+## Gate 3 follow-up — two false-green findings, both closed (2026-08-17)
+
+product-agent's Gate 3 pass found a false green in this suite and proved it by
+mutation. Recorded here because the *shape* of both findings outlives the fixes.
+
+**M1 — an assertion that could not fail.** AC-11's entire obligation in this file
+was `expect(backIsBackgroundTransition()).toBe(true)`, against a function
+declared `(): true`. A constant compared with itself. Mutating `backAction`'s
+keyboard-first clause left this suite all-green while the implementer's own unit
+test went red. AC-10's neighbour had the same shape.
+
+Both are replaced: `backAction`'s real decision table, a state-shape assertion
+for the keyboard, and **five behavioural TC-036 tests** (keyboard-first ordering,
+session stays open, in-flight turn survives and applies once, composer text
+survives, listening words kept and nothing sent). The mutation that fooled the
+old suite now reddens 2 tests; inverting the clause reddens 3.
+
+*The lesson:* a helper with a literal return type (`(): true`) cannot carry an
+AC. It reads like a named rule and tests like a tautology — and the coverage
+matrix cannot tell the difference, because C2 counts AC-id references and C5
+counts green runs, and neither reads an assertion.
+
+**M2 — three unlinked copies of AC-9's numbers.** The mockup CSS, `PAINTED`, and
+the RN `StyleSheet` each stated the same six values, with nothing connecting
+them. All agreed, so no live defect — but any copy could drift silently. The
+automation now parses the mockup at test time (the L-008 technique) and checks
+both other copies against it, with a non-vacuity guard so a dead regex fails
+loudly. Every drift direction is caught independently (verified by mutation).
+**Both gaps closed the same day.** T-040 made `styles.ts` derive its boxes from
+`paintedBox()`, and design published § Touch in `components.md` as the source for
+the four content-width floors.
+
+That retired one QA check and added three. The `PAINTED` ↔ `StyleSheet` drift
+detector went red on its own non-vacuity guard the moment T-040 landed — there
+were no literals left to compare, so it **failed by succeeding**. It is retired
+rather than inverted because
+`src/assistant/mobile/__tests__/touch-keyboard-back.test.ts` now asserts the
+stronger property *by import*, which this tier cannot do (`styles.ts` pulls in
+Flow-typed `react-native`). Verified by mutation that the check really moved:
+re-introducing a literal leaves this suite green and reddens that unit test.
+
+In its place the suite parses `components.md` § Touch and asserts `PAINTED`'s
+four floors against it, that each under-states its rendered measurement, and that
+each sits above both platform minimums. `assistant-permission-cta` is
+deliberately **not** asserted — its floor is unsettled (T-042), so the test
+instead requires it to stay absent from the table, and fails when design
+publishes one.
 
 ## Test cases
 

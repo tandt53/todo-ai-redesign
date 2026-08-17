@@ -8,9 +8,27 @@
 
 import { useMemo } from 'react'
 import { StyleSheet, useColorScheme } from 'react-native'
+import { A11Y_IDS } from '../model/a11y.ts'
 import { font, lineHeightFor, orbRadius, palette, radius, spacing } from '../model/theme.ts'
+import { paintedBox } from '../model/touch.ts'
 
 export type Palette = ReturnType<typeof palette>
+
+// AC-9's painted dimensions are declared ONCE, in `model/touch.ts` `PAINTED`,
+// and read from there — this file restates none of them. `PAINTED` is what the
+// hit-area maths and the unit tier already measure, so a box that changes there
+// moves the rendered control with it instead of leaving these two in silent
+// agreement until one is edited.
+//
+// Controls whose painted height comes from padding on type (add button, task
+// row, undo, retry, chips, cancel) are already single-sourced the other way:
+// `PAINTED` computes them from the same `spacing`/`font` tokens this stylesheet
+// uses as padding, so neither side holds a number.
+const drawerBox = paintedBox(A11Y_IDS.drawerButton)
+const checkboxBox = paintedBox(A11Y_IDS.taskCheckbox)
+const composerInputBox = paintedBox(A11Y_IDS.composerInput)
+const micBox = paintedBox(A11Y_IDS.micButton)
+const sendBox = paintedBox(A11Y_IDS.composerSend)
 
 export function makeStyles(c: Palette) {
   return StyleSheet.create({
@@ -28,8 +46,7 @@ export function makeStyles(c: Palette) {
       borderBottomColor: c.bg.hairline,
     },
     iconButton: {
-      width: 40,
-      height: 40,
+      ...drawerBox,
       borderRadius: radius.sm,
       alignItems: 'center',
       justifyContent: 'center',
@@ -112,8 +129,7 @@ export function makeStyles(c: Palette) {
       borderBottomColor: c.bg.hairline,
     },
     checkbox: {
-      width: 22,
-      height: 22,
+      ...checkboxBox,
       borderRadius: radius.pill,
       borderWidth: 2,
       borderColor: c.text.muted,
@@ -305,6 +321,11 @@ export function makeStyles(c: Palette) {
       alignItems: 'center',
       justifyContent: 'center',
       gap: spacing.md,
+      // Deliberately NOT derived from MIN_TOUCH_TARGET: this row is not
+      // interactive (the cancel button inside it carries its own hit slop), so
+      // this is a layout reservation that keeps the surface from jumping
+      // between states. Tying it to a platform minimum would make one
+      // platform's guideline govern a platform-neutral layout.
       minHeight: 44,
     },
     stateWord: {
@@ -341,7 +362,11 @@ export function makeStyles(c: Palette) {
     },
     composerInput: {
       flex: 1,
-      height: 40,
+      // Width is `flex: 1`, not a painted number: PAINTED's 200 is the minimum
+      // content width the hit-area maths assumes, and a wider field only ever
+      // grows the target. The height is the painted dimension, so it comes
+      // from the one declaration.
+      height: composerInputBox.height,
       borderRadius: radius.pill,
       borderWidth: 1,
       borderColor: c.bg.hairline,
@@ -353,9 +378,8 @@ export function makeStyles(c: Palette) {
     },
     composerInputListening: { borderColor: c.voice.listening, color: c.voice.listening },
     mic: {
-      width: 52,
-      height: 52,
-      borderRadius: orbRadius(52),
+      ...micBox,
+      borderRadius: orbRadius(micBox.width),
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: c.bg.raised,
@@ -367,9 +391,8 @@ export function makeStyles(c: Palette) {
     micDimmed: { opacity: 0.4 },
     micGlyph: { fontFamily: font.family.body, fontSize: font.size.title, color: c.text.primary },
     send: {
-      width: 36,
-      height: 36,
-      borderRadius: orbRadius(36),
+      ...sendBox,
+      borderRadius: orbRadius(sendBox.width),
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: c.primary,

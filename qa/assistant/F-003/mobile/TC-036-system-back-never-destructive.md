@@ -48,3 +48,34 @@ Leaving the assistant view is a **background transition**, not a cancel and not 
 
 ## Notes
 **Not automatable at the node tier — "system back and back-swipe" is in the spec's device-lab list.** The *consequences* (no cancel, no close, text kept) are node-assertable as a background transition and are covered by TC-025 and TC-030; what needs a device is that the real back gesture is routed to the background path at all — the thing most likely to be wired to a navigation `goBack` that unmounts and discards state.
+
+## Execution result — 2026-08-17 (Gate 3 follow-up)
+
+**This TC previously had no real automated coverage in the QA suite, and the
+coverage story said otherwise.** The only AC-11 assertion in
+`qa/assistant/automation/mobile/F-003-mobile-surface.spec.ts` was
+`expect(backIsBackgroundTransition()).toBe(true)` against a function declared
+`(): true` — a constant compared with itself. product-agent proved it at Gate 3
+by mutating `backAction`'s keyboard-first clause: the QA suite returned all-green
+while `src/assistant/mobile/__tests__/touch-keyboard-back.test.ts` correctly went
+red. AC-10's neighbour assertion had the same shape and is fixed with it.
+
+The node-testable half of AC-11 is now asserted directly, as five behavioural
+tests driving the surface:
+
+| Assertion | AC-11 clause |
+|---|---|
+| with the keyboard open, the first back dismisses it and leaves the view standing; the second leaves the view | "With the keyboard open, Android back dismisses the keyboard first and leaves the view on the second press" |
+| back leaves the session **open** on the server | "do **not** close the session"; close stays explicit or idle-driven (F-001 AC-28, ADR-004) |
+| back during an in-flight turn: the turn completes, applies exactly once, is not re-sent | "do **not** cancel an in-flight turn" |
+| back never discards composer text, and the text survives to be sent | "do not discard composer text" |
+| back while listening keeps the recognized words and sends nothing | AC-5/AC-6 govern leaving the view |
+
+Falsification, run 2026-08-17: dropping the keyboard-first clause reddens 2
+tests; inverting it reddens 3. The tautology reddened for neither.
+
+**Tier and Automation are unchanged (`device-lab`, `manual`)** — deliberately.
+The node tier proves the *decisions and their consequences*; that the real
+Android back gesture and the iOS back-swipe route into this path at all is a
+device observation, and it stays owed. The suite's tiering rule enforces that:
+a TC whose primary tier is not `node-headless` may not read `automated`.

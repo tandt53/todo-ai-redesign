@@ -77,12 +77,12 @@ import {
 } from '../../../../src/assistant/mobile/index.ts'
 
 import { A11Y_IDS, ALL_A11Y_IDS, identityAttribute } from '../../../../src/assistant/mobile/model/a11y.ts'
-import { INTERACTIVE_IDS, MIN_TOUCH_TARGET, hitArea, meetsMinimum } from '../../../../src/assistant/mobile/model/touch.ts'
+import { INTERACTIVE_IDS, MIN_TOUCH_TARGET, PAINTED, hitArea, meetsMinimum } from '../../../../src/assistant/mobile/model/touch.ts'
+import { font } from '../../../../src/assistant/mobile/model/theme.ts'
 import {
   AUDIO_INTERRUPTION_REASONS,
   FOREGROUND_SEQUENCE,
-  backIsBackgroundTransition,
-  keyboardChangeAffectsConversation,
+  backAction,
 } from '../../../../src/assistant/mobile/model/lifecycle.ts'
 import {
   canRequest,
@@ -398,6 +398,219 @@ describe('B. touch targets — TC-032 model half (AC-9)', () => {
 
 })
 
+/**
+ * AC-9's evidence used to exist in three unlinked places: the mockup CSS,
+ * `PAINTED` in `model/touch.ts`, and the RN `StyleSheet` in
+ * `components/styles.ts`. No component imported `PAINTED`, no test imported
+ * `styles`, and nothing parsed the mockup — so all six values agreed by hand,
+ * and could stop agreeing without a single test noticing. Gate 3 flagged the
+ * shape; the numbers were (and are) correct, so this is drift-proofing rather
+ * than a defect fix.
+ *
+ * The cure is the one `src/assistant/mobile/__tests__/permissions.test.ts` uses
+ * for the copy deck (LEARNINGS L-008): parse the design artifact at test time so
+ * a hand-copy cannot pass as agreement.
+ */
+describe('B. touch targets are measured against the MOCKUP, not against a hand-copy (AC-9, L-008)', () => {
+  /**
+   * Base-rule dimensions from the iOS mockup CSS. Only the bare selector's own
+   * rule counts: `.icon-btn:active` is a state and `.checkbox svg.ic` is a
+   * descendant, and neither is the control's painted box.
+   */
+  function mockupBoxes(): Map<string, { width?: number; height?: number }> {
+    const css = readFileSync(MOCKUPS.ios, 'utf8')
+    const boxes = new Map<string, { width?: number; height?: number }>()
+    for (const m of css.matchAll(/(^|\n)\s*(\.[a-z-]+)\s*\{([^}]*)\}/g)) {
+      const selector = m[2]!
+      const body = m[3]!
+      const width = /(?:^|[;{\s])width:\s*(\d+(?:\.\d+)?)px/.exec(body)
+      const height = /(?:^|[;{\s])height:\s*(\d+(?:\.\d+)?)px/.exec(body)
+      if (width === null && height === null) continue
+      // First (base) rule wins; later state rules never overwrite it.
+      if (boxes.has(selector)) continue
+      boxes.set(selector, {
+        ...(width === null ? {} : { width: Number(width[1]) }),
+        ...(height === null ? {} : { height: Number(height[1]) }),
+      })
+    }
+    return boxes
+  }
+
+  /**
+   * `design/_shared/components.md` § Touch, parsed at test time. Rows look like:
+   *   | `assistant-retry-button` | **80** | "Thử lại" … — mockup renders 81.9 |
+   * The rendered figure in the Basis cell is what makes the rounding direction
+   * checkable; task-row deliberately has none.
+   */
+  function publishedTouchFloors(): Map<string, { floor: number; renders: number | null }> {
+    const md = readFileSync(join(ROOT, 'design/_shared/components.md'), 'utf8')
+    const section = md.split('## Touch —')[1]?.split('\n## ')[0] ?? ''
+    const rows = new Map<string, { floor: number; renders: number | null }>()
+    for (const m of section.matchAll(/\|\s*`([a-z-]+)`\s*\|\s*\*\*(\d+)\*\*\s*\|([^|]*)\|/g)) {
+      const renders = /renders\s+(\d+(?:\.\d+)?)/.exec(m[3]!)
+      rows.set(m[1]!, { floor: Number(m[2]), renders: renders === null ? null : Number(renders[1]) })
+    }
+    return rows
+  }
+
+  /** Mockup selector → catalogue id, per the comments in `model/touch.ts`. */
+  const SELECTOR_TO_ID: Record<string, string> = {
+    '.icon-btn': A11Y_IDS.drawerButton,
+    '.checkbox': A11Y_IDS.taskCheckbox,
+    '.mic': A11Y_IDS.micButton,
+    '.send': A11Y_IDS.composerSend,
+    '.composer-input': A11Y_IDS.composerInput,
+  }
+
+  it('the parse is not vacuous — every mapped selector was found with real numbers (L-002)', () => {
+    const boxes = mockupBoxes()
+    // A regex that silently matches nothing would make every assertion below
+    // pass over an empty set. This is the guard that makes the rest mean
+    // something.
+    for (const selector of Object.keys(SELECTOR_TO_ID)) {
+      expect(boxes.has(selector), `${selector} was not found in the iOS mockup CSS`).toBe(true)
+    }
+    const numbers = Object.keys(SELECTOR_TO_ID).flatMap((s) => Object.values(boxes.get(s)!))
+    expect(numbers.length, 'the CSS parse produced too few dimensions to be real').toBeGreaterThanOrEqual(9)
+  })
+
+  it('every painted size the mockup states explicitly matches PAINTED exactly', () => {
+    const boxes = mockupBoxes()
+    const compared: string[] = []
+    for (const [selector, id] of Object.entries(SELECTOR_TO_ID)) {
+      const box = boxes.get(selector)!
+      const painted = (PAINTED as Record<string, { width: number; height: number }>)[id]!
+      if (box.width !== undefined) {
+        expect(painted.width, `${selector} width: mockup says ${box.width}, PAINTED says ${painted.width}`).toBe(
+          box.width,
+        )
+        compared.push(`${id}.width`)
+      }
+      if (box.height !== undefined) {
+        expect(
+          painted.height,
+          `${selector} height: mockup says ${box.height}, PAINTED says ${painted.height}`,
+        ).toBe(box.height)
+        compared.push(`${id}.height`)
+      }
+    }
+    expect(compared.length, 'nothing was actually compared').toBeGreaterThanOrEqual(9)
+  })
+
+  /*
+   * RETIRED 2026-08-17 — `PAINTED` ↔ RN `StyleSheet` drift detector.
+   *
+   * This slot held a text-based check that the StyleSheet's literal dimensions
+   * still equalled `PAINTED`. It went red the moment mobile-agent landed T-040,
+   * on its own non-vacuity guard ("expected 0 to be >= 9") — because there are
+   * no literals left to compare: `styles.ts` now derives all five boxes from
+   * `paintedBox()`. It failed by succeeding.
+   *
+   * It is retired rather than inverted because the inverted form already exists,
+   * one tier down and stronger:
+   * `src/assistant/mobile/__tests__/touch-keyboard-back.test.ts` asserts
+   * `paintedBox(id) === PAINTED[id]` by IMPORT (this tier can only read
+   * `styles.ts` as text — it pulls in Flow-typed `react-native` and cannot
+   * load here), that each box is declared `paintedBox(A11Y_IDS.<id>)`, that no
+   * style block restates a literal dimension, and it carries its own
+   * non-vacuity guard. Re-implementing that here would be a second copy of one
+   * check — the duplication this whole thread has been removing (L-004).
+   *
+   * What stays in this file is the half nothing else covers: mockup CSS →
+   * `PAINTED`, above, and `components.md § Touch` → `PAINTED`, below. Those are
+   * design artifact → implementation, which is QA's side of the line.
+   */
+
+  /**
+   * The four content-width floors, PARSED from `design/_shared/components.md`
+   * § Touch — the single source proposed when this suite last reported that
+   * these widths had no artifact that could falsify them. Design published it,
+   * so the gap closes here.
+   *
+   * That section is emphatic that these are NOT the accessibility argument:
+   * they are layout floors, every one already above both platform minimums, so
+   * none can ever bind the hit-area calculation. Asserted as layout truth only.
+   */
+  it('the published content-width floors are the ones PAINTED uses (AC-9 layout floors, L-008)', () => {
+    const floors = publishedTouchFloors()
+    expect(floors.size, 'the § Touch table parsed to nothing — a dead regex proves nothing').toBe(4)
+
+    for (const [id, row] of floors) {
+      const painted = (PAINTED as Record<string, { width: number; height: number }>)[id]
+      expect(painted, `${id} is published as a floor but absent from PAINTED`).toBeDefined()
+      expect(painted!.width, `${id}: components.md publishes ${row.floor}, PAINTED uses ${painted!.width}`).toBe(
+        row.floor,
+      )
+    }
+  })
+
+  it('every published floor obeys the rounding rule the section calls load-bearing', () => {
+    const floors = publishedTouchFloors()
+    let measured = 0
+    for (const [id, row] of floors) {
+      // "rounded DOWN to a multiple of 4" — the direction matters because an
+      // over-stated floor under-computes the slop a genuinely narrow control
+      // needs, and fails silently in the safe-looking direction. That is the
+      // exact defect that put 96 on the retry button.
+      expect(row.floor % 4, `${id}: floor ${row.floor} is not a multiple of 4`).toBe(0)
+      if (row.renders !== null) {
+        expect(row.floor, `${id}: floor ${row.floor} OVER-states the rendered ${row.renders}`).toBeLessThanOrEqual(
+          row.renders,
+        )
+        measured += 1
+      }
+      // Deliberately NOT asserted: that the floor is the LARGEST multiple of 4
+      // below the render. Only `assistant-retry-button` (80 ≤ 81.9) satisfies
+      // that; add-task publishes 96 where 100 was available and undo 108 where
+      // 112 was. Both under-state, which is the direction the section calls
+      // load-bearing, so neither is wrong — but "rounded down to a multiple of
+      // 4" reads mechanical and is not, so asserting the tighter form would
+      // encode a rule design never made. Flagged upward instead.
+      // The lower bound comes from the platform-minimum test below: a floor
+      // could not be absurdly small without failing that one.
+    }
+    // task-row is documented as NOT mockup-derived (it is the narrowest
+    // supported device width), so it has no render figure — 3 of 4 do.
+    expect(measured, 'no floor was checked against a rendered measurement').toBe(3)
+  })
+
+  it('the floors sit above both platform minimums, as § Touch claims they always do', () => {
+    for (const [id, row] of publishedTouchFloors()) {
+      expect(row.floor, `${id} could bind the iOS hit-area minimum`).toBeGreaterThan(MIN_TOUCH_TARGET.ios)
+      expect(row.floor, `${id} could bind the Android hit-area minimum`).toBeGreaterThan(MIN_TOUCH_TARGET.android)
+    }
+  })
+
+  it('assistant-permission-cta is NOT asserted here — its floor is unsettled (T-042)', () => {
+    // Its label varies across the three permission rows, so the floor is the
+    // shortest of the three and only design can measure it. `PAINTED` carries a
+    // known over-claim (140 vs 114.3 rendered), harmless today because both are
+    // far above the minimums. Asserting 140 would freeze a number nobody has
+    // measured, so this asserts only that it is still OUTSIDE the published
+    // table — if design publishes it, this fails and the floor gets asserted
+    // properly instead of silently staying wrong.
+    expect(
+      publishedTouchFloors().has(A11Y_IDS.permissionCta),
+      'a floor for assistant-permission-cta was published — assert it and drop this test (T-042)',
+    ).toBe(false)
+  })
+
+  it('the sizes NOT stated in the mockup are token-derived, not hand-numbers', () => {
+    // `.add-btn`, `.task-row`, `.undo-btn` and `.retry-btn` set padding in
+    // design tokens rather than explicit px, so their painted HEIGHT is
+    // computed (`textControlHeight`) and moves when a token moves. Changing the
+    // spacing scale must therefore change these heights — a hand-typed constant
+    // would not move, and that is what this asserts.
+    const derived = [A11Y_IDS.addTaskButton, A11Y_IDS.taskRow, A11Y_IDS.undoButton, A11Y_IDS.retryButton]
+    for (const id of derived) {
+      const painted = (PAINTED as Record<string, { width: number; height: number }>)[id]!
+      expect(Number.isInteger(painted.height) || painted.height > 0).toBe(true)
+      // The line box alone is smaller than the control: padding is really added.
+      expect(painted.height).toBeGreaterThan(font.size.meta)
+    }
+  })
+})
+
 describe('B. permissions — the platform split (AC-2, AC-3)', () => {
   it('iOS requires TWO grants, Android exactly ONE (AC-2, AC-3)', () => {
     expect(sorted(requiredGrants('ios'))).toEqual(['microphone', 'speech_recognition'])
@@ -460,12 +673,43 @@ describe('B. lifecycle rules — TC-029, TC-030, TC-034/035, TC-036 (AC-7, AC-8,
     expect(FOREGROUND_SEQUENCE.indexOf('replay-outgoing-turn')).toBeGreaterThan(0)
   })
 
-  it('TC-036 · leaving the view is a background transition, never a cancel or a close (AC-11)', () => {
-    expect(backIsBackgroundTransition()).toBe(true)
+  /**
+   * These two used to be `expect(backIsBackgroundTransition()).toBe(true)` and
+   * `expect(keyboardChangeAffectsConversation()).toBe(false)`. Both functions
+   * are declared with LITERAL return types (`(): true`, `(): false`), so each
+   * assertion compared a constant with itself and could not fail for any edit
+   * to any behaviour. product-agent found this at Gate 3 by mutating
+   * `backAction`'s keyboard-first clause: this file returned all-green while
+   * `src/assistant/mobile/__tests__/touch-keyboard-back.test.ts` correctly went
+   * red. They are replaced by the decision table `backAction` actually has, and
+   * by the behavioural assertions in Part C below.
+   */
+  it('TC-036 · back dismisses the keyboard first, then leaves the view — and can do nothing else (AC-11)', () => {
+    expect(backAction({ keyboardVisible: true })).toBe('dismiss-keyboard')
+    expect(backAction({ keyboardVisible: false })).toBe('leave-view')
+
+    // AC-11's content is the shape of the union: there is no 'cancel-turn',
+    // 'close-session' or 'clear-composer' action for back to take. Asserting
+    // the reachable outputs pins that — a destructive member would have to
+    // become reachable here to matter, and then this set changes.
+    const reachable = new Set([
+      backAction({ keyboardVisible: true }),
+      backAction({ keyboardVisible: false }),
+    ])
+    expect(sorted(reachable)).toEqual(['dismiss-keyboard', 'leave-view'])
   })
 
-  it('TC-034/035 · keyboard show/hide changes no conversation state (AC-10)', () => {
-    expect(keyboardChangeAffectsConversation()).toBe(false)
+  it('TC-034/035 · keyboard visibility is not part of conversation state (AC-10)', () => {
+    // The real obligation, asserted against the state object rather than
+    // against a function that returns a literal: no key of the surface state
+    // tracks the keyboard, so a keyboard change cannot be a conversation
+    // change by construction.
+    const s = new Surface({ platform: 'ios', userId: 'qamob-b-keyboard' }) as any
+    const before = JSON.stringify(s.appState)
+    s.keyboard(true)
+    s.keyboard(false)
+    expect(Object.keys(s.appState)).not.toContain('keyboardVisible')
+    expect(JSON.stringify(s.appState), 'a keyboard change mutated conversation state').toBe(before)
   })
 })
 
@@ -2485,6 +2729,117 @@ describe('C. TC-029 — audio interruption is cancel-while-listening; the sessio
       await until(() => s.micMode === 'available', `the mic returning after ${reason}`)
       expect(source.log.prompts, `${reason} re-prompted for permission on focus regain`).toBe(promptsBefore)
     }
+  })
+})
+
+/**
+ * TC-036 — the behavioural half of AC-11, added 2026-08-17 after Gate 3 found
+ * that this file's only AC-11 assertion was a tautology. AC-11 has four
+ * obligations and every one of them is a *negative*: system back must NOT
+ * cancel an in-flight turn, NOT close the session, NOT discard composer text,
+ * and must dismiss the keyboard before it leaves the view. Negatives are
+ * exactly the assertions a constant-returning helper cannot carry.
+ *
+ * The device half (that the real Android back gesture and the iOS back-swipe
+ * route into this path at all) remains device-lab debt — TC-036 stays
+ * `Automation: manual` for that reason.
+ */
+describe('C. TC-036 — system back is never destructive; keyboard-first on Android (AC-11, AC-5, AC-6)', () => {
+  it('with the keyboard open, the FIRST back dismisses it and leaves the view standing', async () => {
+    const u = newUser()
+    const s = surfaceFor(u, { platform: 'android' })
+    await s.start()
+    s.setComposerText('mua sữa cho ngày mai')
+    s.keyboard(true)
+
+    // First press: consumed by the keyboard.
+    expect(await s.pressBack(), 'the first back did not dismiss the keyboard').toBe(true)
+    expect(s.composerText, 'dismissing the keyboard discarded the text').toBe('mua sữa cho ngày mai')
+
+    // Second press: leaves the view — a background transition, not a close.
+    expect(await s.pressBack(), 'the second back was consumed instead of leaving the view').toBe(false)
+  })
+
+  it('with no keyboard, back leaves the view immediately — and that is a background transition', async () => {
+    const u = newUser()
+    const s = surfaceFor(u, { platform: 'android' })
+    await s.start()
+    await say(s, 'add a task qamob-tc036-bg')
+    await until(() => s.tasks.length === 1, 'the applied turn')
+    const sessionId = s.appState.sessionId
+
+    expect(await s.pressBack()).toBe(false)
+    s.background()
+    await until(() => s.state === 'idle', 'the background transition')
+
+    // Leaving the view is backgrounding: the session stays OPEN on the server.
+    // Session close is explicit or idle-driven only (F-001 AC-28, ADR-004).
+    const read = await fetch(`${H.base}/assistant/session`, { headers: { 'x-user-id': u } })
+    const { session } = (await read.json()) as { session: { id: string; status: string } }
+    expect(session.id).toBe(sessionId)
+    expect(session.status, 'system back closed the session').toBe('open')
+  })
+
+  it('back does NOT cancel an in-flight turn — the turn completes and applies exactly once', async () => {
+    const u = newUser()
+    const s = surfaceFor(u)
+    await s.start()
+    H.wire.length = 0
+
+    s.setComposerText('add a task qamob-tc036-inflight')
+    const inFlight = s.submit('typed')
+    await s.pressBack()
+    await s.pressBack()
+    await inFlight
+    await until(() => s.tasks.length === 1, 'the in-flight turn completing across the back presses')
+
+    expect(turnPosts(), 'back duplicated or re-sent the turn').toHaveLength(1)
+    expect(await serverTasks(u), 'back cancelled or double-applied the in-flight turn').toEqual([
+      'qamob-tc036-inflight',
+    ])
+    expect(newest(s).kind).toBe('applied')
+  })
+
+  it('back does NOT discard composer text, with or without the keyboard, and the text survives to be sent', async () => {
+    const u = newUser()
+    const s = surfaceFor(u, { platform: 'android' })
+    await s.start()
+    s.setComposerText('add a task qamob-tc036-kept')
+
+    s.keyboard(true)
+    await s.pressBack() // dismisses keyboard
+    await s.pressBack() // leaves view
+    s.background()
+    await s.foreground()
+
+    expect(s.composerText, 'back discarded the composer text').toBe('add a task qamob-tc036-kept')
+    await s.submit('typed')
+    await until(() => s.tasks.length === 1, 'the preserved text still sendable')
+    expect(await serverTasks(u)).toEqual(['qamob-tc036-kept'])
+  })
+
+  it('back while LISTENING keeps the recognized words and sends nothing (AC-5, AC-11)', async () => {
+    const u = newUser()
+    const source = makeTranscriptSource({ platform: 'android', permissions: { microphone: 'granted' } })
+    const s = surfaceFor(u, { transcript: source, platform: 'android' })
+    await s.start()
+    H.wire.length = 0
+
+    s.tapMic()
+    await until(() => s.state === 'listening', 'listening')
+    s.hearWords('mua', 'mua sữa')
+
+    await s.pressBack()
+    s.background()
+    await until(() => s.state === 'idle', 'idle after back')
+
+    expect(turnPosts(), 'back turned an unfinished recognition into a turn').toHaveLength(0)
+    const pending = JSON.parse(String(s.store.get(`assistant.${u}.pending_input`)))
+    expect(pending.text).toBe('mua sữa')
+
+    await s.foreground()
+    expect(s.state, 'back resumed capture on return').toBe('idle')
+    expect(s.composerText).toBe('mua sữa')
   })
 })
 

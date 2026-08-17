@@ -7,6 +7,9 @@
 // what a unit tier can hold.
 
 import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { backAction, keyboardChangeAffectsConversation } from '../model/lifecycle.ts'
 import { A11Y_IDS } from '../model/a11y.ts'
 import {
@@ -18,8 +21,10 @@ import {
   meetsMinimum,
   MIN_TOUCH_TARGET,
   PAINTED,
+  paintedBox,
   touchProps,
 } from '../model/touch.ts'
+import type { InteractiveId } from '../model/touch.ts'
 import { mobileHarness, settle, turnResponse, undoOutcome, appliedTurn } from './_helpers.ts'
 
 describe('AC-9 — every interactive element reaches the platform minimum as HIT AREA', () => {
@@ -56,6 +61,95 @@ describe('AC-9 — every interactive element reaches the platform minimum as HIT
     expect(slop.top).toBe(13)
     expect(areaOf(PAINTED[A11Y_IDS.taskCheckbox], slop)).toEqual({ width: 48, height: 48 })
     expect(hitArea(A11Y_IDS.taskCheckbox, 'android')).toEqual({ width: 48, height: 48 })
+  })
+
+  it('the four content-width floors match the table design published — parsed, not retyped', () => {
+    // These four have no mockup measurement to read (a full-bleed row, and three
+    // controls whose width is their label), so design published them in
+    // components.md. Parsing that table is what makes PAINTED a consumer of the
+    // number rather than a second declaration of it.
+    const md = readFileSync(
+      resolve(dirname(fileURLToPath(import.meta.url)), '../../../../design/_shared/components.md'),
+      'utf8',
+    )
+    const section = md.split('## Touch — minimum content widths')[1]
+    expect(section, 'the published width table is missing').toBeDefined()
+    const published = new Map<string, number>()
+    for (const line of (section as string).split('\n## ')[0]!.split('\n')) {
+      const m = /^\|\s*`([a-z-]+)`\s*\|\s*\*\*(\d+)\*\*\s*\|/.exec(line)
+      if (m !== null) published.set(m[1] as string, Number(m[2]))
+    }
+    expect([...published.keys()].sort()).toEqual([
+      'assistant-add-task-button',
+      'assistant-retry-button',
+      'assistant-task-row',
+      'assistant-undo-button',
+    ])
+    for (const [id, width] of published) {
+      expect(PAINTED[id as InteractiveId].width, `${id} floor`).toBe(width)
+    }
+    // The rounding rule the table states, checked as a property rather than
+    // trusted: a floor must UNDER-state the rendered width, because an
+    // over-stated one under-computes slop and fails silently in the
+    // safe-looking direction. 96 on retry (a copy of add-task's number) was
+    // exactly that error.
+    for (const width of published.values()) expect(width % 4).toBe(0)
+  })
+
+  describe('the painted dimensions have exactly one declaration', () => {
+    // AC-9's numbers used to live in three places — the mockup CSS, `PAINTED`,
+    // and the RN StyleSheet — all agreeing. Three copies that agree are
+    // indistinguishable from one source until someone edits one of them. QA
+    // closed mockup↔PAINTED by parsing the CSS at test time; these close
+    // PAINTED↔StyleSheet, which could not be closed from the test side because
+    // `components/styles.ts` imports react-native and cannot load in this tier.
+    const DERIVED: [constName: string, idKey: keyof typeof A11Y_IDS][] = [
+      ['drawerBox', 'drawerButton'],
+      ['checkboxBox', 'taskCheckbox'],
+      ['composerInputBox', 'composerInput'],
+      ['micBox', 'micButton'],
+      ['sendBox', 'composerSend'],
+    ]
+
+    it('paintedBox is PAINTED — the value the stylesheet spreads is the value the hit-area maths measures', () => {
+      for (const id of INTERACTIVE_IDS) {
+        expect(paintedBox(id), id).toEqual(PAINTED[id])
+      }
+      // …and a fresh object each time, since StyleSheet.create may freeze it.
+      const first = paintedBox(A11Y_IDS.micButton)
+      expect(first).not.toBe(PAINTED[A11Y_IDS.micButton])
+      first.width = 999
+      expect(PAINTED[A11Y_IDS.micButton].width).not.toBe(999)
+    })
+
+    it('the RN stylesheet reads every box from PAINTED and restates no number', () => {
+      const src = readFileSync(
+        resolve(dirname(fileURLToPath(import.meta.url)), '../components/styles.ts'),
+        'utf8',
+      )
+      let checked = 0
+      for (const [constName, idKey] of DERIVED) {
+        // Declared by derivation, from the id it claims to be about.
+        expect(src, `${constName} is not derived from PAINTED[${A11Y_IDS[idKey]}]`).toContain(
+          `const ${constName} = paintedBox(A11Y_IDS.${idKey})`,
+        )
+        checked += 1
+      }
+      // …and the style blocks that used to hold literals now spread the box.
+      for (const key of ['iconButton', 'checkbox', 'mic', 'send'] as const) {
+        const block = new RegExp(`(^|\\n)\\s*${key}:\\s*\\{([\\s\\S]*?)\\n\\s*\\},`).exec(src)
+        expect(block, `style key "${key}" not found — this map is stale`).not.toBeNull()
+        const body = block![2] as string
+        expect(body, `styles.${key} still declares a literal dimension`).not.toMatch(
+          /(?:^|[,{\s])(?:width|height):\s*\d/,
+        )
+        checked += 1
+      }
+      // Non-vacuity: a dead regex or a renamed file must fail loudly rather
+      // than pass over an empty set. This is the same guard QA put on the
+      // drift detector this replaces.
+      expect(checked, 'no derivation was actually checked').toBe(DERIVED.length + 4)
+    })
   })
 
   it('classifies the catalogue: interactive ids get targets, structural ones do not', () => {

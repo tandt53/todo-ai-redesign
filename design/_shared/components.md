@@ -123,6 +123,23 @@ Assumption per spec OQ-1: drawer + full list stay reachable. Carries the existin
 
 ---
 
+## Touch — minimum content widths (mobile, F-003 AC-9)
+
+**A different kind of constraint from the platform touch minimums, and deliberately not in the same table.** AC-9's 44pt (iOS) / 48dp (Android) are a *hit-area* rule, satisfied by `hitSlop` without moving a painted pixel. The four numbers below are *content-width floors* — the narrowest the painted control can be carrying its shortest label. **Every one of them already exceeds both platform minimums, so none of them can ever bind the hit-area calculation.** They are layout truth and a regression tripwire; they are never the accessibility argument. Merging the two tables would invite exactly that misreading.
+
+Floors are measured from the rendered iOS mockup and rounded **down** to a multiple of 4. The rounding direction is load-bearing: a floor must under-state, because an over-stated width under-computes the slop a genuinely narrow control would need, and that error fails silently in the safe-looking direction.
+
+| Element (catalogue id) | Min content width | Basis |
+|---|---|---|
+| `assistant-add-task-button` | **96** | icon + "Thêm việc" at `font.size.meta`, `padding: xs sm` — mockup renders 102.5 |
+| `assistant-task-row` | **320** | full-bleed row at the narrowest supported device width; **not** derived from the mockup, which paints 428 at its 430 design width |
+| `assistant-undo-button` | **108** | icon + "Hoàn tác" at `font.size.body`, `padding: xs md` — mockup renders 112.4 |
+| `assistant-retry-button` | **80** | "Thử lại" at `font.size.body`, `padding: sm lg` — mockup renders 81.9 |
+
+Heights are not published here: they are derived from `font.size` + `spacing` tokens at build time, so a type-scale change moves them automatically and a constant would go stale.
+
+---
+
 ## Contrast — verified pairs (AC-19 / WCAG 1.4.3, AA ≥ 4.5:1 normal text)
 
 Computed (not eyeballed) via WCAG 2.1 relative-luminance formula; every pair passed. Dark theme: `text.primary`(17.5/15.8), `text.secondary`(9.0/8.1), `text.muted`(5.6/5.0) on `bg.base`/`bg.raised`; `primary` 7.0/6.3; `voice.listening` 12.3/11.1; `danger` 7.7/6.9; `success`&`diff.add` 11.2/10.1; `question` 12.0/10.8 on base/raised; `text.onAccent` on `primary` 7.0, on `voice.listening` 12.3, on `danger` 7.7; accents on own tints: add 9.3, remove 6.8, question 9.9, listening 10.1, `text.primary` on `primaryTint` 15.6. Light theme: `text.primary` 15.5/16.6, `text.secondary` 7.8/8.4, `text.muted` 5.4/5.8 on `bg.base`/`bg.raised`; `primary` 6.1/6.5; `voice.listening` 4.6/4.8; `danger` 5.3/5.7; `success` 5.0/5.3; `question` 5.5/5.9; white on `primary` 6.5; accents on own tints: add 4.6, remove 4.8, question 5.1, listening 4.8, `text.primary` on `primaryTint` 13.7.

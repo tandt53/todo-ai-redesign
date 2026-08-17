@@ -46,6 +46,17 @@ function textControlHeight(fontSize: number, verticalPadding: number, kind: 'bod
  * (design/assistant/screens/voice-assistant-view-ios.html). Widths for
  * text-sized controls are their minimum content width; a wider label only ever
  * increases the hit area, so the minimum is the case worth asserting.
+ *
+ * Four of those content-width floors have no mockup measurement to read and are
+ * published instead in `design/_shared/components.md` § "Touch — minimum
+ * content widths": add-task 96, task-row 320, undo 108, retry 80. They are
+ * measured from the rendered mockup and rounded DOWN, and the direction is
+ * load-bearing: a floor that over-states makes `hitSlopFor` believe the box is
+ * wider than it is and under-compute the slop, which on a genuinely narrow
+ * control yields a hit area below the platform minimum while every test stays
+ * green. `retryButton` carried 96 for exactly that reason — the same number as
+ * `addTaskButton`, which is the signature of a copied constant rather than a
+ * measured one; the mockup renders 81.9, so the floor is 80.
  */
 export const PAINTED: Record<InteractiveId, Size> = {
   // .icon-btn { width: 40px; height: 40px }
@@ -73,12 +84,18 @@ export const PAINTED: Record<InteractiveId, Size> = {
     width: 108,
     height: textControlHeight(font.size.body, spacing.xs),
   },
-  // .retry-btn { padding: sm lg }
+  // .retry-btn { padding: sm lg } — floor published in components.md (renders 81.9)
   [A11Y_IDS.retryButton]: {
-    width: 96,
+    width: 80,
     height: textControlHeight(font.size.body, spacing.sm),
   },
-  // .retry-btn shape, permission CTA copy
+  // .retry-btn shape, permission CTA copy.
+  // KNOWN OVER-CLAIM, deliberately left alone: the iOS mockup renders 114.3.
+  // It is harmless today (both far above the platform minimums, so the slop is
+  // zero either way), but the real floor cannot be measured from one mockup any
+  // more — since the permission catalogue landed, this button's label varies by
+  // row ("Mở Cài đặt" / "Mở cài đặt ứng dụng" / "Cấp quyền micro"), so its floor
+  // is the SHORTEST of the three. Awaiting design's measurement; do not guess.
   [A11Y_IDS.permissionCta]: {
     width: 140,
     height: textControlHeight(font.size.body, spacing.sm),
@@ -163,6 +180,24 @@ export function areaMeetsMinimum(area: Size, platform: MobilePlatform): boolean 
 /** Does this element clear the platform minimum as HIT AREA? */
 export function meetsMinimum(id: InteractiveId, platform: MobilePlatform): boolean {
   return areaMeetsMinimum(hitArea(id, platform), platform)
+}
+
+/**
+ * The painted box as a style fragment, for `components/styles.ts` to spread
+ * into its `StyleSheet` instead of restating the numbers.
+ *
+ * This exists so AC-9's dimensions have ONE declaration. They used to have
+ * three — the mockup CSS, `PAINTED`, and the RN StyleSheet — and all three
+ * agreed, which is the failure mode worth naming: three copies that match are
+ * indistinguishable from one source right up until someone edits one of them.
+ * QA closed mockup↔PAINTED by parsing the CSS at test time; this closes
+ * PAINTED↔StyleSheet by making the second one stop being a declaration at all.
+ *
+ * A fresh object each call: `StyleSheet.create` may freeze what it is given,
+ * and `PAINTED` is shared with the hit-area maths.
+ */
+export function paintedBox(id: InteractiveId): Size {
+  return { ...PAINTED[id] }
 }
 
 /** What a component spreads onto a Pressable: the painted box stays exactly as

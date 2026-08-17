@@ -37,6 +37,14 @@ Entries are **append-only by agents**; humans may edit or delete.
 
 ### L-001 — C12's mutation tool destroys untracked files; back up before running it
 
+> **RESOLVED 2026-08-17 (orchestrator).** The repo now has a baseline commit
+> (`b83d9c6`), so `git checkout --` restores mutated files and
+> `suite-can-fail.sh` can no longer leave source corrupted while reporting PASS.
+> Verified by mutating `permissions.ts` and restoring it. The entry stays as the
+> record of four consecutive reviews where a manual restore was the only thing
+> preventing shipped mutations — and as the reason a fresh project should be
+> committed before its first C12 run.
+
 - **Date added** — 2026-08-16 by reviewer-agent
 - **Trigger** — T-008, F-001 structural review. The C12 run mutated `src/assistant/api/errors.ts` and left it mutated on disk.
 - **Pattern** — `.claude/tools/test-quality/suite-can-fail.sh` guards the working tree with `git diff --quiet` and restores with `git checkout -- <file>`. Both assume the target files are **tracked**. For an untracked file `git diff --quiet` reports clean (so the dirty-tree guard waves it through) and `git checkout --` cannot restore it (so the mutation is permanent). In a project whose first commit has not landed — which is every project during its first feature — the tool silently corrupts the implementation it was asked to evaluate. The check reports PASS while leaving broken code behind, which is worse than reporting nothing.

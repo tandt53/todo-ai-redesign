@@ -30,6 +30,8 @@ Serves F-001 (voice-assistant view): four surface states (idle · listening · t
 
 Carried from the existing app (06-uiux §1) and extended for the four states — durations/easings live in `tokens.json > motion`. State transitions crossfade at `standard` (200ms); the aurora breath loops at 2400ms; row diff-flash holds 1.6s then fades 400ms. `prefers-reduced-motion`: every animation collapses to an 80ms opacity change, end states (strikethrough, collapse, markers) fully kept.
 
+**Phase boundary — this section is live on web only.** The mobile motion stack named above (`reanimated`, `gesture-handler`, `expo-haptics`) is *declared, not installed*: none of the three is in `package.json` or `src/`, so mobile currently ships zero animation and zero haptics. That is a safe state, not a gap — with nothing animating, a reduced-motion user is already fully served. It stops being safe the moment the first animated transition lands. **Precondition on that change:** whoever adds the first mobile animation owes the reduced-motion collapse and the haptic behaviour *in the same change*, not as a follow-up — the tokens below describe the target, and until then they describe nothing that runs on mobile.
+
 ## User journey (happy path)
 
 Entry: app opens on the assistant view — idle state, task list visible, mic orb in the composer.

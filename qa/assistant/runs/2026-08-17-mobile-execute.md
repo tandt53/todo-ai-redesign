@@ -38,6 +38,89 @@ $ npm run test:all
       Tests  434 passed (434)
 ```
 
+After the Gate 3 follow-up (M1 + M2 below):
+
+```
+$ npx vitest run qa/assistant/automation/mobile
+      Tests  123 passed (123)
+$ npm run test:all
+      Tests  468 passed (468)
+$ npx tsc --noEmit
+(exit 0)
+```
+
+## 5b. Gate 3 follow-up — two false-green findings
+
+**M1 — an assertion that could not fail.** AC-11's entire obligation in this file
+was `expect(backIsBackgroundTransition()).toBe(true)`, and
+`model/lifecycle.ts` declares that function `(): true`. A constant compared with
+itself. product-agent proved it by mutating `backAction`'s keyboard-first clause:
+this suite returned 111 passed while the implementer's own
+`touch-keyboard-back.test.ts` went red. AC-10's neighbour assertion had the same
+shape.
+
+Replaced with `backAction`'s real decision table, a state-shape assertion for the
+keyboard, and five behavioural TC-036 tests. The mutation that fooled the old
+suite now reddens 2; inverting the clause reddens 3.
+
+The shape is worth more than the fix: **a helper with a literal return type
+reads like a named rule and tests like a tautology.** Nothing upstream separates
+them — C2 counts AC-id references, C5 counts green runs, and neither reads an
+assertion. The only defence is the question this file's own header asks: if the
+implementation were broken, would this test notice? For that one, the answer had
+always been no.
+
+**M2 — three unlinked copies of AC-9's numbers.** Mockup CSS, `PAINTED`, and the
+RN `StyleSheet` each stated the same six values with nothing connecting them; all
+agreed, so no live defect, but any copy could drift silently. The suite now
+parses the mockup at test time (the L-008 technique) and checks both other copies
+against it, with a non-vacuity guard. Mutation: mockup drift reddens 1, `PAINTED`
+drift reddens 2, `StyleSheet` drift reddens 1, a renamed selector reddens 2.
+
+`components/styles.ts` had to be read as **text**, not imported — it pulls in
+`react-native`, which is Flow-typed and unparseable by this tier. So that third
+check was a drift detector, not a contract.
+
+## 5c. Both M2 gaps closed the same day (T-040, T-041)
+
+**The drift detector failed by succeeding.** mobile-agent's T-040 made
+`styles.ts` derive all five boxes from a new `paintedBox()`, so the file holds
+zero numeric dimensions — and the detector went red on its own non-vacuity guard
+(`expected 0 to be >= 9`). That guard is the whole reason this read as a clean
+signal instead of a silent pass over an empty set, which is the same failure
+class as the tautologies removed in §5b.
+
+**Retired, not inverted.** The inverted form already existed one tier down and
+stronger: `touch-keyboard-back.test.ts` asserts `paintedBox(id) === PAINTED[id]`
+**by import**, that each box is declared by derivation, and that no style block
+restates a literal. Re-implementing it here would be a second copy of one check —
+the duplication this whole thread has been removing (L-004). The handoff was
+verified rather than assumed: re-introducing `const sendBox = { width: 32, height: 32 }`
+leaves the QA suite green and reddens that unit test. The check moved tiers; it
+did not disappear.
+
+**The widths gap closed too.** Design published `components.md` § Touch — the
+single source proposed last pass — so the four floors are now parsed and asserted
+(`retry` corrected 96 → **80**; 96 had been `addTaskButton`'s number copied
+across, which is exactly the signature of a hand-copied constant). Also asserted:
+each floor under-states its rendered measurement (the direction § Touch calls
+load-bearing) and each sits above both platform minimums, so none can bind the
+hit-area calculation.
+
+**One thing deliberately not asserted, and one flagged upward.**
+`assistant-permission-cta`'s floor is unsettled — its label varies across three
+catalogue rows, so only design can measure it (T-042). Rather than freeze the
+known over-claim of 140, the test asserts the id stays *absent* from the
+published table, so it fails when design publishes a floor instead of leaving
+140 quietly wrong.
+
+And § Touch reads as if "rounded down to a multiple of 4" were mechanical, but
+only `retry` (80 ≤ 81.9) is the largest such multiple: `add-task` publishes 96
+where 100 was available, `undo` 108 where 112 was. All three under-state, which
+is the safe direction, so nothing is wrong — but the tighter rule is not the one
+the numbers follow, and asserting it would encode a rule design never made. The
+suite asserts the stated invariants only.
+
 `test:all` breakdown — the mobile automation tier is the one this task owns; the
 rest is regression evidence that the shared extraction did not cost anything:
 
