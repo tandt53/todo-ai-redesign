@@ -69,3 +69,33 @@ chốt thì vẫn tạo task mà không có due date, mặc định vào Inbox."
 So: ask, do not assume. Create dateless only when the user declines to date it.
 No date is invented on the user's behalf — which was the objection to option 1 in
 the invisible-tasks question and remains the objection.
+
+---
+
+## Confirmed 2026-08-18 (second pass): overdue stays in Today
+
+The owner raised *"maybe inbox có thể bao gồm overdue tasks"* and, put the choice
+back with its cost, **confirmed the original answer**.
+
+The cost was stated plainly: overdue in *both* Today and Inbox breaks the
+disjointness that made the model feel simple twenty minutes earlier, so the real
+choice was Today **or** Inbox, not both. Inbox-instead was the cleaner-on-paper
+option — it dissolves all three problems the fold creates — and it was declined
+in favour of keeping overdue where the user will actually see it.
+
+So the fold stands, and **the three problems it creates are now work, not
+trade-offs to argue about again**:
+
+1. `open_all` is sourced from the Inbox count, an identity that held only while
+   Inbox was a superset. A user whose tasks are all future-dated would be told
+   *"All done — your list is clear"* with a full week ahead.
+2. `groupTasks` files overdue rows under a **Later** heading, so Today would
+   claim its overdue members are in the future. False, not merely unhelpful.
+3. `LSM-OVERDUE-TODAY` double-counts: *"N tasks past their date … N more due
+   today"* claims a disjointness that is gone. Against the live store today it
+   would read **"7 tasks are past their date: … 7 more due today."**
+
+Plus two structural consequences: selection rule 4 (`overdue ≥ 1 and
+open_today = 0`) is now **unsatisfiable and its frame unreachable**, and the
+Lists menu needs a **fourth row** or future-dated tasks are invisible with
+nothing erroring — which would break AC-24's reachability bound.
