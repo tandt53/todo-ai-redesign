@@ -84,6 +84,31 @@
       a11y.test.ts's pinned count red BY DESIGN (L-008); the fix belongs to src/.
     · Three new states: tasks-saved-notice · tasks-saved-notice-many · tasks-saved-offline.
 
+  REVISED 2026-08-18 (T-138) for ADR-009 § AMENDMENT 2 — Inbox is the tasks filed into no personal
+  list, not the tasks with no date. The model has TWO AXES over the open tasks: a date axis
+  (Today · Upcoming · undated) and a filing axis (Inbox · each personal list). Via T-138 in
+  design/_shared/components.md. NOTHING WAS RENAMED, NO TESTID MOVED, NO TOKEN WAS ADDED.
+  What changed:
+    · THE LISTS MENU IS TWO GROUPS. `Today · Upcoming · Done` — what a task is doing — then a
+      group break of space, then `Inbox` at the head of the filing rows with LM-LIST beneath it.
+      Inbox MOVED; it used to sit third, justified as "undated", which it no longer is.
+      The break is what stops the count column reading as arithmetic: INBOX'S COUNT CONTAINS
+      TODAY'S AND UPCOMING'S. 16 = 5 + 4 + 7 here; measured on the live store, 716 + 7 + 0 + 21
+      = 744 against 737 live rows. The counts are shown AS THEY ARE — a count omitted at zero
+      already means "none", so a suppressed one would render as a lie.
+    · INBOX IS NO LONGER FLAT. It can hold a row from every cell of the date axis, so it is the
+      one collection that can produce ALL FIVE day groups, and it draws them here: Overdue,
+      Today · {date}, Tomorrow · {date}, Later, Anytime. Flat, its overdue rows carried NO
+      lateness signal anywhere — "one signal, not two" puts lateness in the heading and nowhere
+      else — which is why this is a lost fact and not a lost heading.
+    · Today and Inbox now render the SAME ROWS under the SAME `Overdue` heading. That is the two
+      axes showing through, not a duplication bug: a task has a date cell and a filing cell.
+    · talk-landing-clear-today's count is the INBOX CONTAINER now, which is the same number the
+      menu's Inbox row shows. talk-landing-ahead (LSM-CLEAR-AHEAD) is DORMANT — `inbox_count = 0`
+      means every open task is filed, which today means there are none, so rows 1–2 fire first.
+      It is drawn and kept, blocked on `lists`, exactly as LSM-PROGRESS is blocked on
+      `completed_at`. It is NOT dead like selection rule 4, whose condition contradicts the model.
+
   STATES — 30, switchable via the dev bar (showState):
     talk-idle · talk-empty · talk-loading · talk-failed
     talk-landing · talk-landing-overdue · talk-landing-overdue-only · talk-landing-ahead ·
@@ -95,10 +120,12 @@
     tasks-default · tasks-rename · tasks-arrived · tasks-empty-first · tasks-empty-list ·
     tasks-loading · tasks-refresh-failed · tasks-offline · tasks-error
     tasks-upcoming · tasks-upcoming-empty · tasks-inbox · tasks-done
-                               ← the other three collections. tasks-inbox and tasks-done render
-                                 FLAT: no day headings, because a heading true of every row a
-                                 collection can hold is the collection's name said twice, and on
-                                 Done an Overdue heading over a finished task would be false.
+                               ← the other three collections. tasks-done renders FLAT: a heading
+                                 true of every row a collection can hold is the collection's name
+                                 said twice, and on Done an Overdue heading over a finished task
+                                 would be false. TASKS-INBOX GROUPS, and draws all five headings
+                                 (T-138) — it is a container, so it holds rows from every cell of
+                                 the date axis.
     menu-default · menu-empty · menu-failed
     settings-default · settings-save-failed
     list-new · list-name-taken
@@ -474,8 +501,10 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
 .app[data-tasks="empty-list"]  .v-tasks-empty-list  { display: block; }
 .app[data-tasks="loading"] .v-tasks-loading { display: block; }
 .app[data-tasks="error"]   .v-tasks-error   { display: block; }
-/* The three collections the four-bucket model added or changed. Inbox and Done have NO day-group
-   markup at all — "flat" is drawn by there being no .day-head to draw (components.md § TaskList). */
+/* The three collections the four-bucket model added or changed. DONE has no day-group markup at
+   all — "flat" is drawn by there being no .day-head to draw (components.md § TaskList). INBOX had
+   none either until T-138; it draws all five groups now, because a container holds rows from every
+   cell of the date axis and a flat Inbox showed its overdue rows with no lateness signal at all. */
 .app[data-tasks="upcoming"]       .v-tasks-upcoming       { display: block; }
 .app[data-tasks="upcoming-empty"] .v-tasks-upcoming-empty { display: block; }
 .app[data-tasks="inbox"]          .v-tasks-inbox          { display: block; }
@@ -574,6 +603,13 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
 .menu-row:active { background: var(--primary-tint); }
 .menu-row .mcount { margin-left: auto; font-size: var(--fs-meta); color: var(--tx-muted); font-variant-numeric: var(--font-numeric); }
 .menu-row.active { background: color-mix(in srgb, var(--primary) 7%, transparent); color: var(--primary); }
+/* THE GROUP BREAK (components.md § ListsMenu, "Where the Inbox row sits", T-138). SPACE — not a
+   rule, not a header. The views group ends and the filing group begins, and the gap is the whole
+   mechanism: numbers look like they should add up when the rows carrying them look like siblings.
+   A header here would have to be true of both Inbox and the user's own lists, and there is no such
+   word — `Lists` inside the Lists menu is self-referential and `Your lists` is false of Inbox,
+   which belongs to the app. LM-LIST's `Your lists` sub-label stays exactly where it was. */
+.menu-row.filing-head { margin-top: var(--sp-xxl); }
 .menu-foot { border-top: 1px solid var(--hairline); padding: var(--sp-sm) var(--sp-sm) var(--sp-lg); margin-top: var(--sp-sm); }
 .menu-lists { display: none; }
 .menu-lists-fail { display: none; }
@@ -758,15 +794,27 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
                    due today", a numeral zero saying in three words what one word says better.
                    Selection rule 4 is dead (unsatisfiable); this frame is reached through rule 3. -->
               <p class="lsm lsm-overdue-only">2 tasks are past their date: <span class="tasklink" role="button" tabindex="0">Send the invoice</span>, <span class="tasklink" role="button" tabindex="0">Book the flights</span>. Nothing else is due today.</p>
-              <!-- LSM-CLEAR-TODAY · open_today = 0, overdue = 0, open_all = 7. States the fact and
-                   names what is still waiting. No praise: the day is clear, the list is not. -->
+              <!-- LSM-CLEAR-TODAY · open_today = 0, overdue = 0, inbox_count = 7. States the fact
+                   and names what is still waiting. No praise: the day is clear, the list is not.
+                   ITS COUNT IS THE INBOX CONTAINER (rebound T-138) — the same number § ListsMenu
+                   draws on its Inbox row, so a user told "7 tasks are waiting in Inbox" who opens
+                   Inbox finds 7 rows. It is SELECTED on that same number, because the named set is
+                   always the counted set; selecting on the undated cell instead would fire this
+                   frame, post-lists, for an account whose undated tasks are all filed and render
+                   "0 tasks are waiting in Inbox" — false about the count and about the place. -->
               <p class="lsm lsm-clear-today">Nothing is due today. 7 tasks are waiting in Inbox.</p>
               <!-- LSM-CLEAR-AHEAD · open_today = 0, overdue = 0, inbox_count = 0, upcoming = 4.
-                   The hole that opened when open_all stopped being the Inbox count. Without this
-                   frame the account either hears "All done — your list is clear." with a full week
-                   ahead, or "0 tasks are waiting in Inbox" — false about the number and about the
-                   place. It says neither, and it does not say "Inbox" about a task that is not
-                   in Inbox. -->
+                   Without this frame the account either hears "All done — your list is clear."
+                   with a full week ahead, or "0 tasks are waiting in Inbox" — false about the
+                   number and about the place. It says neither.
+                   DORMANT, NOT DEAD (T-138). `inbox_count = 0` means every open task is FILED,
+                   and nothing can be filed until `lists` ships — so today it means there are no
+                   open tasks at all, and selection rows 1–2 fire first. This state therefore
+                   needs the 4 upcoming tasks to be sitting in personal lists. It is drawn and kept
+                   for the same reason LSM-PROGRESS is: written, correct, and blocked on one named
+                   missing thing. That is NOT selection rule 4's situation — rule 4's condition
+                   contradicts the model permanently and is struck through. This one wakes with
+                   the first filed task. -->
               <p class="lsm lsm-ahead-clear">Nothing is due today. 4 tasks are coming up.</p>
               <!-- LSM-CLEAR · open_all = 0 with history. The only shape that congratulates. -->
               <p class="lsm lsm-clear">All done — your list is clear.</p>
@@ -1023,19 +1071,99 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
           </div>
         </section>
 
-        <!-- INBOX — FLAT. NO DAY HEADINGS, AND THE ABSENCE IS THE DESIGN.
-             Inbox *is* "no date", so `Anytime` would be true of every row it can ever hold: the
-             collection's name said a second time. A heading earns its place only when the
-             collection can produce more than one (components.md § TaskList). Rows carry no meta
-             here for the same reason — there is no date to render. -->
+        <!-- INBOX — GROUPED, AND IT DRAWS ALL FIVE HEADINGS (rewritten T-138, components.md
+             § TaskList). This cell used to read "flat, and the absence is the design", on the
+             premise that Inbox *is* "no date" so `Anytime` was true of every row it could hold.
+             ADR-009 § Amendment 2 removed the premise: Inbox is the tasks filed NOWHERE, which
+             says nothing about dates, so it holds rows from every cell of the date axis and is
+             the ONE collection that can produce all five groups.
+             WHAT FLAT WAS COSTING WAS A FACT, NOT A HEADING. "One signal, not two" puts lateness
+             in the group heading and deliberately nowhere else — no badge, no red date, no icon.
+             So a flat Inbox rendered its overdue rows with NO LATENESS SIGNAL ANYWHERE, on the
+             surface every account opens. Measured on the live store: 716 rows, 7 of them overdue.
+             THE FIRST TWO ROWS BELOW ALSO APPEAR IN TODAY, under the same `Overdue` heading. That
+             is the two axes showing through — a task has a date cell AND a filing cell — and it is
+             the first thing that looks like a duplication bug in a screenshot diff. It is not one.
+             `Anytime` names a real subset here for the first time: 7 of these 16 rows, and false
+             of the 9 above it. -->
         <section class="v v-tasks-inbox">
           <div class="tasks-head">
-            <span class="count num">7 tasks waiting</span>
+            <span class="count num">16 tasks waiting</span>
             <button class="add-btn">
               <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Add task
             </button>
           </div>
-          <ul class="tasks tasks-flat">
+          <!-- THE SAME TWO ROWS TODAY DRAWS, UNDER THE SAME HEADING. Not a duplicate — a task
+               has a date cell and a filing cell, and these two are overdue AND unfiled. This
+               heading is the ONLY thing on this surface that says they are late, which is
+               exactly what a flat Inbox was throwing away. -->
+          <div class="day-group">
+            <div class="day-head overdue">Overdue</div>
+            <ul class="tasks">
+              <li class="task-row">
+                <button class="checkbox" aria-label="Mark “Send the invoice” done" aria-pressed="false"></button>
+                <span class="task-main"><span class="task-title">Send the invoice</span><span class="task-meta">Thu, Aug 14</span></span>
+              </li>
+              <li class="task-row">
+                <button class="checkbox" aria-label="Mark “Book the flights” done" aria-pressed="false"></button>
+                <span class="task-main"><span class="task-title">Book the flights</span><span class="task-meta">Fri, Aug 15</span></span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="day-group">
+            <div class="day-head">Today · Sat, Aug 16</div>
+            <ul class="tasks">
+              <li class="task-row">
+                <button class="checkbox" aria-label="Mark “Review the Q3 budget draft” done" aria-pressed="false"></button>
+                <span class="task-main"><span class="task-title">Review the Q3 budget draft</span><span class="task-meta">4:00 PM</span></span>
+              </li>
+              <li class="task-row">
+                <button class="checkbox" aria-label="Mark “Pay the electricity bill” done" aria-pressed="false"></button>
+                <span class="task-main"><span class="task-title">Pay the electricity bill</span><span class="task-meta">due today</span></span>
+              </li>
+              <li class="task-row">
+                <button class="checkbox" aria-label="Mark “1:1 with Hà” done" aria-pressed="false"></button>
+                <span class="task-main"><span class="task-title">1:1 with Hà</span><span class="task-meta">4:30 PM</span></span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="day-group">
+            <div class="day-head">Tomorrow · Sun, Aug 17</div>
+            <ul class="tasks">
+              <li class="task-row">
+                <button class="checkbox" aria-label="Mark “Grocery run for the week” done" aria-pressed="false"></button>
+                <span class="task-main"><span class="task-title">Grocery run for the week</span><span class="task-meta">morning</span></span>
+              </li>
+              <li class="task-row">
+                <button class="checkbox" aria-label="Mark “Call Mum” done" aria-pressed="false"></button>
+                <span class="task-main"><span class="task-title">Call Mum</span><span class="task-meta">10:00 AM</span></span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="day-group">
+            <div class="day-head">Later</div>
+            <ul class="tasks">
+              <li class="task-row">
+                <button class="checkbox" aria-label="Mark “Quarterly review prep” done" aria-pressed="false"></button>
+                <span class="task-main"><span class="task-title">Quarterly review prep</span><span class="task-meta">Mon, Aug 25</span></span>
+              </li>
+              <li class="task-row">
+                <button class="checkbox" aria-label="Mark “Renew the passport” done" aria-pressed="false"></button>
+                <span class="task-main"><span class="task-title">Renew the passport</span><span class="task-meta">Tue, Sep 2</span></span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- ANYTIME EARNS ITS PLACE HERE FOR THE FIRST TIME. It names 7 of these 16 rows, and
+               it is FALSE of the 9 above — which is the test: a heading earns its place when
+               the collection can produce more than one. Rows carry no meta because there is
+               no date to render, which is now a property of this GROUP, not of Inbox. -->
+          <div class="day-group">
+            <div class="day-head">Anytime</div>
+            <ul class="tasks">
               <li class="task-row">
                 <button class="checkbox" aria-label="Mark “Look into the noise-cancelling headphones” done" aria-pressed="false"></button>
                 <span class="task-main"><span class="task-title">Look into the noise-cancelling headphones</span></span>
@@ -1064,7 +1192,8 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
                 <button class="checkbox" aria-label="Mark “Sort out the bike service” done" aria-pressed="false"></button>
                 <span class="task-main"><span class="task-title">Sort out the bike service</span></span>
               </li>
-          </ul>
+            </ul>
+          </div>
         </section>
 
         <!-- DONE — FLAT, AND THIS IS THE ONE THAT WOULD HAVE SHIPPED A NEW FALSEHOOD.
@@ -1197,12 +1326,29 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
         Upcoming
       </button>
       <button class="menu-row">
-        <svg class="ic" viewBox="0 0 24 24"><path d="M4 5h16v9l-4 5H4z"/><path d="M4 12h16"/></svg>
-        Inbox <span class="mcount num">7</span>
-      </button>
-      <button class="menu-row">
         <svg class="ic" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
         Done <span class="mcount num">4</span>
+      </button>
+
+      <!-- ↑ VIEWS + THE GATE — what a task is DOING. ↓ FILING — where a task LIVES.
+           INBOX MOVED HERE (components.md § ListsMenu, "Where the Inbox row sits", T-138). It used
+           to sit third, between Upcoming and Done, justified as the "undated" step of a time
+           horizon. Under ADR-009 § Amendment 2 it is not a date at all: it is a CONTAINER, the
+           first cell of a second axis whose other cells are the personal lists directly below it.
+           Taking it out of the first group leaves that group's horizon UNBROKEN — now, ahead,
+           finished — and puts Inbox where the lists it files into already are.
+           IT KEEPS menu-collection-row. LM-COLLECTION means "derivable on device, always present",
+           which Inbox still is; LM-LIST means "fetched per user, can skeleton, can fail". That
+           split is why Inbox still renders its count in the FAILED state below, when the personal
+           section is one error line — a menu whose failure strands every open task is the failure
+           "navigation must never be the thing that breaks" forbids.
+           THE COUNT NESTS AND IS SHOWN AS IT IS: 16 = the 5 in Today + the 4 in Upcoming + the 7
+           undated. It is not a sum error. Suppressing it is not available — a count omitted at
+           zero already means "none" — and a second number in the cell would explain one signal
+           with another. The group break above carries the reason instead. -->
+      <button class="menu-row filing-head">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M4 5h16v9l-4 5H4z"/><path d="M4 12h16"/></svg>
+        Inbox <span class="mcount num">16</span>
       </button>
 
       <div class="menu-lists">

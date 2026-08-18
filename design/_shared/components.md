@@ -213,14 +213,50 @@ no appeal to priority, so nothing here rests on the ranking above surviving revi
 
 **A heading earns its place only when the collection can produce more than one.** A heading true of
 every row restates the collection's name in a different word; a heading a collection can never
-produce is dead structure. Against the four buckets:
+produce is dead structure. Against the four rows the Lists menu opens:
 
 | Collection | Groups | Why |
 |---|---|---|
-| **Today** | `Overdue`, then `Today · {date}` | Two, both true. `Tomorrow`, `Later` and `Anytime` are unreachable here by the predicate. This is also the only surface anywhere that names a task as missed — `overdue` has no collection of its own (§ LandingSummary) |
+| **Today** | `Overdue`, then `Today · {date}` | Two, both true. `Tomorrow`, `Later` and `Anytime` are unreachable here by the predicate |
 | **Upcoming** | `Tomorrow · {date}`, then `Later` | Tomorrow is the actionable edge of a future collection. `Overdue`, `Today` and `Anytime` are unreachable. `Later` is coarse — routed below |
-| **Inbox** | **none — flat** | Inbox *is* "no date", so `Anytime` is true of every row it can ever hold. That heading is the collection's name said a second time |
+| **Inbox** | **all five**, in the order above | **Rewritten 2026-08-18 (T-138).** Inbox is a container, not a date, so it holds rows from every cell of the date axis. It is the only collection that can produce all five headings — below |
 | **Done** | **none — flat** | The one that would ship a new falsehood — below |
+
+**Inbox groups, and the row it replaces was resting on a premise that no longer exists** (rewritten
+2026-08-18, T-138, for ADR-009 § Amendment 2). This cell used to read *"none — flat: Inbox **is** 'no
+date', so `Anytime` is true of every row it can ever hold."* Inbox is now the tasks filed into no
+personal list, which says nothing about dates, so it can hold an overdue row, a today row, a
+tomorrow row and a future row alongside its undated ones. `Anytime` stops being true of every row
+and becomes what it is everywhere else: one group among five.
+
+**The cost of leaving it flat is not a missing heading, it is a missing fact.** *One signal, not
+two* put lateness in the group heading and deliberately nowhere else — no badge, no red date, no
+icon on the row. A flat Inbox therefore renders its late rows with **no lateness signal anywhere on
+the surface every account opens**, and that is not hypothetical: measured against the live store,
+Inbox holds 716 rows of which **7 are overdue** and 709 are undated (ADR-009 § Amendment 2 § 4).
+Flat, those 7 sit unmarked in the middle of 716. Grouped, they sit at the top under `Overdue` in
+`color.danger`.
+
+**So `Overdue` is more load-bearing than when it was specified, not less.** It was added for one
+collection and now carries lateness on two — and on the second one it is the *only* thing carrying
+it, because Inbox's rows are not otherwise ordered by date. Nothing about the heading changes: same
+word, same `color.danger`, same size, weight and position, same silent rows beneath it. What
+changes is how much rests on it, which is worth stating because the next person tempted to soften
+it will be reading a rule written when it had half the job.
+
+**The other four headings all earn their place on Inbox too**, which is the test this section
+applies everywhere: `Today · {date}` separates what is due now from what is merely sitting there,
+`Tomorrow · {date}` and `Later` say the same about work already dated forward, and `Anytime` — for
+the first time — names a real subset rather than the whole collection. Today it names 709 of 716
+rows, which looks like the heading-true-of-everything this section forbids and is not: the rule is
+about what a collection *can* produce, and a heading that is true of 709 rows today is false of the
+7 above it.
+
+**Two collections now render the same rows under the same heading, and that is the model showing
+through rather than a duplication bug.** The 7 overdue rows appear under `Overdue` in Today *and*
+under `Overdue` in Inbox, because a task has a date cell and a filing cell at once (ADR-009
+§ Amendment 2 § 1). Recorded because it is the first thing that looks wrong in a screenshot diff
+and the first thing a reader will try to fix by removing one of the two.
 
 **Done must not day-group, and `Overdue` is exactly why.** Done is the one status predicate, so it
 holds rows with any date or none, including rows whose `due_at` is long past. Group Done by `due_at`
@@ -409,7 +445,7 @@ Three row families, one rendering, different sources:
 
 | ID | Family | Rows | Source |
 |---|---|---|---|
-| **LM-COLLECTION** | built-in | Today · Upcoming · Inbox · Done | `collectionCount(tasks, c, now)` per row — the four date predicates of ADR-009 § Amendment, **not** `task.status`, which §1 retired |
+| **LM-COLLECTION** | built-in | Today · Upcoming · Done · Inbox | `collectionCount(tasks, c, now)` per row — **not** `task.status`, which ADR-009 §1 retired. **Three of the four are date-or-status predicates and the fourth, Inbox, is a container** (§ Amendment 2). All four are derivable on device, which is what this family means |
 | **LM-LIST** | personal | the user's lists | **needs `lists` + `tasks.list_id`; no field exists** |
 | **LM-ACTION** | actions | New list · Settings | New list needs the field; Settings does not |
 
@@ -418,12 +454,20 @@ Row anatomy: icon (`icon.size.md`) + name + count, `font.size.body`, `padding: s
 § Drawer. Counts are `text.muted`, tabular, and omitted at zero for the same reason PS-TASKS
 omits its badge.
 
-**The fourth row — Upcoming (added 2026-08-18, T-128).** ADR-009 § Amendment makes all four
-collections date predicates and states this one as a requirement in architecture's own words: *the
-Upcoming collection must be reachable from the Lists menu.* Without the row a future-dated task is
-in no collection the user can open and **nothing errors**, and F-001 AC-24's reachability bound —
-which used to rest on Inbox being a superset of every open task — now rests on the four buckets
-being total, so all four have to be openable. Name, look and position are design's:
+**The fourth row — Upcoming (added 2026-08-18, T-128).** ADR-009 § Amendment states this one as a
+requirement in architecture's own words: *the Upcoming collection must be reachable from the Lists
+menu.* Without the row a future-dated task is in no **date** collection the user can open and
+**nothing errors**. Name, look and position are design's:
+
+*What carries AC-24 changed under it, twice, and the row's own requirement did not* (annotated
+2026-08-18, T-138). This paragraph read that AC-24's reachability bound *"used to rest on Inbox
+being a superset of every open task and now rests on the four buckets being total."* Under
+ADR-009 § Amendment 2 § 6 it rests on neither: the bound is carried by the **filing** axis, which
+is total and every cell of which is openable — today that is Inbox alone. The Upcoming row's
+requirement is **not retracted**, it is narrowed to what it always actually proved: without it a
+future-dated task is unreachable *as a dated task*. Recorded rather than quietly rewritten, because
+the same bound has now been justified three different ways and twice the reason expired without
+anyone noticing.
 
 - **Name: `Upcoming`.** It is the word the owner decision, ADR-009 § Amendment and
   `information-architecture.md` §9 already use, and `todo-ai ADR-11` named it before any of them;
@@ -431,12 +475,11 @@ being total, so all four have to be openable. Name, look and position are design
   agreed on. Rejected: **Later**, which is the heading `groupTasks` renders *inside* a list — one
   word naming two different sets on one screen is the collision this file refuses everywhere else;
   and **Scheduled**, which is accurate and is nobody's word for it.
-- **Position: `Today · Upcoming · Inbox · Done`.** By time horizon — now, then ahead, then
-  undated, then finished — which is the only order here with a reason behind it. Upcoming sits
-  beside Today because they are the same kind of fact one day apart. **This inserts a row and moves
-  none:** `COLLECTIONS` (`src/assistant/_shared/model/tasks.ts:42`) is already
-  `['today', 'inbox', 'done']` and `ListsMenu.tsx` renders in that order, so the
-  `Inbox · Today · Done` this table published was stale before the amendment touched it.
+- **Position: `Today · Upcoming · Done`** (amended 2026-08-18, T-138 — it read
+  `Today · Upcoming · Inbox · Done`). By time horizon — now, then ahead, then finished. Upcoming
+  sits beside Today because they are the same kind of fact one day apart. The original cell placed
+  Inbox third and justified it as *undated*; Inbox is not a date at all, and taking it out of this
+  row leaves the horizon **unbroken** rather than damaged. Where it went is the next block.
 - **Look: no new anatomy.** Icon + name + count exactly as the other three, `icon.size.md`, Lucide
   `calendar-days` — Today already carries `clock`, and clock-versus-calendar reads as now-versus-
   ahead without a label. Count `text.muted`, tabular, **and omitted at zero like every other row.**
@@ -453,12 +496,122 @@ the first one has to be seeded.
 appears exactly once (§ Testid catalogue). The Upcoming row carries that id like the other three.
 There is no `menu-upcoming-row` and nothing should be written against one.
 
-States: default · hover · focused · pressed · active (the collection now rendered) ·
+### Where the Inbox row sits (decided 2026-08-18, T-138)
+
+ADR-009 § Amendment 2 leaves this open in as many words, and it is a real question rather than a
+default: the menu's four built-in rows **stopped being four of a kind.** Today, Upcoming and Done
+are *views* — they answer *what is this task doing* from the task's own fields. Inbox is a
+*container* — it answers *where does this task live*, and it is the first cell of an axis whose
+other cells are the personal lists two families down. A menu that draws those five rows as one
+uniform column is asserting a kinship that the model does not have, and it asserts it in the one
+place a user reads the model at all.
+
+**The decision: two visual groups. `Today · Upcoming · Done`, then a group break, then Inbox at
+the head of the filing rows.**
+
+```
+Today        5          ← views + the gate: what a task is doing
+Upcoming
+Done         4
+                        ← group break: space, no rule, no header
+Inbox       16          ← filing: where a task lives. Always present
+  Your lists            ← LM-LIST's existing sub-label, when lists exist
+Work         5
+Home         2
+
+New list                ← LM-ACTION, unchanged
+Settings
+```
+
+**Four things this buys, and the first is the one that decided it.**
+
+1. **It answers the nested-count problem without a word of explanation.** Numbers look like they
+   should add up when the rows carrying them look like siblings under one heading. Separate the
+   groups and the arithmetic claim disappears: nobody adds `Today 5` to `Settings`, and nobody will
+   add it across a group break either. See the next block for what the counts actually do.
+2. **It is where the row has to end up anyway.** When `lists` ships, Inbox is the container you
+   empty *into* the rows below it. Leaving it among the views now means moving it later — after
+   users have learned where it is, which is a cost navigation should pay once and pay early.
+3. **It makes the arrival of LM-LIST additive.** The filing group already exists with one row in
+   it; lists append beneath Inbox. No new section appears, nothing reflows above.
+4. **It repairs the horizon order it removes itself from.** `Today · Upcoming · Inbox · Done` was
+   published as *now, ahead, undated, finished* and the third word is no longer true of Inbox.
+   Taking Inbox out leaves *now, ahead, finished* — monotonic, and needing no new justification.
+
+**What it costs, stated rather than implied.**
+
+- **Today the filing group holds exactly one row**, so the break buys legibility for a structure
+  the user cannot yet see. That is a real cost paid now against a payoff that lands with UC-41.
+  It is accepted because the alternative pays it later *and* moves a learned row.
+- **Inbox moves.** `COLLECTIONS` (`src/assistant/_shared/model/tasks.ts:42`) ships
+  `['today', 'inbox', 'done']` and `ListsMenu.tsx` renders in that order, so this is the first
+  change to this menu that reorders an existing row rather than inserting one. Reported to the
+  implementation pass, not fixed here.
+- **Done now sits above Inbox**, which reads oddly for one beat — finished work above the pile.
+  It is the price of grouping by kind rather than by mood, and the group break is what makes it
+  legible: Done ends one group, it does not precede Inbox within one.
+
+**Rejected — leave Inbox where it is.** Cheapest, and it is genuinely arguable: the menu is small,
+nobody sums sidebar counts on purpose, and moving a shipped row has a cost. It loses because the
+uniform column is the thing that made *four of a kind* readable in the first place, and because
+the move is deferred rather than avoided.
+
+**Rejected — Inbox first, alone, above the views.** This is the shape several mature todo apps
+use, and the argument for it is triage: Inbox is where you start, so it goes where you look first.
+It loses for two reasons. It separates Inbox from the lists it files into — the two halves of one
+axis at opposite ends of one menu, which is the same mistake as the uniform column wearing
+different clothes. And it ranks the menu around a state that is explicitly temporary: Inbox holds
+every open task **only** because nothing can be filed yet, and ADR-009 § Amendment 2 § 2 is
+explicit that it narrows by itself. Ordering navigation around a number that is designed to shrink
+is how the order becomes wrong quietly.
+
+**The group break is space, not a rule or a header.** Whitespace groups before borders do, and a
+header over the filing group would have to be a word true of both Inbox and the user's own lists —
+`Lists` inside the Lists menu is self-referential, and `Your lists` is false of Inbox, which
+belongs to the app. LM-LIST's existing `Your lists` sub-label stays exactly where it is, labelling
+exactly what it always did, and is absent while there are no lists.
+
+**The testid contract does not move, and that is not a convenience — it is the correct split.**
+Inbox keeps `menu-collection-row`. LM-COLLECTION means *rows the app always has and computes on
+device*; LM-LIST means *rows fetched per user, which can skeleton and can fail*. Inbox is a
+built-in by that test whichever group it renders in, and the § ListsMenu states below depend on it
+being one: in the **failed** state the personal section is a single error line and **Inbox still
+renders its count**, because a menu whose failure strands every open task is exactly the failure
+"Navigation must never be the thing that breaks" forbids. Visual grouping and contract family cut
+across each other here, deliberately, and no new testid is added.
+
+### The counts nest, and the menu shows them as they are
+
+Inbox's number **contains** Today's and Upcoming's — a task has a date cell and a filing cell at
+once, so it is counted on both axes. Measured: 716 + 7 + 0 + 21 = 744 against 737 live rows
+(ADR-009 § Amendment 2 § 4). **The column no longer sums to a headcount, and it did before.**
+
+**Shown as they are.** The two alternatives are worse in ways that are not close.
+
+- **Suppressing Inbox's count is not available**, and the reason is already in this section: counts
+  are *omitted at zero*. A number withheld for any other reason therefore renders as the claim
+  *zero*, and hiding the largest true number in the menu behind a symbol that means "none" is a
+  worse falsehood than the one it was avoiding.
+- **Distinguishing it** — `716 (7 today)`, or a second count treatment — puts two numbers in one
+  cell to explain the first, which is one signal explaining another rather than one signal per
+  meaning, and it forks a count contract that is currently one line long.
+
+**Why this does not read as arithmetic that does not add up: nothing in the menu ever claimed to be
+a partition.** Each row is a label on a set; no row is labelled *everything*; there is no total.
+The group break carries the rest — within the first group the rows are disjoint by construction,
+and the second group's rows partition the open tasks exactly, which is the only place in this menu
+where addition means anything at all. The overlap lives *between* the groups, which is precisely
+where the break is drawn.
+
+**And it is worth naming that this is expected**, for the same reason the bare Upcoming row is:
+*the sidebar counts don't add up* is a plausible day-one bug report, and against the live store
+it is off by exactly the 7 rows that are dated and unfiled. It is the model, not a defect.
 **loading** (built-ins render immediately — they are derivable on device and must never wait on
 a network; only the personal section skeletons, two rows) · **failed** (one line in the personal
 section, "Couldn't load your lists" + Retry; built-ins and Settings still work) · **empty** (no
-personal lists: the section is absent, `New list` carries the invitation — the menu is never
-empty, it always holds the built-ins, New list and Settings).
+personal lists: the `Your lists` sub-label and its rows are absent, `New list` carries the
+invitation — the menu is never empty, it always holds the built-ins, New list and Settings, and
+**the filing group is never empty either, because Inbox is always in it**).
 
 **Navigation must never be the thing that breaks.** Every failure state above keeps the built-in
 collections and the Settings row live, because a menu that fails closed strands the user with no
@@ -791,8 +944,9 @@ AC-14 / AC-15 — this product does not bluff).
 |---|---|---|
 | `open_today` | open tasks dated **on or before** today — overdue included (ADR-009 § Amendment §3) | `collectionCount(tasks, 'today', now)` — **the same call the PathSwitch badge makes.** § PathSwitch fixes this as one number, never a second definition of it |
 | `upcoming` | open tasks dated **after** today | `collectionCount(tasks, 'upcoming', now)` — **added 2026-08-18 (T-128)** |
-| `inbox_count` | open tasks with **no date at all** | `collectionCount(tasks, 'inbox', now)` — **added 2026-08-18 (T-128).** This is what that call returns now that Inbox is a date predicate rather than a superset |
-| `open_all` | every unfinished task | `open_today + upcoming + inbox_count`. **Not the Inbox count** — see below |
+| `undated` | open tasks with **no date at all** | derivable from `due_at` + `status`, **no new field and no collection** — the `undated` cell of ADR-009 § Amendment 2's date axis, which has no surface of its own. The predicate belongs beside `dueToday` in `src/assistant/_shared/model/tasks.ts`, not in the summary composer (L-004). **Added 2026-08-18 (T-138)** — it is the fact `inbox_count` used to name |
+| `inbox_count` | open tasks **filed into no personal list** — the Inbox **container** | `collectionCount(tasks, 'inbox', now)` — **same call, rebound 2026-08-18 (T-138).** The call did not move; the predicate underneath it did (ADR-009 § Amendment 2 § 2). This is the number § ListsMenu's Inbox row shows |
+| `open_all` | every unfinished task | `open_today + upcoming + undated` — the three cells of the **date** axis, which is the axis that partitions. **Not the Inbox count** — see below, and INV-INBOX-FILING |
 | `overdue` | open tasks whose `due_at` is strictly before the start of today | derivable from `due_at` + `status`, **no new field**. The predicate belongs beside `dueToday` in `src/assistant/_shared/model/tasks.ts`, not in the summary composer (L-004: one home per fact). **Now a strict subset of `open_today`, where the two used to be disjoint** |
 | `done_today` | tasks completed today | **not readable.** See "The one shape that is blocked" below |
 
@@ -808,13 +962,30 @@ corrected `open_all` and a user with nothing in Inbox is told **"3 tasks are wai
 Both are false, and they are false about different things, which is what says these are two facts.
 Give each a name and one home (L-004, applied before the drift rather than after it).
 
-**Four facts, three calls.** `open_today`, `upcoming` and `inbox_count` are `collectionCount` on
-the three open collections, and `open_all` is their sum — so the summary, the PathSwitch badge and
-the Lists menu counts cannot disagree, because there is no second definition anywhere for them to
-disagree with. `overdue` is the one predicate with no collection of
-its own, deliberately: ADR-009 § Amendment folded it into Today rather than giving it a surface, so
-the summary is the only place it is named at all. That is worth holding on to when reading the
-ranking argument below.
+**They are exactly equal again today, and that is INV-INBOX-FILING's subject — never a reason to
+re-merge them** (added 2026-08-18, T-138). Inbox now means *filed nowhere*; nothing can be filed,
+so every open task is in Inbox, so `open_all` and `inbox_count` are the same number — 716 = 716
+globally and in every one of the 193 accounts holding live tasks (ADR-009 § Amendment 2 § 4). **The
+equality is a reading of the store, not a definition, and neither number may be sourced from the
+other** (`specs/assistant/data-model.md § INV-INBOX-FILING`). This paragraph is the physical place
+a re-merge would land, which is why the note sits here and not only in the ADR: the split above was
+made this morning *because* the two had stopped being equal, and anyone who notices they are equal
+again and merges them reintroduces exactly the sentence the split was made to prevent — a user with
+a full week ahead told **"All done — your list is clear."** The guard that works without anyone
+remembering the rule is that the two expressions are not written the same: `open_all` is a sum over
+the date axis, `inbox_count` is a single call on the filing axis. Keep them that way.
+
+**Six facts, three calls** (was *four facts* until T-138; the count came out of the heading two
+passes ago for this reason and is written here only because the shape matters). `open_today`,
+`upcoming` and `inbox_count` are `collectionCount` on three collections — so the summary, the
+PathSwitch badge and the Lists menu counts cannot disagree, because there is no second definition
+anywhere for them to disagree with, and `inbox_count` is now literally the number § ListsMenu draws
+on its Inbox row. `open_all` is a **sum**, over the date axis only. `overdue` and `undated` are the
+two predicates with **no collection and no surface of their own**: ADR-009 § Amendment folded
+overdue into Today, and § Amendment 2 leaves `undated` a cell of the date axis that nothing opens.
+Both are named in sentences and nowhere else, which is worth holding on to when reading the ranking
+argument below — and `undated` is the reason `open_all` can still be a sum at all now that
+`inbox_count` measures the other axis.
 
 `now` is the device clock, the same one `dueToday` already uses. The summary is a **message at a
 timestamp, not a live counter** — if the user completes something afterwards it does not rewrite
@@ -862,10 +1033,10 @@ is why).
 | **LSM-AHEAD-N** | `open_today ≥ 2` | `count`, `title_list` | `{count} tasks today: {title_list}.` |
 | **LSM-OVERDUE** | `overdue ≥ 1`, `count_secondary = 0` — **re-pointed 2026-08-18 (T-128)**; reached through selection rule 3, not the dead rule 4 | `count`, `title_list` | 1 → `One task is past its date: {title_list}. Nothing else is due today.` · ≥2 → `{count} tasks are past their date: {title_list}. Nothing else is due today.` |
 | **LSM-OVERDUE-TODAY** | `overdue ≥ 1`, `count_secondary ≥ 1` | `count`, `count_secondary` (= `open_today − overdue`), `title_list` | 1 overdue, 1 other → `One task is past its date: {title_list}. One other is due today.` · 1 overdue, ≥2 others → `One task is past its date: {title_list}. {count_secondary} others are due today.` · ≥2 overdue, 1 other → `{count} tasks are past their date: {title_list}. One other is due today.` · ≥2 overdue, ≥2 others → `{count} tasks are past their date: {title_list}. {count_secondary} others are due today.` |
-| **LSM-CLEAR-TODAY** | `overdue = 0`, `open_today = 0`, `inbox_count ≥ 1` | `count` (= **`inbox_count`**, re-bound 2026-08-18 T-128 — it was `open_all`) | 1 → `Nothing is due today. One task is waiting in Inbox.` · ≥2 → `Nothing is due today. {count} tasks are waiting in Inbox.` |
+| **LSM-CLEAR-TODAY** | `overdue = 0`, `open_today = 0`, `inbox_count ≥ 1` | `count` (= **`inbox_count`**, re-bound 2026-08-18 T-128 — it was `open_all`; **its meaning re-bound again T-138**, from the undated cell to the Inbox container) | 1 → `Nothing is due today. One task is waiting in Inbox.` · ≥2 → `Nothing is due today. {count} tasks are waiting in Inbox.` |
 | **LSM-CLEAR** | `open_all = 0`, and the account has conversation history | none | `All done — your list is clear.` |
 | **LSM-PROGRESS** | `done_today ≥ 1`, `overdue = 0`, `open_today ≥ 1` | `count`, `count_secondary`, `title_list` | 1 → `You've finished one today. {count_secondary} left: {title_list}.` · ≥2 → `You've finished {count} today. {count_secondary} left: {title_list}.` — **not selectable today; see below** |
-| **LSM-CLEAR-AHEAD** | `overdue = 0`, `open_today = 0`, `inbox_count = 0` (so `upcoming ≥ 1`) — **added 2026-08-18 (T-128)** | `count` (= `upcoming`) | 1 → `Nothing is due today. One task is coming up.` · ≥2 → `Nothing is due today. {count} tasks are coming up.` |
+| **LSM-CLEAR-AHEAD** | `overdue = 0`, `open_today = 0`, `inbox_count = 0`, `upcoming ≥ 1` — **added 2026-08-18 (T-128); `upcoming ≥ 1` promoted from an implication to a condition T-138** | `count` (= `upcoming`) | 1 → `Nothing is due today. One task is coming up.` · ≥2 → `Nothing is due today. {count} tasks are coming up.` — **not selectable until `lists` ships; see below** |
 
 In LSM-OVERDUE-TODAY and LSM-PROGRESS, `count` is the named set and `count_secondary` is the
 unnamed one. Only one set is named per message: naming both needs two `title_list`s and produces a
@@ -898,6 +1069,49 @@ that sentence, written for this exact fact under the old model. So the frame kee
 position and its text, and only its door changes: it was rule 4's, it is now rule 3's
 `count_secondary = 0` branch. The dead rule below cost a row; it did not cost a sentence.
 
+**LSM-CLEAR-TODAY keeps naming Inbox and is now selected by Inbox, which is what makes the
+sentence survive lists** (decided 2026-08-18, T-138). Rebinding `inbox_count` to the container
+forces a choice this frame had never had to make, because until today the two candidate numbers
+were the same one:
+
+- **Chosen — count `inbox_count`, select on `inbox_count ≥ 1`.** *The named set is always the
+  counted set* is this section's own rule, and a frame selected on a variable other than the one it
+  names breaks it one step earlier than the case that rule was written for. It is true in both
+  worlds: the sentence claims a place, the number counts that place, and post-lists both narrow
+  together. It also keeps the summary's number **identical to the number § ListsMenu draws on its
+  Inbox row** — a user told *"7 tasks are waiting in Inbox"* who opens Inbox and finds 7 rows.
+- **Rejected — select on `undated ≥ 1` and keep counting `inbox_count`.** Sound today and only
+  today: post-lists an account can have undated tasks all filed into lists, and the frame would
+  fire and render *"0 tasks are waiting in Inbox."* — a numeral zero that is also false about the
+  place. Buying reachability for LSM-CLEAR-AHEAD with a sentence that will lie later is the trade
+  this file refuses everywhere else.
+- **Rejected — re-word the sentence to the date axis: *"{count} tasks have no date."*** Total in
+  both worlds, and it fails on the door. `undated` is a cell with **no surface** — no menu row,
+  nothing to open — so post-lists the sentence would name a set the user cannot go and look at,
+  while its members sit scattered across lists reachable only through those lists (ADR-009
+  § Amendment 2 § 6). It would also put a second number named *Inbox-ish* on Talk while the menu
+  shows a different one, which is the two-surfaces-two-numbers failure the fact table exists to
+  prevent.
+
+**So LSM-CLEAR-AHEAD is dormant, not dead — and the distinction from rule 4 is the whole point.**
+`inbox_count = 0` means *every open task is filed*, which today means *there are no open tasks*,
+which rows 1–2 have already caught. So the frame selects nothing right now. That is **not** row
+4's situation: row 4's condition is a contradiction in the model itself (overdue lives inside
+Today, permanently), so it was struck through. This one is unsatisfiable only while `isFiled` is
+constant `false`, and it **wakes the first time a task is filed** — the same category as
+LSM-PROGRESS, which is written, drawn and blocked on `completed_at`. The frame therefore keeps its
+ID, its slots, its text and its mockup state, and is labelled *blocked on `lists`* rather than
+struck. Nothing observable is lost today: `upcoming` has no member anywhere in the live store, so
+the state that would distinguish the two bindings is unreachable against real data either way.
+
+**What this owes when `lists` ships, written down now because the last two versions of this
+dependency were both found afterwards.** Rule 8 will need a third branch for the one state that
+falls out of it: `inbox_count = 0`, `upcoming = 0`, `open_all ≥ 1` — everything the account has is
+undated *and* filed. It is unreachable today (nothing can be filed), and it is not designed here,
+because the honest frame for it names the filing axis and there is no menu, no list and no row to
+name yet. Until then the table is total by the proof below; from then it is not, and this
+paragraph is where the person who ships `lists` finds that out.
+
 ### Which shape applies — the selection rule
 
 **Preconditions, both required, or there is no summary at all.** The task list must be readable
@@ -917,7 +1131,7 @@ Then, **first match wins**:
 | 5 | `done_today ≥ 1` and `open_today ≥ 1` | **LSM-PROGRESS** — unreachable while `done_today` is unreadable; falls through to 6/7 |
 | 6 | `open_today ≥ 2` | **LSM-AHEAD-N** |
 | 7 | `open_today = 1` | **LSM-AHEAD-1** |
-| 8 | `open_today = 0` (so `upcoming + inbox_count ≥ 1`) | **LSM-CLEAR-TODAY** when `inbox_count ≥ 1`; **LSM-CLEAR-AHEAD** when `inbox_count = 0` |
+| 8 | `open_today = 0` (so `upcoming + undated ≥ 1`) | **LSM-CLEAR-TODAY** when `inbox_count ≥ 1`; **LSM-CLEAR-AHEAD** when `inbox_count = 0` — the second branch selects nothing until `lists` ships |
 
 **The rule is total, and that is the property to test. Re-proved 2026-08-18 (T-128) against the
 four buckets — and the re-proof deleted a row rather than adding one.** After rows 1–2 remove
@@ -929,12 +1143,28 @@ F-002 AC-22's "an unenumerated combination has no frame and therefore fails" dem
 enumerating rather than by failing. **Row 4 is vacuous, not missing**, and that is the difference
 this re-proof was for.
 
+**Re-proved a second time, 2026-08-18 (T-138), against the two axes — and this time the table
+neither grew nor lost a row.** Only two rows touch a fact this amendment moved. Row 8's parenthesis
+is now `upcoming + undated ≥ 1`, because `open_all` is the sum of the **date** axis and
+`inbox_count` is no longer one of its terms; the remainder after `open_today = 0` is therefore the
+other two date cells, and the parenthesis states what it always meant. Row 8's *branch* still
+splits `inbox_count` in two directions and so is still total by inspection — every state reaching
+row 8 has either something in Inbox or nothing in it. Rows 1–7 do not mention `inbox_count` at all
+and are untouched: `open_all`, `overdue`, `open_today` and `done_today` are all date-axis or status
+facts, and this amendment moved neither axis. **The one thing that changed is which branch of row 8
+is reachable:** `inbox_count = 0` now implies `open_all = 0` while nothing can be filed, so rows
+1–2 always fire first and LSM-CLEAR-AHEAD is dormant. Dormant is not vacuous — the branch is
+correct and its state is real, it is merely unreachable until `isFiled` can answer `true`. The
+table is total today; the state that will break that totality is named in the block above, not
+discovered later.
+
 Two rows now fan out to two frames each, and each fan-out splits **one variable in two
 directions**, so it is total by inspection: row 3 on `count_secondary ≥ 1 | = 0`, row 8 on
 `inbox_count ≥ 1 | = 0`. Neither introduces a state; each names which frame an already-owned state
 takes. The requirement — *a future fact must re-prove this table is total, not merely add a row to
 it* — is what forced both splits into existing rows and forced row 4 to be struck rather than
-quietly deleted. `upcoming` was added as a fact and the table did not grow.
+quietly deleted. `upcoming` was added as a fact and the table did not grow; `undated` was added as
+a fact and it did not grow either.
 
 **Overdue still outranks everything except an empty list — but the reason changed, and the old
 one is now false** (rewritten 2026-08-18, T-128; the sentence it replaces is preserved in the
@@ -951,11 +1181,17 @@ tasks and two due today gets LSM-AHEAD-N: *"9 tasks today: A, B, C and 6 more."*
 is true, the titles are the right titles, and the word *late* never appears — the missed work is
 folded anonymously into a count of the set that swallowed it. That is precisely what § "The named
 set is always the counted set" exists to forbid, and it is worse here than elsewhere because
-`overdue` is the one fact in the table with no collection of its own: fold it into a count in the
-summary and the app has no surface anywhere that says a task was missed. Row 3 is the only frame
-that names those tasks, so naming is now the whole argument for its rank. It is a weaker argument
-than the one it replaces and it is sufficient: the ranking used to prevent a lie, and now it
-prevents a silence.
+`overdue` is one of the two facts in the table with no collection of its own: fold it into a count
+in the summary and **Talk** says nothing about missed work at all. Row 3 is the only frame that
+names those tasks, so naming is now the whole argument for its rank. It is a weaker argument than
+the one it replaces and it is sufficient: the ranking used to prevent a lie, and now it prevents a
+silence.
+
+*Narrowed 2026-08-18 (T-138): this paragraph used to say the app would have **no surface anywhere**
+naming a missed task. That was already loose once § TaskList added the `Overdue` day heading, and
+it is now doubly false — the heading renders on Today **and** on Inbox (§ TaskList). The claim is
+true of Talk, which is the surface this rule governs, and it is left at that altitude. The rank is
+unchanged.*
 
 **Mid-day is a fact, not a clock.** LSM-PROGRESS is selected by `done_today ≥ 1` — which can only
 be true after the user has finished something today, which *is* mid-day — and the time is never
@@ -977,7 +1213,8 @@ reads well on a demo and lies on someone else's data.
 | Zero tasks, but history exists (everything deleted or completed) | **LSM-CLEAR** | The account has done something; "All done" is true |
 | Everything done | **LSM-CLEAR** | Same row — the summary counts open tasks, and "done" and "deleted" leave the same count |
 | Tasks exist, none due today, none overdue, something in Inbox | **LSM-CLEAR-TODAY**, naming the Inbox count | Not LSM-CLEAR: the list is not clear, only the day is. If anything is also upcoming it goes unnamed — under-informing by one number, one tap from the Lists menu, and the trade this section makes everywhere |
-| Tasks exist, **all of them dated in the future** | **LSM-CLEAR-AHEAD** — `Nothing is due today. {count} tasks are coming up.` | Not LSM-CLEAR: `open_all` counts Upcoming, so the list is not clear and nobody is congratulated for a week of work. Not LSM-CLEAR-TODAY: *"0 tasks are waiting in Inbox"* is false about the count and false about the place |
+| Tasks exist, **all of them dated in the future** | **LSM-CLEAR-TODAY** — `Nothing is due today. {count} tasks are waiting in Inbox.` **(changed 2026-08-18, T-138 — it was LSM-CLEAR-AHEAD)** | Nothing can be filed, so those future-dated tasks **are** in Inbox and the sentence is true of them. Still not LSM-CLEAR: `open_all` counts Upcoming, so nobody is congratulated for a week of work. The cost is that the sentence does not say the tasks are dated — the same under-informing-by-one-number trade as the row above. LSM-CLEAR-AHEAD is the better sentence here and cannot be reached until a task can be filed out of Inbox |
+| Tasks exist, all dated in the future, **and all filed into personal lists** | **LSM-CLEAR-AHEAD** — `Nothing is due today. {count} tasks are coming up.` | The state the frame was written for, and it needs `lists`. Listed as an unreachable row rather than omitted, because the frame is drawn in three mockups and a reader is owed the state that selects it |
 | Exactly one task today | **LSM-AHEAD-1** — `One task today: {title}.` | A separate literal, not `1 tasks today` and not a pluralising template |
 | Everything overdue, nothing dated today | **LSM-OVERDUE**, reached through rule 3 | `count_secondary = 0` here, and the alternative sentence is *"0 others are due today"*. **This is the live store's own state** — 7 overdue rows, nothing dated today, nothing dated ahead (ADR-009 § Amendment) — so it is the frame most accounts would actually render, not a corner |
 | Some overdue, some due today | **LSM-OVERDUE-TODAY**, naming the overdue ones | The overdue set is named because it is the one the user has already missed |
@@ -1382,3 +1619,116 @@ Four, and none of them is a rename or a reorder.
    `TITLES` map in the three mockups was the only statement anywhere that the surface title names
    the collection being rendered.
 4. **§ Testid catalogue — app shell** gains two rows, listed above.
+
+---
+
+## Two axes — where the Inbox row sits, and what its count now means (T-138)
+
+**Added 2026-08-18 (T-138)**, for `specs/_shared/adr/ADR-009-today-is-a-date.md` **§ Amendment 2**
+and `reports/owner-decision-2026-08-18-inbox-is-unfiled.md`. **No component was added, no ID was
+renamed, no testid moved, and no new token was needed.** One menu row changed position, one
+collection started grouping, one fact was added, one fact was rebound, and one frame went dormant.
+
+**The change in one line.** A task is in Inbox when it is filed into no personal list — not when it
+has no date. So Inbox stops being a cell of the date axis and becomes the first cell of a second,
+independent one: **a *date* axis (Today · Upcoming · `undated`) and a *filing* axis (Inbox · each
+personal list), over the same open tasks.** Amendment 1's predicate table survives untouched as the
+date axis; only the name on its third cell was wrong. Nothing can be filed yet — `lists` and
+`tasks.list_id` do not exist — so `inbox(t)` reduces to *every open task* today and narrows by
+itself when lists ship.
+
+**Three surfaces were disturbed and each has one home**, exactly as at Amendment 1: § TaskList for
+the grouping, § ListsMenu for the row's position and its count, § LandingSummary for the facts and
+the frames.
+
+### The two questions this pass had to decide rather than derive
+
+1. **Where the Inbox row sits.** Decided: **two visual groups** — `Today · Upcoming · Done`, a
+   group break, then Inbox at the head of the filing rows with LM-LIST beneath it. Reasoning,
+   costs, and the two rejected shapes are in § ListsMenu, *Where the Inbox row sits*. The cost is
+   paid today and stated there: the filing group holds one row until `lists` ships, and the Inbox
+   row moves relative to what `COLLECTIONS` ships.
+2. **The nested counts.** Decided: **shown as they are.** Suppression is unavailable because a
+   count omitted at zero already means *none*; a second number in the cell explains one signal with
+   another. The group break is what stops the column reading as arithmetic — see § ListsMenu, *The
+   counts nest*. Measured: 716 + 7 + 0 + 21 = 744 against 737 live rows, and the 7-row gap is the
+   dated-and-unfiled tasks counted on both axes.
+
+### Cells above that changed content in this pass
+
+Ten, and one of them is a position.
+
+1. **§ TaskList, the collection-grouping table, Inbox's row** read *"none — flat: Inbox **is** 'no
+   date', so `Anytime` is true of every row it can ever hold."* The premise is gone. Inbox now
+   groups, and it is the only collection that can produce all five headings. **This is the one
+   changed cell that was costing a fact rather than reading stale:** *One signal, not two* puts
+   lateness in the heading and nowhere else, so a flat Inbox rendered the live store's 7 overdue
+   rows with no lateness signal anywhere on the surface every account opens.
+2. **§ TaskList, the same table's Today row** claimed Today is *"the only surface anywhere that
+   names a task as missed."* Inbox names them too now; the clause is removed rather than reworded,
+   because the fact it was supporting — `overdue` has no collection of its own — is stated in
+   § LandingSummary and does not need a second home.
+3. **§ TaskList gains four paragraphs** on why Inbox groups, what the flat rendering cost, that
+   `Overdue` is **more** load-bearing than when it was specified, and that Today and Inbox
+   deliberately render the same rows under the same heading.
+4. **§ ListsMenu, LM-COLLECTION's `Source`** read *"the four date predicates of ADR-009
+   § Amendment"*. Three of the four are date-or-status predicates and the fourth is a container.
+   The cell now says what the family actually means — rows derivable on device — which is also what
+   keeps Inbox in it while it renders in the other visual group.
+5. **§ ListsMenu, LM-COLLECTION's `Rows`** read `Today · Upcoming · Inbox · Done` and now reads
+   `Today · Upcoming · Done · Inbox`, the order matching the two groups.
+6. **§ ListsMenu, the Upcoming row's `Position` bullet** justified `Today · Upcoming · Inbox · Done`
+   as *now, then ahead, then undated, then finished*. Inbox is not *undated*; removing it from that
+   row leaves the horizon unbroken rather than damaged, and the bullet now says so.
+7. **§ ListsMenu, the Upcoming row's opening paragraph** said F-001 AC-24's reachability bound
+   *"used to rest on Inbox being a superset of every open task and now rests on the four buckets
+   being total."* It rests on neither: ADR-009 § Amendment 2 § 6 moves it to the **filing** axis,
+   which is total and every cell of which is openable. The Upcoming row's own requirement is
+   narrowed, not retracted — without it a future-dated task is unreachable *as a dated task*. The
+   old sentence is quoted in place rather than replaced silently, because this is the third reason
+   the same AC has been true and the first two both expired unnoticed.
+8. **§ ListsMenu gains two blocks** — *Where the Inbox row sits* and *The counts nest* — and its
+   **`empty` state** gains one clause: the filing group is never empty, because Inbox is always in
+   it.
+9. **§ LandingSummary, the fact table.** `undated` is **added** (the fact `inbox_count` used to
+   name, now a cell with no surface, sitting beside `overdue` as the second such); `inbox_count` is
+   **rebound** to the Inbox container — same call, different predicate underneath; and `open_all`'s
+   source changes from `open_today + upcoming + inbox_count` to `open_today + upcoming + undated`,
+   because `inbox_count` is no longer one of the date axis's terms and adding it would count the
+   dated-and-unfiled rows twice.
+10. **§ LandingSummary, LSM-CLEAR-AHEAD** is **dormant, not dead**, and its `Selected when` gains
+   `upcoming ≥ 1` as a condition where it used to be an implication. Row 4 of the selection rule
+   died in T-128 because its condition contradicts the model permanently; this one is unsatisfiable
+   only while `isFiled` is constant `false` and wakes with the first filed task — the same category
+   as LSM-PROGRESS, which is written, drawn and blocked on `completed_at`. Its ID, slots, text and
+   mockup state are untouched.
+
+**Two further blocks were added rather than changed:** the INV-INBOX-FILING note in
+§ LandingSummary — which `specs/assistant/data-model.md` names as the physical place a re-merge
+would land — and the selection rule's **second totality re-proof**, which this time neither grew
+the table nor struck a row.
+
+**One selection-rule row changed and the rest did not, which is the amendment showing its shape.**
+Rows 1–7 branch on `open_all`, `overdue`, `open_today` and `done_today` — all date-axis or status
+facts — and this amendment moved neither the date axis nor the gate. Only row 8, the one row that
+mentions Inbox, changed at all.
+
+### What is owed elsewhere, and is not written here
+
+- **Rule 8's third branch, when `lists` ships.** `inbox_count = 0`, `upcoming = 0`, `open_all ≥ 1`
+  — everything undated and everything filed — falls out of the table. Unreachable today, named in
+  § LandingSummary in advance rather than found afterwards, and deliberately not designed against
+  zero rows: the honest frame for it names the filing axis, and there is no list to name.
+- **Every list must render a row.** ADR-009 § Amendment 2 § 6 converts AC-24's reachability bound
+  onto LM-LIST: post-lists an undated task inside a personal list is in no date collection with a
+  surface and not in Inbox, so its list's row is its only door. § ListsMenu already draws LM-LIST;
+  this is the requirement that says a list which exists and is not drawn strands its tasks
+  silently. Recorded here because it lands with the lists feature, not with this pass.
+- **A filed task has to be constructible before any of this can be tested.** The store holds none
+  and cannot hold one; `isFiled` must be answerable `true` in a test today
+  (`data-model.md § isFiled`). Not a design artifact, recorded because it is invisible from this
+  file and because every assertion about the two axes is vacuous without it.
+- **Code and tests, already routed to the implementation pass** by ADR-009 § Amendment 2 § 7 —
+  `tasks.ts:224`'s exactly-one-collection comment and `collections.test.ts:91`'s disjointness
+  suite are false about the model and the store now holds 7 counterexamples. Named here only so
+  that a reader of this file does not re-file them.
