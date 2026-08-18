@@ -9,9 +9,13 @@
 // `collectionTasks` here. A second copy of the predicate is L-004's shape: two
 // homes for one fact, drifting silently while both look right.
 //
-// The collections are `task.status` plus the due-date union the shipped `today`
-// filter already used (information-architecture.md §7: "S2's Inbox / Today /
-// Done collections — they are `status`").
+// The collections were `task.status` plus the due-date union the shipped
+// `today` filter used (information-architecture.md §7: "S2's Inbox / Today /
+// Done collections — they are `status`"). **ADR-009 split them**: Done is
+// still `status`, and Today is now purely `due_at` — the status leg is gone,
+// and `status: 'today'` is a record-only legacy value nothing writes. IA §7's
+// sentence is true of Inbox and Done and no longer of Today; the ADR is the
+// authority, and this comment is the place the two are reconciled.
 //
 // **Inbox is a superset of Today, not its complement, and that is deliberate.**
 // Two artifacts describe these rows and they do not say quite the same thing:
@@ -40,15 +44,18 @@ export const COLLECTIONS: Collection[] = ['today', 'inbox', 'done']
 /**
  * What the app opens the list on.
  *
- * **Inbox, not Today, and this is a decision worth reading.** `app-shell.html`
- * draws the Tasks surface on Today — but that is one drawn state, and no
- * artifact declares a default. This app's own `addTask` creates every hand-made
- * task with `status: 'inbox'` and no date, so landing on Today would show a
- * brand-new user an empty list immediately after they added something to it.
- * Inbox is also what the shipped default filter (`all`) already showed, so this
- * preserves today's behaviour rather than changing it under a redesign.
+ * **Today** — the owner chose it (owner-decision 2026-08-18, § landing and
+ * collections), and `app-shell.html` draws the Tasks surface that way.
+ *
+ * This constant read `'inbox'` until ADR-009, justified by "`addTask` creates
+ * every hand-made task with `status: 'inbox'` and no date, so landing on Today
+ * would show a brand-new user an empty list immediately after they added
+ * something to it". **Both halves of that are now void**: the owner decided the
+ * default, and add-in-context (`dueAtForCollection`) is what stops the list
+ * being empty — a task created while viewing Today is dated today, so it is in
+ * Today. The constant and its justification changed together, deliberately.
  */
-export const DEFAULT_COLLECTION: Collection = 'inbox'
+export const DEFAULT_COLLECTION: Collection = 'today'
 
 /** Visible collection names — the house words (components.md § Buttons). */
 export function collectionName(c: Collection): string {
@@ -80,10 +87,54 @@ export function isTomorrow(iso: string | null, now: Date): boolean {
   return isToday(iso, t)
 }
 
-/** Due today, in the sense the shipped `today` filter already used: the row is
- * dated today, or carries `status: today` with no date of its own. */
+/**
+ * **Today is a date. Full stop** (ADR-009 §1, owner decision 2026-08-18).
+ *
+ * This used to read `t.status === 'today' || isToday(t.due_at, now)`, which
+ * made Today mean two things at once — a date bucket and a status bucket. The
+ * status leg is the one that could not answer the owner's question, *if a task
+ * has no date, how would you know it is today?*, and it is the one that made
+ * `done_today` underivable: a dateless row on Today lost every marker the
+ * instant it was ticked, because `toggleTask` writes only `status`.
+ *
+ * `now` is the DEVICE clock and this bucket is computed client-side. The server
+ * stores an instant and serves it; it never buckets tasks by day
+ * (data-model.md § Today is a date).
+ *
+ * A row still carrying `status: 'today'` (4 pre-ADR-009 rows, deliberately not
+ * migrated) is inert: it is not done, so it shows in Inbox, and it has no date,
+ * so it does not show here. There is no code path left for it to be wrong on.
+ */
 function dueToday(t: TaskView, now: Date): boolean {
-  return t.status === 'today' || isToday(t.due_at, now)
+  return isToday(t.due_at, now)
+}
+
+/**
+ * The instant a task created **on Today** is dated with: the local start of the
+ * current day, serialized as an ISO instant.
+ *
+ * **Not `now`.** `due_at` is a timestamp and "today" is a day, so the instant
+ * has to be stated somewhere or two clients pick differently and group the same
+ * task differently (ADR-009 §4). Midnight-local is also the honest reading:
+ * putting a task on Today is a commitment to a day, and `now` would render as a
+ * time-of-day commitment the user never made. Ordering inside the group is
+ * unaffected — this repo orders by `created_at` (uc-coverage-map D5).
+ */
+export function startOfTodayIso(now: Date = new Date()): string {
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString()
+}
+
+/**
+ * Creating a task while viewing a collection puts it in that collection **by
+ * date, never by status** (ADR-009 §4). One definition, shared by both clients
+ * and by the online and offline create paths.
+ *
+ * Done gets no date, same as Inbox: a task cannot be created already finished,
+ * and dating it today would make it appear in a collection the user is not
+ * looking at. Inbox is a superset of every open task, so nothing is stranded.
+ */
+export function dueAtForCollection(c: Collection, now: Date = new Date()): string | null {
+  return c === 'today' ? startOfTodayIso(now) : null
 }
 
 export function inCollection(t: TaskView, c: Collection, now: Date): boolean {

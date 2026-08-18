@@ -35,7 +35,22 @@ export interface AppDeps {
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const TASK_STATUSES: readonly string[] = ['inbox', 'today', 'done', 'archived']
+/**
+ * The **write** vocabulary (ADR-009 §2, api-contracts.md § `status` on the
+ * wire) — what a client, the interpreter or the app may SET. It is narrower
+ * than `TaskStatus`, and deliberately: `'today'` is retired as a live value
+ * (membership in Today is `due_at`, not `status`) and this is the write path,
+ * which is where it is stopped from being minted again. `POST /tasks` and
+ * `PATCH /tasks/{id}` answer `400 INVALID_INPUT`, `field: "status"`.
+ *
+ * **`TaskStatus` still has four members and must keep them.** `GET /tasks` may
+ * return `'today'` for rows created before ADR-009, and `undo_snapshot` /
+ * `ask_snapshot` / `post_apply` / `diff.old|new` hold it in records that undo
+ * replays VERBATIM. Deleting the member would mean rewriting those records —
+ * making the app report a diff the user never saw. A type has to be able to
+ * express what the store already contains.
+ */
+const TASK_STATUSES: readonly string[] = ['inbox', 'done', 'archived']
 const TURN_SOURCES: readonly string[] = ['voice', 'typed', 'tap']
 
 type Body = Record<string, unknown>

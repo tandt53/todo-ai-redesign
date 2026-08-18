@@ -13,6 +13,7 @@ import {
   session,
   T0,
   task,
+  todayTask,
   turn,
   turnResponse as ok,
   undoOutcome,
@@ -24,6 +25,7 @@ import { ClientStores } from '../../_shared/model/client-stores.ts'
 import { MemoryDurableStore } from '../../_shared/ports/durable-store.ts'
 import { ScriptedTranscriptSource } from '../../_shared/ports/transcript-source.ts'
 import { micMode, undoableTurnId } from '../../_shared/model/reducer.ts'
+import { inCollection, startOfTodayIso } from '../../_shared/model/tasks.ts'
 
 const TURN = 'POST /assistant/turn'
 const SESSION = 'GET /assistant/session'
@@ -526,6 +528,127 @@ function taskPosts(s: FakeServer): Record<string, unknown>[] {
     .filter((c) => c.method === 'POST' && c.path === '/tasks')
     .map((c) => c.body as Record<string, unknown>)
 }
+
+// ---------------------------------------------------------------------------
+// ADR-009 — the un-complete round trip, and add-in-context
+// ---------------------------------------------------------------------------
+
+describe('un-completing returns a task to the collection it came from (ADR-009 §3, UC-45 AC-45.2)', () => {
+  /** The PATCH bodies this client actually sent, in order. */
+  const patches = (s: FakeServer): Record<string, unknown>[] =>
+    s.calls
+      .filter((c) => c.method === 'PATCH' && c.path.startsWith('/tasks/'))
+      .map((c) => c.body as Record<string, unknown>)
+
+  it("un-ticking writes status 'inbox' and does NOT send due_at", async () => {
+    // The line under test used to write `'today'`, which was wrong twice: a
+    // status that means nothing, AND a row that still would not be in Today
+    // because it had no date. Both halves are asserted here — the value sent,
+    // and the ABSENCE of `due_at` in the body. Asserting only the value would
+    // pass for an implementation that also cleared the date, which is exactly
+    // the loss the round trip depends on not happening.
+    const s = taskServer([todayTask({ id: 'task-1', title: 'Call Mum', status: 'done' })])
+    const h = harness({ server: s })
+    await h.controller.init()
+
+    await h.controller.toggleTask('task-1')
+
+    expect(patches(s)).toEqual([{ status: 'inbox' }])
+    expect(Object.keys(patches(s)[0] ?? {})).not.toContain('due_at')
+  })
+
+  it('a task dated today goes back to Today; a dateless one goes back to Inbox', async () => {
+    // The two collections a round trip can land in, each reached through the
+    // state that can only reach it that way (L-012): the dated row's date is
+    // what returns it to Today, the dateless row's absence of one is what
+    // returns it to Inbox. One case would leave the other branch unproven.
+    //
+    // This reads STATE, and state is written optimistically from `{...t,
+    // status}` — so it cannot see a `due_at` the PATCH cleared on the server.
+    // Verified by mutation: adding `due_at: null` to the PATCH body leaves this
+    // test green and kills only the wire assertion above. The two are not
+    // redundant; neither covers the other's half.
+    const dated = todayTask({ id: 'dated', title: 'Call Mum' })
+    const dateless = task({ id: 'dateless', title: 'Someday', status: 'inbox', due_at: null })
+    const s = taskServer([dated, dateless])
+    const h = harness({ server: s })
+    await h.controller.init()
+    const now = new Date()
+    const find = (id: string) => h.controller.state.tasks.find((t) => t.id === id)!
+
+    for (const id of ['dated', 'dateless']) {
+      await h.controller.toggleTask(id) // tick
+      expect(find(id).status).toBe('done')
+      await h.controller.toggleTask(id) // un-tick
+      expect(find(id).status).toBe('inbox')
+    }
+
+    expect(inCollection(find('dated'), 'today', now), 'the dated row returns to Today').toBe(true)
+    expect(inCollection(find('dateless'), 'today', now), 'the dateless row does not').toBe(false)
+    expect(inCollection(find('dateless'), 'inbox', now), 'it returns to Inbox').toBe(true)
+    // and the dates themselves are untouched — no `doneFrom` field was needed
+    // because nothing was ever lost
+    expect(find('dated').due_at).toBe(dated.due_at)
+    expect(find('dateless').due_at).toBeNull()
+  })
+})
+
+describe('creating a task in a collection sets its DATE (ADR-009 §4)', () => {
+  it('on Today the create carries the local start of today; elsewhere it carries null', async () => {
+    const s = taskServer()
+    const h = harness({ server: s })
+    await h.controller.init()
+
+    await h.controller.addTask('on today', 'today')
+    await h.controller.addTask('on inbox', 'inbox')
+    await h.controller.addTask('on done', 'done')
+
+    const posts = taskPosts(s).map((b) => [b['title'], b['due_at']])
+    expect(posts).toEqual([
+      ['on today', startOfTodayIso(new Date(T0))],
+      ['on inbox', null],
+      ['on done', null],
+    ])
+    // no create ever sends a status: the collection is expressed as a date
+    expect(taskPosts(s).some((b) => 'status' in b)).toBe(false)
+  })
+
+  it('the offline local path dates the row the same way, so the replay carries it', async () => {
+    // The offline row is re-POSTed verbatim on reconnect, so a date decided
+    // only on the online path would be lost for exactly the users who cannot
+    // see the server correct it.
+    const s = taskServer()
+    const h = harness({ server: s, online: false })
+    await h.controller.init()
+
+    await h.controller.addTask('offline on today', 'today')
+    expect(h.controller.state.tasks[0]?.due_at).toBe(startOfTodayIso(new Date(T0)))
+
+    h.controller.setOnline(true)
+    await settle()
+
+    expect(taskPosts(s)[0]).toMatchObject({
+      title: 'offline on today',
+      due_at: startOfTodayIso(new Date(T0)),
+      status: 'inbox',
+    })
+  })
+
+  it('the conversation’s offline local path is NOT a collection — it creates a dateless Inbox row', async () => {
+    // `send()` offline (AC-25) reaches the same builder with no collection at
+    // all, because the user is on Talk and Talk is not a list. Recorded as an
+    // assertion rather than left implicit: it is the one create path ADR-009's
+    // table does not cover, and the default it falls back to is load-bearing.
+    const s = taskServer()
+    const h = harness({ server: s, online: false })
+    await h.controller.init()
+    h.controller.composerChange('buy milk')
+    await h.controller.send('typed')
+
+    expect(h.controller.state.tasks[0]?.due_at).toBeNull()
+    expect(h.controller.state.tasks[0]?.status).toBe('inbox')
+  })
+})
 
 /** The one offline task in state — every case here creates exactly one. */
 function onlyTask(h: ReturnType<typeof harness>): { id: string; local?: boolean; title: string } {

@@ -70,7 +70,7 @@ group and Nhóm I, i.e. the todo app underneath the assistant.
 | UC | Asks for | Class | Answered by / why not |
 |---|---|---|---|
 | UC-31 | Quick-add by hand, instant, local-first | BUILT | F-001 AC-18 (zero AI calls), AC-25 (offline local path); `controller.addTask` + `+ Add task` on both clients. **Residue:** AC-31.1 — online, `addTask` awaits `POST /tasks` *and* a full `refreshTasks` before the row is drawn (`_shared/controller.ts:557-558`), which is a server wait the AC forbids; offline is local-first and correct. No `quickadd:latency` instrument. AC-31.3 (date in the sentence) needs UC-46. |
-| UC-32 | Done / undone toggle | BUILT | F-001 AC-18; `controller.toggleTask` → `PATCH /tasks/{id}`. **Residue:** AC-32.2 — done tasks are reviewable only through web's `done` filter; there is no Logbook (UC-45), and undone always returns to `today`, never to where it came from (see D6). |
+| UC-32 | Done / undone toggle | BUILT | F-001 AC-18; `controller.toggleTask` → `PATCH /tasks/{id}`. **Residue:** AC-32.2 — done tasks are reviewable only through web's `done` filter; there is no Logbook (UC-45). Un-doing returns the task to where it came from as of ADR-009 (D6, resolved). |
 | UC-33 | Delete with in-place undo; 30-day restore | BUILT | F-001 AC-18; `DELETE /tasks/{id}` soft-deletes (`api/app.ts:346`), web has a delete control. **Residue:** AC-33.1 — a hand delete has **no undo at all** (F-001's undo is turn-shaped: AC-5 "the newest applied *turn*"); no trash, no restore, no 30-day purge; **mobile has no delete control** (D8). |
 | UC-34 | Deadline & reminder by picker, no AI | MISSING *(unexamined)* | `due_at` and `reminder_at` exist and are patchable (`TASK_PATCH_FIELDS`), and nothing in any client sets them. |
 | UC-35 | Priority by hand, urgency visible in the list | MISSING *(unexamined)* | `priority` exists as a free `string \| null` — not the three-value low/medium/high the UC names — with no control and no visual mark. |
@@ -158,7 +158,7 @@ group and Nhóm I, i.e. the todo app underneath the assistant.
 | UC-42 | Upcoming — the next 7 days | MISSING *(unexamined)* | Web's `groupTasks` (Today / Tomorrow / Later / Anytime) partly answers "what's coming" but not the UC: no 7-day frame, no rendered empty days, no pinned overdue group, no "Sau đó · N" tail. |
 | UC-43 | Drag ordering — the *only* ordering | MISSING *(unexamined)* | No `sort_order` field, no drag, on either client. **See D5** — the repo currently ships exactly the automatic ordering UC-43 deleted. |
 | UC-44 | A note on a task | MISSING *(unexamined)* | No field. It is also the field UC-37's search and UC-54's `find_tasks` are specified to scan. |
-| UC-45 | Logbook — history by completion day | MISSING *(unexamined)* | No `completed_at`, no `done_from`. Web's `done` filter shows completed tasks in creation order, which is not AC-45.1. **See D6.** |
+| UC-45 | Logbook — history by completion day | MISSING *(unexamined)* | No `completed_at`, no `done_from`. Web's `done` filter shows completed tasks in creation order, which is not AC-45.1. **AC-45.2 is now met** without either field — ADR-009 (D6, resolved); AC-45.1 is what still needs `completed_at`, and ADR-009 § Consequences records that `status: 'done' && isToday(due_at)` measures *"was due today and is done"*, not *"was completed today"*. |
 | UC-46 | Understand dates in quick-add, without AI | MISSING *(unexamined)* | The source calls this "**the `todo-ai ADR-7` hole**": only AI can set a deadline. **Here it is worse** — only the 23-row fixture stub can, and only for those rows. Nothing else in the product can put a date on a task. |
 | UC-47 | Capture from the share sheet | MISSING *(deferred-here)* | F-003 `## Out of Scope` — a second input path that bypasses the turn, routed to the UC-53 feature. |
 | UC-48 | Export / import JSON | MISSING *(unexamined)* | Nothing. Needs the settings surface (D2); AC-48.4's envelope carries `lists`, so it is worth more after UC-41. |
@@ -212,9 +212,28 @@ nó là thứ tự người dùng tự xếp." This repo ships **only** automati
 the server, regrouped by due date on web — and no drag anywhere. Not wrong as a first cut; it is
 simply the option the source removed, and nothing here records the reversal.
 
-**D6 — Undone tasks go to `today`, unconditionally.** `controller.toggleTask` sets
-`status = 'done' ? 'today'`. UC-45 AC-45.2 requires an un-done task to return to the list it came
-from (`doneFrom`). The behaviour is decided in code before the UC that governs it is read.
+**D6 — Undone tasks go to `today`, unconditionally.**
+
+> **RESOLVED 2026-08-18 (web-agent, T-121) by ADR-009.** `controller.toggleTask` now writes
+> `status: 'inbox'` and **does not touch `due_at`** (`_shared/controller.ts`), so the collection
+> survives the round trip: a row dated today returns to Today, a dateless one returns to Inbox.
+> Verified both branches, each through the state only it can reach —
+> `web/__tests__/controller.test.ts` § "un-completing returns a task to the collection it came
+> from"; mutating the line back to `'today'`, or adding `due_at: null` to the PATCH, turns them red.
+>
+> **The mechanism is not `doneFrom`, and it does not need to be.** UC-45's own edge-case table
+> (`specs/_source/todo-ai/02-use-cases.md:904`) already defines the fallback for an empty
+> `doneFrom`: *"Suy từ `dueAt`: due trong hôm nay → Today, còn lại → Inbox."* That inference is
+> exactly what this repo now does, universally rather than as a fallback — so AC-45.2's behaviour
+> is satisfied by the rule UC-45 itself supplies, with no new field. What a real `doneFrom` would
+> still buy is a task moved to a collection by hand *against* its date; no surface offers that
+> move (owner decision 2026-08-18, § Not settled), so there is nothing yet for it to record.
+
+The original entry, kept because the shape of the defect is worth remembering: `controller.toggleTask`
+set `status = 'done' ? 'today'`. UC-45 AC-45.2 requires an un-done task to return to the list it came
+from (`doneFrom`). The behaviour was decided in code before the UC that governs it was read — and it
+was wrong twice over once Today became a date, since `status: 'today'` on a dateless row put it in no
+Today at all.
 
 **D7 — Bulk operations were dropped for touch and re-entered by voice.** UC-40's `ĐÃ BỎ` rests
 on a tap count — N taps beats N+2 through a selection mode — which is an argument about *touch*.
@@ -306,7 +325,7 @@ explicit owner mandate behind them.
 | 5 | **UC-27 + UC-44 — a task detail surface, with `note`** | Every remaining CORE field needs somewhere to live. Without it, 35/36/39 have no home. |
 | 6 | **UC-35 — priority** | One AC; rides on (5). Note the field is a free string today and the UC wants three values plus a list-visible urgency mark. |
 | 7 | **UC-37 — search** | No data-model change. Carries two jobs since UC-38 was dropped into it. Wants UC-44 (`note` is in scope for search). |
-| 8 | **UC-45 — Logbook** | Needs `completed_at` and `done_from`; also retires D6, which is wrong today. |
+| 8 | **UC-45 — Logbook** | Needs `completed_at` for AC-45.1 (grouping by completion day). **No longer needs `done_from`** — ADR-009 satisfied AC-45.2 by removing something, and D6 is resolved. |
 | 9 | **UC-43 — drag ordering** | Needs `sort_order`; closes UC-14 AC-14.1's residue and retires D5. |
 | 10 | **UC-42 — Upcoming** | Pure derivation from `due_at` (AC-42.3 adds no field). Cheap once (3) lands. |
 | 11 | **UC-36 — sub-tasks** | `parent_id` + per-parent order. Blocks UC-04. |

@@ -18,6 +18,7 @@ import type { TaskWire } from '../../_shared/types.ts'
 export {
   T0,
   task,
+  todayTask,
   turn,
   applied,
   appliedTurn,

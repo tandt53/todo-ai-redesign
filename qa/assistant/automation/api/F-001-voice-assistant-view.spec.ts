@@ -629,7 +629,12 @@ describe('AC-6/7/8 undo (TC-15..TC-22)', () => {
   });
 
   it('TC-17 undo delete restores every field intact (same id, deep-equal minus updated_at)', async () => {
-    const orig = await seedTask(U1, { title: 'qaapi-dentist', due_at: '2026-08-20T08:00:00Z', priority: 'high', status: 'today' });
+    // status 'archived', not 'today': ADR-009 narrowed the write vocabulary to
+    // inbox | done | archived, so POST /tasks now answers 400 on 'today'. The
+    // seed still needs a non-default status — the point of the case is that a
+    // restore is field-by-field lossless — and 'archived' is the member no
+    // other path writes.
+    const orig = await seedTask(U1, { title: 'qaapi-dentist', due_at: '2026-08-20T08:00:00Z', priority: 'high', status: 'archived' });
     const del = await postTurn(U1, turn('delete qaapi-buy-milk', { transcript: 'delete qaapi-dentist' })).expect(200);
     // the generic "delete {qaapi-title}" rule resolves this by exact title
     await undoTurn(U1, del.body.turn.id).expect(200);

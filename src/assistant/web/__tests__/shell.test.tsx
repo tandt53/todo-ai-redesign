@@ -25,7 +25,7 @@ import { initialState, reducer } from '../../_shared/model/reducer.ts'
 import type { Action, AppState } from '../../_shared/model/reducer.ts'
 import type { NewMsg } from '../../_shared/model/messages.ts'
 import { collectionCount, inCollection } from '../../_shared/model/tasks.ts'
-import { appliedTurn, harness, session, T0, task, turnResponse } from './_helpers.ts'
+import { appliedTurn, harness, session, T0, task, todayTask, turnResponse } from './_helpers.ts'
 import type { TestController } from './_helpers.ts'
 
 const ROOT = process.cwd()
@@ -55,13 +55,19 @@ function mount(state: AppState): { container: HTMLElement; controller: TestContr
   return { container, controller: h.controller }
 }
 
-// `status: 'inbox'` deliberately: that is what `controller.addTask` really
-// creates, so these are the rows a user actually accumulates. Leaving the
-// fixture's `today` default would put every task in the Today collection and
-// make the badge assertions below vacuous.
+// **Dated today, deliberately** — and this comment replaced its own opposite.
+// It used to read "`status: 'inbox'` deliberately: that is what
+// `controller.addTask` really creates … leaving the fixture's `today` default
+// would put every task in the Today collection and make the badge assertions
+// below vacuous." ADR-009 inverted both halves. `addTask` on Today now creates
+// a row DATED today (add-in-context), the app opens on Today
+// (DEFAULT_COLLECTION), and `status` no longer puts anything anywhere. So these
+// are still "the rows a user actually accumulates" — the spelling changed, not
+// the intent. The badge test below no longer leans on this set at all; it
+// builds its own three rows so that each exclusion has its own cause.
 const TASKS = [
-  task({ id: 'task-1', title: 'Review the Q3 budget draft', status: 'inbox' }),
-  task({ id: 'task-2', title: 'Pay the electricity bill', status: 'inbox' }),
+  todayTask({ id: 'task-1', title: 'Review the Q3 budget draft' }),
+  todayTask({ id: 'task-2', title: 'Pay the electricity bill' }),
 ]
 
 /** An applied message naming two tasks — one the list holds, one it does not. */
@@ -153,18 +159,27 @@ describe('AC-31 — a message is a door to the row', () => {
   })
 
   it('a task filtered out of the collection on screen is not activatable either', () => {
-    // Same rule, the other cause AC-31 names. `task-3` is done, so the Inbox
-    // collection does not hold it — and a link that navigates to a list which
-    // will not show the row is the affordance that does nothing.
+    // Same rule, the other cause AC-31 names. The surface opens on TODAY
+    // (DEFAULT_COLLECTION), and `task-3` is done, so that collection does not
+    // hold it — a link that navigates to a list which will not show the row is
+    // the affordance that does nothing.
     const done = task({ id: 'task-3', title: 'Morning stand-up', status: 'done' })
     const now = new Date()
-    expect(inCollection(done, 'inbox', now)).toBe(false)
+    expect(inCollection(done, 'today', now)).toBe(false)
+    // ADR-009 opened a SECOND way to be filtered out that did not exist while
+    // the surface was Inbox: an open row with no date. Inbox held every open
+    // task, so "not in the collection" could only mean "done"; Today can also
+    // mean "undated". Both doors are shut here, in one mount.
+    const undated = task({ id: 'task-8', title: 'Someday', status: 'inbox', due_at: null })
+    expect(inCollection(undated, 'today', now)).toBe(false)
+    expect(inCollection(undated, 'inbox', now)).toBe(true)
     const msg: NewMsg = {
       kind: 'applied',
       turnId: 'turn-1',
       head: 'Edited 1 task · added 1',
       lines: [
         { taskId: 'task-3', title: 'Morning stand-up', label: 'edit', chips: [] },
+        { taskId: 'task-8', title: 'Someday', label: 'edit', chips: [] },
         { taskId: 'task-2', title: 'Pay the electricity bill', label: 'new', chips: [] },
       ],
       deletedTitles: [],
@@ -172,8 +187,9 @@ describe('AC-31 — a message is a door to the row', () => {
       undone: false,
       at: T0,
     }
-    mount(seed({ tasks: [...TASKS, done] }, [msg]))
+    mount(seed({ tasks: [...TASKS, done, undated] }, [msg]))
     const links = screen.getAllByTestId('talk-task-link')
+    // both excluded rows are named by the message and neither is a control
     expect(links.map((l) => l.textContent)).toEqual(['Pay the electricity bill'])
   })
 
@@ -243,8 +259,9 @@ describe('AC-31 — a message is a door to the row', () => {
 describe('AC-32 — the rendered list is not stale after a turn', () => {
   it('a list already on screen updates within the turn, with no refresh and no re-navigation', async () => {
     const h = harness()
-    const before = [task({ id: 'task-1', title: 'Review the Q3 budget draft' })]
-    const after = [...before, task({ id: 'task-2', title: 'Pay the electricity bill' })]
+    // dated today, so the rows are in the collection the surface opens on
+    const before = [todayTask({ id: 'task-1', title: 'Review the Q3 budget draft' })]
+    const after = [...before, todayTask({ id: 'task-2', title: 'Pay the electricity bill' })]
     h.server
       .always('GET /assistant/session', 200, { session: session(), boundary: null })
       .once('GET /tasks', 200, { tasks: before })
@@ -281,8 +298,9 @@ describe('AC-32 — the rendered list is not stale after a turn', () => {
 
   it('a list opened AFTER the turn opens showing the applied state', async () => {
     const h = harness()
-    const before = [task({ id: 'task-1', title: 'Review the Q3 budget draft' })]
-    const after = [...before, task({ id: 'task-2', title: 'Pay the electricity bill' })]
+    // dated today, so the rows are in the collection the surface opens on
+    const before = [todayTask({ id: 'task-1', title: 'Review the Q3 budget draft' })]
+    const after = [...before, todayTask({ id: 'task-2', title: 'Pay the electricity bill' })]
     h.server
       .always('GET /assistant/session', 200, { session: session(), boundary: null })
       .once('GET /tasks', 200, { tasks: before })
@@ -367,17 +385,26 @@ describe('the shell', () => {
 
   it('the badge counts open tasks due today, names what it counts, and vanishes at zero', () => {
     const now = new Date()
-    const dueToday = task({ id: 'task-4', title: 'Call Mum', status: 'today' })
-    mount(seed({ tasks: [...TASKS, dueToday] }))
+    // Three rows, and each of the two that are NOT counted is excluded for its
+    // own reason: one is dateless (in Inbox, never in Today — ADR-009's whole
+    // point), one is dated today but ticked. A set where both were excluded by
+    // the same rule would leave the other rule unguarded (L-005).
+    const counted = todayTask({ id: 'task-4', title: 'Call Mum' })
+    const dateless = task({ id: 'task-5', title: 'Someday', status: 'inbox', due_at: null })
+    const ticked = todayTask({ id: 'task-6', title: 'Morning stand-up', status: 'done' })
+    const all = [counted, dateless, ticked]
+    mount(seed({ tasks: all }))
     const sw = screen.getByTestId('shell-tasks-button')
-    expect(collectionCount([...TASKS, dueToday], 'today', now)).toBe(1)
+    expect(collectionCount(all, 'today', now)).toBe(1)
     expect(sw.querySelector('.path-badge')?.textContent).toBe('1')
     // the badge is never the whole accessible name
     expect(sw.getAttribute('aria-label')).toBe('Tasks, 1 left today')
     cleanup()
 
-    // Zero renders NO badge — "a number pretending to be news".
-    mount(seed({ tasks: TASKS }))
+    // Zero renders NO badge — "a number pretending to be news". The list is not
+    // empty; it is empty OF TODAY, which is the case the old fixture could not
+    // express while a dateless row counted as Today.
+    mount(seed({ tasks: [dateless, ticked] }))
     const zero = screen.getByTestId('shell-tasks-button')
     expect(zero.querySelector('.path-badge')).toBeNull()
     expect(zero.getAttribute('aria-label')).toBe('Tasks')
@@ -498,8 +525,12 @@ describe('the shell', () => {
     act(() => {
       fireEvent.click(screen.getByTestId('shell-lists-menu-button'))
     })
+    // TASKS are dated today, so both rows carry the same 2 — which is the
+    // identity components.md § PathSwitch asserts (the badge and the Today row
+    // are one number), not a duplicated count. Done stays bare: zero is never
+    // rendered as a count.
     expect(screen.getAllByTestId('menu-collection-row').map((r) => r.textContent?.trim())).toEqual([
-      'Today',
+      'Today 2',
       'Inbox 2',
       'Done',
     ])

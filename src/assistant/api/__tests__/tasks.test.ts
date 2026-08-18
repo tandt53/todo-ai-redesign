@@ -10,28 +10,35 @@ describe('prototype task CRUD', () => {
     const h = await buildHarness()
     const user = uid()
 
+    // `status: 'done'` on create, not `'today'`: ADR-009 narrowed the write
+    // vocabulary to `inbox | done | archived`, and this is the non-default
+    // member the round-trip below actually moves through.
     const created = await h.agent
       .post('/tasks')
       .set('X-User-Id', user)
-      .send({ title: 'Buy milk', due_at: '2026-08-20T10:00:00.000Z', priority: 'high', status: 'today' })
+      .send({ title: 'Buy milk', due_at: '2026-08-20T10:00:00.000Z', priority: 'high', status: 'done' })
     expect(created.status).toBe(201)
     expect(created.body.task).toMatchObject({
       title: 'Buy milk',
       due_at: '2026-08-20T10:00:00.000Z',
       reminder_at: null,
       priority: 'high',
-      status: 'today',
+      status: 'done',
       deleted_at: null,
     })
     expect(created.body.task).not.toHaveProperty('user_id') // task wire shape has no user_id
     const id = created.body.task.id as string
 
+    // the un-complete write (ADR-009 §3): `inbox`, and `due_at` is NOT sent, so
+    // the date the task carried survives the round trip — which is the whole
+    // reason UC-45 AC-45.2 needs no `doneFrom` field
     const patched = await h.agent
       .patch(`/tasks/${id}`)
       .set('X-User-Id', user)
-      .send({ status: 'done', reminder_at: '2026-08-19T08:00:00.000Z' })
+      .send({ status: 'inbox', reminder_at: '2026-08-19T08:00:00.000Z' })
     expect(patched.status).toBe(200)
-    expect(patched.body.task.status).toBe('done')
+    expect(patched.body.task.status).toBe('inbox')
+    expect(patched.body.task.due_at).toBe('2026-08-20T10:00:00.000Z')
     expect(patched.body.task.reminder_at).toBe('2026-08-19T08:00:00.000Z')
 
     const deleted = await h.agent.delete(`/tasks/${id}`).set('X-User-Id', user)
@@ -136,6 +143,88 @@ describe('prototype task CRUD', () => {
       expect(res.status).toBe(401)
       expect(res.body.error.code).toBe('UNAUTHENTICATED')
     }
+  })
+
+  // -------------------------------------------------------------------------
+  // ADR-009 — the write vocabulary is narrower than the union, and the union
+  // keeps its fourth member because the STORE already contains it.
+  // -------------------------------------------------------------------------
+
+  it("rejects status 'today' on both write endpoints — it is retired, not renamed (ADR-009 §2)", async () => {
+    const h = await buildHarness()
+    const user = uid()
+
+    const created = await h.agent
+      .post('/tasks')
+      .set('X-User-Id', user)
+      .send({ title: 'x', status: 'today' })
+    expect(created.status).toBe(400)
+    // `VALIDATION`, not `INVALID_INPUT`. DRIFT, recorded rather than papered
+    // over: ADR-009 and api-contracts.md § `status` on the wire (line 328) both
+    // say `400 INVALID_INPUT`, but the same file's error tables — the ones that
+    // OWN the envelope — say `400 VALIDATION` for every bad field on every
+    // endpoint (lines 16, 18, 227), and that is what ships. Renaming the code
+    // for one field would split the module's error vocabulary in two; the
+    // narrower fix belongs in the spec.
+    expect(created.body.error.code).toBe('VALIDATION')
+    expect(created.body.error.field).toBe('status')
+    expect(await listTasks(h, user), 'a rejected create must have zero side effects').toHaveLength(0)
+
+    const task = await createTask(h, user, 'Buy milk')
+    const patched = await h.agent
+      .patch(`/tasks/${task.id}`)
+      .set('X-User-Id', user)
+      .send({ status: 'today' })
+    expect(patched.status).toBe(400)
+    expect(patched.body.error.field).toBe('status')
+    expect((await listTasks(h, user))[0]!.status, 'the row is untouched').toBe('inbox')
+
+    // …and it is `today` specifically, not a general tightening: the other
+    // three members are still accepted. Without this the test would also pass
+    // against an endpoint that rejected every status.
+    for (const status of ['inbox', 'done', 'archived']) {
+      const ok = await h.agent
+        .patch(`/tasks/${task.id}`)
+        .set('X-User-Id', user)
+        .send({ status })
+      expect(ok.status, `PATCH status=${status}`).toBe(200)
+      expect(ok.body.task.status).toBe(status)
+    }
+  })
+
+  it("GET /tasks still SERVES a stored 'today' — the union keeps four members (ADR-009 §2)", async () => {
+    // The 4 pre-ADR-009 rows in `data/assistant.json` are deliberately not
+    // migrated, and `undo_snapshot` replays such rows verbatim. So the read
+    // path must carry a value the write path refuses. Seeded through the store
+    // rather than the API precisely because the API is where it is now stopped.
+    const h = await buildHarness()
+    const user = uid()
+    const id = uid()
+    h.store.transact((state) => {
+      state.tasks[id] = {
+        id,
+        user_id: user,
+        title: 'a row from before ADR-009',
+        due_at: null,
+        reminder_at: null,
+        priority: null,
+        status: 'today',
+        created_at: '2026-08-17T00:00:00.000Z',
+        updated_at: '2026-08-17T00:00:00.000Z',
+        deleted_at: null,
+      }
+    })
+    const rows = await listTasks(h, user)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.status).toBe('today')
+    // and it is still editable — the row is not bricked by the narrowing, it
+    // simply cannot be written BACK to `today`
+    const patched = await h.agent
+      .patch(`/tasks/${id}`)
+      .set('X-User-Id', user)
+      .send({ status: 'inbox' })
+    expect(patched.status).toBe(200)
+    expect(patched.body.task.status).toBe('inbox')
   })
 
   it('unknown routes get the error envelope, not a stack trace', async () => {

@@ -74,7 +74,11 @@ export function TasksSurface({
   }, [revealTaskId, onRevealConsumed])
 
   const commit = () => {
-    if (draft.trim() !== '') void controller.addTask(draft)
+    // Add-in-context (ADR-009 §4) — the same call the web surface makes, with
+    // the same collection argument. F-003 AC-1's parity claim is only true if
+    // both clients date the row identically, which is why the instant is fixed
+    // in `dueAtForCollection` rather than chosen here.
+    if (draft.trim() !== '') void controller.addTask(draft, collection)
     setDraft('')
     setAdding(false)
   }

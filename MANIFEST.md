@@ -150,24 +150,13 @@ writers:
   #   at the parser instead of the cause). This grant is for RESTORATION, never
   #   authorship; C6 cannot express that distinction, so it is stated here for a
   #   human to hold the orchestrator to.
-  orchestrator:      ["reports/", ".claude/state/", ".mobile-app/", "{qa}/{shared_dir}/bugs/", "{specs}/{shared_dir}/LEARNINGS.md", "{design}/", "MANIFEST.md", "{specs}/_source/"]
-  #   MANIFEST.md was missing from this list until 2026-08-17 even though the
-  #   project CLAUDE.md states the orchestrator owns it. It went unflagged all
-  #   session because C6 only checks paths a TASKS row names, and no row had
-  #   named it — an ownership fact true in prose and absent from the enforcement.
-  #   {specs}/_source/ is IMPORT-only: the orchestrator is the only party that
-  #   sees across repositories, so it brings inherited material in. Nobody edits
-  #   it afterwards, this agent included — see specs/_source/README.md.
-  #   The list must keep matching the comment above it. It first read
-  #   `{design}/{shared_dir}/components.md` while the comment claimed "any
-  #   artifact", and C6 caught the gap the moment a SECOND destroyed file (an
-  #   iOS mockup) had to be put back. A grant narrower than its own stated
-  #   reason is the same defect this repo keeps finding in ACs.
-  # spec-agent also owns the *structural* half of the spoken-frame catalogue:
-  # F-002 AC-22 designates design/_shared/components.md as the owning artifact
-  # for frame IDs and slot contracts, and the spec must be able to declare them
-  # there. WORDING in that file stays design-agent's — the two never write the
-  # same column. Granted 2026-08-17 (T-052); C6 flagged the write before this line existed.
+  # Cross-cutting records the orchestrator maintains, plus the landing place for a
+  # ONE-OFF cross-subtree grant it issued: when a change must land as a single unit
+  # (T-121 — splitting it would have left Today defined twice) the acting agent
+  # crosses lines under an explicit grant and the files are recorded on the
+  # orchestrator row rather than widening that agent permanently. The map cannot
+  # express "sanctioned once"; that is the gap, not the crossing.
+  orchestrator:      ["reports/", ".claude/state/", ".mobile-app/", "MANIFEST.md", "{specs}/_source/", "{specs}/{shared_dir}/LEARNINGS.md", "{specs}/{shared_dir}/uc-coverage-map.md", "{design}/", "{qa}/"]
   spec-agent:        ["{specs}/", "{design}/{shared_dir}/components.md"]
   architect-agent:   ["{specs}/"]
   design-agent:      ["{design}/"]

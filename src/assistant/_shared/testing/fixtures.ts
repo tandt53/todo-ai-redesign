@@ -13,6 +13,7 @@
 import type { AppliedAnatomy, TurnOutcome, UndoOutcomeWire } from '../../api/types.ts'
 import type { BoundaryWire, SessionWire, TaskWire, TurnWire } from '../types.ts'
 import type { FetchLike } from '../api/client.ts'
+import { startOfTodayIso } from '../model/tasks.ts'
 
 export const T0 = '2026-08-16T14:04:00.000Z'
 
@@ -23,12 +24,31 @@ export function task(over: Partial<TaskWire> = {}): TaskWire {
     due_at: null,
     reminder_at: null,
     priority: null,
-    status: 'today',
+    // `'inbox'`, not `'today'` — ADR-009 retired `status: 'today'` as a live
+    // value, so a builder defaulting to it would mint rows the app can no
+    // longer produce and put every un-overridden fixture in a state no user
+    // can reach. A default task is therefore in **Inbox** and in no day group
+    // but Anytime; a test that means "this row is in Today" must now say so
+    // with a `due_at`, which is the only thing that puts it there.
+    status: 'inbox',
     created_at: T0,
     updated_at: T0,
     deleted_at: null,
     ...over,
   }
+}
+
+/**
+ * A task the **current device day** holds — ADR-009's only way into Today.
+ *
+ * Since the status leg was dropped, "put this row in Today" is a statement
+ * about `due_at` and about nothing else, and it has to be made against the real
+ * clock because `openTodayCount` / `collectionTasks` default `now` to it. This
+ * exists so no suite re-derives the date, and so the phrase "a task in Today"
+ * has exactly one spelling across both tiers.
+ */
+export function todayTask(over: Partial<TaskWire> = {}): TaskWire {
+  return task({ due_at: startOfTodayIso(), ...over })
 }
 
 export function turn(over: Partial<TurnWire> = {}): TurnWire {

@@ -23,7 +23,15 @@ import { describe, expect, it } from 'vitest'
 import type { Message } from '../../_shared/types.ts'
 import { initialShellState, shellReducer } from '../model/shell.ts'
 import { tasksSurfaceView } from '../model/tasks-view.ts'
-import { appliedTurn, mobileHarness, requestLog, settle, task, turnResponse } from './_helpers.ts'
+import {
+  appliedTurn,
+  mobileHarness,
+  requestLog,
+  settle,
+  task,
+  todayTask,
+  turnResponse,
+} from './_helpers.ts'
 import type { MobileHarness } from './_helpers.ts'
 
 const aiCalls = (h: MobileHarness) =>
@@ -133,7 +141,12 @@ describe('F-001 AC-32 — the task list tells the truth after a turn', () => {
     // surface after the fact) is shut by never taking it
     const shell = shellReducer(initialShellState('talk'), { type: 'go', surface: 'tasks' })
 
-    h.server.always('GET /tasks', 200, { tasks: [task({ id: 'task-1', title: 'grown in the turn' })] })
+    // dated today, because the surface opens on Today (DEFAULT_COLLECTION,
+    // ADR-009) and a dateless row would render an empty list here — the
+    // assertion would then be about the collection, not about staleness
+    h.server.always('GET /tasks', 200, {
+      tasks: [todayTask({ id: 'task-1', title: 'grown in the turn' })],
+    })
     h.server.always(
       'POST /assistant/turn',
       200,
@@ -151,7 +164,9 @@ describe('F-001 AC-32 — the task list tells the truth after a turn', () => {
 
   it('a list OPENED AFTERWARDS opens showing the applied state, and opening it is not a refresh', async () => {
     const h = await withTasks()
-    h.server.always('GET /tasks', 200, { tasks: [task({ id: 'task-1', title: 'applied while away' })] })
+    h.server.always('GET /tasks', 200, {
+      tasks: [todayTask({ id: 'task-1', title: 'applied while away' })],
+    })
     h.server.always(
       'POST /assistant/turn',
       200,

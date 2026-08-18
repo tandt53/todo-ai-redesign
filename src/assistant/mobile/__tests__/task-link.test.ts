@@ -23,7 +23,7 @@ import {
   taskLinkState,
 } from '../model/task-link.ts'
 import { motion } from '../model/theme.ts'
-import { task } from './_helpers.ts'
+import { task, todayTask } from './_helpers.ts'
 
 const AT = '2026-08-17T09:00:00.000Z'
 
@@ -70,7 +70,10 @@ function stateWith(over: Partial<AppState> = {}): AppState {
 }
 
 describe('AC-31 — the door, when the list holds the row', () => {
-  const held = task({ id: 'task-1', title: 'Review the Q3 budget draft', status: 'today' })
+  // Dated today — after ADR-009 that is the ONLY thing that puts a row in the
+  // Today collection; `status: 'today'` would leave it in Inbox and make every
+  // assertion below quietly about a different list.
+  const held = todayTask({ id: 'task-1', title: 'Review the Q3 budget draft' })
 
   it('a named task the current collection holds is a control', () => {
     expect(taskLinkState('task-1', [held], 'today')).toBe('link')
@@ -170,7 +173,9 @@ describe('AC-31 — ONE routine, and it flashes exactly once', () => {
   })
 
   it('the same row arrived at twice is two events, so the second flash still fires', () => {
-    const held = task({ id: 'task-1' })
+    // `initialShellState` opens on DEFAULT_COLLECTION, which is Today, so the
+    // row has to be dated for the routine to accept it at all.
+    const held = todayTask({ id: 'task-1' })
     const state = stateWith({ tasks: [held] })
     const first = revealTask(initialShellState('tasks'), 'task-1', state)
     const consumed = shellReducer(first, { type: 'reveal-consumed' })
@@ -192,8 +197,8 @@ describe('AC-31 — ONE routine, and it flashes exactly once', () => {
 // ---------------------------------------------------------------------------
 
 describe('D8 — the row carries a delete control and a rename input on touch', () => {
-  const rows = stateWith({ tasks: [task({ id: 'task-1', status: 'today' })] })
-  const onTasks = initialShellState('tasks')
+  const rows = stateWith({ tasks: [todayTask({ id: 'task-1' })] })
+  const onTasks = initialShellState('tasks') // opens on Today (DEFAULT_COLLECTION)
 
   it('delete is declared whenever the list has rows — always visible, never hover-revealed', () => {
     // "A hover-revealed control does not exist on touch, and hiding it would

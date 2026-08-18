@@ -34,6 +34,7 @@ export {
   boundary,
   session,
   task,
+  todayTask,
   turn,
   turnResponse,
   undoOutcome,

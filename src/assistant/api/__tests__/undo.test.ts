@@ -52,10 +52,13 @@ describe('POST /assistant/turn/{turn_id}/undo — revert shapes (AC-6)', () => {
   it('delete → tasks restored with all fields intact', async () => {
     const h = await buildHarness()
     const user = uid()
+    // `archived` is the write vocabulary's third member (ADR-009 §2) and the
+    // one no other path writes, so a restored `archived` can only have come
+    // from the snapshot. It replaces `today`, which is no longer settable.
     await createTask(h, user, 'Team meeting', {
       due_at: '2026-08-20T10:00:00.000Z',
       priority: 'high',
-      status: 'today',
+      status: 'archived',
     })
     const turn = (await sendTurn(h, user, 'delete the meeting')).body.turn
     expect(await listTasks(h, user)).toHaveLength(0)
@@ -65,7 +68,7 @@ describe('POST /assistant/turn/{turn_id}/undo — revert shapes (AC-6)', () => {
       title: 'Team meeting',
       due_at: '2026-08-20T10:00:00.000Z',
       priority: 'high',
-      status: 'today',
+      status: 'archived',
       deleted_at: null,
     })
   })

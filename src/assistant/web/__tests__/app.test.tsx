@@ -18,6 +18,7 @@ import { AssistantController } from '../../_shared/controller.ts'
 import { initialState, reducer } from '../../_shared/model/reducer.ts'
 import type { Action, AppState } from '../../_shared/model/reducer.ts'
 import type { NewMsg } from '../../_shared/model/messages.ts'
+import { isToday } from '../../_shared/model/tasks.ts'
 import type { SpeechCapability } from '../../_shared/ports/transcript-source.ts'
 import {
   animateScrollTo,
@@ -31,6 +32,7 @@ import {
   setReducedMotion,
   T0,
   task,
+  todayTask,
   turnResponse,
 } from './_helpers.ts'
 import type { TestController } from './_helpers.ts'
@@ -153,9 +155,14 @@ function mount(state: AppState, drive?: (m: Mounted) => void): Mounted {
   return mounted
 }
 
+// Two open rows and one ticked one. The two open rows are dated TODAY, because
+// the app now opens on the Today collection (DEFAULT_COLLECTION, ADR-009) and
+// membership there is the date — dateless rows would render an empty list and
+// every `assistant-task-row` / `assistant-row-badge` assertion below would be
+// asserting about a surface with nothing on it.
 const TASKS = [
-  task({ id: 'task-1', title: 'Review Q3 budget draft', due_at: '2026-08-16T09:00:00.000Z' }),
-  task({ id: 'task-2', title: 'Pay electricity bill' }),
+  todayTask({ id: 'task-1', title: 'Review Q3 budget draft' }),
+  todayTask({ id: 'task-2', title: 'Pay electricity bill' }),
   task({ id: 'task-3', title: 'Team standup', status: 'done' }),
 ]
 
@@ -1022,7 +1029,22 @@ describe('interactions', () => {
       fireEvent.keyDown(field, { key: 'Enter' })
     })
 
-    expect(h.server.calls.some((c) => c.method === 'POST' && c.path === '/tasks')).toBe(true)
+    const post = h.server.calls.find((c) => c.method === 'POST' && c.path === '/tasks')
+    expect(post).toBeDefined()
+    // Add-in-context (ADR-009 §4), end to end through the UI: the surface is on
+    // Today, so the create carries TODAY'S DATE and no `status: 'today'`. This
+    // is what stops the default landing collection showing an empty list to a
+    // user who has just added something to it.
+    const body = post?.body as { due_at: string | null; status?: string }
+    expect(body.status).toBeUndefined()
+    // `T0`, not `new Date()`: the create path dates the row from the
+    // controller's injected clock (`ControllerDeps.now`), which the harness
+    // pins. In production that seam IS the device clock the view buckets by, so
+    // the two agree; here the pin is what makes the assertion deterministic.
+    expect(isToday(body.due_at, new Date(T0))).toBe(true)
+    // and it is midnight-local, not the moment of creation (ADR-009 §4)
+    const created = new Date(body.due_at as string)
+    expect([created.getHours(), created.getMinutes()]).toEqual([0, 0])
     expect(h.server.assistantCalls()).toHaveLength(assistantBefore)
   })
 
@@ -1031,24 +1053,37 @@ describe('interactions', () => {
     // toggles a pane beside the conversation — it opens navigation to the other
     // surface's collections. Same data, now addressable (IA §3).
     const h = harness()
+    // A dateless open row is added to TASKS on purpose: after ADR-009 Today and
+    // Inbox are no longer the same set, and without a row that only Inbox holds
+    // the Today→Inbox step would render an identical list and prove nothing.
+    const dateless = task({ id: 'task-4', title: 'Someday', status: 'inbox', due_at: null })
     h.server
       .always('GET /assistant/session', 200, { session: session(), boundary: null })
-      .always('GET /tasks', 200, { tasks: TASKS })
+      .always('GET /tasks', 200, { tasks: [...TASKS, dateless] })
     await act(async () => {
       await h.controller.init()
     })
     render(<App controller={h.controller} />)
 
-    // Inbox — every open task, which is what the shipped default filter showed.
+    const openMenu = async (name: string): Promise<void> => {
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('shell-lists-menu-button'))
+      })
+      const row = screen
+        .getAllByTestId('menu-collection-row')
+        .find((r) => (r.textContent ?? '').includes(name)) as HTMLElement
+      await act(async () => {
+        fireEvent.click(row)
+      })
+    }
+
+    // Today (DEFAULT_COLLECTION) — the two open rows that carry today's date.
     expect(screen.getAllByTestId('assistant-task-row').length).toBe(2)
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('shell-lists-menu-button'))
-    })
-    const rows = screen.getAllByTestId('menu-collection-row')
-    const done = rows.find((r) => (r.textContent ?? '').includes('Done')) as HTMLElement
-    await act(async () => {
-      fireEvent.click(done)
-    })
+    // Inbox — EVERY open task, dated or not: the superset, one row larger.
+    await openMenu('Inbox')
+    expect(screen.getAllByTestId('assistant-task-row').length).toBe(3)
+    // Done — the ticked one.
+    await openMenu('Done')
     expect(screen.getAllByTestId('assistant-task-row').length).toBe(1)
     // …and picking a collection closes the menu (IA §4: "tap the row; the menu
     // closes" — one tap, not two).

@@ -41,6 +41,8 @@ import {
 import type { MessageContext, NewMsg } from './model/messages.ts'
 import { initialState, reducer, undoableTurnId } from './model/reducer.ts'
 import type { Action, AppState } from './model/reducer.ts'
+import { dueAtForCollection } from './model/tasks.ts'
+import type { Collection } from './model/tasks.ts'
 import type {
   DiffLine,
   QuestionKind,
@@ -556,22 +558,42 @@ export class AssistantController {
   // Manual path (AC-18) — /tasks only, zero AI involvement
   // -------------------------------------------------------------------------
 
-  async addTask(title: string): Promise<void> {
+  /**
+   * Add by hand. **`collection` is where the user is looking**, and it sets the
+   * task's DATE, not its status (ADR-009 §4): on Today the row is dated the
+   * local start of today, so it lands in the list the user is standing in;
+   * everywhere else it is dateless and lands in Inbox.
+   *
+   * The default is `'inbox'` because the other caller is the conversation —
+   * `send()`'s offline local path (AC-25) — which is not a collection at all
+   * and has no day to commit the user to.
+   */
+  async addTask(title: string, collection: Collection = 'inbox'): Promise<void> {
     const t = title.trim()
     if (t === '') return
     if (this.state.offline || !this.onlineNow()) {
-      this.createLocalTask(t)
+      this.createLocalTask(t, collection)
       return
     }
-    const res = await this.api.createTask({ title: t })
+    const res = await this.api.createTask({
+      title: t,
+      due_at: dueAtForCollection(collection, new Date(this.now())),
+    })
     if (res.kind === 'ok') await this.refreshTasks()
-    else this.createLocalTask(t)
+    else this.createLocalTask(t, collection)
   }
 
   async toggleTask(taskId: string): Promise<void> {
     const task = this.state.tasks.find((t) => t.id === taskId)
     if (task === undefined) return
-    const nextStatus = task.status === 'done' ? 'today' : 'done'
+    // Un-completing writes `inbox` and **does not touch `due_at`** (ADR-009 §3).
+    // This line read `? 'today'` and was wrong twice over: it wrote a status
+    // that means nothing, AND it failed to put the row in Today, because a
+    // dateless row is not in Today. Leaving the date alone is what makes the
+    // round trip lossless — a row dated today returns to Today, a dateless one
+    // returns to Inbox, which is where each came from (UC-45 AC-45.2, with no
+    // `doneFrom` field).
+    const nextStatus = task.status === 'done' ? 'inbox' : 'done'
     // a hand-changed row is never attributed to a turn (AC-4)
     this.dispatch({ type: 'unmark-task', taskId })
     this.dispatch({
@@ -646,12 +668,16 @@ export class AssistantController {
     this.dispatch({ type: 'tasks-load', load: 'ok' })
   }
 
-  private createLocalTask(title: string): void {
+  private createLocalTask(title: string, collection: Collection = 'inbox'): void {
     const at = this.now()
     const task: TaskView = {
       id: this.uuid(),
       title,
-      due_at: null,
+      // Same rule as the online path, and it has to be: the offline row is
+      // replayed verbatim on reconnect (`pushLocalTasks`), so a date decided
+      // only in `addTask` would be lost for exactly the users who cannot see
+      // the server correct it.
+      due_at: dueAtForCollection(collection, new Date(at)),
       reminder_at: null,
       priority: null,
       status: 'inbox',

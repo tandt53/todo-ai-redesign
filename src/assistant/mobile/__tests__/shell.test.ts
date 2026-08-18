@@ -36,7 +36,7 @@ import {
   tasksSurfaceView,
 } from '../model/tasks-view.ts'
 import type { LoadState } from '../../_shared/model/reducer.ts'
-import { task } from './_helpers.ts'
+import { task, todayTask } from './_helpers.ts'
 
 const ROOT = resolve(import.meta.dirname, '../../../..')
 const MOBILE_SRC = resolve(ROOT, 'src/assistant/mobile')
@@ -177,14 +177,18 @@ describe('back means UP ONE LEVEL, never "the previous surface"', () => {
 
 describe('PathSwitch carries the open count, and the count is not the guarantee', () => {
   it('PS-TASKS names the count as a sentence, never as a bare number', () => {
-    const tasks = [task({ id: 'a' }), task({ id: 'b' }), task({ id: 'c', status: 'done' })]
+    // All three are dated TODAY (ADR-009: that is the only thing that puts a
+    // row in Today). `c` is dated today AND done, so the badge excluding it is
+    // the done rule doing work — a dateless `done` row would have been excluded
+    // twice over and proved neither.
+    const tasks = [todayTask({ id: 'a' }), todayTask({ id: 'b' }), todayTask({ id: 'c', status: 'done' })]
     const v = pathSwitch('talk', tasks)
     expect(v).toMatchObject({ row: 'PS-TASKS', label: 'Tasks', badge: 2 })
     expect(v.accessibleName).toBe('Tasks, 2 left today')
   })
 
   it('zero renders NO badge — a badge reading 0 is a number pretending to be news', () => {
-    const v = pathSwitch('talk', [task({ status: 'done' })])
+    const v = pathSwitch('talk', [todayTask({ status: 'done' })])
     expect(v.badge).toBe(null)
     expect(v.accessibleName).toBe('Tasks')
   })
@@ -199,7 +203,9 @@ describe('PathSwitch carries the open count, and the count is not the guarantee'
   })
 
   it('the badge and the Tasks header publish ONE number, not two definitions', () => {
-    const tasks = [task({ id: 'a' }), task({ id: 'b', status: 'inbox' }), task({ id: 'c' })]
+    // two in Today (dated), one only in Inbox (dateless) — so the number is 2
+    // and not 3, and the two publishers still agree on it
+    const tasks = [todayTask({ id: 'a' }), task({ id: 'b', status: 'inbox' }), todayTask({ id: 'c' })]
     expect(pathSwitch('talk', tasks).badge).toBe(openTodayCount(tasks))
     expect(tasksHeadline(openTodayCount(tasks))).toBe('2 tasks left today')
   })
@@ -300,7 +306,7 @@ describe('S1 Talk — a loading surface never renders its empty state', () => {
 
 describe('S2 Tasks — the list is never replaced by an error', () => {
   it('a failed refresh with tasks on device keeps every row and adds a retry banner', () => {
-    const v = tasksSurfaceView(stateWith({ tasks: [task()], tasksLoad: 'failed' }), 'today')
+    const v = tasksSurfaceView(stateWith({ tasks: [todayTask()], tasksLoad: 'failed' }), 'today')
     expect(v.view).toBe('default')
     expect(v.banner).toBe('retry')
     expect(v.tasks).toHaveLength(1)
@@ -312,7 +318,7 @@ describe('S2 Tasks — the list is never replaced by an error', () => {
   })
 
   it('offline is not a failure: the list works and the banner carries the news', () => {
-    const v = tasksSurfaceView(stateWith({ tasks: [task()], offline: true }), 'today')
+    const v = tasksSurfaceView(stateWith({ tasks: [todayTask()], offline: true }), 'today')
     expect(v.view).toBe('default')
     expect(v.banner).toBe('offline')
   })
@@ -342,7 +348,7 @@ describe('day headers stack above their rows', () => {
     const now = new Date('2026-08-16T09:00:00.000Z')
     const groups = groupTasks(
       [
-        task({ id: 'a', status: 'today', due_at: '2026-08-16T16:00:00.000Z' }),
+        task({ id: 'a', status: 'inbox', due_at: '2026-08-16T16:00:00.000Z' }),
         task({ id: 'b', status: 'inbox', due_at: '2026-08-17T10:00:00.000Z' }),
         task({ id: 'c', status: 'inbox', due_at: null }),
       ],
@@ -358,8 +364,8 @@ describe('day headers stack above their rows', () => {
     const now = new Date('2026-08-16T09:00:00.000Z')
     const groups = groupTasks(
       [
-        task({ id: 'a', status: 'today', due_at: '2026-08-16T10:00:00.000Z' }),
-        task({ id: 'b', status: 'today', due_at: '2026-08-16T12:00:00.000Z' }),
+        task({ id: 'a', status: 'inbox', due_at: '2026-08-16T10:00:00.000Z' }),
+        task({ id: 'b', status: 'inbox', due_at: '2026-08-16T12:00:00.000Z' }),
       ],
       now,
     )

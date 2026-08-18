@@ -223,7 +223,11 @@ export function TasksSurface({
   const failedWithContent = state.tasksLoad === 'failed' && !nothingAnywhere
 
   const commitAdd = () => {
-    if (draft.trim() !== '') void controller.addTask(draft)
+    // Add-in-context (ADR-009 §4): the collection on screen is passed through,
+    // and on Today it becomes the row's DATE. Dropping it here is what would
+    // make the default landing collection show an empty list right after the
+    // user added something to it.
+    if (draft.trim() !== '') void controller.addTask(draft, collection)
     setDraft('')
     setAdding(false)
   }

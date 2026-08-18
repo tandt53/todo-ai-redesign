@@ -19,7 +19,7 @@
 Revert shape "delete" (AC-6): deleted tasks are restored with **all fields intact** — not recreated bare. The seeded task carries every mutable field (due_at, reminder_at, priority, status) so a lossy restore is caught field-by-field.
 
 ## Preconditions
-- User `QAAPI-U1`; seeded via POST /tasks: `{title: "qaapi-dentist", due_at: <D>, reminder_at: <R>, priority: <P>, status: "today"}`; full task object captured as `{orig}`.
+- User `QAAPI-U1`; seeded via POST /tasks: `{title: "qaapi-dentist", due_at: <D>, reminder_at: <R>, priority: <P>, status: "archived"}` (ADR-009 narrowed the write vocabulary; `today` is now a 400); full task object captured as `{orig}`.
 - Applied single-delete turn via UT-DELETE-1-style row targeting `qaapi-dentist`, turn id `{tid}`.
 
 ## Test steps
