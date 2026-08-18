@@ -314,7 +314,8 @@ any pure-CRUD scenario (AC-18, AC-25 offline local path).
 `status?` on both write endpoints is narrower than `TaskStatus` — see
 § `status` on the wire below. Un-completing a task sends `status: "inbox"` and
 **does not send `due_at`**: leaving the date untouched is what returns the task
-to the collection it came from (ADR-009).
+to the collection it came from — one of four since the 2026-08-18 amendment
+(ADR-009).
 
 `id` on `POST /tasks` is optional and **client-generated** (uuid): the
 offline local path (AC-25) creates the task locally under a real id and
@@ -328,7 +329,10 @@ as already-synced (its ack). Omitted `id` → server generates one.
 and `archived`.** `today` is **rejected** — `400 INVALID_INPUT`, `field:
 "status"` — and it is the one member of `TaskStatus` that this is true of. It is
 retired as a live value: membership in Today is `due_at`, not `status`
-(data-model.md § Today is a date). The union keeps the member because historical
+(data-model.md § The four collections). **The 2026-08-18 amendment adding the
+Upcoming collection changes nothing on the wire**: `upcoming` is a client-side
+view over `due_at`, never a status, so it is neither an accepted nor a returnable
+`status` value. The union keeps the member because historical
 records hold it; the wire is the write path, and the write path is where it is
 stopped from being minted again.
 
@@ -354,6 +358,7 @@ by `owner-decision-2026-08-18-today-is-a-date.md`):
 | Created while viewing | Body sends |
 |---|---|
 | Today | `status: "inbox"`, `due_at:` **the local start of today**, as an ISO instant |
+| **Upcoming** | **open — no contract value yet.** Upcoming's predicate is `due_at` *after today*, which names no single instant the way Today's day does, so no date is derivable and none is invented. The candidates (local start of tomorrow · `null` with the task announced as landing in Inbox · no composer on Upcoming at all) and their costs are in ADR-009 § The one cell this amendment refuses to fill; the call is design's / the owner's. **Until it is made, the client sends `due_at: null`** — the accidental answer today's code gives, recorded here so it is visible rather than silent |
 | Inbox | `status: "inbox"`, `due_at: null` |
 | Done | `status: "inbox"`, `due_at: null` — a task cannot be created finished |
 
@@ -364,3 +369,6 @@ group is unaffected — this repo orders by `created_at` (`uc-coverage-map.md` D
 
 The collection is a **client** concept. The server receives a `due_at` and has no
 opinion about which day it belongs to; no endpoint takes a collection parameter.
+This is what makes the four-bucket amendment a **zero-endpoint change**: adding
+Upcoming adds no field, no parameter and no status value, because the buckets are
+read from a date the server already stores and serves.

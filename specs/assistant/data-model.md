@@ -139,16 +139,47 @@ only inside historical records.
 
 **A stored `'today'` is inert, and that is why the member is retained rather
 than deleted.** After ADR-009 nothing branches on it: a row carrying it is not
-done, so it appears in Inbox, and Today is read from the date, so it does not
-appear there. Undo replaying a pre-ADR-009 `undo_snapshot` therefore restores a
+done **and carries no date**, so it appears in Inbox, and Today is read from the
+date, so it does not appear there. (All live rows carrying the value are
+dateless — re-measured 2026-08-18 at the four-bucket amendment, ADR-009
+§ Amendment § What did not change.) Undo replaying a pre-ADR-009 `undo_snapshot` therefore restores a
 value that is harmless rather than one that is invalid. `archived` is a separate
 question (never assigned, never stored) and ADR-009 does not touch it.
 
-### Today is a date
+### The four collections — all of them date predicates (ADR-009 + its 2026-08-18 amendment)
 
-**Today is exactly the open tasks whose `due_at` falls on the current day.** A
-task with no date is never in Today — open or ticked. `status` does not
-participate.
+**Every collection is a filter on `due_at`, except Done, which is the one that is
+genuinely a status.** `status` does not participate in the other three.
+
+| Bucket | Membership |
+|---|---|
+| **Done** | `status === 'done'` |
+| **Today** | not done, `due_at` **on or before** today — **overdue included** |
+| **Upcoming** | not done, `due_at` **after** today |
+| **Inbox** | not done, **no `due_at`** |
+
+**Total and disjoint: every task has exactly one home.** Not-done splits on
+has-a-date; dated splits on past-or-today versus future. Nothing is stranded, and
+that totality — not a superset Inbox — is what carries F-001 AC-24's
+reachability bound, which makes **Upcoming being reachable a requirement rather
+than a layout preference** (ADR-009 § Nothing is stranded).
+
+**The two dated predicates compare local calendar days, not instants.** `due_at`
+is a timestamp and a bucket boundary is a day; reading Today as `due_at <= now`
+would leave a task dated today at 17:00 in no bucket until 17:00. Both compare
+`localDay(due_at)` against `localDay(now)` on the same device clock.
+
+**Today means "needs attention now", not literally "dated today."** Folding
+overdue in is a deliberate widening of the word, taken on the argument that a
+task which vanishes from view is how it gets forgotten
+(`reports/owner-decision-2026-08-18-four-buckets.md`). It is not a defect to
+narrow later.
+
+**Inbox means "no date yet."** It was *every open task* until 2026-08-18; the
+change is user-visible and was measured before it was taken — 7 of 737 live rows
+change bucket, all of them out of Inbox and into Today (ADR-009 § Amendment §2).
+
+A task with no date is never in Today — open or ticked.
 
 Three consequences are contract, not implementation detail:
 
@@ -157,8 +188,8 @@ Three consequences are contract, not implementation detail:
   no opinion about which day "today" is.
 - **`due_at` survives completion.** Completing a task writes `status` only;
   un-completing writes `status: 'inbox'` and likewise leaves `due_at` alone. A
-  task therefore returns to the collection it came from with no `doneFrom`
-  field — the requirement `uc-coverage-map.md` D6 records as unmet (UC-45
+  task therefore returns to the collection it came from — one of four now, still
+  with no `doneFrom` field — the requirement `uc-coverage-map.md` D6 records as unmet (UC-45
   AC-45.2).
 - **`done_today` is derivable** as `status: 'done'` **and** `due_at` today. It
   needs no `completed_at` column. Read what it measures before using it: it is
@@ -168,9 +199,13 @@ Three consequences are contract, not implementation detail:
   carries the copy consequence.
 
 **`Collection` is not `TaskStatus`.** `src/assistant/_shared/model/tasks.ts`
-defines `Collection = 'inbox' | 'today' | 'done'` — a **view** over tasks, which
-keeps all three members and in which `'today'` stays fully meaningful. The two
-sets share three names and nothing else. Changing one must not change the other.
+defines `Collection = 'inbox' | 'today' | 'upcoming' | 'done'` — a **view** over
+tasks, in which `'today'` stays fully meaningful. The two sets share three names
+and nothing else. Changing one must not change the other, and the 2026-08-18
+amendment is that rule's first exercise: **`Collection` gained `upcoming` and
+`TaskStatus` did not change at all.** There is no `upcoming` status, no client
+may send one, and no row will ever hold one — Upcoming is computed from `due_at`,
+exactly as Today is.
 
 ## Client-side stores (client contracts — not server entities)
 
