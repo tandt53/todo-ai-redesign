@@ -217,12 +217,38 @@ dashboard, so silently accepting it corrupts the metrics.
    parallel, so recording centrally is what removes the write race.
 7. For `PARTIAL`, create a follow-up task from the agent's `unresolved:` entries
    with `Depends` pointing at this task, so it cannot be dispatched out of order.
-8. Update STATUS.md ## Agent Results with completion entry
-9. If a workspace `task_id` was set in BRIEFING, post a one-line dispatcher note (best-effort, skip if `qa_task_comment` unavailable):
+8. **Record the return's memory entries. You are the sole writer of `memory/`**
+   (MANIFEST `## Paths.memory`), exactly as you are of the `## Links` block —
+   `_memory-protocol.md` says the write goes *through the orchestrator* and
+   agents may not write there themselves.
+
+   | Return field | Append to | What it is |
+   |---|---|---|
+   | `memory_entry:` | `memory/MEMORY.md` | project-wide: a non-obvious decision, a mistake found, a reusable pattern |
+   | `agent_memory_entry:` | `memory/{agent-name}.md` | that role's procedural knowledge — read at every one of its dispatches (layer 5) |
+
+   Create the file if it does not exist. An absent `memory/` is not "no memory
+   yet" — it is **every read layer returning empty forever**, which is what
+   teaches an agent to stop reading. Layers 2–5 of `_memory-protocol.md` all read
+   from this directory and **nothing else writes it.**
+
+   `memory_entry: none` is a legitimate answer and needs no action — the
+   protocol's three triggers are deliberately narrow. What is not legitimate is
+   never looking: if several consecutive returns carry entries and `memory/` is
+   still empty, the entries are being dropped on the floor here.
+
+   **Two judgement calls that are yours, not the agent's.** An entry whose real
+   home is an ADR, a spec or `LEARNINGS.md` goes *there* instead — agents
+   sometimes say so themselves, and they are usually right, because those files
+   are read by everyone while `memory/{agent}.md` is read by one. And an entry
+   that contradicts one already stored is a supersede, not an append
+   (`_memory-protocol.md ## Superseding stale entries`).
+9. Update STATUS.md ## Agent Results with completion entry
+10. If a workspace `task_id` was set in BRIEFING, post a one-line dispatcher note (best-effort, skip if `qa_task_comment` unavailable):
    ```
    qa_task_comment(task_id, body: "Status: <DONE|PARTIAL|BLOCKED> — confidence <HIGH|MEDIUM|LOW> — <one-line summary>", author: "system")
    ```
-10. Report to user
+11. Report to user
 
 **APPROVE** (product-agent/reviewer-agent only):
 1. Quality gate passed → proceed to next phase

@@ -45,10 +45,12 @@ done
 
 # One identity catalogue, one source prop, three surface spellings:
 #   web   data-testid
-#   RN    testID  →  iOS accessibilityIdentifier · Android resource-id
+#   RN    testID  ->  iOS accessibilityIdentifier . Android resource-id
 # contentDescription is NOT an identity attribute: it is Android's spoken
 # announcement (from accessibilityLabel), and TalkBack reads it aloud — an id
-# parked there gets spoken to the user instead of the message (F-003 AC-12).
+# parked there gets spoken to the user instead of the message. Treating it as
+# identity made the checker accept an id that is announced rather than queryable,
+# and miss the resource-id that is the real Android spelling.
 ATTR='data-testid|testID|accessibilityIdentifier|resource-id'
 
 ids_in() {

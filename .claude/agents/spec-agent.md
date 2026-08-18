@@ -292,6 +292,59 @@ That runs the mechanical half over the `## Data` table. States, transitions and
 actors are yours to account for by reading — the tool does not parse them, and
 their absence from it is not evidence they were handled.
 
+### `## Impact` — required for every feature that is not the first
+
+The section above accounts for the spec against **itself**. This one accounts for
+it against **the features that already exist**, and it is a separate obligation
+because nothing else in the pipeline carries it.
+
+**Why it is yours.** `## Check Existing Work` above asks whether this feature
+already exists — that is duplicate detection, and it is a different question.
+Gate 1's lenses are role-shaped and each is told what is out of its scope, so
+"the other features" is nobody's lens. Gate 2's C-checks run against code, by
+which point the impact has been designed and built around. **The pipeline
+compares a spec to itself and to the code, and never to the other specs.** You
+are the only party positioned to close that.
+
+Write it as: **per existing artifact — what this touches, what changes there, and
+what breaks if nobody looks.**
+
+Two failure modes to write against, because both look like a finished section:
+
+- **Listing only what the feature adds.** The half that matters is what existing
+  behaviour *changes or breaks*. A section that enumerates new fields and new
+  endpoints has described the feature again, not its impact.
+- **Settling an impact in passing.** Where an impact forces a product decision,
+  it is an **open question for the owner**, not something you resolve inside a
+  subsection. The owner overturns what they can see.
+
+Go looking in the places where a new field or a new row silently changes an old
+guarantee. The recurring shapes, offered as search targets rather than as a
+checklist to tick:
+
+- **Closed lists that gate behaviour** — allowlists, field tuples, enum sets. Ask
+  how many copies exist; the answer is rarely one. A field omitted from one of
+  them exists and is unreachable, and nothing errors.
+- **One constant serving two purposes.** When a list is both a permission and a
+  payload, a new member cannot be added to one half only.
+- **Records that are replayed verbatim** — snapshots, undo entries, event logs.
+  Widening the thing they store widens every record already written.
+- **A rule in an existing feature that this one must violate.** If feature X says
+  an unenumerated case *fails*, and your feature creates one, X will fail on
+  first use. That is X working correctly, and it is your dependency to name.
+- **A field with live data changing type or range.** That is a migration, not an
+  addition. Count the rows and say the number.
+- **Shared code paths.** An implementation living in shared code reaches every
+  client, whether or not the other clients are in this feature's scope.
+- **Contracts that enumerate or count** — parity tables, catalogues, pinned
+  totals. They are designed to break, and breaking them is the signal, not the
+  problem.
+
+If the feature genuinely touches nothing — a first feature, or a wholly isolated
+module — say that in one line **with the reason**. An absent section and a
+considered "nothing" are indistinguishable to every reader downstream, and only
+one of them is true.
+
 ---
 
 ## Updating the Module Feature Index

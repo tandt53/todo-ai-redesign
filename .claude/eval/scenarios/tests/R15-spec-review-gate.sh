@@ -71,6 +71,33 @@ done
 [ -z "$silent" ] && _record_pass "every lens is told to return a checked: list when it finds nothing" \
                  || _record_fail "lens(es) that could pass by silence: ${silent}"
 
+# --- the impact contract: both halves, or the gap re-opens silently ---
+#
+# The pipeline compares a spec to itself (declared-elements) and to the code
+# (Gate 2's C-checks), and never to the other specs. Nothing asked a new feature
+# what it breaks in the existing ones until an owner noticed the omission by
+# hand. Closing it took two edits in two files, and either one alone is
+# worthless: an Impact section nobody reviews is a paragraph, and a review
+# obligation with no section to read is a no-op. Both are asserted here so a
+# later tidy-up cannot remove one and leave the other looking healthy.
+SPEC_AGENT="$AGENTS/spec-agent.md"
+assert_file_exists "$SPEC_AGENT" "spec-agent.md present"
+if [ -f "$SPEC_AGENT" ]; then
+  assert_file_contains "$SPEC_AGENT" '## `## Impact`' \
+    "spec-agent requires an Impact section on a feature that is not the first"
+  assert_file_contains "$SPEC_AGENT" 'what breaks if nobody looks' \
+    "spec-agent states Impact covers what BREAKS, not only what is added"
+  assert_file_contains "$SPEC_AGENT" 'open question for the owner' \
+    "spec-agent forbids settling a product-forcing impact in passing"
+fi
+
+assert_file_contains "$PROTO" 'in scope for every lens' \
+  "protocol puts the Impact section in scope for every lens"
+assert_file_contains "$PROTO" 'true and incomplete' \
+  "protocol names incompleteness, not only error, as a reviewable impact failure"
+assert_file_contains "$PROTO" 'itself a HIGH finding' \
+  "protocol makes a MISSING Impact section a finding rather than nothing to review"
+
 # --- the orchestrator half ---
 assert_file_contains "$ORCH" 'Gate 1 — multi-lens spec review' "ORCHESTRATION defines the gate"
 assert_file_contains "$ORCH" 'spec_review' "ORCHESTRATION reads MANIFEST spec_review"

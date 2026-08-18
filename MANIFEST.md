@@ -81,6 +81,9 @@ patterns:
   qa_knowledge:       "{qa}/{shared_dir}/KNOWLEDGE.md"
   traceability:       "{qa}/{shared_dir}/TRACEABILITY.md"
   learnings:          "{specs}/{shared_dir}/LEARNINGS.md"   # durable cross-cutting lessons; reviewer appends, humans curate
+  memory:             "memory/"                             # _memory-protocol.md read layers 2-5; ORCHESTRATOR is the sole writer
+  memory_log:         "memory/MEMORY.md"                    # project-wide append-only log (layers 2-4)
+  memory_agent:       "memory/{agent}.md"                   # one file per agent — layer 5, procedural knowledge for that role
 ```
 
 <!-- Alternate layouts (not active — switch by changing `layout:` above):

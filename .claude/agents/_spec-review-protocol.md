@@ -107,11 +107,45 @@ checked:
 
 ---
 
+## The `## Impact` section is in scope for every lens
+
+The spec's `## Impact` section — what this feature changes or breaks in the
+features that already exist — **is reviewable by you, in your own lens's terms**,
+and this is the one place the scope rule below does not narrow.
+
+**Why it is everyone's and not a sixth lens.** An impact claim is a claim about
+an existing artifact, and the lens qualified to check it is whichever lens owns
+that artifact: the dev lens verifies claims about code, the architect lens claims
+about contracts and stored records, the design lens claims about the existing
+component vocabulary, the tester lens claims about what the current suites
+assert, the product lens claims about a shipped feature's promises. A dedicated
+impact lens would duplicate all five and hold no competence of its own.
+
+**And it is the section most likely to be wrong while looking finished.** It is
+written by the one agent that has read the new spec most and the old artifacts
+least. Three ways it fails, each of which is a legitimate finding:
+
+- **A claim that is simply false** — the cited file does not say that, or the
+  line moved.
+- **A claim that is true and incomplete** — it names two call sites and there are
+  thirteen. Incompleteness here is worse than error, because the section reads as
+  a considered answer.
+- **An impact silently settled** rather than raised — where the consequence
+  forces a product decision, the section owed the owner a question and gave
+  itself an answer instead.
+
+**A missing `## Impact` section is itself a HIGH finding** on any feature that is
+not the first in its module. Do not treat its absence as "nothing to review".
+
+---
+
 ## Scope discipline
 
 - **Answer your own lens's questions.** Your agent file lists them. Do not review
   the spec generally — the other lenses are covering the angles you are not, and
   four agents producing the same generic feedback is the failure mode here.
+  The `## Impact` section above is the deliberate exception: every lens reads it,
+  each within its own competence.
 - **Write nothing.** No files, not even the spec's `## Links` block. Findings go
   in your return.
 - **Do not fix.** You report; spec-agent revises.

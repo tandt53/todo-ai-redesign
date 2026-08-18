@@ -107,8 +107,17 @@ run_case R4 "absolute machine path in a prompt" \
 
 # R5 — a stale C-range quote. En-dash specifically: the ASCII form was the only
 # one the old pattern could see.
+#
+# The mutation is a plain substitution, and it must stay one. It was written as
+# `0,/C1–C14/s//C1–C9/` — GNU sed's first-match-only form, which BSD sed (macOS)
+# rejects by silently doing nothing and exiting 0. So on a Mac this case mutated
+# nothing, R5 stayed green, and the sweep reported R5 unproven — correctly, and
+# for a reason that looked like R5's fault rather than the case's. A mutation
+# case that cannot mutate is the same defect this whole file exists to catch,
+# one level up. Keep every case POSIX; there is one en-dash occurrence, so
+# replacing all of them is what replacing the first one meant anyway.
 run_case R5 "stale C-range quoted with an en-dash" \
-  "sed -i.bak '0,/C1–C14/s//C1–C9/' .claude/ORCHESTRATION.md"
+  "sed -i.bak 's/C1–C14/C1–C9/' .claude/ORCHESTRATION.md"
 
 # R6 — a protocol no agent names is dead, because dispatch appends nothing.
 run_case R6 "protocol reachable from no agent" \
@@ -153,6 +162,60 @@ run_case R13 "declared-elements counts every field as accounted for" \
 # declared id as honoured is how it would die: the tally keeps printing.
 run_case R14 "testid-contract counts every id as honoured" \
   "sed -i.bak 's/MISSING + 1/MISSING + 0/' .claude/tools/design-check/testid-contract.sh"
+
+# R15 — Gate 1. Four cases, because the gate has four independent ways to die
+# and each of them leaves the others looking healthy.
+#
+# R15 and R16 shipped with no case here at all, which by this file's own rule
+# made them unproven rather than passing — and R15 is the scenario guarding the
+# gate that the impact contract was then added to. Building on an unproven check
+# adds words, not protection, so the debt is paid before the new assertions rest
+# on it.
+
+# A lens that can pass by saying nothing. This is the gate's oldest failure mode:
+# four agents agreeing a spec seems reasonable is pure expense.
+run_case R15 "a lens is no longer told to return a checked: list" \
+  "sed -i.bak 's/checked/reviewed-quietly/g' $A/qa-web-agent.md"
+
+# The impact contract, half one: the section stops being required. The gate then
+# reviews a section that is never written, which reads as compliance.
+run_case R15 "spec-agent stops requiring the Impact section" \
+  "sed -i.bak 's/what breaks if nobody looks/what the feature adds/' $A/spec-agent.md"
+
+# The impact contract, half two: the section is still written and nobody is told
+# to read it. The scope-discipline rule then quietly excludes it, since it is not
+# any single lens's own question.
+run_case R15 "the protocol stops putting Impact in scope for every lens" \
+  "sed -i.bak 's/in scope for every lens/written by spec-agent/' $A/_spec-review-protocol.md"
+
+# The absence loophole: a missing section reads as nothing to review rather than
+# as the finding it is. This is how the requirement dies without anyone editing
+# the requirement.
+run_case R15 "a missing Impact section stops being a finding" \
+  "sed -i.bak 's/itself a HIGH finding/itself unremarkable/' $A/_spec-review-protocol.md"
+
+# R17 — the executor half. Three cases, one per way the link can break: the
+# playbook forgets it is the writer, the protocol stops naming an executor (so
+# the sweep has nothing to check and must say so rather than pass), and the
+# paths stop resolving.
+run_case R17 "the playbook stops naming the memory return fields" \
+  "sed -i.bak 's/agent_memory_entry/agent_notes_entry/g' .claude/ORCHESTRATION.md"
+
+run_case R17 "the protocol stops delegating, so the sweep examines nothing" \
+  "sed -i.bak 's/through the \*\*orchestrator\*\*/by hand/' $A/_memory-protocol.md"
+
+# MANIFEST.md sits at the project-starter root, which IS the sandbox root the
+# mutation runs in — an earlier version of this case wrote `../MANIFEST.md` and
+# so edited a file outside the copy, mutating nothing. The sweep reported it
+# unproven, which was the sweep working.
+run_case R17 "MANIFEST stops declaring where memory lives" \
+  "sed -i.bak 's/^  memory_agent:/  disabled_memory_agent:/' MANIFEST.md"
+
+# R16 — design craft. The scenario's claim is that the aesthetic direction is
+# delegated to the vendored skills rather than restated in prose, so the case
+# breaks the delegation and requires the scenario to notice.
+run_case R16 "design-agent stops delegating aesthetics to the vendored skills" \
+  "sed -i.bak 's|.claude/skills/|.claude/skills-removed/|g' $A/design-agent.md"
 
 echo
 echo "─── ${PROVEN} proven fallible, ${UNPROVEN} unproven ───"
