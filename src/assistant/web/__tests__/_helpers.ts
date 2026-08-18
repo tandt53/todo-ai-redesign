@@ -20,6 +20,7 @@ export {
   task,
   todayTask,
   upcomingTask,
+  filedTask,
   turn,
   applied,
   appliedTurn,

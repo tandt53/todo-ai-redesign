@@ -697,6 +697,12 @@ export function makeStyles(c: Palette) {
       borderRadius: radius.sm,
     },
     menuRowActive: { backgroundColor: c.primaryTint },
+    // The group break (components.md § ListsMenu, "Where the Inbox row sits"):
+    // the views and the gate, then space, then the filing rows. Space, not a
+    // rule and not a header — whitespace groups before borders do, and no word
+    // is true of both Inbox and the user's own lists. It is what stops the
+    // column reading as arithmetic now that Inbox's count contains Today's.
+    menuFilingGroup: { marginTop: spacing.lg },
     menuRowText: {
       fontFamily: font.family.body,
       fontSize: font.size.body,

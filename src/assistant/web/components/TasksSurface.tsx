@@ -178,12 +178,15 @@ function TaskRow({
  *
  * This drew `todayGroupLabel(now)` — the literal `Today · {date}` — over every
  * collection's skeleton. That already contradicted § Skeletons' own rule that
- * skeletons carry no text; under four buckets it is a wrong heading on three
- * collections and a coin-flip on the fourth, because the first heading the read
- * produces is `Overdue` on Today whenever anything is late, `Tomorrow · {date}`
- * on Upcoming, and nothing at all on Inbox and Done. **A skeleton cannot know
- * which heading the read will produce, so it must not assert one.** The bar
- * mirrors the silhouette, which is all this section ever asked for.
+ * skeletons carry no text, and it is a wrong heading on every collection but
+ * one: the first heading the read produces is `Overdue` on Today whenever
+ * anything is late, `Tomorrow · {date}` on Upcoming, `Overdue` again on Inbox
+ * since T-139 — it groups now, and is the only collection that can produce all
+ * five — and nothing at all on Done. **A skeleton cannot know which heading the
+ * read will produce, so it must not assert one.** The bar mirrors the
+ * silhouette, which is all this section ever asked for. `groupsByDay` is the
+ * one answer both the skeleton and the read take, so a collection that starts
+ * or stops grouping moves both together.
  *
  * No spinner in a void anywhere in this app, and no testid: nothing about a
  * skeleton is assertable except that it is not the empty state.
@@ -219,9 +222,13 @@ export function TasksSurface({
   const now = new Date()
   const collection: Collection = shell.collection
   const tasks = collectionTasks(state.tasks, collection, now)
-  // Grouping is per collection now: Today gets `Overdue` + `Today · {date}`,
-  // Upcoming gets `Tomorrow · {date}` + `Later`, and Inbox and Done render
-  // flat — one unlabelled group, no headings (components.md § TaskList).
+  // Grouping is per collection: Today gets `Overdue` + `Today · {date}`,
+  // Upcoming gets `Tomorrow · {date}` + `Later`, **Inbox can produce all five**
+  // — it is a container, so it holds rows from every cell of the date axis —
+  // and Done alone renders flat, one unlabelled group with no headings
+  // (components.md § TaskList). Today and Inbox therefore draw the same overdue
+  // rows under the same `Overdue` heading; that is the two axes showing
+  // through, not a duplication bug.
   const groups = groupTasks(tasks, collection, now)
   // components.md's drawn header string — "3 tasks left today" — is TRUE only
   // of the Today collection, and its zero form ("Nothing left today") likewise.

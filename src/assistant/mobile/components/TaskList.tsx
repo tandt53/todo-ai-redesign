@@ -226,12 +226,13 @@ export function TaskList({
       <ScrollView keyboardShouldPersistTaps="handled">
         {/* SK-ROW sat under a REAL day header — the literal `Today · {date}` —
             which § Skeletons' own rule already forbade (skeletons carry no
-            text) and the four buckets made wrong: the first heading is
+            text) and the collections made wrong: the first heading is
             `Overdue` on Today whenever anything is late, `Tomorrow · {date}` on
-            Upcoming, and nothing at all on Inbox and Done. A skeleton cannot
-            know which heading the read will produce, so it draws a
-            heading-shaped BAR where one will go — and nothing on the
-            collections that render flat. */}
+            Upcoming, `Overdue` again on Inbox since T-139 (it groups now, and
+            can produce all five headings), and nothing at all on Done. A
+            skeleton cannot know which heading the read will produce, so it
+            draws a heading-shaped BAR where one will go — and nothing on the
+            one collection that renders flat. */}
         {groupsByDay(collection) && <View style={styles.skeletonDayHead} />}
         <RowSkeletons />
       </ScrollView>

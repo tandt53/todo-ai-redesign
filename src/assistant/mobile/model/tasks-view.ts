@@ -16,12 +16,16 @@
 // SCOPE BOUNDARY, stated once and enforced by what is absent: **personal lists
 // do not exist.** `task` has no `list_id` and there is no `lists` table
 // (`information-architecture.md § 7`), so `Collection` is a closed union of the
-// four built-in collections — three date predicates and Done — and a personal
-// list cannot be represented here at all.
+// four built-in collections — two date views, the Done gate, and Inbox, which
+// is the filing axis's one built-in cell — and a personal list cannot be
+// represented here at all. `COLLECTION_GROUPS` is re-exported with the rest
+// because the Lists menu's group break is part of that order, not a mobile
+// rendering choice (ADR-009 § Amendment 2; components.md § ListsMenu).
 
 import type { AppState, LoadState } from '../../_shared/model/reducer.ts'
 import {
   COLLECTIONS,
+  COLLECTION_GROUPS,
   DEFAULT_COLLECTION,
   collectionCount,
   collectionName,
@@ -35,6 +39,7 @@ import type { TaskView } from '../../_shared/types.ts'
 
 export {
   COLLECTIONS,
+  COLLECTION_GROUPS,
   DEFAULT_COLLECTION,
   collectionCount,
   collectionName,

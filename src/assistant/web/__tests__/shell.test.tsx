@@ -546,23 +546,42 @@ describe('the shell', () => {
     act(() => {
       fireEvent.click(screen.getByTestId('shell-lists-menu-button'))
     })
-    // Order is `Today · Upcoming · Inbox · Done` — by time horizon
-    // (components.md § ListsMenu). TASKS are dated today, so the Today row and
-    // the PathSwitch badge carry the same 2, which is the identity § PathSwitch
-    // asserts (one number, not a duplicated count). CHANGED at T-128: Inbox
-    // read `Inbox 2` while it was a superset of every open task; it holds only
-    // the undated row now. Done stays bare — zero is never rendered as a count.
+    // Order is `Today · Upcoming · Done`, a group break, then Inbox
+    // (components.md § ListsMenu, "Where the Inbox row sits"). TASKS are dated
+    // today, so the Today row and the PathSwitch badge carry the same 2, which
+    // is the identity § PathSwitch asserts (one number, not a duplicated
+    // count). Done stays bare — zero is never rendered as a count.
+    //
+    // CHANGED TWICE. `Inbox 2` while it was a superset of every open task;
+    // `Inbox 1` at T-128, when it held only the undated row; `Inbox 4` now — it
+    // is the tasks filed nowhere, nothing can be filed, so it holds every open
+    // row including the two dated ones. **The column does not sum to a
+    // headcount and is not meant to:** 2 + 1 + 0 + 4 = 7 across 5 open rows,
+    // over by the dated-and-unfiled ones counted on both axes. That is the
+    // model, and the group break is what stops it reading as arithmetic.
     expect(screen.getAllByTestId('menu-collection-row').map((r) => r.textContent?.trim())).toEqual([
       'Today 2',
       'Upcoming 1',
-      'Inbox 1',
       'Done',
+      'Inbox 4',
     ])
     expect(screen.queryByTestId('menu-list-row')).toBeNull()
     expect(screen.queryByTestId('menu-new-list-button')).toBeNull()
     expect(screen.queryByTestId('list-editor-name-input')).toBeNull()
     // navigation must never be the thing that breaks
     expect(screen.getByTestId('menu-settings-row')).toBeTruthy()
+
+    // The break is drawn, and asserted on the RENDER rather than on the
+    // constant: the two visual groups are the whole of design's decision here,
+    // and a menu that read `COLLECTION_GROUPS` and then flattened it would
+    // satisfy the order assertion above while drawing the uniform column the
+    // decision rejected. Inbox is alone in the filing group — and it keeps
+    // `menu-collection-row`, because LM-COLLECTION means *derivable on device*,
+    // which Inbox is whichever group it renders in.
+    const groups = document.querySelectorAll('.menu-group')
+    expect(groups).toHaveLength(2)
+    expect([...groups].map((g) => g.querySelectorAll('.menu-row').length)).toEqual([3, 1])
+    expect(document.querySelector('.menu-group.filing')?.textContent?.trim()).toBe('Inbox 4')
   })
 
   it('the loading skeleton asserts NO heading — a bar where one goes, nothing where none does', () => {
@@ -571,8 +590,8 @@ describe('the shell', () => {
     // § Skeletons' own rule that skeletons carry no text; under four buckets it
     // is a wrong heading on three collections and a coin-flip on the fourth,
     // because the first heading the read produces is `Overdue` on Today
-    // whenever anything is late, `Tomorrow · {date}` on Upcoming, and nothing
-    // at all on Inbox and Done.
+    // whenever anything is late, `Tomorrow · {date}` on Upcoming, `Overdue`
+    // again on Inbox since T-139, and nothing at all on Done.
     //
     // Asserted on the RENDER rather than on the source, because the claim is
     // about what a loading user sees (L-002). The words are checked as an
@@ -602,12 +621,17 @@ describe('the shell', () => {
     expect(container.querySelectorAll('.sk-head')).toHaveLength(1)
     expect(container.textContent ?? '').not.toMatch(/Tomorrow · /)
 
-    // …and the two that render flat skeleton flat, with no bar at all.
-    for (const flat of ['Inbox', 'Done']) {
-      pick(flat)
-      expect(container.querySelectorAll('.sk-head'), `${flat} skeleton`).toHaveLength(0)
-      expect(container.querySelectorAll('.day-head'), `${flat} heading`).toHaveLength(0)
-    }
+    // …and so does Inbox since T-139, which is the half that moved: it
+    // skeletoned flat while it was "no date". A skeleton that keeps the old
+    // answer draws a silhouette the read then contradicts.
+    pick('Inbox')
+    expect(container.querySelectorAll('.sk-head'), 'Inbox skeleton').toHaveLength(1)
+    expect(container.textContent ?? '', 'Inbox skeleton text').not.toMatch(/Overdue|Anytime/)
+
+    // …and the ONE that renders flat skeletons flat, with no bar at all.
+    pick('Done')
+    expect(container.querySelectorAll('.sk-head'), 'Done skeleton').toHaveLength(0)
+    expect(container.querySelectorAll('.day-head'), 'Done heading').toHaveLength(0)
   })
 
   it('Settings carries only rows whose dependencies exist', () => {

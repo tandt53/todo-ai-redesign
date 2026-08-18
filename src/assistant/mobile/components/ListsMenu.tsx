@@ -21,18 +21,39 @@
 // the thing that breaks" — the four collections and Settings are derivable on
 // device, so no failure state can take them away.
 //
-// **All four rows, not three.** Since ADR-009 § Amendment, Inbox is no longer a
-// superset of every open task, so F-001 AC-24's reachability bound rests on the
-// four buckets being total — and totality is only reachability if every bucket
-// is openable. Drop the Upcoming row and a future-dated task is in no
-// collection the user can reach, with nothing erroring.
+// **TWO GROUPS, NOT ONE COLUMN** (components.md § ListsMenu, "Where the Inbox
+// row sits"). `Today · Upcoming · Done`, a break, then Inbox at the head of the
+// filing rows — the same order and the same break as the web client, because
+// both read `COLLECTION_GROUPS` rather than each spelling the order for itself
+// (F-003 AC-1's parity claim is only true if that is one fact, not two that
+// agree today). The built-ins stopped being four of a kind at ADR-009
+// § Amendment 2: three are views computed from the task's own fields, Inbox is
+// the container a task lives in. The break also retires an arithmetic claim the
+// uniform column was making — Inbox's count CONTAINS Today's and Upcoming's, so
+// the column does not sum to a headcount, and the overlap lives exactly where
+// the break is drawn.
+//
+// The break is **space** — no rule, no header, no divider view. A header would
+// have to be a word true of both Inbox and the user's own lists, and there is
+// none: `Lists` inside the Lists menu is self-referential, `Your lists` is
+// false of Inbox, which belongs to the app.
+//
+// **No id moves.** Inbox keeps `menuCollectionRow`: LM-COLLECTION means rows
+// the app always has and derives on device, which Inbox is whichever group it
+// renders in.
+//
+// **Every row, not a subset.** F-001 AC-24's reachability bound rests on the
+// FILING axis since § Amendment 2 § 6 — it is total and every cell of it is
+// openable, today Inbox alone holding every open task. Upcoming's own row is
+// narrowed rather than retracted: without it a future-dated task is unreachable
+// *as a dated task*, with nothing erroring.
 
 import { Pressable, Text, View } from 'react-native'
 import { CalendarDays, Check, Clock, Inbox, Settings, X } from 'lucide-react-native'
 import type { AppState } from '../../_shared/model/reducer.ts'
 import { SHELL_A11Y_IDS, a11yProps } from '../model/a11y.ts'
 import type { MobilePlatform } from '../model/permissions.ts'
-import { COLLECTIONS, collectionCount, collectionName } from '../model/tasks-view.ts'
+import { COLLECTION_GROUPS, collectionCount, collectionName } from '../model/tasks-view.ts'
 import type { Collection } from '../model/tasks-view.ts'
 import { tokens } from '../model/theme.ts'
 import { touchProps } from '../model/touch.ts'
@@ -86,36 +107,42 @@ export function ListsMenu({
           </Pressable>
         </View>
 
-        {COLLECTIONS.map((c) => {
-          const Icon = ICON[c]
-          const active = c === collection
-          const count = collectionCount(state.tasks, c)
-          return (
-            <Pressable
-              key={c}
-              {...a11yProps(SHELL_A11Y_IDS.menuCollectionRow, {
-                label: count === 0 ? collectionName(c) : `${collectionName(c)}, ${count}`,
-                role: 'button',
-                state: { selected: active },
-              })}
-              hitSlop={rowTouch.hitSlop}
-              style={[styles.menuRow, active ? styles.menuRowActive : null]}
-              onPress={() => onSelect(c)}
-            >
-              <Icon
-                size={tokens.icon.size.md}
-                color={active ? colors.primary : colors.text.primary}
-                strokeWidth={tokens.icon.stroke}
-              />
-              <Text style={[styles.menuRowText, active ? styles.menuRowTextActive : null]}>
-                {collectionName(c)}
-              </Text>
-              {/* counts are omitted at zero, for the same reason PS-TASKS omits
-                  its badge */}
-              {count > 0 && <Text style={styles.menuCount}>{count}</Text>}
-            </Pressable>
-          )
-        })}
+        {COLLECTION_GROUPS.map((group, i) => (
+          // The break is the gap between these views — space, no divider. The
+          // first group carries no top margin so nothing above it moves.
+          <View key={group.join('-')} style={i === 0 ? undefined : styles.menuFilingGroup}>
+            {group.map((c) => {
+              const Icon = ICON[c]
+              const active = c === collection
+              const count = collectionCount(state.tasks, c)
+              return (
+                <Pressable
+                  key={c}
+                  {...a11yProps(SHELL_A11Y_IDS.menuCollectionRow, {
+                    label: count === 0 ? collectionName(c) : `${collectionName(c)}, ${count}`,
+                    role: 'button',
+                    state: { selected: active },
+                  })}
+                  hitSlop={rowTouch.hitSlop}
+                  style={[styles.menuRow, active ? styles.menuRowActive : null]}
+                  onPress={() => onSelect(c)}
+                >
+                  <Icon
+                    size={tokens.icon.size.md}
+                    color={active ? colors.primary : colors.text.primary}
+                    strokeWidth={tokens.icon.stroke}
+                  />
+                  <Text style={[styles.menuRowText, active ? styles.menuRowTextActive : null]}>
+                    {collectionName(c)}
+                  </Text>
+                  {/* counts are omitted at zero, for the same reason PS-TASKS
+                      omits its badge */}
+                  {count > 0 && <Text style={styles.menuCount}>{count}</Text>}
+                </Pressable>
+              )
+            })}
+          </View>
+        ))}
 
         <View style={styles.menuFoot}>
           <Pressable

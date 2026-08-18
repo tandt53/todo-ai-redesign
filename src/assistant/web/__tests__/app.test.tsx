@@ -1061,10 +1061,12 @@ describe('interactions', () => {
     // surface's collections. Same data, now addressable (IA §3).
     const h = harness()
     // Two open rows are added to TASKS on purpose, one per collection that TASKS
-    // cannot fill. After ADR-009 § Amendment the four buckets are DISJOINT, so
-    // each step of this walk has to render a different set for the walk to prove
-    // anything — under the old superset Inbox it would have shown Today's rows
-    // again and passed whatever the menu did.
+    // cannot fill, so that each step of this walk renders a set only that step
+    // can render. The DATE collections are disjoint from each other, which is
+    // what makes Today and Upcoming distinguishable here; Inbox is not disjoint
+    // from them and is not meant to be — it is the container, so it shows every
+    // open row, and what proves the walk on that step is the row NO date
+    // collection could have shown (`Someday`) sitting alongside them.
     //
     // `ahead` is the seed ADR-009 § Amendment §2 says QA owes: the live store
     // has no future-dated task in any account, so an Upcoming assertion that
@@ -1100,19 +1102,25 @@ describe('interactions', () => {
     await openMenu('Upcoming')
     expect(screen.getAllByTestId('assistant-task-row').length).toBe(1)
     expect(screen.getByText('Renew the passport')).toBeTruthy()
-    // Inbox — the UNDATED open rows, and nothing else. CHANGED at T-128: this
-    // expected 3 and read "EVERY open task, dated or not: the superset, one row
-    // larger". Inbox is a date predicate now — its absence — so the two dated
-    // rows are not here.
+    // Inbox — EVERY open row, because Inbox is the tasks filed nowhere and
+    // nothing in this app can be filed. CHANGED TWICE: it expected 3 (the
+    // superset), then 1 at T-128 (the undated rows), and 4 now. The number is
+    // the same as the superset's and the claim is not — the definition is
+    // filing, and it narrows by itself when `lists` ships (INV-INBOX-FILING).
     await openMenu('Inbox')
-    expect(screen.getAllByTestId('assistant-task-row').length).toBe(1)
+    expect(screen.getAllByTestId('assistant-task-row').length).toBe(4)
+    // the row that no DATE collection could have shown — this is what makes the
+    // step non-vacuous now that Inbox overlaps Today and Upcoming
     expect(screen.getByText('Someday')).toBeTruthy()
+    expect(screen.getByText('Renew the passport')).toBeTruthy()
     // Done — the ticked one.
     await openMenu('Done')
     expect(screen.getAllByTestId('assistant-task-row').length).toBe(1)
-    // …and the four steps above between them showed every open row exactly
-    // once, which is the totality F-001 AC-24's reachability bound now rests on
-    // — walked through the UI rather than asserted on the predicate.
+    // …and F-001 AC-24's reachability bound is the Inbox step alone now, not
+    // the four steps summed: every open row was on ONE surface, reached in one
+    // action from the menu, because the filing axis is total and every cell of
+    // it has a row (ADR-009 § Amendment 2 § 6). Walked through the UI rather
+    // than asserted on the predicate.
     // …and picking a collection closes the menu (IA §4: "tap the row; the menu
     // closes" — one tap, not two).
     expect(screen.queryByTestId('menu-close-button')).toBeNull()

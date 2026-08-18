@@ -64,6 +64,28 @@ export function todayTask(over: Partial<TaskWire> = {}): TaskWire {
  * (`Tomorrow · {date}` before `Later`), so a fixture dated tomorrow would make
  * every grouping assertion about the collection agree by accident.
  */
+/**
+ * A task **filed into a personal list** — the one shape the app cannot produce
+ * and the store cannot hold, and the reason it exists is that without it the
+ * filing axis has no falsifiable assertion at all.
+ *
+ * `lists` and `tasks.list_id` do not exist, so `isFiled` answers `false` for
+ * every row anything else can build, and every claim about the two axes would
+ * be vacuously true. ADR-009 § Amendment 2 § 3 makes this a requirement in as
+ * many words — *`isFiled` must be answerable `true` in a test today* — because
+ * an invariant with no failing case is **unproven rather than passing**. This
+ * builder is that case: it is what INV-INBOX-FILING's test hands `inCollection`
+ * to show that Inbox narrows and Today does not.
+ *
+ * The key is deliberately **not** on `TaskWire`. No `list_id` ships — not on
+ * the entity, not on the wire, not in the store — so this returns the wire
+ * shape plus the structurally-read key that `isFiled` looks for, and nothing in
+ * `src/assistant/api` knows the word.
+ */
+export function filedTask(over: Partial<TaskWire> = {}): TaskWire & { list_id: string } {
+  return { ...task(over), list_id: 'list-work' }
+}
+
 export function upcomingTask(over: Partial<TaskWire> = {}): TaskWire {
   const d = new Date(startOfTodayIso())
   d.setDate(d.getDate() + 7)

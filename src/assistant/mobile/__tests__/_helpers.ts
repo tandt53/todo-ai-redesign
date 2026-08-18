@@ -36,6 +36,7 @@ export {
   task,
   todayTask,
   upcomingTask,
+  filedTask,
   turn,
   turnResponse,
   undoOutcome,

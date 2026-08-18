@@ -397,17 +397,71 @@ describe('day headers stack above their rows — and only on the collections tha
     expect(groups.map((g) => g.label)).not.toContain('Later')
   })
 
-  it('Inbox and Done render FLAT — `label: null`, and no heading is drawn for it', () => {
-    for (const c of ['inbox', 'done'] as const) {
-      const groups = groupTasks([task({ id: 'a' }), task({ id: 'b' })], c, now)
-      expect(groups.map((g) => g.label), `${c} headings`).toEqual([null])
-      expect(groups[0]?.tasks).toHaveLength(2)
-      expect(groupsByDay(c)).toBe(false)
-    }
-    // and the two that DO group say so, which is what the skeleton reads to
+  it('DONE renders FLAT — `label: null`, and no heading is drawn for it', () => {
+    // CHANGED at T-139: Inbox was in this loop and now groups. It read flat on
+    // the premise that Inbox *is* "no date", so `Anytime` was true of every row
+    // it could hold; Inbox is a container now and holds rows from every cell of
+    // the date axis. Done stays flat for the reason that did not move — group
+    // it by `due_at` and a task finished this morning appears under `Overdue`
+    // because it was due last week.
+    const groups = groupTasks([task({ id: 'a' }), task({ id: 'b' })], 'done', now)
+    expect(groups.map((g) => g.label)).toEqual([null])
+    expect(groups[0]?.tasks).toHaveLength(2)
+    expect(groupsByDay('done')).toBe(false)
+
+    // and the three that DO group say so, which is what the skeleton reads to
     // decide whether to draw its heading-shaped bar
     expect(groupsByDay('today')).toBe(true)
     expect(groupsByDay('upcoming')).toBe(true)
+    expect(groupsByDay('inbox')).toBe(true)
+  })
+
+  it('the mobile Lists menu draws the group break — a SOURCE SCAN, and it says so', () => {
+    // What this tier can and cannot see (L-002). The web client's break is
+    // asserted on the RENDER, in `web/__tests__/shell.test.tsx`: two
+    // `.menu-group` blocks, three rows then one. Mobile's components are React
+    // Native and nothing here renders them — there is no react-native-web alias
+    // in the vitest config, and the hook tier drives doubles rather than the
+    // real views. So the strongest available check on this half is a scan, and
+    // the claim it makes is exactly what a scan can support: the menu maps the
+    // GROUPS and never the flattened order.
+    //
+    // It can fail, which is the only reason to write it: flatten the render
+    // back to `COLLECTIONS.map(` — the shape that shipped until T-139 and the
+    // one a tidy-up would reach for — and both assertions go red.
+    const src = readFileSync(resolve(MOBILE_SRC, 'components/ListsMenu.tsx'), 'utf8')
+    expect(src, 'renders the two groups').toMatch(/COLLECTION_GROUPS\.map\(/)
+    expect(src, 'and does not flatten them back into one column').not.toMatch(
+      /COLLECTIONS\.map\(|COLLECTION_GROUPS\.flat\(\)/,
+    )
+    // the break is space, not a rule or a header: no divider view, no border,
+    // and no label over the filing group (components.md § ListsMenu)
+    expect(src, 'the break is a margin, not a divider').toMatch(/styles\.menuFilingGroup/)
+    const styles = readFileSync(resolve(MOBILE_SRC, 'components/styles.ts'), 'utf8')
+    const rule = /menuFilingGroup: \{([^}]*)\}/.exec(styles)?.[1] ?? ''
+    expect(rule, 'the filing group carries margin only').toMatch(/marginTop/)
+    expect(rule, 'no rule, no border').not.toMatch(/border|Width|backgroundColor/)
+  })
+
+  it('INBOX groups — the lateness signal reaches the surface every account opens', () => {
+    // components.md § TaskList (rewritten T-139). Mobile draws the same
+    // headings from the same shared classification, and this is the collection
+    // where flat rendering was costing a FACT rather than a heading: *one
+    // signal, not two* puts lateness in the group heading and nowhere else, so
+    // a flat Inbox showed the live store's 7 overdue rows with no lateness
+    // signal anywhere.
+    const groups = groupTasks(
+      [
+        task({ id: 'undated', due_at: null }),
+        task({ id: 'late', status: 'inbox', due_at: '2026-08-14T10:00:00.000Z' }),
+        task({ id: 'today', status: 'inbox', due_at: '2026-08-16T16:00:00.000Z' }),
+      ],
+      'inbox',
+      now,
+    )
+    expect(groups.map((g) => g.label)).toEqual(['Overdue', 'Today · Sun, Aug 16', 'Anytime'])
+    expect(groups[0]?.tasks.map((t) => t.id)).toEqual(['late'])
+    expect(groups[2]?.tasks.map((t) => t.id)).toEqual(['undated'])
   })
 
   it('Upcoming holds a seeded future row — the live store has none to read', () => {

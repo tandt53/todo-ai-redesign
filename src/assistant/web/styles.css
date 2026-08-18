@@ -425,6 +425,12 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 .menu-head { display: flex; align-items: center; gap: var(--sp-sm); padding: 0 var(--sp-md) var(--sp-md); }
 .menu-head .wordmark { flex: 1; font-family: var(--font-family-display); font-weight: var(--font-weight-title); }
 .menu-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 0 var(--sp-sm); }
+/* The group break (components.md § ListsMenu, "Where the Inbox row sits"): the
+   views and the gate, then space, then the filing rows. Space, not a rule and
+   not a header — whitespace groups before borders do, and no word is true of
+   both Inbox and the user's own lists. The gap is what stops the column reading
+   as arithmetic, since Inbox's count contains Today's and Upcoming's. */
+.menu-group.filing { margin-top: var(--sp-lg); }
 .menu-row {
   display: flex; align-items: center; gap: var(--sp-md); width: 100%;
   padding: var(--sp-sm) var(--sp-md); border-radius: var(--r-sm);

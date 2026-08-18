@@ -20,18 +20,42 @@
 // is the rule underneath all of that: **navigation must never be the thing that
 // breaks.** Settings and the four collections are live unconditionally.
 //
-// **All four rows, not three.** Rendering `COLLECTIONS` in full is what makes
-// F-001 AC-24's reachability bound true since ADR-009 § Amendment: Inbox stopped
-// being a superset of every open task, so the bound rests on the four buckets
-// being total, and totality is only reachability if every bucket is openable.
-// Drop the Upcoming row and a future-dated task is in no collection the user can
-// reach — and nothing errors. `Upcoming` ships with no count in every account
+// **TWO GROUPS, NOT ONE COLUMN** (components.md § ListsMenu, "Where the Inbox
+// row sits"). `Today · Upcoming · Done`, a break, then Inbox at the head of the
+// filing rows. The four built-ins stopped being four of a kind at ADR-009
+// § Amendment 2: three are views computed from the task's own fields and Inbox
+// is a container — the first cell of an axis whose other cells are the personal
+// lists two families down. A uniform column asserts a kinship the model does
+// not have, in the one place a user reads the model at all, and it asserts the
+// arithmetic too: Inbox's count CONTAINS Today's and Upcoming's, so the column
+// does not sum to a headcount. Numbers look like they should add up when the
+// rows carrying them look like siblings; the break is what retires that claim.
+// The overlap lives between the groups, which is where the break is drawn.
+//
+// **The break is space — no rule, no header.** Whitespace groups before borders
+// do, and a header would have to be a word true of both Inbox and the user's
+// own lists: `Lists` inside the Lists menu is self-referential, and `Your lists`
+// is false of Inbox, which belongs to the app.
+//
+// **The testid does not move, and that is the correct split rather than a
+// convenience.** Inbox keeps `menu-collection-row`: LM-COLLECTION means *rows
+// the app always has and computes on device*, LM-LIST means *rows fetched per
+// user, which can skeleton and can fail*. Inbox is a built-in by that test
+// whichever group it renders in — and in the failed state it must still render
+// its count, because a menu whose failure strands every open task is exactly
+// what "navigation must never be the thing that breaks" forbids.
+//
+// **Every row, not a subset.** F-001 AC-24's reachability bound rests on the
+// FILING axis since § Amendment 2 § 6: that axis is total and every cell of it
+// is openable, which today is Inbox alone holding every open task. Upcoming's
+// own row is narrowed rather than retracted — without it a future-dated task is
+// unreachable *as a dated task*. `Upcoming` ships with no count in every account
 // today, because nothing in the live store is dated in the future; that is the
 // omit-at-zero rule working, not a broken row.
 
 import { useEffect } from 'react'
 import type { AppState } from '../../_shared/model/reducer.ts'
-import { COLLECTIONS, collectionCount, collectionName } from '../../_shared/model/tasks.ts'
+import { COLLECTION_GROUPS, collectionCount, collectionName } from '../../_shared/model/tasks.ts'
 import type { Collection } from '../../_shared/model/tasks.ts'
 import {
   CalendarDaysIcon,
@@ -99,24 +123,32 @@ export function ListsMenu({
           </button>
         </div>
         <div className="menu-scroll">
-          {COLLECTIONS.map((c) => {
-            const count = collectionCount(state.tasks, c, now)
-            return (
-              <button
-                key={c}
-                className={`menu-row${c === active ? ' active' : ''}`}
-                data-testid="menu-collection-row"
-                aria-current={c === active ? 'page' : undefined}
-                onClick={() => onPick(c)}
-              >
-                <CollectionIcon c={c} />
-                {collectionName(c)}{' '}
-                {/* omitted at zero, for the same reason PS-TASKS omits its
-                    badge (components.md § ListsMenu) */}
-                {count > 0 && <span className="mcount num">{count}</span>}
-              </button>
-            )
-          })}
+          {COLLECTION_GROUPS.map((group, i) => (
+            // The group break is the gap between these blocks — space, not a
+            // rule and not a header. `menu-group` after the first carries the
+            // margin; the rows inside are identical in every other respect,
+            // which is the point: same anatomy, same testid, different kind.
+            <div key={group.join('-')} className={i === 0 ? 'menu-group' : 'menu-group filing'}>
+              {group.map((c) => {
+                const count = collectionCount(state.tasks, c, now)
+                return (
+                  <button
+                    key={c}
+                    className={`menu-row${c === active ? ' active' : ''}`}
+                    data-testid="menu-collection-row"
+                    aria-current={c === active ? 'page' : undefined}
+                    onClick={() => onPick(c)}
+                  >
+                    <CollectionIcon c={c} />
+                    {collectionName(c)}{' '}
+                    {/* omitted at zero, for the same reason PS-TASKS omits its
+                        badge (components.md § ListsMenu) */}
+                    {count > 0 && <span className="mcount num">{count}</span>}
+                  </button>
+                )
+              })}
+            </div>
+          ))}
         </div>
         <div className="menu-foot">
           <button className="menu-row" data-testid="menu-settings-row" onClick={onSettings}>
