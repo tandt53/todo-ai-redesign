@@ -93,7 +93,7 @@ Empty conversation state: `font.family.display` line "Say it. I'll write it down
 | Slot | Type | Notes |
 |---|---|---|
 | `count` | integer | the primary count |
-| `count_secondary` | integer | **revert frames only** (`UndoResult.skipped.length`) |
+| `count_secondary` | integer | **revert frames and landing frames** — `UndoResult.skipped.length` for `SPK-REVERTED-PARTIAL`; the unnamed of the two counts for `LSM-OVERDUE-TODAY` / `LSM-PROGRESS` (§ LandingSummary, which widened this cell and says why) |
 | `title` | one task title | resolved per F-002 AC-21; never a uuid or draft-ref token (F-001 AC-4) |
 | `title_list` | `{titles: string[] (≤ 3), overflow: integer}` | ordered; above 3, name the first 3 and let `overflow` carry the rest ("and N more") |
 | `verbatim` | string, **passed through unmodified** | user- or server-authored text (heard transcript, server `alternative`) — quoted, never generated |
@@ -580,3 +580,197 @@ Neither is a rename, a reorder, or a new row.
 2. **The `menu-close-button` catalogue annotation** said *"≤ 1023px only"* — left over from the
    desktop rail this file rejected. The menu is a slide-over at every width and always carries
    its close control.
+
+---
+
+## LandingSummary — what Talk says when you open it (LSM-*)
+
+**Added 2026-08-18 (T-114), additive**, for `reports/owner-decision-2026-08-18-landing-and-collections.md §1`
+(a phone lands on Talk, and Talk must not be an empty room). Nothing above this line moved, was
+renamed or was reordered. One cell above changed content and is called out at the foot.
+
+Mockups: `app-shell.html` · `app-shell-ios.html` · `app-shell-android.html`, states
+`talk-landing` · `talk-landing-overdue` · `talk-landing-clear-today` · `talk-landing-clear`.
+
+**What it is.** One assistant message, rendered once per open at the foot of the thread, that
+reports what the task list currently holds. It is **not a turn**: no `client_turn_id`, no row in
+the turn log, no Undo, nothing applied. It is client-local and **not persisted** — a later
+session read does not return it, so greetings never accumulate in history. New turns append below
+it in the normal way, so it ages into the thread as "what the day looked like when you opened".
+
+**It renders; it does not speak.** F-002 AC-4 restricts speech to a turn the user just issued, and
+its `## What speaks, and from what` table already answers this case — *any message restored by a
+session read* speaks **no**. Making this one talk would be shipping the spoken day summary, which
+F-002 reserves as **F-004 and explicitly records as having no owner decision behind it**. So this
+frame family lives beside § Spoken frames and borrows its machinery, and sits outside it: `SPK-*`
+is what the app says out loud, `LSM-*` is what it writes on open. If the owner wants it spoken,
+that is F-004 and it is a separate decision.
+
+**It renders at every width**, in the panel at ≥ 1024px exactly as on a phone. One mechanism at
+every width is the rule § AppFrame already holds the diff row to; a summary that appeared only
+below the split would be a second behaviour selected by viewport, and the branch nobody runs is
+the one that rots.
+
+**No time-of-day salutation.** "Good morning" needs a clock, carries no information, and is wrong
+for anyone opening the app at 11pm. The orientation *is* the greeting.
+
+### The four facts it may state, and where each comes from
+
+It reports counts and names tasks it can read. It does not summarise, judge or predict (F-001
+AC-14 / AC-15 — this product does not bluff).
+
+| Fact | Definition | Source |
+|---|---|---|
+| `open_today` | open tasks due today | `collectionCount(tasks, 'today', now)` — **the same call the PathSwitch badge makes.** § PathSwitch fixes this as one number, never a second definition of it |
+| `open_all` | every unfinished task | `collectionCount(tasks, 'inbox', now)` — Inbox is a superset of Today (owner decision 2026-08-18 §3) |
+| `overdue` | open tasks whose `due_at` is strictly before the start of today | derivable from `due_at` + `status`, **no new field**. The predicate belongs beside `dueToday` in `src/assistant/_shared/model/tasks.ts`, not in the summary composer (L-004: one home per fact) |
+| `done_today` | tasks completed today | **not readable.** See "The one shape that is blocked" below |
+
+`now` is the device clock, the same one `dueToday` already uses. The summary is a **message at a
+timestamp, not a live counter** — if the user completes something afterwards it does not rewrite
+itself, because messages in this thread never do. The live number is the PathSwitch badge.
+
+### Which tasks get named, and how many
+
+`title_list` from § Spoken frames' closed vocabulary, unchanged: **up to 3 titles, then `overflow`
+carries the rest as "and N more"**. No new bound is invented here and none is needed — the reason
+the spoken bound exists (a sentence naming eleven tasks is not a sentence anyone can act on) is
+the same reason it applies to a sentence you read.
+
+**Which three.** The first three of the set the frame counts, **in the order that set is already
+published in** — `collectionTasks(tasks, 'today', now)` for the today frames, the overdue subset
+in the same order for the overdue frames. Not a second ordering: if the Tasks surface ever gains a
+sort, the summary inherits it by calling the same function, and the sentence and the list cannot
+disagree about which task is first.
+
+**The named set is always the counted set.** An overdue frame names overdue tasks, never today's —
+a count of one set beside the titles of another is two facts wearing one sentence.
+
+Named titles render as § MessageTaskLink, the same door to the list every other bubble's titles
+are. They carry no `data-testid` of their own: `talk-task-link` is already the catalogue's
+exemplar for that control and each contract testid appears exactly once (§ Testid catalogue).
+
+**One difference from every other MessageTaskLink, and it is not cosmetic: inside the summary the
+link is an inline element, not a `<button>`.** Everywhere else a MessageTaskLink sits on its own
+diff row, where the browser's atomic layout of a button is harmless. In running text it is not:
+measured in Chromium at 375px and 1280px, an atomic box cannot break mid-phrase, so the
+punctuation after a title lands at the start of the next line — a line beginning with a bare
+comma — and a title longer than the bubble overflows it rather than wrapping. Role, appearance,
+behaviour and the testid contract are unchanged; only the box is. Implementers rendering the
+summary body must use an inline element there.
+
+### The frames
+
+Same discipline as § Spoken frames: **fixed strings with named slots**, from that section's closed
+vocabulary. Two literal forms per row where a noun changes with the count — singular and plural
+are the whole set, never a template over a noun (§ NewMessageAffordance set this precedent; L-008
+is why).
+
+| ID | Selected when | Slots | Text |
+|---|---|---|---|
+| **LSM-AHEAD-1** | `open_today = 1` | `title` | `One task today: {title}.` |
+| **LSM-AHEAD-N** | `open_today ≥ 2` | `count`, `title_list` | `{count} tasks today: {title_list}.` |
+| **LSM-OVERDUE** | `overdue ≥ 1`, `open_today = 0` | `count`, `title_list` | 1 → `One task is past its date: {title_list}. Nothing else is due today.` · ≥2 → `{count} tasks are past their date: {title_list}. Nothing else is due today.` |
+| **LSM-OVERDUE-TODAY** | `overdue ≥ 1`, `open_today ≥ 1` | `count`, `count_secondary`, `title_list` | 1 → `One task is past its date: {title_list}. {count_secondary} more due today.` · ≥2 → `{count} tasks are past their date: {title_list}. {count_secondary} more due today.` |
+| **LSM-CLEAR-TODAY** | `overdue = 0`, `open_today = 0`, `open_all ≥ 1` | `count` | 1 → `Nothing is due today. One task is waiting in Inbox.` · ≥2 → `Nothing is due today. {count} tasks are waiting in Inbox.` |
+| **LSM-CLEAR** | `open_all = 0`, and the account has conversation history | none | `All done — your list is clear.` |
+| **LSM-PROGRESS** | `done_today ≥ 1`, `overdue = 0`, `open_today ≥ 1` | `count`, `count_secondary`, `title_list` | 1 → `You've finished one today. {count_secondary} left: {title_list}.` · ≥2 → `You've finished {count} today. {count_secondary} left: {title_list}.` — **not selectable today; see below** |
+
+In LSM-OVERDUE-TODAY and LSM-PROGRESS, `count` is the named set and `count_secondary` is the
+unnamed one. Only one set is named per message: naming both needs two `title_list`s and produces a
+paragraph, and the unnamed set is one tap away in Tasks.
+
+### Which shape applies — the selection rule
+
+**Preconditions, both required, or there is no summary at all.** The task list must be readable
+this open (from the server, or from the device when offline — either is a real read), and Talk
+must not be in `talk-loading` or `talk-failed`, which own the surface while they last. A greeting
+composed from a partial or stale read is the one thing this must never be: silence is honest,
+a guessed count is not.
+
+Then, **first match wins**:
+
+| # | Condition | Frame |
+|---|---|---|
+| 1 | `open_all = 0` **and no conversation history** | **no summary** — § Message bubbles' empty-conversation invitation stands (`talk-empty`) |
+| 2 | `open_all = 0` and history exists | **LSM-CLEAR** |
+| 3 | `overdue ≥ 1` and `open_today ≥ 1` | **LSM-OVERDUE-TODAY** |
+| 4 | `overdue ≥ 1` and `open_today = 0` | **LSM-OVERDUE** |
+| 5 | `done_today ≥ 1` and `open_today ≥ 1` | **LSM-PROGRESS** — unreachable while `done_today` is unreadable; falls through to 6/7 |
+| 6 | `open_today ≥ 2` | **LSM-AHEAD-N** |
+| 7 | `open_today = 1` | **LSM-AHEAD-1** |
+| 8 | `open_today = 0` (so `open_all ≥ 1`) | **LSM-CLEAR-TODAY** |
+
+**The rule is total, and that is the property to test.** After rows 1–2 remove `open_all = 0`,
+every remaining state is covered by `overdue` (rows 3–4) or, when `overdue = 0`, by
+`open_today ≥ 2 | = 1 | = 0` (rows 6–8). There is no combination without a frame — which is what
+F-002 AC-22's "an unenumerated combination has no frame and therefore fails" demands, met by
+enumerating rather than by failing. A future fact added to the summary must re-prove this table is
+total, not merely add a row to it.
+
+**Overdue outranks everything except an empty list, and that is the whole safety argument.**
+`open_today` counts `status: 'today'` or a date of today; a task dated last Tuesday is in neither,
+so a rule keyed on `open_today` alone congratulates a user with three tasks past their date on
+their clear day. That is not under-informing, it is misinforming — the shape F-001 AC-7 and
+SPK-REVERTED-PARTIAL already exist to prevent, arriving here through a different door.
+
+**Mid-day is a fact, not a clock.** LSM-PROGRESS is selected by `done_today ≥ 1` — which can only
+be true after the user has finished something today, which *is* mid-day — and the time is never
+read. A clock-based rule would call 6am mid-day for a night shift and be wrong in the one sentence
+the app opens with.
+
+**Praise is reserved for a clear list, not a clear day.** LSM-CLEAR congratulates; LSM-CLEAR-TODAY
+states the fact and names what is still waiting. "Well done" to someone with seven tasks in Inbox
+is the generic empty state's lie (§ Empty states — Tasks, ET-COLLECTION) told in a greeting.
+
+### What the awkward cases render
+
+Every row here is a state a real account reaches, and each was chosen against a greeting that
+reads well on a demo and lies on someone else's data.
+
+| Case | Renders | Why not the obvious thing |
+|---|---|---|
+| Zero tasks ever, first open | **no summary** — the `talk-empty` invitation | A summary of nothing is an empty room with a sentence in it. There is nothing to orient toward and no achievement to congratulate |
+| Zero tasks, but history exists (everything deleted or completed) | **LSM-CLEAR** | The account has done something; "All done" is true |
+| Everything done | **LSM-CLEAR** | Same row — the summary counts open tasks, and "done" and "deleted" leave the same count |
+| Tasks exist, none due today, none overdue | **LSM-CLEAR-TODAY**, naming the Inbox count | Not LSM-CLEAR: the list is not clear, only the day is |
+| Exactly one task today | **LSM-AHEAD-1** — `One task today: {title}.` | A separate literal, not `1 tasks today` and not a pluralising template |
+| Everything overdue, nothing due today | **LSM-OVERDUE** | The case that would otherwise congratulate a user who is behind |
+| Some overdue, some due today | **LSM-OVERDUE-TODAY**, naming the overdue ones | The overdue set is named because it is the one the user has already missed |
+| 40 tasks today | **LSM-AHEAD-N** — `40 tasks today: A, B, C and 37 more.` | The count is honest and the bound is `title_list`'s existing 3 |
+| Offline, tasks on the device | The frame the device list selects | The device list is a real read; § OfflineBanner carries the news that it may be stale. Nothing here claims to be fresh |
+| The task read failed | **no summary** | The surface's own failure state stands (§ SurfaceError / § InlineRetryBanner). No count is better than a wrong one |
+| Talk is loading or failed | **no summary** | Those states own the surface (IA §6, S1) |
+
+### The one shape that is blocked, and on exactly what
+
+The owner's second shape — *"you have finished X, Y left, which are …"* — needs a count of tasks
+**completed today**. The `task` entity has no completion timestamp: its fields are `id, user_id,
+title, due_at, reminder_at, priority, status, created_at, updated_at, deleted_at`
+(`src/assistant/api/types.ts`). `updated_at` is *last touched*, so deriving `done_today` from it
+counts a done task whose title was edited today and drops one completed today and edited tomorrow.
+It would be right most of the time and quietly wrong the rest, which is the failure this product's
+character is defined against — and it fails silently, because a plausible number looks exactly
+like a correct one.
+
+So LSM-PROGRESS is **written, drawn and not selectable**: rule 5 never fires and the summary falls
+through to LSM-AHEAD-*, which is honest and slightly less warm. It needs one field —
+`task.completed_at`, set when `status` becomes `done` and cleared when it leaves — which is a
+data-model change and belongs to spec + architect, not to design. This is IA §7's line, applied to
+a copy decision: draw it, name the field, do not build half of it.
+
+**Routed, not assumed** (L-008's corollary — when the honest derivation is missing, route the case,
+do not invent it): the owner asked for three shapes and today two of them are reachable. Whether
+`completed_at` is worth a migration is the owner's call, not design's.
+
+### One cell above changed content in this pass
+
+Not a rename, a reorder, or a new row.
+
+1. **§ Spoken frames, slot vocabulary, the `count_secondary` Notes cell** read *"**revert frames
+   only** (`UndoResult.skipped.length`)"*. The alphabet is **deliberately widened, not composed
+   around** (F-002 AC-22's own move when four kinds needed more than a count): LSM-OVERDUE-TODAY
+   and LSM-PROGRESS each state two counts, one named and one not, and there is no way to say that
+   with one count that is not a second sentence. The cell now reads *"revert frames and landing
+   frames"* and names both sources. No new slot **type** was added — the vocabulary is still five,
+   still closed. No `SPK-*` row changed.
