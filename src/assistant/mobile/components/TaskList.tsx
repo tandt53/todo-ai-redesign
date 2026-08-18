@@ -32,7 +32,7 @@ import {
   collectionName,
   fillListSlot,
   groupTasks,
-  todayGroupLabel,
+  groupsByDay,
 } from '../model/tasks-view.ts'
 import type { Collection, TasksSurfaceView } from '../model/tasks-view.ts'
 import { useStyles } from './styles.ts'
@@ -214,13 +214,25 @@ export function TaskList({
   onAdd: () => void
 }) {
   const { styles } = useStyles()
+  // ONE clock for this render. The grouping is day-sensitive since ADR-009
+  // § Amendment — `Overdue` and `Today · {date}` are decided by which calendar
+  // day it is — and this file used to mint a second `new Date()` inline for the
+  // grouping while the skeleton's header read a third. Two clocks in one render
+  // can straddle midnight and put the same row under two headings.
+  const now = new Date()
 
   if (view.view === 'loading') {
     return (
       <ScrollView keyboardShouldPersistTaps="handled">
-        {/* SK-ROW sits under a REAL day header, so the placeholder mirrors
-            the real silhouette instead of inventing a second heading format. */}
-        <Text style={styles.dayHead}>{todayGroupLabel()}</Text>
+        {/* SK-ROW sat under a REAL day header — the literal `Today · {date}` —
+            which § Skeletons' own rule already forbade (skeletons carry no
+            text) and the four buckets made wrong: the first heading is
+            `Overdue` on Today whenever anything is late, `Tomorrow · {date}` on
+            Upcoming, and nothing at all on Inbox and Done. A skeleton cannot
+            know which heading the read will produce, so it draws a
+            heading-shaped BAR where one will go — and nothing on the
+            collections that render flat. */}
+        {groupsByDay(collection) && <View style={styles.skeletonDayHead} />}
         <RowSkeletons />
       </ScrollView>
     )
@@ -236,9 +248,13 @@ export function TaskList({
 
   return (
     <ScrollView keyboardShouldPersistTaps="handled">
-      {groupTasks(view.tasks, new Date()).map((g) => (
-        <View key={g.label}>
-          <Text style={styles.dayHead}>{g.label}</Text>
+      {/* Grouping is per collection: Today gets `Overdue` + `Today · {date}`,
+          Upcoming gets `Tomorrow · {date}` + `Later`, and Inbox and Done render
+          FLAT — one unlabelled group and no headings at all (components.md
+          § TaskList). `label: null` is that instruction, not a missing label. */}
+      {groupTasks(view.tasks, collection, now).map((g) => (
+        <View key={g.label ?? 'flat'}>
+          {g.label !== null && <Text style={styles.dayHead}>{g.label}</Text>}
           {g.tasks.map((t) => (
             <TaskRow
               key={t.id}

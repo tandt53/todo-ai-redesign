@@ -115,9 +115,13 @@ describe('AC-31 — a task the list does not hold is NOT ACTIVATABLE AT ALL', ()
     // The row exists. The list on screen does not hold it, so the
     // postcondition — that row is on screen and has flashed once — could not
     // be met by navigating there, and the title is plain text.
-    // Inbox is a SUPERSET of Today in the shared collection model, so the row
-    // that Today does not hold is an undated one — not an "inbox vs today"
-    // complement, which does not exist.
+    // The row Today does not hold is an UNDATED one: the four buckets split
+    // the open tasks by date, so an open row is in Today (dated on or before
+    // today), Upcoming (dated after) or Inbox (no date at all), and exactly one
+    // of them. An undated row is therefore the shortest way to say "in a
+    // collection that is not the one on screen" — it was chosen when Inbox was
+    // a superset of Today and it stays correct now that it is not, for a
+    // different reason.
     const elsewhere = task({ id: 'task-9', title: 'Buy milk', status: 'inbox', due_at: null })
     const state = stateWith({
       tasks: [elsewhere],

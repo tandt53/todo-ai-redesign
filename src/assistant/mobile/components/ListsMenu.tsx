@@ -18,11 +18,17 @@
 //
 // What IS here is § ListsMenu's own floor: "the menu is never empty, it always
 // holds the built-ins, New list and Settings", and "navigation must never be
-// the thing that breaks" — the three collections and Settings are derivable on
+// the thing that breaks" — the four collections and Settings are derivable on
 // device, so no failure state can take them away.
+//
+// **All four rows, not three.** Since ADR-009 § Amendment, Inbox is no longer a
+// superset of every open task, so F-001 AC-24's reachability bound rests on the
+// four buckets being total — and totality is only reachability if every bucket
+// is openable. Drop the Upcoming row and a future-dated task is in no
+// collection the user can reach, with nothing erroring.
 
 import { Pressable, Text, View } from 'react-native'
-import { Check, Clock, Inbox, Settings, X } from 'lucide-react-native'
+import { CalendarDays, Check, Clock, Inbox, Settings, X } from 'lucide-react-native'
 import type { AppState } from '../../_shared/model/reducer.ts'
 import { SHELL_A11Y_IDS, a11yProps } from '../model/a11y.ts'
 import type { MobilePlatform } from '../model/permissions.ts'
@@ -32,8 +38,13 @@ import { tokens } from '../model/theme.ts'
 import { touchProps } from '../model/touch.ts'
 import { useStyles } from './styles.ts'
 
+// Upcoming is Lucide `calendar-days` (components.md § ListsMenu, "Look"):
+// Today already carries `clock`, and clock-versus-calendar reads as
+// now-versus-ahead without a label. `Record<Collection, …>` is what makes a
+// fifth collection a typecheck failure here rather than a blank icon.
 const ICON: Record<Collection, typeof Clock> = {
   today: Clock,
+  upcoming: CalendarDays,
   inbox: Inbox,
   done: Check,
 }

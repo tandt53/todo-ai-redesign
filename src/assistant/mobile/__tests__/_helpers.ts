@@ -35,6 +35,7 @@ export {
   session,
   task,
   todayTask,
+  upcomingTask,
   turn,
   turnResponse,
   undoOutcome,

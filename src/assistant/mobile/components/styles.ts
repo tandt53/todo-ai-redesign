@@ -607,6 +607,18 @@ export function makeStyles(c: Palette) {
       paddingHorizontal: spacing.gutter_mobile,
       paddingVertical: spacing.sm,
     },
+    // § Skeletons SK-ROW — a bar where the day heading will go, at the
+    // heading's size and position. The words were never part of the
+    // silhouette, and a skeleton cannot know which heading the read produces.
+    skeletonDayHead: {
+      marginHorizontal: spacing.gutter_mobile,
+      marginTop: spacing.md,
+      marginBottom: spacing.xs,
+      width: 96,
+      height: font.size.label,
+      borderRadius: radius.sm,
+      backgroundColor: c.bg.hairline,
+    },
     skeletonBox: { ...checkboxBox, borderRadius: radius.sm, backgroundColor: c.bg.hairline },
     skeletonBar: { height: lineHeightFor(font.size.body), borderRadius: radius.sm, backgroundColor: c.bg.hairline },
     skeletonBubble: {

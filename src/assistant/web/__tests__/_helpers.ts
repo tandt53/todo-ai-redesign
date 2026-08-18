@@ -19,6 +19,7 @@ export {
   T0,
   task,
   todayTask,
+  upcomingTask,
   turn,
   applied,
   appliedTurn,

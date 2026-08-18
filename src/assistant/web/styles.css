@@ -284,6 +284,10 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
   padding: 0 var(--sp-md); border-radius: var(--r-sm);
   background: var(--primary); color: var(--tx-onaccent); font-weight: var(--font-weight-emphasis); font-size: var(--fs-meta);
 }
+/* SK-ROW's day heading is a BAR, not words (components.md § Skeletons): a
+   skeleton cannot know which heading the read will produce, so it mirrors the
+   silhouette at the heading's size and position and asserts nothing. */
+.sk-head { height: var(--fs-label); width: 96px; margin-bottom: var(--sp-sm); }
 /* Day headers stack ABOVE their rows at every width — the 180px gutter T-101
    drew was withdrawn by T-105 (components.md § AppFrame). */
 .day-group { display: block; padding-top: var(--sp-lg); }

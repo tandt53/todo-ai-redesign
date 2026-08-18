@@ -13,8 +13,10 @@
 //
 // WHAT IS DELIBERATELY ABSENT: every personal-list affordance. `lists` and
 // `tasks.list_id` do not exist (IA §7), so there is no per-row "Move to list"
-// and the header never names a personal list — only the three built-in
-// collections, which are `task.status`.
+// and the header never names a personal list — only the four built-in
+// collections. IA §7 called those `task.status`; ADR-009 and its § Amendment
+// retired that reading, and they are date predicates now with the single
+// exception of Done.
 
 import { useState } from 'react'
 import * as Toggle from '@radix-ui/react-toggle'
@@ -26,8 +28,8 @@ import {
   collectionName,
   collectionTasks,
   groupTasks,
+  groupsByDay,
   openTodayCount,
-  todayGroupLabel,
 } from '../../_shared/model/tasks.ts'
 import type { Collection } from '../../_shared/model/tasks.ts'
 import type { ShellHandle } from '../shell.ts'
@@ -169,14 +171,28 @@ function TaskRow({
   )
 }
 
-/** SK-ROW — checkbox square + a title bar, five rows, under a real day header.
+/**
+ * SK-ROW — checkbox square + a title bar, five rows, under a **heading-shaped
+ * bar** on the collections that group and nothing at all on the flat ones
+ * (components.md § Skeletons, changed 2026-08-18 T-128).
+ *
+ * This drew `todayGroupLabel(now)` — the literal `Today · {date}` — over every
+ * collection's skeleton. That already contradicted § Skeletons' own rule that
+ * skeletons carry no text; under four buckets it is a wrong heading on three
+ * collections and a coin-flip on the fourth, because the first heading the read
+ * produces is `Overdue` on Today whenever anything is late, `Tomorrow · {date}`
+ * on Upcoming, and nothing at all on Inbox and Done. **A skeleton cannot know
+ * which heading the read will produce, so it must not assert one.** The bar
+ * mirrors the silhouette, which is all this section ever asked for.
+ *
  * No spinner in a void anywhere in this app, and no testid: nothing about a
- * skeleton is assertable except that it is not the empty state. */
-function TaskSkeletons({ now }: { now: Date }) {
+ * skeleton is assertable except that it is not the empty state.
+ */
+function TaskSkeletons({ collection }: { collection: Collection }) {
   const widths = ['62%', '48%', '66%', '40%', '56%']
   return (
     <div className="day-group" aria-busy="true">
-      <div className="day-head">{todayGroupLabel(now)}</div>
+      {groupsByDay(collection) && <div className="sk sk-head" />}
       <div>
         {widths.map((w) => (
           <div className="sk-rowline" key={w}>
@@ -203,7 +219,10 @@ export function TasksSurface({
   const now = new Date()
   const collection: Collection = shell.collection
   const tasks = collectionTasks(state.tasks, collection, now)
-  const groups = groupTasks(tasks, now)
+  // Grouping is per collection now: Today gets `Overdue` + `Today · {date}`,
+  // Upcoming gets `Tomorrow · {date}` + `Later`, and Inbox and Done render
+  // flat — one unlabelled group, no headings (components.md § TaskList).
+  const groups = groupTasks(tasks, collection, now)
   // components.md's drawn header string — "3 tasks left today" — is TRUE only
   // of the Today collection, and its zero form ("Nothing left today") likewise.
   // On another collection the honest options were to compose a new string or to
@@ -290,7 +309,7 @@ export function TasksSurface({
             </div>
           )}
 
-          {loading && <TaskSkeletons now={now} />}
+          {loading && <TaskSkeletons collection={collection} />}
 
           {failedBlank && (
             <div className="surface-error">
@@ -341,8 +360,10 @@ export function TasksSurface({
                 </button>
               </div>
               {groups.map((g) => (
-                <div className="day-group" key={g.label}>
-                  <div className="day-head">{g.label}</div>
+                <div className="day-group" key={g.label ?? 'flat'}>
+                  {/* `null` is the flat collections' instruction, not a missing
+                      label: draw the rows and draw no heading. */}
+                  {g.label !== null && <div className="day-head">{g.label}</div>}
                   <ul className="tasks">
                     {g.tasks.map((t) => (
                       <TaskRow

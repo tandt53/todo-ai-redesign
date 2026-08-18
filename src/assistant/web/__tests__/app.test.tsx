@@ -33,6 +33,7 @@ import {
   T0,
   task,
   todayTask,
+  upcomingTask,
   turnResponse,
 } from './_helpers.ts'
 import type { TestController } from './_helpers.ts'
@@ -1053,13 +1054,20 @@ describe('interactions', () => {
     // toggles a pane beside the conversation — it opens navigation to the other
     // surface's collections. Same data, now addressable (IA §3).
     const h = harness()
-    // A dateless open row is added to TASKS on purpose: after ADR-009 Today and
-    // Inbox are no longer the same set, and without a row that only Inbox holds
-    // the Today→Inbox step would render an identical list and prove nothing.
+    // Two open rows are added to TASKS on purpose, one per collection that TASKS
+    // cannot fill. After ADR-009 § Amendment the four buckets are DISJOINT, so
+    // each step of this walk has to render a different set for the walk to prove
+    // anything — under the old superset Inbox it would have shown Today's rows
+    // again and passed whatever the menu did.
+    //
+    // `ahead` is the seed ADR-009 § Amendment §2 says QA owes: the live store
+    // has no future-dated task in any account, so an Upcoming assertion that
+    // replays real data is vacuous — green having never rendered a row.
     const dateless = task({ id: 'task-4', title: 'Someday', status: 'inbox', due_at: null })
+    const ahead = upcomingTask({ id: 'task-5', title: 'Renew the passport' })
     h.server
       .always('GET /assistant/session', 200, { session: session(), boundary: null })
-      .always('GET /tasks', 200, { tasks: [...TASKS, dateless] })
+      .always('GET /tasks', 200, { tasks: [...TASKS, dateless, ahead] })
     await act(async () => {
       await h.controller.init()
     })
@@ -1079,12 +1087,26 @@ describe('interactions', () => {
 
     // Today (DEFAULT_COLLECTION) — the two open rows that carry today's date.
     expect(screen.getAllByTestId('assistant-task-row').length).toBe(2)
-    // Inbox — EVERY open task, dated or not: the superset, one row larger.
+    // Upcoming — the future-dated row, and only it. This row is the reason the
+    // collection has to be reachable at all: under four buckets it is in no
+    // other list, so a missing menu row would make it invisible with nothing
+    // erroring (ADR-009 § Nothing is stranded).
+    await openMenu('Upcoming')
+    expect(screen.getAllByTestId('assistant-task-row').length).toBe(1)
+    expect(screen.getByText('Renew the passport')).toBeTruthy()
+    // Inbox — the UNDATED open rows, and nothing else. CHANGED at T-128: this
+    // expected 3 and read "EVERY open task, dated or not: the superset, one row
+    // larger". Inbox is a date predicate now — its absence — so the two dated
+    // rows are not here.
     await openMenu('Inbox')
-    expect(screen.getAllByTestId('assistant-task-row').length).toBe(3)
+    expect(screen.getAllByTestId('assistant-task-row').length).toBe(1)
+    expect(screen.getByText('Someday')).toBeTruthy()
     // Done — the ticked one.
     await openMenu('Done')
     expect(screen.getAllByTestId('assistant-task-row').length).toBe(1)
+    // …and the four steps above between them showed every open row exactly
+    // once, which is the totality F-001 AC-24's reachability bound now rests on
+    // — walked through the UI rather than asserted on the predicate.
     // …and picking a collection closes the menu (IA §4: "tap the row; the menu
     // closes" — one tap, not two).
     expect(screen.queryByTestId('menu-close-button')).toBeNull()

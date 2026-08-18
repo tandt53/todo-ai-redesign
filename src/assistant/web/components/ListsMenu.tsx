@@ -18,18 +18,45 @@
 // so this menu has no loading state of its own — which is also why the failed
 // state that `menu-retry-button` belongs to cannot arise yet. What it does keep
 // is the rule underneath all of that: **navigation must never be the thing that
-// breaks.** Settings and the three collections are live unconditionally.
+// breaks.** Settings and the four collections are live unconditionally.
+//
+// **All four rows, not three.** Rendering `COLLECTIONS` in full is what makes
+// F-001 AC-24's reachability bound true since ADR-009 § Amendment: Inbox stopped
+// being a superset of every open task, so the bound rests on the four buckets
+// being total, and totality is only reachability if every bucket is openable.
+// Drop the Upcoming row and a future-dated task is in no collection the user can
+// reach — and nothing errors. `Upcoming` ships with no count in every account
+// today, because nothing in the live store is dated in the future; that is the
+// omit-at-zero rule working, not a broken row.
 
 import { useEffect } from 'react'
 import type { AppState } from '../../_shared/model/reducer.ts'
 import { COLLECTIONS, collectionCount, collectionName } from '../../_shared/model/tasks.ts'
 import type { Collection } from '../../_shared/model/tasks.ts'
-import { CheckIcon, ClockIcon, CloseIcon, InboxIcon, SettingsIcon } from './icons.tsx'
+import {
+  CalendarDaysIcon,
+  CheckIcon,
+  ClockIcon,
+  CloseIcon,
+  InboxIcon,
+  SettingsIcon,
+} from './icons.tsx'
 
+/** A `switch` over the closed union rather than a chain ending in a fallback:
+ * the fallback used to hand `Done`'s check to anything it did not recognise, so
+ * adding Upcoming would have drawn a tick beside it and nothing would have
+ * failed. Now a fifth collection is a typecheck error here. */
 function CollectionIcon({ c }: { c: Collection }) {
-  if (c === 'today') return <ClockIcon />
-  if (c === 'inbox') return <InboxIcon />
-  return <CheckIcon />
+  switch (c) {
+    case 'today':
+      return <ClockIcon />
+    case 'upcoming':
+      return <CalendarDaysIcon />
+    case 'inbox':
+      return <InboxIcon />
+    case 'done':
+      return <CheckIcon />
+  }
 }
 
 export function ListsMenu({

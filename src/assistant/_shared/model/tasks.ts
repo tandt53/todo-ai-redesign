@@ -1,45 +1,81 @@
-// The task list's own view model — collections, the open count, day grouping.
+// The task list's own view model — the four collections, the open count, day
+// grouping.
 //
 // Why this is in `_shared/model/` rather than inside the web component that
-// draws it: three different things now publish numbers about the same set, and
-// components.md § PathSwitch fixes them as ONE number, not three definitions of
-// it — "the count is open tasks due today — the same number § TaskList's header
-// publishes, never a second definition of it". The PathSwitch badge, the Tasks
-// header and the Lists menu's per-row counts all call `openTodayCount` /
-// `collectionTasks` here. A second copy of the predicate is L-004's shape: two
+// draws it: several different things publish numbers about the same set, and
+// components.md § PathSwitch fixes them as ONE number, not several definitions
+// of it — "the count is open tasks due today — the same number § TaskList's
+// header publishes, never a second definition of it". The PathSwitch badge, the
+// Tasks header and the Lists menu's per-row counts all call `openTodayCount` /
+// `collectionTasks` here. A second copy of a predicate is L-004's shape: two
 // homes for one fact, drifting silently while both look right.
 //
-// The collections were `task.status` plus the due-date union the shipped
-// `today` filter used (information-architecture.md §7: "S2's Inbox / Today /
-// Done collections — they are `status`"). **ADR-009 split them**: Done is
-// still `status`, and Today is now purely `due_at` — the status leg is gone,
-// and `status: 'today'` is a record-only legacy value nothing writes. IA §7's
-// sentence is true of Inbox and Done and no longer of Today; the ADR is the
-// authority, and this comment is the place the two are reconciled.
+// **All four collections are date predicates but one, and the one is genuinely
+// a status** (ADR-009 § Amendment, owner decision 2026-08-18 § four buckets):
 //
-// **Inbox is a superset of Today, not its complement, and that is deliberate.**
-// Two artifacts describe these rows and they do not say quite the same thing:
-// IA §3 says the shipped `all / today / done` filters "become three menu rows —
-// same data, addressable", while components.md § ListsMenu names the rows
-// Inbox · Today · Done. Reading Inbox as *every open task* satisfies both: it
-// is the shipped `all` filter minus the completed rows, so nothing about what
-// the user can reach changed, and it is the reading the mockup's own counts
-// imply (Today 3, Inbox 7 — a complement could not be larger than the whole).
-// It also keeps the property AC-24 leans on when it calls this surface the
-// second path: **every open task is reachable by hand from the default
-// collection**, with no combination of dates that can strand one.
+//     Done      status === 'done'
+//     Today     open and dated ON OR BEFORE today
+//     Upcoming  open and dated AFTER today
+//     Inbox     open and carrying no date at all
 //
-// Recorded rather than assumed: the two artifacts should be reconciled by
-// design/spec, and this file is where the reconciliation currently lives.
+// **Total and disjoint, and that is the property everything else rests on.**
+// Not-done splits on has-a-date; dated splits on past-or-today versus future.
+// Every task is in exactly one collection, for every clock. `inCollection`
+// below is written so this is *structural* — one classification, one answer —
+// rather than three predicates that happen to line up. Three predicates that
+// happen to line up is how a row falls out of all of them and is reachable from
+// nowhere, with nothing erroring.
+//
+// **What that replaced, and why the replacement matters.** Inbox used to be
+// *every open task* — a superset of Today, not its complement. That shape
+// existed because with three buckets a future-dated task had no other home, and
+// F-001 AC-24's bound leaned directly on it: *every open task is reachable by
+// hand from the default collection*. **That argument is gone.** Inbox is now a
+// strict subset, and reachability rests instead on the four buckets being total
+// — which is only reachability if all four are *openable*, so the Lists menu
+// renders `COLLECTIONS` in full (components.md § ListsMenu, the fourth row).
+// Drop the Upcoming row and a future-dated task is in no collection the user
+// can reach, silently.
+//
+// **The two dated predicates compare local calendar days, not instants, and
+// that is load-bearing rather than a nicety.** `due_at` is a timestamp; a
+// bucket boundary is a day. Read Today as `due_at <= now` and a task dated today
+// at 17:00 is in Today only after 17:00 — and in Upcoming before then it is not
+// either, because its *day* is not after today. The set would leak between
+// midnight and the due time, so it would stop being total for part of every day.
+// `dueDayOffset` is therefore the single place a `due_at` becomes a day, and
+// `isToday`, `isTomorrow`, `isOverdue` and `inCollection` all read it.
+//
+// **A `due_at` no clock can read counts as no date, so it lands in Inbox.** It
+// is the only answer that keeps the set total: a row whose date is malformed
+// names no day, and the collection for "names no day" is Inbox. The alternative
+// — each dated predicate answering `false` on `NaN` — drops the row out of all
+// four buckets at once, which is exactly the silent stranding the totality
+// argument exists to prevent.
+//
+// **Overdue is inside Today, deliberately** (ADR-009 § Amendment §3). Today
+// means *needs attention now*, not literally *dated today*; a task that vanishes
+// from view is how it gets forgotten. Overdue has no collection of its own — it
+// surfaces as a day-group heading inside Today (components.md § TaskList) and as
+// a fact the landing summary may name. Narrowing Today back to `isToday` at some
+// later tidy-up would silently hide missed work.
+//
+// `status` participates in exactly one collection, and `status: 'today'` is a
+// record-only legacy value nothing writes (4 rows in `data/assistant.json`,
+// deliberately not migrated). Under these predicates those rows are undated open
+// tasks and land in Inbox — the same place the three-bucket predicate put them.
 
 import type { TaskView } from '../types.ts'
 
-/** The three built-in collections (information-architecture.md §2, §3).
+/** The four built-in collections (ADR-009 § Amendment §1).
  * Personal lists are NOT here: they need `lists` + `tasks.list_id`, and no
- * such field exists (IA §7). */
-export type Collection = 'inbox' | 'today' | 'done'
+ * such field exists (information-architecture.md §7). */
+export type Collection = 'inbox' | 'today' | 'upcoming' | 'done'
 
-export const COLLECTIONS: Collection[] = ['today', 'inbox', 'done']
+/** The order the Lists menu renders — by time horizon: now, then ahead, then
+ * undated, then finished (components.md § ListsMenu, "Position"). Upcoming was
+ * INSERTED here; no row moved. */
+export const COLLECTIONS: Collection[] = ['today', 'upcoming', 'inbox', 'done']
 
 /**
  * What the app opens the list on.
@@ -50,18 +86,24 @@ export const COLLECTIONS: Collection[] = ['today', 'inbox', 'done']
  * This constant read `'inbox'` until ADR-009, justified by "`addTask` creates
  * every hand-made task with `status: 'inbox'` and no date, so landing on Today
  * would show a brand-new user an empty list immediately after they added
- * something to it". **Both halves of that are now void**: the owner decided the
+ * something to it". **Both halves of that are void**: the owner decided the
  * default, and add-in-context (`dueAtForCollection`) is what stops the list
  * being empty — a task created while viewing Today is dated today, so it is in
- * Today. The constant and its justification changed together, deliberately.
+ * Today. Since the amendment, Today also holds everything overdue, which makes
+ * the choice easier rather than harder.
  */
 export const DEFAULT_COLLECTION: Collection = 'today'
 
-/** Visible collection names — the house words (components.md § Buttons). */
+/** Visible collection names — the house words (components.md § Buttons,
+ * § ListsMenu). `Upcoming` is the word the owner decision, ADR-009 § Amendment
+ * and information-architecture.md §9 all already use; a synonym here would be a
+ * second name for a thing four artifacts have agreed on. */
 export function collectionName(c: Collection): string {
   switch (c) {
     case 'today':
       return 'Today'
+    case 'upcoming':
+      return 'Upcoming'
     case 'inbox':
       return 'Inbox'
     case 'done':
@@ -69,44 +111,47 @@ export function collectionName(c: Collection): string {
   }
 }
 
-export function isToday(iso: string | null, now: Date): boolean {
-  if (iso === null) return false
+/**
+ * The one place a `due_at` becomes a **day**: how many local calendar days the
+ * task's date sits from `now`'s. Negative is past, `0` is today, positive is
+ * future, and `null` means the row names no day at all — no date, or a date no
+ * clock can read.
+ *
+ * Every date question in this file goes through here, so there is one comparison
+ * to be wrong about rather than four. Days are compared as calendar days and not
+ * as instants (see the header): a task dated today at 17:00 is in Today from
+ * midnight, not from 17:00.
+ */
+function dueDayOffset(iso: string | null, now: Date): number | null {
+  if (iso === null) return null
   const d = new Date(iso)
-  return (
-    !Number.isNaN(d.getTime()) &&
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate()
-  )
+  if (Number.isNaN(d.getTime())) return null
+  const day = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())
+  return Math.round((day - today) / 86_400_000)
+}
+
+export function isToday(iso: string | null, now: Date): boolean {
+  return dueDayOffset(iso, now) === 0
 }
 
 export function isTomorrow(iso: string | null, now: Date): boolean {
-  if (iso === null) return false
-  const t = new Date(now)
-  t.setDate(t.getDate() + 1)
-  return isToday(iso, t)
+  return dueDayOffset(iso, now) === 1
 }
 
 /**
- * **Today is a date. Full stop** (ADR-009 §1, owner decision 2026-08-18).
+ * Dated **strictly before** today — the `Overdue` day group (components.md
+ * § TaskList) and the landing summary's `overdue` fact, which is why the
+ * predicate lives here beside its siblings rather than in a composer (L-004:
+ * one home per fact).
  *
- * This used to read `t.status === 'today' || isToday(t.due_at, now)`, which
- * made Today mean two things at once — a date bucket and a status bucket. The
- * status leg is the one that could not answer the owner's question, *if a task
- * has no date, how would you know it is today?*, and it is the one that made
- * `done_today` underivable: a dateless row on Today lost every marker the
- * instant it was ticked, because `toggleTask` writes only `status`.
- *
- * `now` is the DEVICE clock and this bucket is computed client-side. The server
- * stores an instant and serves it; it never buckets tasks by day
- * (data-model.md § Today is a date).
- *
- * A row still carrying `status: 'today'` (4 pre-ADR-009 rows, deliberately not
- * migrated) is inert: it is not done, so it shows in Inbox, and it has no date,
- * so it does not show here. There is no code path left for it to be wrong on.
+ * It is **not** a collection: overdue rows are inside Today, and this names a
+ * subset of it. `isOverdue` and `inCollection(t, 'today', now)` are therefore
+ * not complements and must not be read as such.
  */
-function dueToday(t: TaskView, now: Date): boolean {
-  return isToday(t.due_at, now)
+export function isOverdue(iso: string | null, now: Date): boolean {
+  const day = dueDayOffset(iso, now)
+  return day !== null && day < 0
 }
 
 /**
@@ -129,19 +174,67 @@ export function startOfTodayIso(now: Date = new Date()): string {
  * date, never by status** (ADR-009 §4). One definition, shared by both clients
  * and by the online and offline create paths.
  *
- * Done gets no date, same as Inbox: a task cannot be created already finished,
- * and dating it today would make it appear in a collection the user is not
- * looking at. Inbox is a superset of every open task, so nothing is stranded.
+ * Every branch is written out because one of them is an open question, and a
+ * fallthrough would answer it silently — which is how it got answered the first
+ * time.
  */
 export function dueAtForCollection(c: Collection, now: Date = new Date()): string | null {
-  return c === 'today' ? startOfTodayIso(now) : null
+  switch (c) {
+    case 'today':
+      // The collection is exactly one day, so the day's local start is
+      // derivable and honest.
+      return startOfTodayIso(now)
+
+    case 'upcoming':
+      // ─────────────────────────────────────────────────────────────────────
+      // OPEN DECISION — **T-130**. This cell is NOT decided, and the `null`
+      // below is not an answer; it is the absence of one, kept deliberately
+      // rather than filled.
+      //
+      // ADR-009 §4 fixes *creating in a collection puts it in that collection,
+      // by date*. **Upcoming is not one day** — its predicate is
+      // `due_at > today`, which names no instant, so there is nothing to
+      // derive. ADR-009 § The one cell this amendment refuses to fill and
+      // components.md § The cell this pass refuses to fill each lay out the
+      // candidate answers (tomorrow's local start · `null` with the composer
+      // saying where it went · no composer on Upcoming at all) and each
+      // recommends none of them; design's note adds a fourth — ask for the
+      // date, as the voice path already does.
+      //
+      // **What ships until it is decided:** `null`, so a task created while
+      // viewing Upcoming lands in **Inbox** — off the surface it was created
+      // on, at the moment of creation, **and nothing tells the user.** That is
+      // one of the candidate answers with its notice removed, arrived at by
+      // fallthrough rather than by choice. It is recorded here, loudly, so it
+      // is read as an unfilled cell and not as a decision anyone made.
+      // ─────────────────────────────────────────────────────────────────────
+      return null
+
+    case 'inbox':
+    case 'done':
+      // Inbox IS "no date", so no date is the whole of its answer. Done gets
+      // none either: a task cannot be created already finished, and dating it
+      // today would put it in a collection the user is not looking at.
+      return null
+  }
 }
 
+/**
+ * The one classification, and the reason the four buckets are total and
+ * disjoint rather than merely believed to be.
+ *
+ * A task is sorted **once** — done, or undated, or dated on-or-before today, or
+ * dated after today — and the collection argument only asks which answer came
+ * back. So for any task and any clock exactly one collection returns `true`,
+ * by construction. There is no combination of `status` and `due_at`, malformed
+ * dates included, that returns `true` twice or `false` four times.
+ */
 export function inCollection(t: TaskView, c: Collection, now: Date): boolean {
-  if (c === 'done') return t.status === 'done'
-  if (t.status === 'done') return false
-  if (c === 'inbox') return true
-  return dueToday(t, now)
+  if (t.status === 'done') return c === 'done'
+  if (c === 'done') return false
+  const day = dueDayOffset(t.due_at, now)
+  if (day === null) return c === 'inbox'
+  return day <= 0 ? c === 'today' : c === 'upcoming'
 }
 
 export function collectionTasks(tasks: readonly TaskView[], c: Collection, now: Date): TaskView[] {
@@ -152,15 +245,18 @@ export function collectionTasks(tasks: readonly TaskView[], c: Collection, now: 
  * The one count, parameterised by collection — one definition ("open tasks in
  * this collection"), never two implementations.
  *
- * The PathSwitch badge is this function at `today`, which is exactly what
- * components.md § PathSwitch fixes it as ("open tasks due today"); a Lists-menu
- * row is this function at its own collection; and on the Today collection the
- * badge and the header are literally the same call, which is the identity that
- * section asserts.
+ * The PathSwitch badge is this function at `today`, which is what
+ * components.md § PathSwitch fixes it as; a Lists-menu row is this function at
+ * its own collection; and on the Today collection the badge and the header are
+ * literally the same call, which is the identity that section asserts. Since
+ * the amendment that number includes overdue, which is a change in what it
+ * means and not a second definition of it.
  *
  * Zero is never rendered as a badge or a row count: "a badge reading `0` is a
  * number pretending to be news" (§ PathSwitch, and § ListsMenu for the same
- * reason). The zero case is said in words on the Tasks surface instead.
+ * reason). The zero case is said in words on the Tasks surface instead — which
+ * is what Upcoming ships showing, since nothing in the live store is dated in
+ * the future.
  */
 export function collectionCount(
   tasks: readonly TaskView[],
@@ -176,7 +272,11 @@ export function openTodayCount(tasks: readonly TaskView[], now: Date = new Date(
 }
 
 export interface DayGroup {
-  label: string
+  /** The heading over these rows, or **`null` when the collection renders
+   * flat** — Inbox and Done have no headings at all (components.md § TaskList,
+   * "Which collections group at all"). `null` is a rendering instruction, not a
+   * missing label: draw the rows and draw no heading. */
+  label: string | null
   tasks: TaskView[]
 }
 
@@ -184,36 +284,86 @@ function dayLabel(d: Date): string {
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
-/** The first day header — also the one the loading skeleton sits under, so the
- * placeholder mirrors the real silhouette instead of inventing a second
- * heading format (components.md § Skeletons: SK-ROW is "five rows under a real
- * day header"). */
-export function todayGroupLabel(now: Date = new Date()): string {
-  return `Today · ${dayLabel(now)}`
-}
+/**
+ * The collections that day-group at all (components.md § TaskList).
+ *
+ * **Inbox and Done render flat**, and each for its own reason. Inbox *is* "no
+ * date", so `Anytime` would be true of every row it can ever hold — the
+ * collection's name said a second time. Done is the one status predicate, so it
+ * holds rows with any date or none: group it and a task finished this morning
+ * appears under `Overdue` because it was due last week. It is not overdue; it is
+ * done. The fact a reader wants there is *when I finished*, which is
+ * `completed_at`, which does not exist.
+ */
+const GROUPED_COLLECTIONS: readonly Collection[] = ['today', 'upcoming']
 
 /**
  * Day groups, stacked above their rows at every width — the 180px day-header
- * gutter T-101 drew was withdrawn by T-105 (components.md § AppFrame, "The
- * day-header gutter is withdrawn").
+ * gutter T-101 drew was withdrawn by T-105 (components.md § AppFrame).
+ *
+ * **Grouping is per collection**, which is why this takes one. Today gets
+ * `Overdue` + `Today · {date}`; Upcoming gets `Tomorrow · {date}` + `Later`;
+ * Inbox and Done get a single unlabelled group and render flat.
+ *
+ * `Overdue` is tested **before** `Later` and carries **no date**. Both follow
+ * rules the group table already had: the axis runs earliest to latest, so
+ * overdue extends it backwards by one step
+ * (`Overdue → Today → Tomorrow → Later → Anytime`); and a heading takes a date
+ * when it names exactly one day and none when it names a span, which is why
+ * `Later` and `Anytime` are already bare. Before this group existed an overdue
+ * row failed `isToday` and `isTomorrow`, had a date, and landed under **`Later`**
+ * — a heading reading *after tomorrow* over tasks that are late. Since overdue
+ * folded into Today that heading rendered inside the Today collection, on the
+ * seven rows that are the entire observable effect of the amendment.
+ *
+ * The lateness signal is the heading and nothing else: § TaskRow gets no overdue
+ * badge, no red date and no icon. Two signals for one meaning read as alarm.
+ *
+ * A grouped collection can only produce some of the five headings — `Anytime` is
+ * unreachable inside Today, `Overdue` inside Upcoming, and so on. The
+ * classification is run in full anyway and empty groups are dropped, so a row
+ * that should not have been in this collection renders under its true heading
+ * instead of disappearing.
  */
-export function groupTasks(tasks: readonly TaskView[], now: Date): DayGroup[] {
+export function groupTasks(tasks: readonly TaskView[], c: Collection, now: Date): DayGroup[] {
+  if (!GROUPED_COLLECTIONS.includes(c)) {
+    return tasks.length === 0 ? [] : [{ label: null, tasks: [...tasks] }]
+  }
+  const overdue: TaskView[] = []
   const today: TaskView[] = []
   const tomorrow: TaskView[] = []
   const later: TaskView[] = []
   const anytime: TaskView[] = []
   for (const t of tasks) {
-    if (dueToday(t, now)) today.push(t)
-    else if (isTomorrow(t.due_at, now)) tomorrow.push(t)
-    else if (t.due_at !== null) later.push(t)
-    else anytime.push(t)
+    const day = dueDayOffset(t.due_at, now)
+    if (day === null) anytime.push(t)
+    else if (day < 0) overdue.push(t)
+    else if (day === 0) today.push(t)
+    else if (day === 1) tomorrow.push(t)
+    else later.push(t)
   }
   const tmr = new Date(now)
   tmr.setDate(tmr.getDate() + 1)
   const groups: DayGroup[] = []
+  if (overdue.length > 0) groups.push({ label: 'Overdue', tasks: overdue })
   if (today.length > 0) groups.push({ label: `Today · ${dayLabel(now)}`, tasks: today })
   if (tomorrow.length > 0) groups.push({ label: `Tomorrow · ${dayLabel(tmr)}`, tasks: tomorrow })
   if (later.length > 0) groups.push({ label: 'Later', tasks: later })
   if (anytime.length > 0) groups.push({ label: 'Anytime', tasks: anytime })
   return groups
+}
+
+/**
+ * Whether a collection renders day headings at all.
+ *
+ * Exported because the **loading skeleton** needs the same answer the read will
+ * produce, and it is the only thing about a heading a skeleton may know. It
+ * cannot know *which* heading — on Upcoming the first is `Tomorrow · {date}`,
+ * on Today it is `Overdue` whenever anything is late — so it draws a
+ * heading-shaped bar where a heading will go and asserts no words
+ * (components.md § Skeletons: skeletons carry no text). Flat collections
+ * skeleton flat.
+ */
+export function groupsByDay(c: Collection): boolean {
+  return GROUPED_COLLECTIONS.includes(c)
 }

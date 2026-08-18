@@ -31,12 +31,13 @@ import {
   INLINE_RETRY_BANNER,
   DEFAULT_COLLECTION,
   groupTasks,
+  groupsByDay,
   openTodayCount,
   tasksHeadline,
   tasksSurfaceView,
 } from '../model/tasks-view.ts'
 import type { LoadState } from '../../_shared/model/reducer.ts'
-import { task, todayTask } from './_helpers.ts'
+import { task, todayTask, upcomingTask } from './_helpers.ts'
 
 const ROOT = resolve(import.meta.dirname, '../../../..')
 const MOBILE_SRC = resolve(ROOT, 'src/assistant/mobile')
@@ -343,34 +344,81 @@ describe('S2 Tasks — the list is never replaced by an error', () => {
   })
 })
 
-describe('day headers stack above their rows', () => {
+describe('day headers stack above their rows — and only on the collections that group', () => {
+  // `TaskList.tsx` is the consumer, so the per-collection rule is asserted at
+  // this tier too rather than trusted from the web one: the two clients render
+  // the same groups from the same function (F-003 § Parity), and a mobile-only
+  // regression would otherwise have no observable here.
+  const now = new Date('2026-08-16T09:00:00.000Z')
+
   it('today and tomorrow are named; a task with no date gets its own group', () => {
-    const now = new Date('2026-08-16T09:00:00.000Z')
     const groups = groupTasks(
       [
         task({ id: 'a', status: 'inbox', due_at: '2026-08-16T16:00:00.000Z' }),
         task({ id: 'b', status: 'inbox', due_at: '2026-08-17T10:00:00.000Z' }),
         task({ id: 'c', status: 'inbox', due_at: null }),
       ],
+      'today',
       now,
     )
     expect(groups).toHaveLength(3)
-    expect(groups[0]?.label.startsWith('Today · ')).toBe(true)
-    expect(groups[1]?.label.startsWith('Tomorrow · ')).toBe(true)
+    expect(groups[0]?.label?.startsWith('Today · ')).toBe(true)
+    expect(groups[1]?.label?.startsWith('Tomorrow · ')).toBe(true)
     expect(groups[2]?.label).toBe('Anytime')
   })
 
   it('tasks due the same day share one group', () => {
-    const now = new Date('2026-08-16T09:00:00.000Z')
     const groups = groupTasks(
       [
         task({ id: 'a', status: 'inbox', due_at: '2026-08-16T10:00:00.000Z' }),
         task({ id: 'b', status: 'inbox', due_at: '2026-08-16T12:00:00.000Z' }),
       ],
+      'today',
       now,
     )
     expect(groups).toHaveLength(1)
     expect(groups[0]?.tasks).toHaveLength(2)
+  })
+
+  it('overdue rows head the Today collection under `Overdue`, not under `Later`', () => {
+    // The heading `Later` reads *after tomorrow*. Once Today widened to
+    // `<= today` (ADR-009 § Amendment) every overdue row in it rendered under
+    // that word — false, on the collection every account opens, about the seven
+    // rows that are the entire observable effect of the amendment.
+    const groups = groupTasks(
+      [
+        task({ id: 'today', status: 'inbox', due_at: '2026-08-16T16:00:00.000Z' }),
+        task({ id: 'late', status: 'inbox', due_at: '2026-08-14T10:00:00.000Z' }),
+      ],
+      'today',
+      now,
+    )
+    expect(groups.map((g) => g.label)).toEqual(['Overdue', 'Today · Sun, Aug 16'])
+    expect(groups.map((g) => g.label)).not.toContain('Later')
+  })
+
+  it('Inbox and Done render FLAT — `label: null`, and no heading is drawn for it', () => {
+    for (const c of ['inbox', 'done'] as const) {
+      const groups = groupTasks([task({ id: 'a' }), task({ id: 'b' })], c, now)
+      expect(groups.map((g) => g.label), `${c} headings`).toEqual([null])
+      expect(groups[0]?.tasks).toHaveLength(2)
+      expect(groupsByDay(c)).toBe(false)
+    }
+    // and the two that DO group say so, which is what the skeleton reads to
+    // decide whether to draw its heading-shaped bar
+    expect(groupsByDay('today')).toBe(true)
+    expect(groupsByDay('upcoming')).toBe(true)
+  })
+
+  it('Upcoming holds a seeded future row — the live store has none to read', () => {
+    // ADR-009 § Amendment §2: no account has a future-dated task, so a suite
+    // that replays the store reports this collection green having never held a
+    // member. `upcomingTask` is the seed, and it is a week out so `Later` is
+    // exercised rather than `Tomorrow`.
+    const view = tasksSurfaceView(stateWith({ tasks: [upcomingTask({ id: 'ahead' })] }), 'upcoming')
+    expect(view.tasks.map((t) => t.id)).toEqual(['ahead'])
+    expect(view.empty).toBeNull()
+    expect(groupTasks(view.tasks, 'upcoming', new Date()).map((g) => g.label)).toEqual(['Later'])
   })
 })
 

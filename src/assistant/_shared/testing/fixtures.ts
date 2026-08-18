@@ -51,6 +51,25 @@ export function todayTask(over: Partial<TaskWire> = {}): TaskWire {
   return task({ due_at: startOfTodayIso(), ...over })
 }
 
+/**
+ * A task in **Upcoming** — dated after the current device day.
+ *
+ * It exists because Upcoming cannot be observed from live data: ADR-009
+ * § Amendment §2 measured the store and found **no future-dated row in any
+ * account**, so a suite that replays it reports Upcoming green having never
+ * rendered a member. The first one has to be seeded, and this is the one
+ * spelling of it across both tiers.
+ *
+ * A week out, not a day: tomorrow is its own day GROUP inside Upcoming
+ * (`Tomorrow · {date}` before `Later`), so a fixture dated tomorrow would make
+ * every grouping assertion about the collection agree by accident.
+ */
+export function upcomingTask(over: Partial<TaskWire> = {}): TaskWire {
+  const d = new Date(startOfTodayIso())
+  d.setDate(d.getDate() + 7)
+  return task({ due_at: d.toISOString(), ...over })
+}
+
 export function turn(over: Partial<TurnWire> = {}): TurnWire {
   return {
     id: 'turn-1',

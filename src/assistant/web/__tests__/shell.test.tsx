@@ -25,7 +25,16 @@ import { initialState, reducer } from '../../_shared/model/reducer.ts'
 import type { Action, AppState } from '../../_shared/model/reducer.ts'
 import type { NewMsg } from '../../_shared/model/messages.ts'
 import { collectionCount, inCollection } from '../../_shared/model/tasks.ts'
-import { appliedTurn, harness, session, T0, task, todayTask, turnResponse } from './_helpers.ts'
+import {
+  appliedTurn,
+  harness,
+  session,
+  T0,
+  task,
+  todayTask,
+  upcomingTask,
+  turnResponse,
+} from './_helpers.ts'
 import type { TestController } from './_helpers.ts'
 
 const ROOT = process.cwd()
@@ -169,7 +178,9 @@ describe('AC-31 — a message is a door to the row', () => {
     // ADR-009 opened a SECOND way to be filtered out that did not exist while
     // the surface was Inbox: an open row with no date. Inbox held every open
     // task, so "not in the collection" could only mean "done"; Today can also
-    // mean "undated". Both doors are shut here, in one mount.
+    // mean "undated". Both doors are shut here, in one mount. (§ Amendment
+    // opened a third — an open row dated in the future, which is in Upcoming
+    // and in no other list; the collection walk in app.test.tsx covers it.)
     const undated = task({ id: 'task-8', title: 'Someday', status: 'inbox', due_at: null })
     expect(inCollection(undated, 'today', now)).toBe(false)
     expect(inCollection(undated, 'inbox', now)).toBe(true)
@@ -521,17 +532,30 @@ describe('the shell', () => {
     // Six drawn surfaces depend on `lists` + `tasks.list_id` and neither
     // exists (IA §7). The rows below Done, `New list`, and the whole
     // ListEditorSheet are therefore absent rather than inert.
-    mount(seed({ tasks: TASKS }))
+    //
+    // Two rows are seeded on top of TASKS so that each of the four built-ins
+    // holds something only it can hold. Without them this assertion would run
+    // against three bare rows and could not tell a menu that renders Upcoming
+    // from one that does not — which is the whole of what changed here
+    // (ADR-009 § Amendment; F-001 AC-24's reachability bound now rests on all
+    // four being openable). `upcomingTask` is the seed the live store cannot
+    // supply: nothing in it is dated in the future.
+    const dateless = task({ id: 'task-3', title: 'Someday', due_at: null })
+    const ahead = upcomingTask({ id: 'task-4', title: 'Renew the passport' })
+    mount(seed({ tasks: [...TASKS, dateless, ahead] }))
     act(() => {
       fireEvent.click(screen.getByTestId('shell-lists-menu-button'))
     })
-    // TASKS are dated today, so both rows carry the same 2 — which is the
-    // identity components.md § PathSwitch asserts (the badge and the Today row
-    // are one number), not a duplicated count. Done stays bare: zero is never
-    // rendered as a count.
+    // Order is `Today · Upcoming · Inbox · Done` — by time horizon
+    // (components.md § ListsMenu). TASKS are dated today, so the Today row and
+    // the PathSwitch badge carry the same 2, which is the identity § PathSwitch
+    // asserts (one number, not a duplicated count). CHANGED at T-128: Inbox
+    // read `Inbox 2` while it was a superset of every open task; it holds only
+    // the undated row now. Done stays bare — zero is never rendered as a count.
     expect(screen.getAllByTestId('menu-collection-row').map((r) => r.textContent?.trim())).toEqual([
       'Today 2',
-      'Inbox 2',
+      'Upcoming 1',
+      'Inbox 1',
       'Done',
     ])
     expect(screen.queryByTestId('menu-list-row')).toBeNull()
@@ -539,6 +563,51 @@ describe('the shell', () => {
     expect(screen.queryByTestId('list-editor-name-input')).toBeNull()
     // navigation must never be the thing that breaks
     expect(screen.getByTestId('menu-settings-row')).toBeTruthy()
+  })
+
+  it('the loading skeleton asserts NO heading — a bar where one goes, nothing where none does', () => {
+    // The defect this replaced: the skeleton rendered `todayGroupLabel(now)` —
+    // the literal `Today · {date}` — over EVERY collection. That already broke
+    // § Skeletons' own rule that skeletons carry no text; under four buckets it
+    // is a wrong heading on three collections and a coin-flip on the fourth,
+    // because the first heading the read produces is `Overdue` on Today
+    // whenever anything is late, `Tomorrow · {date}` on Upcoming, and nothing
+    // at all on Inbox and Done.
+    //
+    // Asserted on the RENDER rather than on the source, because the claim is
+    // about what a loading user sees (L-002). The words are checked as an
+    // absence and the bar as a presence: a skeleton that drew neither would
+    // satisfy "no text" while losing the silhouette § Skeletons asks for.
+    const { container } = mount(seed({ tasks: [], tasksLoad: 'loading' }))
+    const pick = (name: string) => {
+      act(() => {
+        fireEvent.click(screen.getByTestId('shell-lists-menu-button'))
+      })
+      const row = screen
+        .getAllByTestId('menu-collection-row')
+        .find((r) => (r.textContent ?? '').includes(name)) as HTMLElement
+      act(() => {
+        fireEvent.click(row)
+      })
+    }
+
+    // Today — the default collection, and the one the old literal was true of
+    // only by accident.
+    expect(container.querySelectorAll('.day-head')).toHaveLength(0)
+    expect(container.textContent ?? '').not.toMatch(/Today · /)
+    expect(container.querySelectorAll('.sk-head')).toHaveLength(1)
+
+    // Upcoming groups too, so it gets the bar…
+    pick('Upcoming')
+    expect(container.querySelectorAll('.sk-head')).toHaveLength(1)
+    expect(container.textContent ?? '').not.toMatch(/Tomorrow · /)
+
+    // …and the two that render flat skeleton flat, with no bar at all.
+    for (const flat of ['Inbox', 'Done']) {
+      pick(flat)
+      expect(container.querySelectorAll('.sk-head'), `${flat} skeleton`).toHaveLength(0)
+      expect(container.querySelectorAll('.day-head'), `${flat} heading`).toHaveLength(0)
+    }
   })
 
   it('Settings carries only rows whose dependencies exist', () => {

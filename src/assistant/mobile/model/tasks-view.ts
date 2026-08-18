@@ -7,7 +7,7 @@
 //
 // **Collections, counts and day grouping are NOT here** — they live in
 // `src/assistant/_shared/model/tasks.ts` and are imported. Both clients render
-// the same three collections and publish the same counts, and F-003 AC-1's
+// the same four collections and publish the same counts, and F-003 AC-1's
 // parity claim is only true if that is one implementation rather than two that
 // agree today. This file re-exports the shared names so mobile callers have one
 // import, and adds only what is genuinely the mobile shell's: which view
@@ -16,8 +16,8 @@
 // SCOPE BOUNDARY, stated once and enforced by what is absent: **personal lists
 // do not exist.** `task` has no `list_id` and there is no `lists` table
 // (`information-architecture.md § 7`), so `Collection` is a closed union of the
-// three `status`-derived collections and a personal list cannot be represented
-// here at all.
+// four built-in collections — three date predicates and Done — and a personal
+// list cannot be represented here at all.
 
 import type { AppState, LoadState } from '../../_shared/model/reducer.ts'
 import {
@@ -27,8 +27,8 @@ import {
   collectionName,
   collectionTasks,
   groupTasks,
+  groupsByDay,
   openTodayCount,
-  todayGroupLabel,
 } from '../../_shared/model/tasks.ts'
 import type { Collection, DayGroup } from '../../_shared/model/tasks.ts'
 import type { TaskView } from '../../_shared/types.ts'
@@ -40,8 +40,8 @@ export {
   collectionName,
   collectionTasks,
   groupTasks,
+  groupsByDay,
   openTodayCount,
-  todayGroupLabel,
 }
 export type { Collection, DayGroup }
 
