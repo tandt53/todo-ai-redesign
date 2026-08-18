@@ -145,6 +145,89 @@ Manual path: create/edit/complete/delete all doable by touch with zero AI calls 
 
 Groups rows by day; hairline section headers (`font.size.label` uppercase `text.muted`). Works untouched when AI is off/erroring/offline (ADR-7). States: default · empty · offline (unchanged — the banner carries the news).
 
+### Day groups after the four buckets (added 2026-08-18, T-128)
+
+For ADR-009 § Amendment. `groupTasks` (`src/assistant/_shared/model/tasks.ts:200`) sorts a
+collection's rows into `Today · {date}` · `Tomorrow · {date}` · `Later` · `Anytime` by testing
+`dueToday`, then `isTomorrow`, then `due_at !== null`. An overdue row fails the first two and has a
+date, so it lands in **`Later`** — a heading that reads *after tomorrow*. Once Today's predicate
+widens to `<= today` that heading renders inside the Today collection, and in the live store, where
+every dated open row is overdue and nothing is dated today, **the whole of Today renders under one
+heading reading `Later`.** Not unhelpful — false, on the collection every account opens, about the
+seven rows that are the entire observable effect of the amendment.
+
+**One new group, `Overdue`, tested before `Later`:**
+
+| Heading | Members | Carries a date |
+|---|---|---|
+| **`Overdue`** | dated **before** today | **no** |
+| `Today · {date}` | dated today | yes |
+| `Tomorrow · {date}` | dated tomorrow | yes |
+| `Later` | dated after tomorrow | no |
+| `Anytime` | no date | no |
+
+**`Overdue` carries no date, and the rule that decides is already in the table.** A heading takes a
+date when it names exactly one day and none when it names a span — which is why `Later` and
+`Anytime` are already bare. Overdue is a span: the set reaches back as far as the account is old,
+and one date over it would be true of one row. Grouping per past day instead is honest and turns
+seven late tasks into seven single-row headings, burying the one fact that matters under a date
+list. No row loses its date — § TaskRow already renders due meta, tabular — it stays at the
+altitude where it is a fact about a task rather than a claim about a set.
+
+**`Overdue` is the word, and it is deliberately not the summary's.** § LandingSummary says *"past
+their date"* because a sentence can state a fact; a heading has to name a set, and a set needs a
+noun. `Overdue` is the word this project's own record uses throughout and the word every app the
+audience opens daily uses — recognition is a UX asset and a heading is not where the novelty budget
+is spent. Rejected: `Missed` and `Behind`, which judge the user; `Past due`, a synonym with no
+advantage; `Before today`, which recites the predicate instead of naming the set.
+
+**One signal, not two: nothing on the row changes.** The heading carries lateness for the whole
+set, so § TaskRow gets no overdue badge, no red date and no icon. Two signals for one meaning read
+as alarm and dilute each other — and in the live store that badge would sit on seven rows out of
+seven, an alarm with nothing to contrast against.
+
+### Which collections group at all, and in what order
+
+**Order first, because it needs no new principle.** `Overdue` sits **above** `Today · {date}`. The
+group set is a time axis and it already runs earliest to latest; overdue is earlier than today, so
+it extends the axis backwards by one step and the set stays monotonic —
+`Overdue → Today → Tomorrow → Later → Anytime`, dateless tail last as it already is.
+
+**This agrees with § LandingSummary's ranking, and it is not the same argument.** Worth separating,
+because a shared conclusion is evidence rather than proof. There, ranking overdue first decides
+whether a missed task is **named at all**: the summary is one sentence, and a set left out of it is
+mentioned nowhere in the app. In a list every row is present at every ordering — nothing appears or
+disappears, and order decides only what the eye meets first. That argument is about silence; this
+one is about chronology, and this one is the weaker of the two. That is the right outcome: it needs
+no appeal to priority, so nothing here rests on the ranking above surviving review.
+
+**A heading earns its place only when the collection can produce more than one.** A heading true of
+every row restates the collection's name in a different word; a heading a collection can never
+produce is dead structure. Against the four buckets:
+
+| Collection | Groups | Why |
+|---|---|---|
+| **Today** | `Overdue`, then `Today · {date}` | Two, both true. `Tomorrow`, `Later` and `Anytime` are unreachable here by the predicate. This is also the only surface anywhere that names a task as missed — `overdue` has no collection of its own (§ LandingSummary) |
+| **Upcoming** | `Tomorrow · {date}`, then `Later` | Tomorrow is the actionable edge of a future collection. `Overdue`, `Today` and `Anytime` are unreachable. `Later` is coarse — routed below |
+| **Inbox** | **none — flat** | Inbox *is* "no date", so `Anytime` is true of every row it can ever hold. That heading is the collection's name said a second time |
+| **Done** | **none — flat** | The one that would ship a new falsehood — below |
+
+**Done must not day-group, and `Overdue` is exactly why.** Done is the one status predicate, so it
+holds rows with any date or none, including rows whose `due_at` is long past. Group Done by `due_at`
+and a task finished this morning appears under **`Overdue`** because it was due last week. It is not
+overdue; it is done. The fact a reader wants here is *when I finished*, which is `completed_at`,
+which does not exist — § LandingSummary's "The one shape that is blocked" names the same missing
+field for the same reason, and this is a second surface waiting on it. Note the shape: the fix for
+one false heading would have introduced a fresh one on the collection nobody thought to check.
+
+**Routed, not filled — `Later` is coarse on Upcoming.** Every Upcoming row is dated after today, so
+`Later` catches everything that is not tomorrow: next week and next year under one word. Nothing
+false renders, which is why it is not decided here. The honest alternatives — per-day headings, or a
+this-week / later split — are layout judgements about a collection with **no member anywhere in the
+live store**, and choosing between them against zero rows is choosing against nothing. It needs a
+screens pass with seeded data, and it blocks nothing: the collection is correct and reachable
+without it.
+
 ## OfflineBanner
 
 Purpose: no half-running conversation (AC-25) — full-width thin note above the Composer, `bg.raised`, `question` accent text: "No connection — the list still works, and what you type is saved on the device." Shows queued-turn count when one is in flight.
@@ -415,7 +498,7 @@ app** — the only spinner is the one § Buttons puts inside a button that was p
 
 | ID | Mirrors | Shape |
 |---|---|---|
-| **SK-ROW** | § TaskRow | checkbox square + two bars (title 62%, meta 24%), five rows under a real day header |
+| **SK-ROW** | § TaskRow | checkbox square + two bars (title 62%, meta 24%), five rows under a **heading-shaped bar** — see the note below |
 | **SK-BUBBLE** | § Message bubbles | three bubbles, alternating sides, 70% / 45% / 80% width |
 | **SK-LISTROW** | LM-LIST | icon square + one bar at 55%, two rows |
 
@@ -426,6 +509,17 @@ except that they are not the empty state.
 
 **A loading surface never renders its empty state.** A returning user who sees "Say it. I'll
 write it down." while their conversation is still loading reads it as history lost.
+
+**SK-ROW's day header is a bar, not words** (changed 2026-08-18, T-128). The cell read *"five rows
+under a real day header"*, and `TasksSurface.tsx:179` renders `todayGroupLabel(now)` — the literal
+string `Today · {date}` — over every collection's skeleton. That already contradicted this section's
+own rule two paragraphs up (*skeletons carry no text*); the four buckets make it visibly wrong
+rather than merely inconsistent. On Inbox and Done nothing groups at all, on Upcoming the first
+heading is `Tomorrow · {date}`, and on Today it is `Overdue` whenever anything is late — which in
+the live store is always. **A skeleton cannot know which heading the read will produce, so it must
+not assert one.** A bar at the heading's size and position mirrors the silhouette, which is all this
+section ever asked for; the words were never part of the silhouette. Collections that render flat
+(§ TaskList) skeleton flat, with no bar.
 
 ## InlineRetryBanner
 
@@ -900,8 +994,10 @@ Not a rename, a reorder, or a new row.
 
 **Added 2026-08-18 (T-128), additive**, for `reports/owner-decision-2026-08-18-four-buckets.md`
 § Confirmed (second pass) and `specs/_shared/adr/ADR-009-today-is-a-date.md` § Amendment. **No row
-ID above was moved, renamed or reordered.** One frame ID and two facts were added, one selection
-rule row died, and ten cells changed content — all listed at the foot of this section.
+ID above was moved, renamed or reordered.** One frame ID, two facts and one day-group heading were
+added, one selection rule row died, and eleven cells changed content — all listed at the foot of
+this section. The three surfaces the amendment disturbed have one home each: § LandingSummary for
+the frames and facts, § ListsMenu for the fourth row, § TaskList for the day groups.
 
 The owner considered moving overdue into Inbox, which would have dissolved every problem this
 section addresses, and **confirmed keeping it in Today**. So none of what follows is an open
@@ -948,23 +1044,24 @@ invisible one. ET-COLLECTION's CTA on Upcoming cannot.
 
 ### What is owed elsewhere, and is not written here
 
-- **The `Later` day-group heading.** `groupTasks` files an overdue row under `Later`, so rendering
-  the Today collection puts its overdue members under a heading claiming they are in the future.
-  That is false rather than merely unhelpful, and it is a heading and its words, so it is design's
-  — but it is not in this pass's scope and no wording is invented for it here. It needs either a
-  leading `Overdue` group or an absorption into the `Today` group.
+- **`Later` on Upcoming, and `completed_at` for Done.** Both are routed in § TaskList with the
+  reason each is routed rather than decided: `Later` is coarse but renders nothing false, on a
+  collection with no member in the live store to design against; Done's grouping needs the same
+  missing `completed_at` that blocks LSM-PROGRESS. Neither blocks the implementation task — Done
+  and Inbox render flat, which is an answer, not a deferral.
 - **Mockup states.** § LandingSummary names four states — `talk-landing` · `talk-landing-overdue` ·
   `talk-landing-clear-today` · `talk-landing-clear`. LSM-CLEAR-AHEAD has no state among them, and
   `talk-landing-overdue` now needs to show the `count_secondary = 0` branch (LSM-OVERDUE) as well
-  as the `≥ 1` one. The three `app-shell*.html` mockups and the Lists menu's fourth row are owed a
-  screens pass; nothing in them was touched here.
+  as the `≥ 1` one. The three `app-shell*.html` mockups owe the Lists menu's fourth row, the
+  `Overdue` day heading, and the flat rendering of Inbox and Done; nothing in them was touched
+  here.
 - **The Upcoming member QA has to seed.** Not a design artifact, recorded because it is invisible
   from this file: the live store has no future-dated task, so every assertion about Upcoming and
   about LSM-CLEAR-AHEAD is vacuous against replayed data.
 
 ### Cells above that changed content in this pass
 
-Ten, and none of them is a new row:
+Eleven, and none of them is a new row:
 
 1. **§ ListsMenu, LM-COLLECTION `Rows`** read *"Inbox · Today · Done"* and now reads
    *"Today · Upcoming · Inbox · Done"*. The published order was already stale — `COLLECTIONS` ships
@@ -998,3 +1095,11 @@ Ten, and none of them is a new row:
 10. **§ LandingSummary, two rows of § What the awkward cases render**, and **selection rule rows 3,
    4 and 8**. Row 4 is struck through and marked dead; rows 3 and 8 each name a two-way frame split
    in place of a single frame. The table still has eight numbered rows.
+11. **§ Skeletons, SK-ROW's `Shape`** read *"five rows under a real day header"* and now reads
+   *"under a heading-shaped bar"*. The words were already forbidden by the sentence two paragraphs
+   below it — *skeletons carry no text* — and the four buckets turned a contradiction into a wrong
+   heading on three of the four collections.
+
+**Two sections gained additive blocks rather than changed cells:** § ListsMenu (the fourth row) and
+§ TaskList (the `Overdue` heading and the per-collection grouping rule). Nothing in either was
+rewritten.
