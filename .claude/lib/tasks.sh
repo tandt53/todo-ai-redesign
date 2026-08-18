@@ -22,14 +22,14 @@ TASKS_COLS=""
 # tasks_init <path-to-TASKS.md> — returns 1 if there is no header row to read.
 # tasks_live — the file with HTML comments removed.
 #
-# Comments must be stripped the same way `lib/tasks.js` strips them: non-greedy,
+# Comments must be stripped the same way `lib/tasks.cjs` strips them: non-greedy,
 # so a SINGLE-LINE `<!-- ... -->` closes on its own line. A sed range
 # (`/<!--/,/-->/d`) cannot do this — it starts at the opening line and searches
 # for the terminator on LATER lines only, so one inline comment swallows every
 # line up to the next `-->`. TASKS.md ships exactly such a comment in its
 # archival instructions, above the task table: with the sed version, every real
 # task row was deleted and `next` reported "No pending tasks" forever while the
-# dashboard (which uses tasks.js) listed them correctly.
+# dashboard (which uses tasks.cjs) listed them correctly.
 tasks_live() {
   awk '
     {

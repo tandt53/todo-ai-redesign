@@ -6,7 +6,7 @@
 #   1. TASKS.md            — declares the column layout and the status vocabulary
 #   2. ORCHESTRATION.md    — selects the next task by parsing those columns
 #   3. validate-state.sh   — enforces C1-C5 against those columns
-#   4. eval/server.js      — renders the queue on the dashboard
+#   4. eval/server.cjs      — renders the queue on the dashboard
 #
 # The failure this guards against is the one that motivated the single-table
 # rewrite: status lived in four section headings with a different column set
@@ -25,7 +25,7 @@ TASKS="$CLAUDE_ROOT/state/TASKS.md"
 SEED="$CLAUDE_ROOT/templates/docs/TASKS.md"
 ORCH="$CLAUDE_ROOT/ORCHESTRATION.md"
 VALIDATOR="$CLAUDE_ROOT/hooks/validate-state.sh"
-SERVER="$CLAUDE_ROOT/eval/server.js"
+SERVER="$CLAUDE_ROOT/eval/server.cjs"
 MANIFEST="$PROJECT_ROOT/MANIFEST.md"
 CONTRACT="$CLAUDE_ROOT/agents/_completion-protocol.md"
 
@@ -56,13 +56,13 @@ assert_file_contains "$TASKS" 'Outcome' "TASKS.md declares an Outcome column"
 # resolve positions from TASKS.md's own header, so the duplication is gone
 # rather than merely guarded.
 LIB_SH="$CLAUDE_ROOT/lib/tasks.sh"
-LIB_JS="$CLAUDE_ROOT/lib/tasks.js"
+LIB_JS="$CLAUDE_ROOT/lib/tasks.cjs"
 assert_file_exists "$LIB_SH" "lib/tasks.sh present"
-assert_file_exists "$LIB_JS" "lib/tasks.js present"
+assert_file_exists "$LIB_JS" "lib/tasks.cjs present"
 
 assert_file_contains "$VALIDATOR" 'lib/tasks.sh' "validator sources the shared reader"
 assert_file_contains "$ORCH" 'lib/tasks.sh' "orchestrator sources the shared reader"
-assert_file_contains "$SERVER" "lib/tasks.js" "dashboard requires the shared reader"
+assert_file_contains "$SERVER" "lib/tasks.cjs" "dashboard requires the shared reader"
 
 # A header row must exist for name resolution to have anything to read.
 if grep -qE '^\| *ID *\|' "$TASKS"; then
@@ -210,9 +210,9 @@ fi
 
 # ── Dashboard reads the column, not the heading ────────────────────────────
 if grep -qE '\^## PENDING|\^## DONE' "$SERVER"; then
-  _record_fail "server.js still buckets tasks by section heading"
+  _record_fail "server.cjs still buckets tasks by section heading"
 else
-  _record_pass "server.js does not parse status section headings"
+  _record_pass "server.cjs does not parse status section headings"
 fi
 assert_file_contains "$LIB_JS" 'BUCKET' "the shared reader maps Status to dashboard buckets"
 
@@ -253,8 +253,8 @@ fi
 # ── The event log is hook-written, never agent-written ─────────────────────
 # The log's value is that it is not self-reported. If an agent is ever told to
 # write it, it stops being independent evidence.
-EVENTS_HOOK="$CLAUDE_ROOT/hooks/capture-events.js"
-assert_file_exists "$EVENTS_HOOK" "capture-events.js present"
+EVENTS_HOOK="$CLAUDE_ROOT/hooks/capture-events.cjs"
+assert_file_exists "$EVENTS_HOOK" "capture-events.cjs present"
 assert_file_contains "$EVENTS_HOOK" 'evidence_conflict' \
   "event log records DONE-without-artifacts as a conflict"
 assert_grep_zero 'events\.jsonl' \
@@ -315,7 +315,7 @@ fi
 # terminator on LATER lines only — so the single-line `<!-- N tasks archived -->`
 # in TASKS.md's own archival instructions swallowed every task row beneath it.
 # The shell reader returned 0 rows and `next` said "No pending tasks" forever,
-# while tasks.js (non-greedy regex) listed them correctly. Column names agreed
+# while tasks.cjs (non-greedy regex) listed them correctly. Column names agreed
 # throughout, so a declaration-only check stayed green.
 BEHAV_TMP="$(mktemp -d)"
 trap 'rm -rf "$BEHAV_TMP"' EXIT
@@ -331,6 +331,12 @@ cp "$TASKS" "$BEHAV_TMP/TASKS.md"
   printf '| T-898 | Done probe two | auth | F-900 | backend-agent | P0 | — | DONE | .claude/state/TASKS.md | probe |\n'
   printf '| T-899 | Done probe three | auth | F-900 | web-agent | P1 | T-897 | DONE | .claude/state/TASKS.md | probe |\n'
   printf '| T-900 | Behavioural probe row | auth | F-900 | spec-agent | P0 | T-897,T-898 | PENDING | — | — |\n'
+  # A LETTERED sub-task, because the readers disagreed about exactly these and
+  # nothing here contained one. `T-\d+` matches T-899 and not T-899a, so a
+  # reader carrying that pattern drops every sub-task while counting its
+  # parent — and the fixture must contain one or the comparison below cannot
+  # see it. Found in a real project only after an unrelated crash was fixed.
+  printf '| T-899a | Lettered sub-task probe | auth | F-900 | web-agent | P1 | T-899 | DONE | .claude/state/TASKS.md | probe |\n'
 } >> "$BEHAV_TMP/TASKS.md"
 
 sh_rows=$(
@@ -354,20 +360,70 @@ else
   _record_fail "tasks_select_next picked nothing from a queue with a selectable PENDING row"
 fi
 
-if command -v node >/dev/null 2>&1 && [ -f "$CLAUDE_ROOT/lib/tasks.js" ]; then
+if command -v node >/dev/null 2>&1 && [ -f "$CLAUDE_ROOT/lib/tasks.cjs" ]; then
   js_rows=$(node -e "
-    const t = require('$CLAUDE_ROOT/lib/tasks.js');
+    const t = require('$CLAUDE_ROOT/lib/tasks.cjs');
     const fs = require('fs');
     process.stdout.write(String(t.parseTable(fs.readFileSync('$BEHAV_TMP/TASKS.md','utf8')).rows.length));
   " 2>/dev/null || echo "err")
   if [ "$js_rows" = "$sh_rows" ]; then
-    _record_pass "tasks.sh and tasks.js agree on row count (${sh_rows})"
+    _record_pass "tasks.sh and tasks.cjs agree on row count (${sh_rows})"
   else
-    _record_fail "reader divergence: tasks.sh sees ${sh_rows} row(s), tasks.js sees ${js_rows} — the orchestrator and the dashboard would disagree about the queue"
+    _record_fail "reader divergence: tasks.sh sees ${sh_rows} row(s), tasks.cjs sees ${js_rows} — the orchestrator and the dashboard would disagree about the queue"
   fi
 else
-  _record_pass "node or tasks.js absent — cross-reader comparison skipped"
+  _record_pass "node or tasks.cjs absent — cross-reader comparison skipped"
 fi
+
+# --- the readers must survive an ESM project, which is where they actually run ---
+#
+# This template ships no package.json, so every .js file under it loads as
+# CommonJS and the readers work. A real project almost always declares
+# `"type": "module"` — modern TypeScript defaults to it — and under that flag
+# Node treats every .js in the tree as ESM, so `require`/`module.exports` throw
+# on load. That is exactly what happened: a live project's node reader threw
+# while the shell reader returned 110 rows, and R9 was green in the template the
+# whole time. The bug could not exist in the environment the check ran in.
+#
+# Two halves, because one is not enough on its own.
+#
+# 1. BEHAVIOURAL, on the one module that is imported rather than executed:
+#    build a scratch project declaring ESM and load tasks.cjs from inside it.
+#    Only tasks.cjs is probed this way — requiring server.cjs starts an HTTP
+#    server and requiring the capture hooks blocks reading stdin, so executing
+#    them is not a test, it is a hang. (It hung once while this was written.)
+#
+# 2. STRUCTURAL, on the class: no .js file anywhere under .claude/ may contain
+#    CommonJS. This is what catches the next file somebody adds, and it is why
+#    the four existing ones are .cjs — an extension Node reads as CommonJS no
+#    matter what the surrounding package.json says.
+if command -v node >/dev/null 2>&1 && [ -f "$CLAUDE_ROOT/lib/tasks.cjs" ]; then
+  ESM_TMP="$(mktemp -d)"
+  printf '{ "name": "esm-probe", "type": "module" }\n' > "$ESM_TMP/package.json"
+  cp "$CLAUDE_ROOT/lib/tasks.cjs" "$ESM_TMP/tasks.cjs"
+  if ( cd "$ESM_TMP" && node -e "require('./tasks.cjs')" ) >/dev/null 2>&1; then
+    _record_pass "the shared reader loads inside a project declaring \"type\": \"module\""
+  else
+    _record_fail "the shared reader does not load in an ESM project — this is what a real project runs in"
+  fi
+  rm -rf "$ESM_TMP"
+fi
+
+cjs_in_js=""
+scanned=0
+while IFS= read -r jsfile; do
+  [ -f "$jsfile" ] || continue
+  scanned=$((scanned + 1))
+  grep -qE 'require\(|module\.exports' "$jsfile" && cjs_in_js="${cjs_in_js}${jsfile#$CLAUDE_ROOT/} "
+done < <(find "$CLAUDE_ROOT" -name '*.js' -not -path '*/node_modules/*' 2>/dev/null)
+
+[ "$scanned" -gt 0 ] \
+  && _record_pass "scanned ${scanned} .js file(s) under .claude/ for CommonJS" \
+  || _record_pass "no .js files under .claude/ — nothing that could break under ESM"
+
+[ -z "$cjs_in_js" ] \
+  && _record_pass "no .js file under .claude/ uses CommonJS — none can throw in an ESM project" \
+  || _record_fail "CommonJS inside a .js file (rename to .cjs): ${cjs_in_js}"
 
 # Commented example rows must still never reach selection.
 if [ "$(. "$CLAUDE_ROOT/lib/tasks.sh"; tasks_init "$BEHAV_TMP/TASKS.md" >/dev/null 2>&1; tasks_rows | grep -c 'T-00X' || true)" -eq 0 ]; then

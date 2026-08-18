@@ -7,7 +7,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [ "$1" = "--serve" ]; then
-  node "$SCRIPT_DIR/server.js"
+  node "$SCRIPT_DIR/server.cjs"
   exit 0
 fi
 

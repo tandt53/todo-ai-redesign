@@ -159,7 +159,16 @@ writers:
   # crosses lines under an explicit grant and the files are recorded on the
   # orchestrator row rather than widening that agent permanently. The map cannot
   # express "sanctioned once"; that is the gap, not the crossing.
-  orchestrator:      ["reports/", ".claude/state/", ".mobile-app/", "MANIFEST.md", "{specs}/_source/", "{specs}/{shared_dir}/LEARNINGS.md", "{specs}/{shared_dir}/uc-coverage-map.md", "{design}/", "{qa}/"]
+  # `.claude/` added 2026-08-18. The pipeline's own tooling is owned by no agent,
+  # and the orchestrator is the party that runs `upgrade-project.sh` — so
+  # template-synced files land here under its name. This is not authorship: the
+  # source of truth for everything under `.claude/` is
+  # `claude-agents-final/templates/project-starter/`, and a fix made HERE is
+  # erased by the next upgrade. Fix upstream, then sync. The grant exists because
+  # C6 cannot express "synced, not written", and because the alternative was
+  # recording the sync against an agent that did not do it. The Drift Log already
+  # carried two such edits with nowhere to attribute them.
+  orchestrator:      ["reports/", ".claude/", ".mobile-app/", "MANIFEST.md", "{specs}/_source/", "{specs}/{shared_dir}/LEARNINGS.md", "{specs}/{shared_dir}/uc-coverage-map.md", "{design}/", "{qa}/"]
   spec-agent:        ["{specs}/", "{design}/{shared_dir}/components.md"]
   architect-agent:   ["{specs}/"]
   design-agent:      ["{design}/"]

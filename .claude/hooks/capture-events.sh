@@ -17,5 +17,5 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # A hook must never break the session it observes.
-cat | node "$SCRIPT_DIR/capture-events.js" 2>/dev/null
+cat | node "$SCRIPT_DIR/capture-events.cjs" 2>/dev/null
 exit 0

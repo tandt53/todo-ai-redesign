@@ -1,4 +1,4 @@
-// Shared TASKS.md reader for Node consumers (currently .claude/eval/server.js).
+// Shared TASKS.md reader for Node consumers (currently .claude/eval/server.cjs).
 //
 // The bash half lives in .claude/lib/tasks.sh and follows the same rule:
 // column positions are resolved from the header row at runtime, never
@@ -58,7 +58,12 @@ function parseTable(content) {
 
   const rows = [];
   for (const line of lines) {
-    if (!/^\|\s*T-\d+\s*\|/.test(line)) continue;
+    // T-\d+ ALONE drops every lettered sub-task (T-070b, T-121c). The shell
+    // reader counts them and this one did not, so the dashboard silently omitted
+    // rows the orchestrator was acting on. Same pattern bit an archival script in
+    // this project on 2026-08-18, which moved every numbered row and left its
+    // lettered children behind.
+    if (!/^\|\s*T-\d+[a-z]?\s*\|/.test(line)) continue;
     const c = cells(line);
     const row = {};
     for (const [name, i] of Object.entries(columns)) row[name] = c[i] ?? '';

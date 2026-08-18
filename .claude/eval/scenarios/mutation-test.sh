@@ -139,6 +139,25 @@ run_case R9 "consumer re-derives a column position" \
 run_case R9 "shell reader stops resolving columns by name" \
   "sed -i.bak 's|i=\"\$(tasks_index \"\$2\")\"|i=9|' .claude/lib/tasks.sh"
 
+# R9 — the ESM half. The failure this pair exists for: CommonJS in a .js file
+# works in this template (no package.json) and throws in a real project (which
+# declares type: module). Renaming the shared reader back to .js is that bug,
+# reproduced exactly.
+run_case R9 "the shared reader goes back to a .js extension" \
+  "mv .claude/lib/tasks.cjs .claude/lib/tasks.js"
+
+# The class rule, separately: a NEW file carrying CommonJS with a .js extension.
+# This is the one that catches the next person rather than the last one.
+run_case R9 "a new .js file under .claude/ carries CommonJS" \
+  "printf 'const x = require(\"fs\");\nmodule.exports = { x };\n' > .claude/lib/helper.js"
+
+# R9 — the readers must agree about LETTERED sub-tasks. This is the divergence
+# that was hiding behind the ESM crash: the node reader matched `T-\d+` and so
+# counted T-899 while dropping T-899a, and the dashboard silently omitted rows
+# the orchestrator was acting on.
+run_case R9 "node reader stops matching lettered sub-tasks" \
+  "sed -i.bak 's/T-\\\\d+\[a-z\]?/T-\\\\d+/' .claude/lib/tasks.cjs"
+
 # R10 — an agent told to write a block the orchestrator owns.
 run_case R10 "agent told to write the Links block directly" \
   "printf '\nWrite the feature spec ## Links block yourself when you finish.\n' >> $A/web-agent.md"

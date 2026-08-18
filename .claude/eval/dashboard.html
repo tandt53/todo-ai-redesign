@@ -396,7 +396,7 @@ async function loadAndRender() {
   if (!metrics.length && !qualitySignals.length) {
     document.body.innerHTML = '<h1 style="color:#f87171;padding:40px">Cannot load metrics.<br>' +
       'Static report: rebuild with <code style="color:#60a5fa">bash .claude/eval/generate-dashboard.sh</code><br>' +
-      'Live view: start the server with <code style="color:#60a5fa">node .claude/eval/server.js</code></h1>';
+      'Live view: start the server with <code style="color:#60a5fa">node .claude/eval/server.cjs</code></h1>';
     return;
   }
 

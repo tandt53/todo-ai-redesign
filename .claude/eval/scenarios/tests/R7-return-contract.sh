@@ -4,7 +4,7 @@
 # Three parties must agree or metrics silently break:
 #   1. agents            — must emit the ---METRICS--- block
 #   2. ORCHESTRATION.md  — routes on `status:` from that block
-#   3. capture-agent-metrics.js — parses the block's fields
+#   3. capture-agent-metrics.cjs — parses the block's fields
 #
 # The failure this guards against: the contract was defined in one file that no
 # agent read, ORCHESTRATION branched on a "Status field" that 10 of 12 agents
@@ -18,7 +18,7 @@ source "$SCRIPT_DIR/../lib/assert.sh"
 CLAUDE_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 AGENTS_DIR="$CLAUDE_ROOT/agents"
 CONTRACT="$AGENTS_DIR/_completion-protocol.md"
-HOOK="$CLAUDE_ROOT/hooks/capture-agent-metrics.js"
+HOOK="$CLAUDE_ROOT/hooks/capture-agent-metrics.cjs"
 
 echo "─── R7 — return contract agreed across agents / orchestrator / hook ───"
 
@@ -82,10 +82,10 @@ if [ -f "$HOOK" ]; then
       fi
     done
   else
-    _record_fail "could not find the hook's status vocabulary — did capture-agent-metrics.js change shape?"
+    _record_fail "could not find the hook's status vocabulary — did capture-agent-metrics.cjs change shape?"
   fi
 else
-  _record_fail "capture-agent-metrics.js missing — Layer-1 metrics cannot be captured"
+  _record_fail "capture-agent-metrics.cjs missing — Layer-1 metrics cannot be captured"
 fi
 
 # The retired value must not come back as a usable status. The contract is

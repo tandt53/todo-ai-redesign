@@ -3,8 +3,8 @@ const fs = require('fs');
 const path = require('path');
 
 // Column positions come from TASKS.md's own header via the shared reader —
-// see .claude/lib/tasks.js. Never re-derive them here.
-const { parseTasks: parseTasksTable } = require('../lib/tasks.js');
+// see .claude/lib/tasks.cjs. Never re-derive them here.
+const { parseTasks: parseTasksTable } = require('../lib/tasks.cjs');
 
 const PORT = process.env.PORT || 8080;
 const PROJECT_ROOT = path.resolve(__dirname, '../..');

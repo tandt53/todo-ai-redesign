@@ -215,7 +215,7 @@ Rules:
 End **every** return — DONE, PARTIAL, BLOCKED, APPROVE, or REJECT — with this
 block. It must be the last thing in your output, introduced by a line containing
 exactly `---METRICS---`. The orchestrator routes on `status:`; the Layer-1 hook
-(`.claude/hooks/capture-agent-metrics.js`) parses the rest into the dashboard.
+(`.claude/hooks/capture-agent-metrics.cjs`) parses the rest into the dashboard.
 
 ```
 ---METRICS---
