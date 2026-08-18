@@ -340,8 +340,8 @@ describe('the APP SHELL catalogue — one source, three attribute spellings', ()
   const android = catalogueOf('design/assistant/screens/app-shell-android.html', 'resource-id')
   const web = catalogueOf('design/assistant/screens/app-shell.html', 'data-testid')
 
-  it('all three shell mockups declare the same 29 ids', () => {
-    expect(sorted(ios)).toHaveLength(29)
+  it('all three shell mockups declare the same 31 ids', () => {
+    expect(sorted(ios)).toHaveLength(31)
     expect(sorted(android)).toEqual(sorted(ios))
     expect(sorted(web)).toEqual(sorted(ios))
   })

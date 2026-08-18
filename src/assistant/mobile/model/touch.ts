@@ -241,7 +241,7 @@ export const INTERACTIVE_IDS = [
  * correct — a conversation control that is not in the conversation mockup is a
  * real defect. Shell controls are drawn in the shell mockups instead.
  *
- * The eight shell ids absent from this list are the ones `SHELL_IDS_BLOCKED`
+ * The ten shell ids absent from this list are the ones `SHELL_IDS_BLOCKED`
  * records as drawn and deliberately unbuilt; a hit area for a control that does
  * not exist would be a measurement of nothing.
  */

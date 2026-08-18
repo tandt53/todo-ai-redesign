@@ -88,6 +88,12 @@ const NOT_BUILT: Record<string, string> = {
   // to rev 3 and unbuilt.
   'settings-talkback-switch': 'needs F-002 (components.md § SettingsRow)',
   'settings-row-retry': 'the failed state of a row that does not exist yet',
+  // SaveNotice is drawn in app-shell.html by T-135 and deliberately not built:
+  // "designed, not built" (components.md § SaveNotice). Both ids land here
+  // together — a notice with no dismiss control, or a dismiss control with no
+  // notice, would each be half a component.
+  'tasks-save-notice': 'SaveNotice is drawn and unbuilt (components.md § SaveNotice, T-135)',
+  'tasks-save-notice-dismiss': 'dismisses a notice that does not render yet (components.md § SaveNotice)',
 }
 
 /** The contract, straight from the design mockups — never hand-copied. */
@@ -517,7 +523,7 @@ describe('testid contract (design mockup catalogue)', () => {
     // Both size guards are here for L-007's reason: a catalogue that silently
     // came back empty, or an exclusion list that silently excused everything,
     // both yield the same green as a working check.
-    expect(catalogue().size).toBe(45)
+    expect(catalogue().size).toBe(47)
     const expected = builtCatalogue()
     expect(expected.size).toBe(36)
 

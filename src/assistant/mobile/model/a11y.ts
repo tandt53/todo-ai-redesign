@@ -92,10 +92,10 @@ export const ALL_A11Y_IDS: readonly ConversationA11yId[] = Object.values(A11Y_ID
 /**
  * `design/assistant/screens/app-shell-ios.html` (`accessibilityIdentifier`),
  * `-android.html` (`resource-id`) and `app-shell.html` (`data-testid`) declare
- * **29** ids, byte-identical across the three. Seven of them are controls that
+ * **31** ids, byte-identical across the three. Seven of them are controls that
  * already existed and simply render on a different surface now — they keep
  * their ids and stay in `A11Y_IDS` above ("They are not renamed",
- * components.md § Testid catalogue — app shell). The **22** genuinely new
+ * components.md § Testid catalogue — app shell). The **24** genuinely new
  * controls are here.
  *
  * Split rather than merged for a reason that is not tidiness: `ALL_A11Y_IDS` is
@@ -133,6 +133,12 @@ export const SHELL_A11Y_IDS = {
   tasksEmptyAddButton: 'tasks-empty-add-button',
   tasksRenameInput: 'tasks-rename-input',
   tasksDeleteButton: 'tasks-delete-button',
+  // SaveNotice — the receipt for a task that did not stay (components.md
+  // § SaveNotice, T-135). Drawn in all three shell mockups; both ids are
+  // recorded in `SHELL_IDS_BLOCKED` below because the component is designed
+  // and not built.
+  tasksSaveNotice: 'tasks-save-notice',
+  tasksSaveNoticeDismiss: 'tasks-save-notice-dismiss',
 } as const
 
 export type ShellA11yId = (typeof SHELL_A11Y_IDS)[keyof typeof SHELL_A11Y_IDS]
@@ -170,6 +176,10 @@ export const SHELL_IDS_BLOCKED: Partial<Record<ShellA11yId, string>> = {
     'F-002 talk-back is specced and unbuilt; "a switch that toggles nothing is worse than an absent one" (components.md § SettingsRow)',
   [SHELL_A11Y_IDS.settingsRowRetry]:
     'the SettingsRow failed state — the only shipped row is Theme, which is local and cannot fail to save (IA §6, S4)',
+  [SHELL_A11Y_IDS.tasksSaveNotice]:
+    'SaveNotice is designed and not built — drawn by T-135 (components.md § SaveNotice), with no implementation task dispatched for it yet',
+  [SHELL_A11Y_IDS.tasksSaveNoticeDismiss]:
+    'the dismiss control of a notice that does not render yet; it lands with SaveNotice itself (components.md § SaveNotice)',
 }
 
 /**
