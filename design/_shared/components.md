@@ -297,7 +297,7 @@ Three row families, one rendering, different sources:
 
 | ID | Family | Rows | Source |
 |---|---|---|---|
-| **LM-COLLECTION** | built-in | Inbox · Today · Done | `task.status` — works today |
+| **LM-COLLECTION** | built-in | Today · Upcoming · Inbox · Done | `collectionCount(tasks, c, now)` per row — the four date predicates of ADR-009 § Amendment, **not** `task.status`, which §1 retired |
 | **LM-LIST** | personal | the user's lists | **needs `lists` + `tasks.list_id`; no field exists** |
 | **LM-ACTION** | actions | New list · Settings | New list needs the field; Settings does not |
 
@@ -305,6 +305,41 @@ Row anatomy: icon (`icon.size.md`) + name + count, `font.size.body`, `padding: s
 `radius.sm`. Active row = 7% `primary` tint — the one legal chrome tint, carried unchanged from
 § Drawer. Counts are `text.muted`, tabular, and omitted at zero for the same reason PS-TASKS
 omits its badge.
+
+**The fourth row — Upcoming (added 2026-08-18, T-128).** ADR-009 § Amendment makes all four
+collections date predicates and states this one as a requirement in architecture's own words: *the
+Upcoming collection must be reachable from the Lists menu.* Without the row a future-dated task is
+in no collection the user can open and **nothing errors**, and F-001 AC-24's reachability bound —
+which used to rest on Inbox being a superset of every open task — now rests on the four buckets
+being total, so all four have to be openable. Name, look and position are design's:
+
+- **Name: `Upcoming`.** It is the word the owner decision, ADR-009 § Amendment and
+  `information-architecture.md` §9 already use, and `todo-ai ADR-11` named it before any of them;
+  picking a synonym now would be inventing a second name for a thing four artifacts have already
+  agreed on. Rejected: **Later**, which is the heading `groupTasks` renders *inside* a list — one
+  word naming two different sets on one screen is the collision this file refuses everywhere else;
+  and **Scheduled**, which is accurate and is nobody's word for it.
+- **Position: `Today · Upcoming · Inbox · Done`.** By time horizon — now, then ahead, then
+  undated, then finished — which is the only order here with a reason behind it. Upcoming sits
+  beside Today because they are the same kind of fact one day apart. **This inserts a row and moves
+  none:** `COLLECTIONS` (`src/assistant/_shared/model/tasks.ts:42`) is already
+  `['today', 'inbox', 'done']` and `ListsMenu.tsx` renders in that order, so the
+  `Inbox · Today · Done` this table published was stale before the amendment touched it.
+- **Look: no new anatomy.** Icon + name + count exactly as the other three, `icon.size.md`, Lucide
+  `calendar-days` — Today already carries `clock`, and clock-versus-calendar reads as now-versus-
+  ahead without a label. Count `text.muted`, tabular, **and omitted at zero like every other row.**
+
+**Upcoming ships showing no count, and that is the rule working rather than a broken one.** ADR-009
+§ Amendment measured the live store: 737 live rows, and **Upcoming has no member anywhere in it** —
+nothing is dated in the future in any account. So the first thing every user and every reviewer
+sees is a bare `Upcoming` row. Written down because a bare row is exactly what gets filed as a bug
+on day one, and because it has a consequence for QA: **this row cannot be verified by replaying the
+store.** A suite that reads live data will report Upcoming green having never rendered a member;
+the first one has to be seeded.
+
+**No new testid.** `menu-collection-row` is the LM-COLLECTION exemplar and each contract testid
+appears exactly once (§ Testid catalogue). The Upcoming row carries that id like the other three.
+There is no `menu-upcoming-row` and nothing should be written against one.
 
 States: default · hover · focused · pressed · active (the collection now rendered) ·
 **loading** (built-ins render immediately — they are derivable on device and must never wait on
@@ -442,6 +477,14 @@ users something untrue.
 
 `{list}` is a `verbatim` slot (§ Spoken frames' vocabulary) — the list's own name, never
 re-worded.
+
+**Upcoming's empty state is ET-COLLECTION, and it is the state every account is in today** (added
+2026-08-18, T-128). No future-dated task exists anywhere in the live store (ADR-009 § Amendment),
+so `Nothing in Upcoming` + `Add task` is not an edge case — it is the collection's default
+appearance for every user until somebody dates something forward. That puts weight on a cell nobody
+has filled: **what `Add task` does while viewing Upcoming has no derivable date.** See
+§ LandingSummary's foot, *The cell this pass refuses to fill*. The empty state is drawn; its CTA's
+behaviour is pending that decision and is **not** `Add task`-with-a-guessed-date.
 
 ## Testid catalogue — app shell
 
@@ -614,17 +657,39 @@ the one that rots.
 **No time-of-day salutation.** "Good morning" needs a clock, carries no information, and is wrong
 for anyone opening the app at 11pm. The orientation *is* the greeting.
 
-### The four facts it may state, and where each comes from
+### The facts it may state, and where each comes from
 
 It reports counts and names tasks it can read. It does not summarise, judge or predict (F-001
 AC-14 / AC-15 — this product does not bluff).
 
 | Fact | Definition | Source |
 |---|---|---|
-| `open_today` | open tasks due today | `collectionCount(tasks, 'today', now)` — **the same call the PathSwitch badge makes.** § PathSwitch fixes this as one number, never a second definition of it |
-| `open_all` | every unfinished task | `collectionCount(tasks, 'inbox', now)` — Inbox is a superset of Today (owner decision 2026-08-18 §3) |
-| `overdue` | open tasks whose `due_at` is strictly before the start of today | derivable from `due_at` + `status`, **no new field**. The predicate belongs beside `dueToday` in `src/assistant/_shared/model/tasks.ts`, not in the summary composer (L-004: one home per fact) |
+| `open_today` | open tasks dated **on or before** today — overdue included (ADR-009 § Amendment §3) | `collectionCount(tasks, 'today', now)` — **the same call the PathSwitch badge makes.** § PathSwitch fixes this as one number, never a second definition of it |
+| `upcoming` | open tasks dated **after** today | `collectionCount(tasks, 'upcoming', now)` — **added 2026-08-18 (T-128)** |
+| `inbox_count` | open tasks with **no date at all** | `collectionCount(tasks, 'inbox', now)` — **added 2026-08-18 (T-128).** This is what that call returns now that Inbox is a date predicate rather than a superset |
+| `open_all` | every unfinished task | `open_today + upcoming + inbox_count`. **Not the Inbox count** — see below |
+| `overdue` | open tasks whose `due_at` is strictly before the start of today | derivable from `due_at` + `status`, **no new field**. The predicate belongs beside `dueToday` in `src/assistant/_shared/model/tasks.ts`, not in the summary composer (L-004: one home per fact). **Now a strict subset of `open_today`, where the two used to be disjoint** |
 | `done_today` | tasks completed today | **not readable.** See "The one shape that is blocked" below |
+
+**`open_all` and `inbox_count` are two facts that were one number only by accident** (split
+2026-08-18, T-128). The selection rule needs *every open task* — that is the whole basis on which
+rows 1–2 are safe to fire. The copy in LSM-CLEAR-TODAY needs *the Inbox count* — "waiting in Inbox"
+is a claim about a place, and a task dated next Tuesday is not in that place. While Inbox was a
+superset of every open task, one expression served both readings and nothing distinguished them.
+It is not a superset any more, the two readings now differ by exactly `upcoming`, and the cost of
+not splitting them is not cosmetic in either direction: leave `open_all` on the Inbox count and a
+user with a full week ahead is told **"All done — your list is clear."**; point the copy at the
+corrected `open_all` and a user with nothing in Inbox is told **"3 tasks are waiting in Inbox."**
+Both are false, and they are false about different things, which is what says these are two facts.
+Give each a name and one home (L-004, applied before the drift rather than after it).
+
+**Four facts, three calls.** `open_today`, `upcoming` and `inbox_count` are `collectionCount` on
+the three open collections, and `open_all` is their sum — so the summary, the PathSwitch badge and
+the Lists menu counts cannot disagree, because there is no second definition anywhere for them to
+disagree with. `overdue` is the one predicate with no collection of
+its own, deliberately: ADR-009 § Amendment folded it into Today rather than giving it a surface, so
+the summary is the only place it is named at all. That is worth holding on to when reading the
+ranking argument below.
 
 `now` is the device clock, the same one `dueToday` already uses. The summary is a **message at a
 timestamp, not a live counter** — if the user completes something afterwards it does not rewrite
@@ -670,15 +735,43 @@ is why).
 |---|---|---|---|
 | **LSM-AHEAD-1** | `open_today = 1` | `title` | `One task today: {title}.` |
 | **LSM-AHEAD-N** | `open_today ≥ 2` | `count`, `title_list` | `{count} tasks today: {title_list}.` |
-| **LSM-OVERDUE** | `overdue ≥ 1`, `open_today = 0` | `count`, `title_list` | 1 → `One task is past its date: {title_list}. Nothing else is due today.` · ≥2 → `{count} tasks are past their date: {title_list}. Nothing else is due today.` |
-| **LSM-OVERDUE-TODAY** | `overdue ≥ 1`, `open_today ≥ 1` | `count`, `count_secondary`, `title_list` | 1 → `One task is past its date: {title_list}. {count_secondary} more due today.` · ≥2 → `{count} tasks are past their date: {title_list}. {count_secondary} more due today.` |
-| **LSM-CLEAR-TODAY** | `overdue = 0`, `open_today = 0`, `open_all ≥ 1` | `count` | 1 → `Nothing is due today. One task is waiting in Inbox.` · ≥2 → `Nothing is due today. {count} tasks are waiting in Inbox.` |
+| **LSM-OVERDUE** | `overdue ≥ 1`, `count_secondary = 0` — **re-pointed 2026-08-18 (T-128)**; reached through selection rule 3, not the dead rule 4 | `count`, `title_list` | 1 → `One task is past its date: {title_list}. Nothing else is due today.` · ≥2 → `{count} tasks are past their date: {title_list}. Nothing else is due today.` |
+| **LSM-OVERDUE-TODAY** | `overdue ≥ 1`, `count_secondary ≥ 1` | `count`, `count_secondary` (= `open_today − overdue`), `title_list` | 1 overdue, 1 other → `One task is past its date: {title_list}. One other is due today.` · 1 overdue, ≥2 others → `One task is past its date: {title_list}. {count_secondary} others are due today.` · ≥2 overdue, 1 other → `{count} tasks are past their date: {title_list}. One other is due today.` · ≥2 overdue, ≥2 others → `{count} tasks are past their date: {title_list}. {count_secondary} others are due today.` |
+| **LSM-CLEAR-TODAY** | `overdue = 0`, `open_today = 0`, `inbox_count ≥ 1` | `count` (= **`inbox_count`**, re-bound 2026-08-18 T-128 — it was `open_all`) | 1 → `Nothing is due today. One task is waiting in Inbox.` · ≥2 → `Nothing is due today. {count} tasks are waiting in Inbox.` |
 | **LSM-CLEAR** | `open_all = 0`, and the account has conversation history | none | `All done — your list is clear.` |
 | **LSM-PROGRESS** | `done_today ≥ 1`, `overdue = 0`, `open_today ≥ 1` | `count`, `count_secondary`, `title_list` | 1 → `You've finished one today. {count_secondary} left: {title_list}.` · ≥2 → `You've finished {count} today. {count_secondary} left: {title_list}.` — **not selectable today; see below** |
+| **LSM-CLEAR-AHEAD** | `overdue = 0`, `open_today = 0`, `inbox_count = 0` (so `upcoming ≥ 1`) — **added 2026-08-18 (T-128)** | `count` (= `upcoming`) | 1 → `Nothing is due today. One task is coming up.` · ≥2 → `Nothing is due today. {count} tasks are coming up.` |
 
 In LSM-OVERDUE-TODAY and LSM-PROGRESS, `count` is the named set and `count_secondary` is the
 unnamed one. Only one set is named per message: naming both needs two `title_list`s and produces a
 paragraph, and the unnamed set is one tap away in Tasks.
+
+**`count_secondary` is `open_today − overdue`, and the word carrying it is `others`, not `more`**
+(changed 2026-08-18, T-128). The definition is architect's and it is arithmetic: with overdue
+inside Today, `count_secondary = open_today` counted the overdue tasks a second time, and against
+the live store the frame rendered *"7 tasks are past their date: … 7 more due today."* Subtracting
+fixes the number. The word is a separate question and it fails a separate test.
+
+*More* became true again once the sets were disjoint — and it still had to go, because
+`title_list` spends the same word four words earlier. Above three titles it renders *"A, B, C and
+4 more"*, so the message read *"…A, B, C and 4 more. 3 more due today."*: one word carrying two
+referents in one breath, the first meaning *more of the set I am naming*, the second *a set I am
+not naming at all*. A reader resolving the second *more* against the first gets 4 and 3 as
+quantities of the same thing. `others` cannot be read that way, and it is the stronger word for
+the fact besides — *other* **asserts** the disjointness whose loss was this frame's entire defect,
+where *more* merely permits it. Cost: the row now carries four literals instead of two, because
+two counts each vary singular-versus-plural. That is L-008's price and it is the right one — a
+pluralising template over the noun is exactly how a combination nobody enumerated ships fluent
+text nobody reviewed.
+
+**When `count_secondary` is 0, LSM-OVERDUE speaks — the fixed definition needs somewhere to land.**
+`open_today − overdue` is 0 whenever everything late and nothing dated today is open, which is the
+live store's own state (7 overdue, nothing dated today). LSM-OVERDUE-TODAY would then read
+*"7 tasks are past their date: … 0 others are due today."* — a numeral zero in a sentence, saying
+in three words what one word says better. LSM-OVERDUE's *"Nothing else is due today."* is already
+that sentence, written for this exact fact under the old model. So the frame keeps its ID, its
+position and its text, and only its door changes: it was rule 4's, it is now rule 3's
+`count_secondary = 0` branch. The dead rule below cost a row; it did not cost a sentence.
 
 ### Which shape applies — the selection rule
 
@@ -694,25 +787,50 @@ Then, **first match wins**:
 |---|---|---|
 | 1 | `open_all = 0` **and no conversation history** | **no summary** — § Message bubbles' empty-conversation invitation stands (`talk-empty`) |
 | 2 | `open_all = 0` and history exists | **LSM-CLEAR** |
-| 3 | `overdue ≥ 1` and `open_today ≥ 1` | **LSM-OVERDUE-TODAY** |
-| 4 | `overdue ≥ 1` and `open_today = 0` | **LSM-OVERDUE** |
+| 3 | `overdue ≥ 1` (which now implies `open_today ≥ 1`) | **LSM-OVERDUE-TODAY** when `count_secondary ≥ 1`; **LSM-OVERDUE** when `count_secondary = 0` |
+| 4 | ~~`overdue ≥ 1` and `open_today = 0`~~ | **DEAD — unsatisfiable, 2026-08-18 (T-128).** Overdue lives inside Today, so `overdue ≥ 1` implies `open_today ≥ 1` and this condition can never hold. The row is kept, struck through, so that 1–8 still number what every reference to them numbers; it selects nothing, and LSM-OVERDUE is reached through row 3 |
 | 5 | `done_today ≥ 1` and `open_today ≥ 1` | **LSM-PROGRESS** — unreachable while `done_today` is unreadable; falls through to 6/7 |
 | 6 | `open_today ≥ 2` | **LSM-AHEAD-N** |
 | 7 | `open_today = 1` | **LSM-AHEAD-1** |
-| 8 | `open_today = 0` (so `open_all ≥ 1`) | **LSM-CLEAR-TODAY** |
+| 8 | `open_today = 0` (so `upcoming + inbox_count ≥ 1`) | **LSM-CLEAR-TODAY** when `inbox_count ≥ 1`; **LSM-CLEAR-AHEAD** when `inbox_count = 0` |
 
-**The rule is total, and that is the property to test.** After rows 1–2 remove `open_all = 0`,
-every remaining state is covered by `overdue` (rows 3–4) or, when `overdue = 0`, by
-`open_today ≥ 2 | = 1 | = 0` (rows 6–8). There is no combination without a frame — which is what
+**The rule is total, and that is the property to test. Re-proved 2026-08-18 (T-128) against the
+four buckets — and the re-proof deleted a row rather than adding one.** After rows 1–2 remove
+`open_all = 0`, every state with `overdue ≥ 1` is caught by row 3 alone, because overdue now lives
+inside Today and `overdue ≥ 1` implies `open_today ≥ 1`; row 4's condition is the complement of an
+implication that always holds, so it catches nothing. When `overdue = 0`, `open_today ≥ 2 | = 1 |
+= 0` covers the remainder (rows 6–8). Every state still has exactly one frame — which is what
 F-002 AC-22's "an unenumerated combination has no frame and therefore fails" demands, met by
-enumerating rather than by failing. A future fact added to the summary must re-prove this table is
-total, not merely add a row to it.
+enumerating rather than by failing. **Row 4 is vacuous, not missing**, and that is the difference
+this re-proof was for.
 
-**Overdue outranks everything except an empty list, and that is the whole safety argument.**
-`open_today` counts `status: 'today'` or a date of today; a task dated last Tuesday is in neither,
-so a rule keyed on `open_today` alone congratulates a user with three tasks past their date on
-their clear day. That is not under-informing, it is misinforming — the shape F-001 AC-7 and
-SPK-REVERTED-PARTIAL already exist to prevent, arriving here through a different door.
+Two rows now fan out to two frames each, and each fan-out splits **one variable in two
+directions**, so it is total by inspection: row 3 on `count_secondary ≥ 1 | = 0`, row 8 on
+`inbox_count ≥ 1 | = 0`. Neither introduces a state; each names which frame an already-owned state
+takes. The requirement — *a future fact must re-prove this table is total, not merely add a row to
+it* — is what forced both splits into existing rows and forced row 4 to be struck rather than
+quietly deleted. `upcoming` was added as a fact and the table did not grow.
+
+**Overdue still outranks everything except an empty list — but the reason changed, and the old
+one is now false** (rewritten 2026-08-18, T-128; the sentence it replaces is preserved in the
+changed-cells note at the foot). The argument used to be safety: `open_today` counted `status:
+'today'` or a date of today, a task dated last Tuesday was in neither, and a rule keyed on
+`open_today` alone congratulated a user who was behind. ADR-009 retired the status leg and its
+§ Amendment folded overdue into Today, so **`open_today` sees those tasks now** and that failure
+cannot occur through this door any more. The safety argument was not defeated; it was **absorbed
+into the predicate**, which is the better place for it. Leaving the paragraph as written would have
+left a live falsehood in the file justifying a rule that is still right.
+
+What survives the absorption is naming, and it is enough. Demote row 3 and a user with seven late
+tasks and two due today gets LSM-AHEAD-N: *"9 tasks today: A, B, C and 6 more."* Every number in it
+is true, the titles are the right titles, and the word *late* never appears — the missed work is
+folded anonymously into a count of the set that swallowed it. That is precisely what § "The named
+set is always the counted set" exists to forbid, and it is worse here than elsewhere because
+`overdue` is the one fact in the table with no collection of its own: fold it into a count in the
+summary and the app has no surface anywhere that says a task was missed. Row 3 is the only frame
+that names those tasks, so naming is now the whole argument for its rank. It is a weaker argument
+than the one it replaces and it is sufficient: the ranking used to prevent a lie, and now it
+prevents a silence.
 
 **Mid-day is a fact, not a clock.** LSM-PROGRESS is selected by `done_today ≥ 1` — which can only
 be true after the user has finished something today, which *is* mid-day — and the time is never
@@ -733,9 +851,10 @@ reads well on a demo and lies on someone else's data.
 | Zero tasks ever, first open | **no summary** — the `talk-empty` invitation | A summary of nothing is an empty room with a sentence in it. There is nothing to orient toward and no achievement to congratulate |
 | Zero tasks, but history exists (everything deleted or completed) | **LSM-CLEAR** | The account has done something; "All done" is true |
 | Everything done | **LSM-CLEAR** | Same row — the summary counts open tasks, and "done" and "deleted" leave the same count |
-| Tasks exist, none due today, none overdue | **LSM-CLEAR-TODAY**, naming the Inbox count | Not LSM-CLEAR: the list is not clear, only the day is |
+| Tasks exist, none due today, none overdue, something in Inbox | **LSM-CLEAR-TODAY**, naming the Inbox count | Not LSM-CLEAR: the list is not clear, only the day is. If anything is also upcoming it goes unnamed — under-informing by one number, one tap from the Lists menu, and the trade this section makes everywhere |
+| Tasks exist, **all of them dated in the future** | **LSM-CLEAR-AHEAD** — `Nothing is due today. {count} tasks are coming up.` | Not LSM-CLEAR: `open_all` counts Upcoming, so the list is not clear and nobody is congratulated for a week of work. Not LSM-CLEAR-TODAY: *"0 tasks are waiting in Inbox"* is false about the count and false about the place |
 | Exactly one task today | **LSM-AHEAD-1** — `One task today: {title}.` | A separate literal, not `1 tasks today` and not a pluralising template |
-| Everything overdue, nothing due today | **LSM-OVERDUE** | The case that would otherwise congratulate a user who is behind |
+| Everything overdue, nothing dated today | **LSM-OVERDUE**, reached through rule 3 | `count_secondary = 0` here, and the alternative sentence is *"0 others are due today"*. **This is the live store's own state** — 7 overdue rows, nothing dated today, nothing dated ahead (ADR-009 § Amendment) — so it is the frame most accounts would actually render, not a corner |
 | Some overdue, some due today | **LSM-OVERDUE-TODAY**, naming the overdue ones | The overdue set is named because it is the one the user has already missed |
 | 40 tasks today | **LSM-AHEAD-N** — `40 tasks today: A, B, C and 37 more.` | The count is honest and the bound is `title_list`'s existing 3 |
 | Offline, tasks on the device | The frame the device list selects | The device list is a real read; § OfflineBanner carries the news that it may be stale. Nothing here claims to be fresh |
@@ -774,3 +893,108 @@ Not a rename, a reorder, or a new row.
    with one count that is not a second sentence. The cell now reads *"revert frames and landing
    frames"* and names both sources. No new slot **type** was added — the vocabulary is still five,
    still closed. No `SPK-*` row changed.
+
+---
+
+## Four buckets — what this pass changed and the one cell it refuses to fill (T-128)
+
+**Added 2026-08-18 (T-128), additive**, for `reports/owner-decision-2026-08-18-four-buckets.md`
+§ Confirmed (second pass) and `specs/_shared/adr/ADR-009-today-is-a-date.md` § Amendment. **No row
+ID above was moved, renamed or reordered.** One frame ID and two facts were added, one selection
+rule row died, and ten cells changed content — all listed at the foot of this section.
+
+The owner considered moving overdue into Inbox, which would have dissolved every problem this
+section addresses, and **confirmed keeping it in Today**. So none of what follows is an open
+question about the model; it is the work the confirmed model owes.
+
+### The cell this pass refuses to fill
+
+**Creating a task while viewing Upcoming has no derivable date, and none is invented here.**
+
+ADR-009 §4 fixes *creating in a collection puts it in that collection, by date*. For Today the
+instant was derivable, because the collection is one day and that day's local start is the honest
+answer. **Upcoming is not one day.** Its predicate is `due_at > today`, which names no instant.
+Architect left the cell open deliberately; design does not close it either. Three answers exist and
+each costs something real:
+
+1. **The local start of tomorrow** — the least-committal instant satisfying the predicate, and it
+   keeps §4 exactly. Costs a date the user never said, which is the objection the owner raised
+   against every date-inventing option in this thread; and the task leaves Upcoming for Today by
+   morning, so it does not even stay where it was created.
+2. **`null`, with the composer saying it landed in Inbox** — invents nothing, breaks §4: the task
+   disappears from the surface at the moment of creation, which is the one thing a create action
+   must never look like.
+3. **No composer on Upcoming at all** — coherent, and it has precedent: § Empty states ET-DONE
+   gives Done no action because no action fills it directly. But Upcoming is not Done. An action
+   *can* fill it; it just needs one more piece of information. And removing the composer makes
+   ET-COLLECTION's `Add task` inapplicable on the one collection where **every account currently
+   lands empty**, so the cost is paid by every user on day one.
+
+**Design's recommendation, for the owner to take or leave: none of the three — ask.** The owner has
+already answered this exact question on the other path: *"nghe user nói, nếu không có thông tin
+ngày thì có thể hỏi lại; nếu user chưa chốt thì vẫn tạo task mà không có due date, mặc định vào
+Inbox."* Ask, do not assume; create dateless only when the user declines to date it. The hand path
+should follow the rule the voice path already has rather than grow a second one. Concretely: the
+composer opened from Upcoming presents the date field **empty and first**, with no default sitting
+in it. Pick a date and the task is in Upcoming, by §4. Decline and it is option 2 — **chosen rather
+than done silently**, with the composer saying where it went. This invents no date and adds no rule
+the owner has not already made. It is a recommendation and the call is the owner's.
+
+**Today's code answers this by accident, which is why it is flagged loudly rather than left open
+quietly.** `c === 'today' ? startOfTodayIso(now) : null` is option 2 with the notice removed: the
+task lands in Inbox, outside the collection it was created in, and nothing says so. The Upcoming
+row can ship before this cell is filled — an empty collection you can open is the fix for an
+invisible one. ET-COLLECTION's CTA on Upcoming cannot.
+
+### What is owed elsewhere, and is not written here
+
+- **The `Later` day-group heading.** `groupTasks` files an overdue row under `Later`, so rendering
+  the Today collection puts its overdue members under a heading claiming they are in the future.
+  That is false rather than merely unhelpful, and it is a heading and its words, so it is design's
+  — but it is not in this pass's scope and no wording is invented for it here. It needs either a
+  leading `Overdue` group or an absorption into the `Today` group.
+- **Mockup states.** § LandingSummary names four states — `talk-landing` · `talk-landing-overdue` ·
+  `talk-landing-clear-today` · `talk-landing-clear`. LSM-CLEAR-AHEAD has no state among them, and
+  `talk-landing-overdue` now needs to show the `count_secondary = 0` branch (LSM-OVERDUE) as well
+  as the `≥ 1` one. The three `app-shell*.html` mockups and the Lists menu's fourth row are owed a
+  screens pass; nothing in them was touched here.
+- **The Upcoming member QA has to seed.** Not a design artifact, recorded because it is invisible
+  from this file: the live store has no future-dated task, so every assertion about Upcoming and
+  about LSM-CLEAR-AHEAD is vacuous against replayed data.
+
+### Cells above that changed content in this pass
+
+Ten, and none of them is a new row:
+
+1. **§ ListsMenu, LM-COLLECTION `Rows`** read *"Inbox · Today · Done"* and now reads
+   *"Today · Upcoming · Inbox · Done"*. The published order was already stale — `COLLECTIONS` ships
+   `['today', 'inbox', 'done']` — so this inserts one row and corrects a drifted cell.
+2. **§ ListsMenu, LM-COLLECTION `Source`** read *"`task.status` — works today"*. ADR-009 §1 retired
+   the status leg; the cell now names `collectionCount(tasks, c, now)`, the same call the badge and
+   the summary make.
+3. **§ LandingSummary, the `open_today` fact** read *"open tasks due today"*. It is *on or before*
+   today now, overdue included. Same call, wider set.
+4. **§ LandingSummary, the `open_all` fact** was sourced from `collectionCount(tasks, 'inbox',
+   now)` on the stated ground that *"Inbox is a superset of Today"*. It is not a superset any more;
+   the source is now the sum of the three open collections. This is the one changed cell that was
+   producing a false sentence rather than a stale one.
+5. **§ LandingSummary, LSM-OVERDUE's `Selected when`** read `overdue ≥ 1, open_today = 0`. That is
+   unsatisfiable; the frame is now rule 3's `count_secondary = 0` branch. Its ID, position, slots
+   and text are untouched.
+6. **§ LandingSummary, LSM-OVERDUE-TODAY's text** rendered `{count_secondary} more due today` from
+   `count_secondary = open_today`. It now renders `{count_secondary} others are due today` from
+   `open_today − overdue`, in four literals rather than two.
+7. **§ LandingSummary, LSM-CLEAR-TODAY's `count` slot** was `open_all` and is now `inbox_count`.
+   Its text did not change, because the sentence was always about Inbox — only the number that
+   filled it stopped being.
+8. **§ LandingSummary, the "Overdue outranks everything" paragraph.** It read: *"`open_today`
+   counts `status: 'today'` or a date of today; a task dated last Tuesday is in neither, so a rule
+   keyed on `open_today` alone congratulates a user with three tasks past their date on their clear
+   day."* Both clauses are now false — the status leg is retired and overdue is inside Today. The
+   ranking is unchanged and its argument is rebuilt on naming rather than safety.
+9. **§ LandingSummary's fact-table heading** read *"The four facts it may state"*. The table holds
+   six now — `upcoming` and `inbox_count` joined it — so the number came out rather than being
+   corrected to one that will go stale again the next time a fact is added.
+10. **§ LandingSummary, two rows of § What the awkward cases render**, and **selection rule rows 3,
+   4 and 8**. Row 4 is struck through and marked dead; rows 3 and 8 each name a two-way frame split
+   in place of a single frame. The table still has eight numbered rows.
