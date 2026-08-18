@@ -69,6 +69,21 @@
     · SK-ROW's day header is a BAR, not the literal `Today · {date}` — a skeleton cannot know
       which heading the read will produce (components.md § Skeletons).
 
+  REVISED 2026-08-18 (T-135) for the owner's decision of 2026-08-18 — "Cứ lưu không ngày, hiện
+  thông báo 'Đã lưu vào Inbox'" — via design/_shared/components.md § SaveNotice. This is option 2
+  of the three § Four buckets listed and refused to choose between; the owner chose it, so the
+  cell is now filled and this file draws the notice it requires. NOTHING WAS RENAMED OR REORDERED.
+    · SaveNotice joins the TASKS BANNER STACK — last, closest to the list. The two banners above
+      it report the state of the app; this reports what the user just did.
+    · It is NOT a toast. No timer; cleared by the user (dismiss), by a newer save, or by leaving
+      the surface. On Upcoming its usual backdrop is `Nothing in Upcoming`, which looks IDENTICAL
+      before and after the save, so a message that times out re-creates the silent disappearance
+      it was built to end.
+    · It carries NO ACTION: the right one is `Add a date` and no date-setting UI exists (IA §9).
+    · TWO NEW IDS — tasks-save-notice, tasks-save-notice-dismiss (29 → 31). That turns
+      a11y.test.ts's pinned count red BY DESIGN (L-008); the fix belongs to src/.
+    · Three new states: tasks-saved-notice · tasks-saved-notice-many · tasks-saved-offline.
+
   STATES — 30, switchable via the dev bar (showState):
     talk-idle · talk-empty · talk-loading · talk-failed
     talk-landing · talk-landing-overdue · talk-landing-overdue-only · talk-landing-ahead ·
@@ -479,6 +494,24 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
 .day-head-sk { padding-bottom: var(--sp-sm); }
 .day-head-sk .sk-bar { height: 10px; width: 34%; }
 
+/* SaveNotice (components.md § SaveNotice). It joins the BANNER STACK — same strip family, same
+   altitude, IN FLOW — and it is deliberately NOT a toast: on Upcoming its usual backdrop is
+   `Nothing in Upcoming`, which looks identical before and after the save, so a message that
+   removes itself on a timer would re-create the silent disappearance it exists to end.
+   THE LIVE REGION IS ALWAYS IN THE DOM and empty when nothing is showing — a region injected at
+   the same moment as its content is not reliably announced. Only .notice appears and disappears.
+   IT DOES NOT DEPEND ON MOTION: presence and wording carry the whole meaning, and with no timer
+   there is nothing for a reduce-motion user to lose.
+   TWO LITERALS, NOT A TEMPLATE (§ SaveNotice, L-008) — SN-ONE and SN-MANY are both written out. */
+.notice { display: none; align-items: center; gap: var(--sp-md); padding: var(--sp-sm) var(--gutter); background: var(--bg-raised); border-bottom: 1px solid var(--hairline); font-size: var(--fs-meta); color: var(--tx); }
+.app[data-notice] .notice { display: flex; }
+.notice-ic { color: var(--success); flex: none; }
+.notice-msg { display: none; flex: 1; min-width: 0; }
+.app[data-notice="one"]  .notice-one  { display: block; }
+.app[data-notice="many"] .notice-many { display: block; }
+/* The dismiss target carries the platform minimum — 44pt (F-003 AC-9) — like every other control here. */
+.notice-x { flex: none; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; color: var(--tx-muted); border-radius: var(--r-sm); }
+
 .tasks-head { display: flex; align-items: center; gap: var(--sp-md); padding-bottom: var(--sp-sm); }
 .tasks-head .count { font-size: var(--fs-meta); color: var(--tx-muted); font-variant-numeric: var(--font-numeric); }
 .add-btn { display: inline-flex; align-items: center; gap: var(--sp-xs); margin-left: auto; min-height: 44px; padding: var(--sp-xs) var(--sp-sm); border-radius: var(--r-pill); color: var(--primary); font-size: var(--fs-meta); font-weight: var(--font-weight-emphasis); }
@@ -608,6 +641,9 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
   <button data-s="tasks-error" onclick="showState('tasks-error')">tasks-error</button>
   <button data-s="tasks-upcoming" onclick="showState('tasks-upcoming')">tasks-upcoming</button>
   <button data-s="tasks-upcoming-empty" onclick="showState('tasks-upcoming-empty')">tasks-upcoming-empty</button>
+  <button data-s="tasks-saved-notice" onclick="showState('tasks-saved-notice')">tasks-saved-notice</button>
+  <button data-s="tasks-saved-notice-many" onclick="showState('tasks-saved-notice-many')">tasks-saved-notice-many</button>
+  <button data-s="tasks-saved-offline" onclick="showState('tasks-saved-offline')">tasks-saved-offline</button>
   <button data-s="tasks-inbox" onclick="showState('tasks-inbox')">tasks-inbox</button>
   <button data-s="tasks-done" onclick="showState('tasks-done')">tasks-done</button>
   <button data-s="menu-default" onclick="showState('menu-default')">menu-default</button>
@@ -807,6 +843,29 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
     <div class="banner banner-offline" data-testid="assistant-offline-banner" accessibilityIdentifier="assistant-offline-banner">
       <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M2 2 22 22"/><path d="M8.5 16.4a5 5 0 0 1 7 0"/><path d="M5 12.9a10 10 0 0 1 4-2.5"/><path d="M15 10.4a10 10 0 0 1 4 2.5"/><path d="M12 20h.01"/></svg>
       No connection — the list still works, and what you type is saved on the device.
+    </div>
+
+    <!-- SaveNotice — components.md § SaveNotice. LAST IN THE STACK, closest to the list:
+         the two banners above it report the state of the app, this reports what the USER just
+         did, so condition comes first and consequence last. It is IN FLOW while
+         § NewMessageAffordance overlays, and the difference is deliberate: that pill arrives
+         while the user is READING and may not move the sentence under their eyes; here the user
+         has just committed a create, the content below is rows rather than prose, and the reflow
+         is itself the visible change — which on an empty Upcoming is the only change there is.
+         NO ACTION BUTTON. The right action is `Add a date` (the only one that makes this
+         message's own news stop being true) and there is no date-setting UI anywhere in this app
+         — IA §9 puts a due-date picker out of scope. `Open Inbox` repairs nothing and `Undo`
+         collides with § Buttons' fixed word. The slot is reserved in the catalogue, NOT drawn
+         here as a dead control. -->
+    <div class="notice-region" role="status" aria-live="polite" aria-atomic="true">
+      <div class="notice" data-testid="tasks-save-notice" accessibilityIdentifier="tasks-save-notice">
+        <svg class="ic ic-sm notice-ic" viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+        <span class="notice-msg notice-one">Saved to Inbox — it has no date yet.</span>
+        <span class="notice-msg notice-many">2 tasks saved to Inbox — they have no date yet.</span>
+        <button class="notice-x" data-testid="tasks-save-notice-dismiss" accessibilityIdentifier="tasks-save-notice-dismiss" aria-label="Dismiss">
+          <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
     </div>
 
     <div class="tasks-body">
@@ -1241,6 +1300,20 @@ var STATES = {
   'tasks-upcoming-empty': { surface: 'tasks', tasks: 'upcoming-empty' },
   'tasks-inbox':          { surface: 'tasks', tasks: 'inbox' },
   'tasks-done':           { surface: 'tasks', tasks: 'done' },
+  /* SaveNotice (components.md § SaveNotice) — the owner's 2026-08-18 decision, which fills
+     § Four buckets' refused cell with its option 2: save dateless, and say where it went.
+     SN-ONE sits over the EMPTY Upcoming on purpose — ADR-009 § Amendment measured that no account
+     holds a future-dated task, so that is the collection's default first appearance and the
+     backdrop this notice is actually seen against. It is also the backdrop that rules a toast out:
+     it looks the same before and after the save, so a message that times out leaves the user
+     staring at an unchanged empty screen.
+     SN-MANY takes the POPULATED Upcoming, which buys a second thing per state — the in-flow
+     reflow drawn above real rows rather than above nothing.
+     tasks-saved-offline is F-001 AC-25's local no-AI create, the one path where two strips
+     co-occur, and it draws the stack order: condition above, consequence below. */
+  'tasks-saved-notice':      { surface: 'tasks', tasks: 'upcoming-empty', notice: 'one' },
+  'tasks-saved-notice-many': { surface: 'tasks', tasks: 'upcoming',       notice: 'many' },
+  'tasks-saved-offline':     { surface: 'tasks', tasks: 'upcoming-empty', notice: 'one', banner: 'offline' },
   'menu-default':         { surface: 'tasks', tasks: 'default', menu: 'default' },
   'menu-empty':           { surface: 'tasks', tasks: 'default', menu: 'empty' },
   'menu-failed':          { surface: 'tasks', tasks: 'default', menu: 'failed' },
@@ -1249,7 +1322,7 @@ var STATES = {
   'list-new':             { surface: 'tasks', tasks: 'default', menu: 'default', sheet: 'new' },
   'list-name-taken':      { surface: 'tasks', tasks: 'default', menu: 'default', sheet: 'taken' }
 };
-var KEYS = ['surface', 'talk', 'tasks', 'menu', 'settings', 'sheet', 'banner', 'mic', 'landing'];
+var KEYS = ['surface', 'talk', 'tasks', 'menu', 'settings', 'sheet', 'banner', 'mic', 'landing', 'notice'];
 
 function showState(name) {
   var cfg = STATES[name];

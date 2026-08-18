@@ -186,6 +186,16 @@ set, so § TaskRow gets no overdue badge, no red date and no icon. Two signals f
 as alarm and dilute each other — and in the live store that badge would sit on seven rows out of
 seven, an alarm with nothing to contrast against.
 
+**The heading is `color.danger`, and it is the one day heading that is not `text.muted`** (added
+2026-08-18, T-133 — previously asserted only by `.day-head.overdue` in the three mockups, which
+left the drawing as its sole authority). Size, weight, letter-spacing and position are every other
+day head's exactly; **only the colour differs**, which is what keeps it one signal and leaves the
+rows below untouched. The colour is doing the work the group was added for: the owner's question
+was *does a task I missed still say it was missed*, and a muted grey label answers that too quietly
+to count. It stays calm — a small uppercase label, no fill, no icon, no badge, nothing on any row.
+`danger` on `bg.base` is a § Contrast-verified pair (7.7 dark / 5.3 light), so this introduces no
+new pair.
+
 ### Which collections group at all, and in what order
 
 **Order first, because it needs no new principle.** `Overdue` sits **above** `Today · {date}`. The
@@ -227,6 +237,25 @@ this-week / later split — are layout judgements about a collection with **no m
 live store**, and choosing between them against zero rows is choosing against nothing. It needs a
 screens pass with seeded data, and it blocks nothing: the collection is correct and reachable
 without it.
+
+### The Tasks surface title names the collection it is rendering (T-133)
+
+Added 2026-08-18. Previously the rule existed only as `showState`'s `TITLES` map in the three shell
+mockups, which made the drawing its sole authority.
+
+The Tasks top bar's `h1` is the name of the collection currently on screen — `Today` · `Upcoming` ·
+`Inbox` · `Done` — and it is **derived from the rendered collection, never typed per view.** A view
+that can show one collection's rows under another's name is the class of falsehood ADR-009
+§ Amendment exists to remove, and it is the cheapest one to reintroduce: four static headings in
+four templates drift the first time a predicate moves.
+
+**The string is the one § ListsMenu's LM-COLLECTION row already carries**, not a second spelling of
+it — the § Buttons *one word per concept* rule applied to navigation. That is also what makes the
+rule checkable rather than merely stated: **the title's text equals the active menu row's text.**
+
+**Its domain is exactly the four built-in collections.** A personal list's name in this header is
+blocked on `lists` + `tasks.list_id` (IA §7, § ListsMenu LM-LIST), so the title has four possible
+values today and no fallback case to design.
 
 ## OfflineBanner
 
@@ -614,6 +643,8 @@ Genuinely new controls, and only those, take new ids:
 | `tasks-empty-add-button` | ET-FIRST / ET-COLLECTION CTA (distinct from the header's `assistant-add-task-button`) |
 | `tasks-rename-input` | inline rename, which ships on web today with no testid |
 | `tasks-delete-button` | the row's delete control, which ships on web today with no testid |
+| `tasks-save-notice` | SN-ONE / SN-MANY — the notice itself (§ SaveNotice, added T-135) |
+| `tasks-save-notice-dismiss` | SaveNotice's trailing dismiss control (added T-135) |
 
 **`assistant-drawer-button` is retired by this IA** — the hamburger stops toggling a pane and
 becomes navigation to a different surface, which is a different control wearing the same glyph.
@@ -1005,6 +1036,13 @@ question about the model; it is the work the confirmed model owes.
 
 ### The cell this pass refuses to fill
 
+> **RESOLVED 2026-08-18 by the owner (T-135).** The recommendation below — *none of the three,
+> ask* — was **not** taken. The owner chose **option 2**: *"Cứ lưu không ngày, hiện thông báo 'Đã
+> lưu vào Inbox'"* — save it dateless and say where it went. That satisfies the condition this
+> section attached to option 2 (**chosen rather than done silently**), and the notice it requires is
+> specified in **§ SaveNotice**. Everything below stands as the record of what was weighed; read it
+> as history, not as advice, and do not re-argue the choice from it.
+
 **Creating a task while viewing Upcoming has no derivable date, and none is invented here.**
 
 ADR-009 §4 fixes *creating in a collection puts it in that collection, by date*. For Today the
@@ -1103,3 +1141,244 @@ Eleven, and none of them is a new row:
 **Two sections gained additive blocks rather than changed cells:** § ListsMenu (the fourth row) and
 § TaskList (the `Overdue` heading and the per-collection grouping rule). Nothing in either was
 rewritten.
+
+---
+
+## SaveNotice — the receipt for a task that did not stay (T-135)
+
+**Added 2026-08-18 (T-135), additive**, for the owner's decision of 2026-08-18: *"Cứ lưu không
+ngày, hiện thông báo 'Đã lưu vào Inbox'"* — save it dateless, and say where it went. That fills
+§ Four buckets' *The cell this pass refuses to fill* with its **option 2, chosen rather than done
+silently**, which is the condition that section put on it. **Nothing above this line was moved,
+renamed or reordered.** Two new testids, three new mockup states, **zero new tokens** — so
+§ Contrast is unchanged and complete for this component, which reuses pairs already verified
+there. Two cells above changed content, one table gained two rows, and § TaskList gained two
+paragraphs that were previously asserted only in the drawings; all four are listed at the foot.
+
+### What it is for
+
+Creating a task while viewing **Upcoming** derives no date (§ Four buckets), so the task is
+created dateless and lands in **Inbox** — off the surface the user was looking at. Today's code
+already does exactly this and says nothing (`c === 'today' ? startOfTodayIso(now) : null`). **The
+whole component is the sentence that ends that silence.**
+
+Note the scale before reading it as an edge case. ADR-009 § Amendment measured the live store:
+**no account holds a single future-dated task**, so every user's first visit to Upcoming is an
+empty collection with an `Add task` CTA (§ Empty states). This is not a corner of the app — it is
+the collection's default first experience.
+
+### It is not a toast, and § SettingsRow is why
+
+§ SettingsRow says *"Failed is the row's most important state and it is not a toast… A preference
+that silently does not stick is the quietest failure an app can have."* The rule underneath that
+sentence is not *toasts are banned*. It is: **a message the user can miss may not be the only
+place a fact lives.** SettingsRow's fact — your preference did not save — lives nowhere else, so
+putting it somewhere missable is putting it nowhere.
+
+Test this notice against the same rule and it passes. Its fact — the task is in Inbox — *does*
+live elsewhere: the task is in Inbox, the Lists menu opens Inbox from this very screen, and the
+row is there under its own title. Missing this message costs a moment of confusion; missing
+SettingsRow's costs a setting that is silently not set. **So a transient message would be
+permissible here** — and it is still not what ships, for a reason that has nothing to do with
+that rule.
+
+**The reason is the backdrop.** On Upcoming the notice's most common surface is
+`Nothing in Upcoming` (§ Empty states), which looks **identical before and after the save**. A
+message that removes itself after four seconds leaves a user who glanced away staring at an
+unchanged empty screen — the same silent disappearance this component was built to end, delayed
+by four seconds. **A component that exists because something vanished may not itself vanish on a
+timer.**
+
+So: a **persistent, dismissible strip**, not a toast. The owner chose the outcome — say where it
+went — and the outcome is delivered more completely by a message that waits than by one that
+races the user's attention.
+
+### Anatomy and placement
+
+It joins the **Tasks surface's banner stack**, the strip family § OfflineBanner and
+§ InlineRetryBanner already occupy: top of the surface, below the top bar, **in flow**.
+Full-width, `bg.raised`, 1px `bg.hairline` bottom hairline, `padding: sm gutter`, Lucide `inbox`
+at `icon.size.sm` in `success`, message at `font.size.meta` in `text.primary`, dismiss control at
+the trailing edge.
+
+**Why the stack and not a float.** (1) The class already exists — a full-width strip reporting one
+fact about this list is precisely what both existing banners are. (2) Tasks has no composer to
+dock above: the composer belongs to Talk, and at or above `breakpoints.split` Tasks is the centre
+column while Talk is the right panel, so a bottom dock would be a new layout mechanism invented
+for one message. (3) It renders identically on web, iOS and Android because the banner stack
+already does.
+
+**Why in flow, when § NewMessageAffordance deliberately overlays.** That component refuses to
+reflow because it arrives while the user is *reading*, and pushing history upward moves the
+sentence under their eyes. Here the user has just committed a create and is reading nothing; the
+content below is a list of rows, not prose; and the reflow is itself informative — the surface
+visibly changes, which on an empty Upcoming is the only change there is. The argument does not
+transfer, and inverting it here is deliberate rather than an oversight.
+
+**Order within the stack: condition first, consequence last.** InlineRetryBanner and OfflineBanner
+report the state of the app; SaveNotice reports what the user just did. It renders **below both**,
+nearest the list. The co-occurrence is real and drawn (`tasks-saved-offline`): the local no-AI
+create path works offline (F-001 AC-25) and creates dateless too, so the offline banner and this
+one appear together on the first try.
+
+**Icon: `inbox`, not a tick.** A tick says *saved*, which the user knows — they pressed the button.
+The news is the **destination**, so the icon is the one the destination wears in the Lists menu.
+`success` green because § Colour rules 1 already assigns green to *added* and this is an add; per
+rule 3 the meaning never rests on the colour — the words carry it alone.
+
+### The two rows
+
+| ID | Shown when | Message |
+|---|---|---|
+| **SN-ONE** | one task has been saved off-surface since the last clear | `Saved to Inbox — it has no date yet.` |
+| **SN-MANY** | `{count}` ≥ 2 | `{count} tasks saved to Inbox — they have no date yet.` |
+
+**Slots:** `count`, integer, from § Spoken frames' closed vocabulary. **Two literals, not a
+template over a noun** — § NewMessageAffordance's rule for L-008's reason: a template that
+pluralises renders fluent text for cases nobody enumerated, and here there are exactly two. SN-MANY
+needs no singular form because `count` ≥ 2 is its definition.
+
+**Why the sentence has a second clause.** `Saved to Inbox` alone answers *where* and leaves
+unanswered the question the user actually has — *why not here?* — on the surface they deliberately
+opened. `it has no date yet` is the entire reason in five words, and **`yet` is load-bearing**: it
+says the state is changeable without promising a control that does not exist.
+
+**It never stacks.** One strip, however many saves — § NewMessageAffordance's rule and its reason:
+a per-event notice multiplies into a column that obscures the list it is reporting on. A second
+save replaces the message and increments the count.
+
+### It carries no action, and the action it will carry
+
+Four were weighed. The right one cannot be built, and the notice ships with none rather than with
+the next best.
+
+| Action | Verdict |
+|---|---|
+| **`Add a date`** | **Right, and unbuildable today.** The only action that makes the notice's own news stop being true: date the task inside Upcoming's predicate and it is in the collection the user was looking at. But there is no date-setting UI anywhere in this app — the manual create path is title-only, and `information-architecture.md` §9 puts a due-date picker out of scope while noting `due_at` itself exists and is patchable. Drawing the button now publishes a contract with no destination. |
+| **`Open Inbox`** | Travel, and it repairs nothing. It moves the user off the surface they chose, to look at a task they still cannot date. Anyone who does want Inbox has the Lists menu, one tap away, already on this screen. |
+| **`Undo`** | Wrong twice. The user wanted the task — they typed it and pressed the button; the mismatch is the date, not the existence. And § Buttons fixes **undo** as *reversing the last applied turn*, so spending it on a manual create gives one word two mechanisms, which is the drift that table exists to prevent. Removing a task by hand is **delete**, and offering Delete on a success notice is hostile. |
+| **none** | **Ships.** |
+
+**Reserved, not forgotten.** When a due-date affordance lands (`information-architecture.md` §9,
+UC-34), SaveNotice gains `Add a date` as a ghost button before the dismiss control, targeting the
+one task SN-ONE names. **SN-MANY does not gain it** — with two tasks there is no single referent,
+and a button that silently picks the most recent is the guessing this catalogue refuses everywhere
+else. Written now so the row lands as an addition rather than a redesign, and it uses
+§ SettingsRow's precedent in the correct direction: the **place** is reserved in the catalogue, not
+drawn as a dead control in the mockup.
+
+### Where it fires, and where it must not
+
+**One rule, not one event.** SaveNotice fires when a task the user just created **is not on the
+surface they created it from, and nothing else on that surface says so.** Both clauses bind.
+
+| Path | Fires | Why |
+|---|---|---|
+| manual create on **Upcoming** | **yes** | dateless → Inbox; the surface is unchanged and says nothing. The only site reachable today — and per § Empty states the collection's *default* appearance, not an edge case |
+| manual create on **Upcoming, offline** | **yes** | same shape: the local no-AI path (AC-25) creates dateless too |
+| manual create on **Today** | no | add-in-context dates it today (ADR-009 §4); the row appears where it was made |
+| manual create on **Inbox** | no | dateless, and Inbox is where it lands — already on screen |
+| **Done** | unreachable | § Empty states ET-DONE gives Done no create action, and the drawn surface carries no `Add task` |
+| personal lists | blocked | needs `lists` + `tasks.list_id` (IA §7) |
+| **assistant create** | **no** | the second clause — below |
+
+**The assistant path is excluded by the second clause, not for being the assistant.**
+`reports/owner-question-2026-08-18-assistant-created-tasks-are-invisible.md` describes the
+identical disappearance on the voice path, and the orchestrator's reading of it is that *the
+confirmation message is the receipt*: the applied bubble names the task and § MessageTaskLink makes
+that name a door to its row. That receipt is persistent, specific, and already on the surface the
+user is standing on. A SaveNotice beside it would be a second control saying one thing — the
+duplication § NewMessageAffordance refused with *one control, however many messages arrived*.
+
+**That question is open and this section does not close it.** The rule above is phrased so the
+owner's answer changes which paths satisfy it without changing the rule. One cell it decides,
+recorded rather than guessed: **below `breakpoints.split` a user standing on Tasks cannot see the
+bubble at all**, and whether that counts as *nothing on that surface says so* is exactly what the
+answer settles.
+
+**"A message that exists for one event is suspicious" — and this one is a rule with six tested
+branches**, five of which say *no*. It picks up more when personal lists ship (creating inside a
+list, moving between lists) without the rule changing.
+
+### Lifetime — what removes it
+
+**There is no timer.** WCAG 2.2.1 is not engaged, because there is no time limit to adjust; the
+reduce-motion and screen-reader users who lose timed messages lose nothing here. Three things
+clear it, all of them the user's own doing:
+
+1. **Dismiss** — the trailing control.
+2. **A newer save** — replaces the message and increments the count (SN-ONE → SN-MANY).
+3. **Leaving the surface** — another collection, Settings, or Talk. The notice reports what is
+   *not* on this screen; carried to another screen it answers a question nobody asked.
+
+### Accessibility
+
+A transient visual message is the classic thing screen-reader and reduce-motion users lose
+entirely. This one is specified so they lose nothing.
+
+- **The live region pre-exists.** The Tasks surface carries a permanently-present `role="status"`
+  (`aria-live="polite"`, `aria-atomic="true"`) container, empty when there is no notice. A region
+  injected into the DOM at the same moment as its content is not reliably announced — the standard
+  failure, and precisely the case this component may not have.
+- **`polite`, never `assertive`.** Nothing is wrong and the user caused it; interrupting would
+  claim an urgency the message does not have.
+- **It never takes focus.** Focus stays where the create left it — which on an empty Upcoming is
+  where the user is about to type the next task. `aria-atomic` re-announces the whole sentence when
+  SN-ONE becomes SN-MANY, so the count is never spoken as a bare number.
+- **Keyboard-reachable without a steal.** It sits in DOM order between the top bar and the list, so
+  `Tab` out of the top bar reaches the dismiss control before the first row.
+- **Dismiss** is icon-only; accessible name `Dismiss`. 2.5.3 does not bind (no visible label text);
+  the glyph is `text.muted` on `bg.raised`, which clears 1.4.11's 3:1 at 5.0 dark / 5.8 light.
+- **Motion is not load-bearing.** Presence, wording and announcement carry the whole meaning. The
+  strip enters at `motion.duration_ms.standard`; under `prefers-reduced-motion` that collapses to
+  the 80ms opacity change per `motion.reducedMotion`, and — because there is no timer — **nothing
+  else about the component changes at all.** Same promise as § NewMessageAffordance, for the same
+  reason.
+- **No new contrast pair.** `text.primary` and `text.muted` on `bg.raised`, and `success` as a
+  non-text icon, are all verified in § Contrast already.
+
+### Testids and states
+
+| Testid | Control |
+|---|---|
+| `tasks-save-notice` | the notice — carries the message; the observable QA asserts |
+| `tasks-save-notice-dismiss` | the trailing dismiss control |
+
+`tasks-save-notice` sits on a non-interactive element, exactly like `assistant-offline-banner`: the
+message **is** the deliverable, so a catalogue that skipped it would leave the one thing this
+component exists to produce untestable. One exemplar each, in all three shell mockups, in the three
+spellings § AppFrame's *Platform variants* fixes.
+
+**The shell catalogue goes 29 → 31, and assertions in `src/` go red by design.**
+`src/assistant/mobile/__tests__/a11y.test.ts` pins the count at 29 and its `ALL_SHELL_A11Y_IDS`
+does not contain the two new ids; `src/assistant/web/__tests__/app.test.tsx`'s `NOT_BUILT` map
+needs both, since neither ships. This is L-008's mechanism working in the direction drift actually
+travels — the suite fails because the **upstream** artifact moved — and the fix belongs to whoever
+owns `src/`, not to this file.
+
+**States, in all three mockups:** `tasks-saved-notice` (SN-ONE over an empty Upcoming — the default
+first experience) · `tasks-saved-notice-many` (SN-MANY over the populated Upcoming, which also
+draws the in-flow reflow above real rows) · `tasks-saved-offline` (SN-ONE below the OfflineBanner —
+the AC-25 path and the stack order).
+
+### One shape considered and rejected
+
+**Showing the new task on Upcoming under a "just added" heading.** It is the only answer in which
+nothing disappears, and it is a worse falsehood than silence: a row in a collection whose predicate
+it fails is exactly what ADR-009 § Amendment and § TaskList spent this whole pass removing.
+Recorded because it is the tempting one.
+
+### Cells above that changed content in this pass
+
+Four, and none of them is a rename or a reorder.
+
+1. **§ Four buckets, *The cell this pass refuses to fill*** published a recommendation — *"none of
+   the three — ask"* — that the owner has now decided against, choosing option 2. The cell gains a
+   resolution line. Left unmarked it would send the next reader to advice that has been overruled.
+2. **§ TaskList** gains the `Overdue` heading's colour rule (**T-133**). The heading's `danger`
+   colour was asserted only by `.day-head.overdue` in the three mockups, leaving the drawing as its
+   only authority.
+3. **§ TaskList** gains the Tasks surface-title rule (**T-133**). Same shape: `showState`'s
+   `TITLES` map in the three mockups was the only statement anywhere that the surface title names
+   the collection being rendered.
+4. **§ Testid catalogue — app shell** gains two rows, listed above.
