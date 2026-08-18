@@ -139,30 +139,57 @@ only inside historical records.
 
 **A stored `'today'` is inert, and that is why the member is retained rather
 than deleted.** After ADR-009 nothing branches on it: a row carrying it is not
-done **and carries no date**, so it appears in Inbox, and Today is read from the
-date, so it does not appear there. (All live rows carrying the value are
-dateless — re-measured 2026-08-18 at the four-bucket amendment, ADR-009
-§ Amendment § What did not change.) Undo replaying a pre-ADR-009 `undo_snapshot` therefore restores a
+done, so it is unfiled and therefore appears in Inbox, and it carries no date, so
+Today — which is read from the date — does not show it. (All live rows carrying
+the value are dateless — re-measured 2026-08-18 at both amendments, three
+measurements with the same answer, ADR-009 § Amendment 2 § 4. Inbox has meant
+three different things this day and all three put these rows in the same place.)
+Undo replaying a pre-ADR-009 `undo_snapshot` therefore restores a
 value that is harmless rather than one that is invalid. `archived` is a separate
 question (never assigned, never stored) and ADR-009 does not touch it.
 
-### The four collections — all of them date predicates (ADR-009 + its 2026-08-18 amendment)
+### The four collections — two axes, not one partition (ADR-009 + its two 2026-08-18 amendments)
 
-**Every collection is a filter on `due_at`, except Done, which is the one that is
-genuinely a status.** `status` does not participate in the other three.
+**The open tasks are partitioned twice, independently.** A *date* axis says when
+a task is due; a *filing* axis says where it lives. `status` participates in
+neither — it is the gate that removes a task from both.
 
-| Bucket | Membership |
-|---|---|
-| **Done** | `status === 'done'` |
-| **Today** | not done, `due_at` **on or before** today — **overdue included** |
-| **Upcoming** | not done, `due_at` **after** today |
-| **Inbox** | not done, **no `due_at`** |
+| | Cells | Kind | Surfaces today |
+|---|---|---|---|
+| **Date axis** | Today · Upcoming · `undated` | views computed from `due_at` | Today and Upcoming have rows; `undated` has none |
+| **Filing axis** | Inbox · each personal list | containers — a property of the task | Inbox only; `lists` does not exist |
+| **The gate** | Done | the one genuine status | its own row |
 
-**Total and disjoint: every task has exactly one home.** Not-done splits on
-has-a-date; dated splits on past-or-today versus future. Nothing is stranded, and
-that totality — not a superset Inbox — is what carries F-001 AC-24's
-reachability bound, which makes **Upcoming being reachable a requirement rather
-than a layout preference** (ADR-009 § Nothing is stranded).
+| Collection | Membership | Axis |
+|---|---|---|
+| **Done** | `status === 'done'` | gate |
+| **Today** | not done, `due_at` **on or before** today — **overdue included** | date |
+| **Upcoming** | not done, `due_at` **after** today | date |
+| **Inbox** | not done, **filed into no personal list** | filing |
+
+**Each axis is separately total and disjoint; the two together are a grid.** A
+task has a date cell **and** a filing cell, and every combination is legal.
+Consequences that are contract, not detail:
+
+- **The collections overlap.** A task is routinely in Today *and* in Inbox — that
+  is what Todoist, Things 3, TickTick and OmniFocus all do, and it is what the
+  owner chose (ADR-009 § Amendment 2). Measured in `data/assistant.json` on
+  2026-08-18: `|Inbox ∩ Today| = 7`.
+- **The counts nest and do not sum to a headcount.** Inbox's number contains
+  Today's and Upcoming's. 716 + 7 + 0 + 21 = 744 against 737 live rows.
+- **Reachability rests on the filing axis, not the date axis.** F-001 AC-24's
+  set half — *the **full** todo list remains usable by hand* — holds because the
+  filing axis is total and every cell of it is openable from the Lists menu. It
+  no longer rests on Inbox being a superset (retired 2026-08-18 morning), nor on
+  the four buckets being total (retired the same afternoon). Upcoming must still
+  be reachable or a future-dated task is unreachable *as a dated task*; that is
+  now a date-axis requirement rather than AC-24's carrier.
+- **`undated` has no surface, and will not have one.** Inbox serves that cell by
+  coincidence today, because nothing can be filed. Post-lists, an undated task
+  inside a personal list is in no date collection and not in Inbox — it is
+  reachable through its list and only through its list, which is how every
+  reference app behaves. **Every list a task can be filed into must therefore
+  render a row**, or its undated tasks are stranded silently.
 
 **The two dated predicates compare local calendar days, not instants.** `due_at`
 is a timestamp and a bucket boundary is a day; reading Today as `due_at <= now`
@@ -175,11 +202,72 @@ task which vanishes from view is how it gets forgotten
 (`reports/owner-decision-2026-08-18-four-buckets.md`). It is not a defect to
 narrow later.
 
-**Inbox means "no date yet."** It was *every open task* until 2026-08-18; the
-change is user-visible and was measured before it was taken — 7 of 737 live rows
-change bucket, all of them out of Inbox and into Today (ADR-009 § Amendment §2).
+**Inbox means "filed nowhere."** Not *"no date"* — that was its meaning for part
+of 2026-08-18 only, and it is not what the word means in any app the audience
+uses. `lists` and `tasks.list_id` do not exist
+(`design/_shared/information-architecture.md` §7), so no task can be filed, so
+**every open task is unfiled and Inbox is every open task today.** When personal
+lists ship, Inbox narrows by itself: no second rule change, no re-litigation.
+Measured before it was taken — 7 of 737 live rows change bucket, all of them
+*into* Inbox, none out of anything (ADR-009 § Amendment 2 § 4).
 
-A task with no date is never in Today — open or ticked.
+A task with no date is never in Today — open or ticked. It is in Inbox until it
+is filed, and after that it is in its list.
+
+### `isFiled` — the predicate, and why there is no `list_id` field
+
+**No `list_id` ships.** No entity field, no schema, no wire change, no migration
+— verified absent from all 790 rows in the store. What ships is one named
+predicate, whose answer today is `false` for every task **because the filing axis
+has exactly one door and this app has not built it**:
+
+```ts
+isFiled(t)  = listIdOf(t) !== null      // → false for every task, today
+inbox(t)    = t.status !== 'done' && !isFiled(t)
+```
+
+Written this way rather than as the shorter `inbox(t) = t.status !== 'done'` for
+two reasons that are not style. The predicate on screen then **reads as the
+definition**, so Inbox narrows by itself when lists land; and it is **not
+token-identical to `open_all`'s membership test**, which is the guard
+INV-INBOX-FILING below depends on. A `list_id` column that is always null was
+rejected as the dead promise ADR-009 § 2 already refused once — it cannot stay
+off the wire, it pre-commits UC-41's shape, and it changes nothing observable
+(ADR-009 § Amendment 2 § 3).
+
+**`isFiled` must be answerable `true` in a test today.** A predicate whose only
+reachable answer is `false` cannot be exercised, and the invariant below would be
+*unproven* rather than passing. The seam's mechanism is the implementer's call;
+its existence is not.
+
+### INV-INBOX-FILING — the equality that must never become a definition
+
+> **INV-INBOX-FILING.** `open_all` counts every open task. `inbox_count` counts
+> the open tasks in the Inbox **container**. Their equality holds while and only
+> while no task is filed. It is a **reading of the store, never a definition**,
+> and neither number may be sourced from the other.
+
+They are exactly equal today — 716 = 716 globally and in every one of the 193
+accounts holding live tasks — and they diverge the moment the first task is
+filed. `design/_shared/components.md` § LandingSummary split these two facts on
+2026-08-18 (T-128) precisely because they had stopped being equal; this
+definition makes them equal again. **Re-merging them reintroduces the bug the
+split fixed:** a user with a full week ahead told *"All done — your list is
+clear."*
+
+Three things carry it, and the note you are reading is the weakest:
+
+1. **The two expressions are not written the same** — see `isFiled` above. This
+   is the only guard that works without anyone remembering the rule.
+2. **A test that can fail today.** Hand `inCollection` a task the filing seam
+   reports as filed and assert **both** halves: it is *not* in Inbox, and it is
+   *still* in its date collection. That fails against a re-merged
+   `inbox(t) = !done`, and it also fails against an implementation that
+   "resolves" the overlap by dropping the row out of Today. It is the only
+   artifact a re-merge cannot walk past.
+3. **This note**, plus ADR-009 § Amendment 2 § 5, plus `components.md`
+   § LandingSummary when design rebinds its counts — the physical place a
+   re-merge would land.
 
 Three consequences are contract, not implementation detail:
 
@@ -188,9 +276,11 @@ Three consequences are contract, not implementation detail:
   no opinion about which day "today" is.
 - **`due_at` survives completion.** Completing a task writes `status` only;
   un-completing writes `status: 'inbox'` and likewise leaves `due_at` alone. A
-  task therefore returns to the collection it came from — one of four now, still
-  with no `doneFrom` field — the requirement `uc-coverage-map.md` D6 records as unmet (UC-45
-  AC-45.2).
+  task therefore returns to **both** the date collection and the container it
+  came from, still with no `doneFrom` field — the requirement
+  `uc-coverage-map.md` D6 records as unmet (UC-45 AC-45.2). Filing is not a
+  status either, so completion cannot disturb it any more than it disturbs
+  `due_at`.
 - **`done_today` is derivable** as `status: 'done'` **and** `due_at` today. It
   needs no `completed_at` column. Read what it measures before using it: it is
   *"was due today and is done"*, not *"was completed today"* — the two differ
@@ -201,11 +291,21 @@ Three consequences are contract, not implementation detail:
 **`Collection` is not `TaskStatus`.** `src/assistant/_shared/model/tasks.ts`
 defines `Collection = 'inbox' | 'today' | 'upcoming' | 'done'` — a **view** over
 tasks, in which `'today'` stays fully meaningful. The two sets share three names
-and nothing else. Changing one must not change the other, and the 2026-08-18
-amendment is that rule's first exercise: **`Collection` gained `upcoming` and
-`TaskStatus` did not change at all.** There is no `upcoming` status, no client
-may send one, and no row will ever hold one — Upcoming is computed from `due_at`,
-exactly as Today is.
+and nothing else. Changing one must not change the other, and the two 2026-08-18
+amendments are that rule's first two exercises: **`Collection` gained `upcoming`,
+then Inbox moved to a different axis, and `TaskStatus` did not change either
+time.** There is no `upcoming` status and no status named after a list — no
+client may send one and no row will ever hold one. Upcoming is computed from
+`due_at`; Inbox is computed from filing; neither is a status.
+
+**The union spans two axes and one gate, and that is what a menu is.** Its four
+members are not four of a kind — `today` and `upcoming` are date views, `inbox`
+is a container, `done` is the status gate. The union exists because the Lists
+menu renders one list of rows, not because the four are the same sort of thing,
+and `inCollection` must therefore **not** be written as a single classification
+that returns exactly one answer. That shape was correct while the model was one
+partition and it is false now: the store holds 7 live tasks that are in Today and
+in Inbox simultaneously.
 
 ## Client-side stores (client contracts — not server entities)
 

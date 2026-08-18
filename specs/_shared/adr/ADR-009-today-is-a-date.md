@@ -11,10 +11,19 @@ collections are now date predicates. This **strengthens** the ADR's core claim �
 still not a date filter. It reverses nothing. The Decision is amended in place at
 §2, §4 and § Consequences; see **§ Amendment (2026-08-18)** at the end for what
 moved, what did not, and the measured cost.
+**Amended again:** 2026-08-18 (T-137, architect-agent) — **Inbox is the tasks
+filed into no personal list, not the tasks with no date.** This is the correction
+the previous amendment's shape could not absorb: Inbox stops being a member of
+the date partition and becomes the first cell of a **second, independent axis**.
+The collection set is no longer one partition with four cells; it is a *date*
+axis and a *filing* axis over the same open tasks. Amendment 1's predicate table
+is annotated in place — it describes the date axis correctly and always did — and
+the structural statement is in **§ Amendment 2 (2026-08-18)** at the end.
 **Source of record:** `reports/owner-decision-2026-08-18-today-is-a-date.md`,
 which sharpens `reports/owner-decision-2026-08-18-landing-and-collections.md` §2.
-The amendment's source of record is
-`reports/owner-decision-2026-08-18-four-buckets.md`.
+Amendment 1's source of record is
+`reports/owner-decision-2026-08-18-four-buckets.md`; Amendment 2's is
+`reports/owner-decision-2026-08-18-inbox-is-unfiled.md`.
 
 ## Context
 
@@ -219,6 +228,10 @@ disappears with it.
   unfinished task, so reachability is now a property of the **four buckets being
   total**, not of one superset — and it therefore depends on Upcoming being
   rendered. § Amendment § Nothing is stranded — but the argument is new.)*
+  *(Amended again 2026-08-18: that premise is retired too. Reachability is a
+  property of the **filing axis being total** — every open task sits in Inbox or
+  in a list, and every cell of that axis is openable. It is the first of the
+  three reasons that depends on no date predicate at all. § Amendment 2 § 6.)*
 - **Bad, accepted.** `done_today` derived as `status: 'done' && isToday(due_at)`
   is **"was due today and is done", not "was completed today"**, and
   `LSM-PROGRESS`'s copy — *"You've finished {count} today"* — claims the second.
@@ -310,6 +323,14 @@ that bucket all along (Inbox · Today · Upcoming · Logbook).
 **Total and disjoint.** Not-done splits on has-a-date; dated splits on
 past-or-today versus future. Every task has exactly one home. Done is still the
 one status predicate, and it is the one this ADR never disputed.
+
+> **Read this table as the *date* axis (Amendment 2, 2026-08-18).** Its three
+> open rows are still exactly right and still total and disjoint — nothing in
+> them is retracted. What is retracted is the name on the third one: that cell is
+> **`undated`**, and **Inbox is not it.** Inbox moved to a second axis, so the
+> sentence *"every task has exactly one home"* is true of this axis and false of
+> the model, which now has two. The correction is structural and is **not**
+> written here as an exception to a partition — see **§ Amendment 2**.
 
 **Both dated predicates compare local calendar days, not instants, and this has
 to be written down or the set is not total.** `due_at` is a timestamp and a
@@ -423,6 +444,14 @@ dates forward to keep "Today" literal. It invents dates the user never set, and
 this ADR already rejected that move for the 4 dateless rows for the same reason.
 
 ### Nothing is stranded — but the argument is new, and it is now a dependency
+
+> **Superseded by § Amendment 2 § 6 (2026-08-18).** This section's *requirement*
+> stands — Upcoming must be reachable, or a future-dated task cannot be opened as
+> a dated task — but it is **no longer what carries AC-24**. Inbox is not a date
+> cell at all now, it holds every open task again, and reachability is a property
+> of the **filing** axis. The reasoning below is kept because it is the record of
+> the second of three reasons, and because the requirement it derived survives
+> the reason that derived it.
 
 The old reachability argument was *Inbox is a superset of every open task*, and
 `F-001` AC-24 leans on it. **That argument is gone**, because Inbox is now a
@@ -600,7 +629,9 @@ feature. This amendment changes the first and adds two:
 3. **The four collections are total and disjoint: every open task is in exactly
    one of Today, Upcoming and Inbox.** This is the property the whole model rests
    on and it is testable directly — for any task and any clock, exactly one
-   predicate is true.
+   predicate is true. **— Revised by § Amendment 2, which splits this into 3a
+   (the date axis) and 3b (the filing axis). Written as one property it is now
+   false: the store holds 7 tasks in Today and Inbox at once.**
 4. Creating a task while viewing a collection puts it in that collection, by date
    *(Upcoming's cell pending the decision above)*.
 5. Un-completing returns a task to the collection it came from, with no new field
@@ -621,3 +652,452 @@ and the day-group heading for overdue. Then the code, **in one change**: the
 them leaves a window in which the buckets are neither total nor disjoint. QA
 expectations last, and QA must **seed a future-dated task**: the store has no
 Upcoming member to read.
+
+## Amendment 2 (2026-08-18) — Inbox is *unfiled*; the model has two axes
+
+**Trigger.** `reports/owner-decision-2026-08-18-inbox-is-unfiled.md`. The owner
+said *"Inbox nên là các task chưa xong, gồm cả task có ngày hay chưa"* — Inbox
+should be the unfinished tasks, dated or not — and then asked the question that
+actually decided it: *"các app khác giữ inbox như nào?"*, how do other apps keep
+Inbox. Todoist, Things 3, TickTick and OmniFocus agree, and they agree on
+something stronger than a default: **Inbox is a container you empty by filing,
+never a date filter.** In Todoist it is literally the default project. In all
+four, a task is in Inbox *and* in Today at once, because Today is a view and
+Inbox is a place. The owner recognised the definition on being shown it and chose
+it.
+
+**This is not a correction of a mistake and must not be read as one.** Amendment 1
+was right on the evidence it had. With Inbox as the third date cell, three of four
+collections were dates and the fourth was a status — the exact asymmetry the owner
+had just named as *complicated* — and making all four dates removed it. What that
+move could not see is that the word *Inbox* was never on the date axis in the
+first place: not in this app, and not in any of the four apps the owner opens
+daily. So this amendment narrows no predicate and widens none. It moves one
+collection off an axis it was never on, which is why every date predicate
+survives it untouched.
+
+### 1. The correction is structural: two axes, not a partition with an exception
+
+Amendment 1's load-bearing sentence — *"Not-done splits on has-a-date; dated
+splits on past-or-today versus future. Every task has exactly one home."* — is
+now false, and the honest repair is not an exception clause. Grafting *"…except
+Inbox, which overlaps"* onto a partition claim would leave the model looking like
+a partition with a defect, and the next person to tidy it would remove the
+defect.
+
+The model is **two independent axes over the open tasks**, plus one status
+predicate that empties both:
+
+| | Cells | Kind | Ships today |
+|---|---|---|---|
+| **Date axis** | Today · Upcoming · `undated` | views, computed from `due_at` | Today and Upcoming have surfaces; `undated` has none |
+| **Filing axis** | Inbox · each personal list | containers, a property of the task | Inbox only — `lists` does not exist |
+| **The gate** | Done | the one genuine status | its own surface |
+
+Each axis is **separately total and disjoint** over the open tasks. Together they
+are a grid: a task has a date cell **and** a filing cell, and every combination is
+legal. The four rows in the Lists menu are therefore no longer four of a kind —
+two are views, one is a container, one is a status filter — which is precisely
+what Todoist's sidebar is, and why its counts overlap the same way ours now do.
+
+**Amendment 1's predicate table survives as the date axis.** Its three open rows
+were correct and stay correct; only the name on the third one was wrong. That
+cell is `undated`, and it is not a surface — Inbox was serving it by coincidence,
+and stops the moment anything can be filed.
+
+**The date axis is where this model has moved twice in one day; the filing axis
+is where it has never moved.** That is not a coincidence and § 5 depends on it:
+*when* a task is due is a fact that keeps getting re-cut, and *where a task
+lives* is not.
+
+### 2. The predicate set, in full
+
+`localDay` compares calendar days on the device clock, exactly as Amendment 1
+fixed it; `dueDayOffset` is the one place a `due_at` becomes a day, and a date no
+clock can read still counts as no day.
+
+```ts
+// ── the gate ──────────────────────────────────────────────────────────────
+done(t)            = t.status === 'done'
+open(t)            = t.status !== 'done'
+
+// ── axis A — date. Total and disjoint over open(t). UNCHANGED by this amendment.
+day(t, now)        = dueDayOffset(t.due_at, now)   // null ⟺ the row names no day
+today(t, now)      = open(t) && day(t, now) !== null && day(t, now) <= 0
+upcoming(t, now)   = open(t) && day(t, now) !== null && day(t, now) >  0
+undated(t, now)    = open(t) && day(t, now) === null       // no surface of its own
+
+// ── axis B — filing. Total and disjoint over open(t). NEW.
+isFiled(t)         = listIdOf(t) !== null
+inbox(t)           = open(t) && !isFiled(t)
+inList(t, L)       = open(t) && listIdOf(t) === L
+```
+
+The four properties that replace *"every task has exactly one home"*, each
+testable directly:
+
+- **P1 — date axis total and disjoint.** For any open task and any clock, exactly
+  one of `today`, `upcoming`, `undated` is true.
+- **P2 — filing axis total and disjoint.** For any open task, exactly one of
+  `inbox` and `inList(·, L)` over the existing lists is true.
+- **P3 — Done is exclusive of both.** A done task is in `done` and in no cell of
+  either axis; `open(t)` gates every predicate above.
+- **P4 — the axes are independent.** Every (date cell × filing cell) pair is
+  reachable, and no operation on one axis moves a task on the other. This is the
+  property that makes "two axes" a claim rather than a description, and it is the
+  first thing a re-merge breaks.
+
+**What `inbox(t)` is today.** `lists` and `tasks.list_id` do not exist
+(`information-architecture.md` §7; `design/_shared/components.md` § ListsMenu
+draws LM-LIST and records it as unbuildable). So `listIdOf(t)` is `null` for every
+task, `isFiled(t)` is `false` for every task, and **`inbox(t)` reduces to
+`open(t)` — every open task.** That is exactly the list the owner asked for. The
+definition and the list are the same set right now, and they look different only
+because the definition names a door this app has not built.
+
+### 3. The cell where a wrong choice is cheap now and expensive later: `list_id`
+
+Two shapes were available. **The recommendation is neither of the two the
+briefing named**, and the difference matters, so all three are stated.
+
+**Rejected — ship a `list_id` concept now, absent everywhere, always `null`.**
+
+1. It is the dead promise this ADR already refused once. § 2 records the tension
+   from `specs/_source/todo-ai/02-use-cases.md:911` — *"a state nobody assigns is
+   a dead promise in a type"* — and retained `'today'` only because the store
+   already contains it. `list_id` has the opposite defence: nothing contains it,
+   nothing would ever set it, nothing would ever branch on it.
+2. **It cannot stay off the wire.** `task` is served by `GET /tasks` and accepted
+   by `POST /tasks` and `PATCH /tasks/{id}`. A field on the entity is a field on
+   the wire, and a field on the wire needs a rule for a client that sends one —
+   a write-vocabulary rejection, its `400`, its contract entry and its tests, all
+   for a field with exactly one legal value.
+3. **It pre-commits a decision nobody has taken.** Personal lists are UC-41, the
+   owner's headline gap and the largest blast radius on the whole list
+   (`uc-coverage-map.md` § 2): a `lists` table, ownership per user, delete
+   cascade, a default list, UC-48's export envelope, and interpreter context
+   under AC-41.4. Whether the task carries a nullable `list_id` or the relation
+   lives elsewhere is not knowable today — and if this ADR ships the column, this
+   ADR will be cited as having decided it.
+4. It buys nothing observable, which is the test this ADR already applied to the
+   4-row migration and answered the same way.
+
+**Rejected — express Inbox as `inbox(t) = open(t)` with the filing definition
+recorded in prose.**
+
+- It is **token-identical to `open_all`'s membership test.** Two facts written
+  the same way are one fact to every reader, every grep and every reviewer, and
+  merging them is § 5's trap arriving through the predicate instead of through
+  the summary.
+- It records the *list* and loses the *definition*, throwing away the entire
+  value of the owner's choice: an Inbox defined by filing narrows by itself when
+  lists ship; an Inbox defined as `!done` narrows by nobody, and the rule gets
+  re-litigated a fourth time.
+- The fact *this task is unfiled* would have no home and would be re-derived at
+  every call site the day lists land (L-004).
+
+**Chosen, and what I would defend in review — one named predicate, no field.**
+
+`inbox(t) = open(t) && !isFiled(t)`, where `isFiled` is a named function in
+`src/assistant/_shared/model/tasks.ts` whose answer today is `false` for every
+task **because the filing axis has exactly one door and this app has not built
+it.** No entity field, no schema, no migration, no wire change, no new status.
+The predicate on screen reads as the definition; the equality with `open_all` is
+visibly a *consequence* of `isFiled` being constant rather than a definition; and
+when lists ship, one function body changes and Inbox narrows without anything
+else moving.
+
+**One constraint architecture does impose, and it is the half that makes § 5
+enforceable: `isFiled` must be answerable `true` in a test today.** A predicate
+whose only reachable answer is `false` cannot be exercised, and an invariant with
+no failing case is unproven rather than passing (`run-scenarios.sh mutation`'s
+rule; L-003's shape). Whether that seam is a parameter, a module boundary or a
+structurally-typed key on the argument is the implementer's call. **That it
+exists is not**, and a `isFiled` hard-wired to `return false` fails this
+requirement even though it satisfies every other line above.
+
+### 4. Measured against `data/assistant.json` — not reassured
+
+Same store and same method as Amendment 1 § 2, re-run at this amendment. Device
+clock `+07`; device day **2026-08-18**.
+
+| | Rows |
+|---|---|
+| task rows in the store | 790 |
+| live (not soft-deleted) | 737 |
+| live and open | 716 |
+| live and done | 21 |
+| open and dated | 7 — all due `2026-08-17`, i.e. **all overdue** |
+| open and undated | 709 |
+| rows carrying a `list_id` | **0 — the key is absent from all 790 rows** |
+
+| Collection | Before (Amendment 1) | After (this amendment) | Δ |
+|---|---|---|---|
+| **Inbox** | 709 | **716** | **+7** |
+| **Today** | 7 | 7 | — |
+| **Upcoming** | 0 | 0 | — |
+| **Done** | 21 | 21 | — |
+
+**7 rows change bucket, and every one of them changes by *gaining* a
+membership.** No row leaves any collection: this amendment is purely additive.
+The 7 are the same seeded `Call mom` rows that left Inbox this morning
+(`a2ff22a6-…`, `flowA-demo`, `shot-msx2ej4u`, `bug-msx4nu2i`,
+`v2-msxjcj7d-desktop`, `v2-msxjdvlv-desktop`, `v2-msxjdvlv-mobile`); they return
+to Inbox and **stay in Today**. Per affected account — 7 of the 193 accounts
+holding live tasks — the change is: Inbox `+1`, Today unchanged at 1, `Tasks · N`
+badge unchanged.
+
+Three things the number says that the number alone does not:
+
+- **The store now shows a non-empty intersection for the first time.**
+  `|Inbox ∩ Today| = 7`; `|Inbox ∩ Upcoming| = 0`, and it stays 0 until something
+  is dated forward. Under every previous model every intersection was empty. **A
+  suite that asserts disjointness across collections now has 7 live
+  counterexamples** — see § 6.
+- **The collection counts no longer sum to a headcount.** 716 + 7 + 0 + 21 = 744
+  against 737 live rows. The Lists menu's column is a set of overlapping
+  memberships, not a partition of the account, and 7 rows are counted twice in it
+  today.
+- **The day's arc closes where it opened.** Inbox 716 → 709 → **716**; Today
+  0 → 7 → **7**. The morning's move is reversed and the afternoon's is kept, which
+  is the whole shape of the three decisions: Today gained a date, Inbox gained a
+  meaning, and only one of the two ever had to move.
+
+**`open_all` and `inbox_count` are exactly equal today** — 716 = 716 globally,
+and equal in every one of the 193 accounts, with no account showing a
+discrepancy anywhere. That total coincidence is § 5's subject and is why a note
+alone would not survive it.
+
+**The 4 legacy `status: 'today'` rows, re-measured a third time:** still 4, still
+live, still open, **still all undated**. They are in `undated` on the date axis
+and in **Inbox** on the filing axis — the same place the three-bucket predicate
+and the four-bucket predicate both put them. § 2's inertness claim survives its
+third measurement unchanged, and this amendment creates no new reason to migrate
+them.
+
+### 5. INV-INBOX-FILING — the equality that must never become a definition
+
+> **INV-INBOX-FILING.** `open_all` counts every open task. `inbox_count` counts
+> the open tasks in the Inbox **container**. Their equality holds while and only
+> while no task is filed. It is a **reading of the store, never a definition**,
+> and neither number may be sourced from the other.
+
+Its home is `specs/assistant/data-model.md § INV-INBOX-FILING` — this ADR is the
+reason, that file is the contract, and one fact does not get two homes (L-004).
+
+The risk is concrete and it has already happened once in reverse.
+`design/_shared/components.md` § LandingSummary split these two facts this
+morning (T-128) precisely because they had *stopped* being equal. This decision
+makes them equal again, exactly, in every account. Someone will notice, and
+re-merging them reintroduces the bug the split was made to fix: a user with a
+full week ahead told **"All done — your list is clear."**
+
+**Three things carry the invariant, and the note is the weakest of them.** It is
+listed last on purpose.
+
+1. **The two expressions are not written the same.** `inbox` is
+   `open(t) && !isFiled(t)`; `open_all` is the sum of the three date cells. There
+   is no moment at which a reader meets one expression twice and concludes it is
+   one fact. This is the only guard that works without anyone remembering the
+   rule, and it is the reason § 3 rejected the shorter predicate.
+2. **A test that can fail today.** Hand `inCollection` a task the filing seam
+   reports as filed, and assert **both** halves: it is *not* in Inbox, and it is
+   *still* in its date collection. That test fails against a re-merged
+   `inbox(t) = open(t)` — on the first assertion — and it also fails against an
+   implementation that "resolves" the new overlap by dropping the row out of
+   Today, which is the other way this gets broken. It is the only artifact here a
+   re-merge cannot walk past, and it is why § 3 requires `isFiled` to be
+   answerable `true`. Without that seam the test cannot be written, and the
+   invariant is **unproven rather than passing**.
+3. **The note** — in this ADR, in `data-model.md`, and, when design rebinds the
+   summary's counts, in `components.md` § LandingSummary, which is the physical
+   place a re-merge would land.
+
+**What a reviewer hits.** The invariant has a name, so any change to either count
+has to say which of the two it is changing. A diff that makes the two expressions
+identical does not need to be caught by eye — it fails (2).
+
+### 6. AC-24's third reason, stated plainly
+
+**AC-24 has two halves, and only one of them has been moving.** Separating them
+is overdue, because conflating them is part of how the reason changed twice
+unnoticed:
+
+- The **surface** half — rev 4's note: from every conversation failure state, the
+  by-hand list is reachable in at most one action. **Untouched by any of this**,
+  and untouched by both previous amendments.
+- The **set** half — the word *full* in *"the full todo list remains usable by
+  hand"*: every open task is reachable by hand once you are there. This is the
+  half ADR-009 has now given three reasons for.
+
+**The current reason, and it is the third:** the **filing axis is total, and
+every cell of it is openable from the Lists menu.** Today that axis has exactly
+one cell — Inbox — it contains every open task, and it is a row in LM-COLLECTION.
+The bound therefore holds **with no dependency on any date predicate at all.**
+
+**Why this one should outlast the two that broke, stated as a reason and not as
+a hope.** Both previous reasons were properties of the *date* axis:
+Inbox-as-superset was a claim about one date cell, four-buckets-total was a claim
+about the whole of it. The date axis is the thing that has been re-cut twice in
+one day. The filing axis is where *can the user open this* actually lives — a
+task is reachable because it sits in a container that has a row, not because of
+when it is due. Reachability was tied to the wrong axis, which is why it kept
+coming untied. Amendment 1's dependency (**the Upcoming row must exist**) is not
+retracted — Upcoming still needs its row or a future-dated task is unreachable
+*as a dated task* — but it is no longer what carries AC-24, because such a task
+is also in Inbox.
+
+**Is an undated task inside a personal list reachable, post-lists? Yes — through
+exactly one door: its list.**
+
+- It is in **no date collection with a surface.** Its date cell is `undated`,
+  which has no row of its own and never had one; Inbox was serving that cell by
+  coincidence and stops serving it the moment the task is filed.
+- It is **not in Inbox.** That is what filing means.
+- It is in `inList(·, L)`, and LM-LIST is that row.
+
+**So post-lists the bound converts into a hard requirement on LM-LIST: every list
+a task can be filed into must render a row.** A list that exists and is not drawn
+strands every undated task in it, silently and with nothing erroring — the same
+shape as Amendment 1's Upcoming-row requirement, one axis over. Written down in
+advance because the previous two versions of this dependency were both found
+after the fact.
+
+**This is normal, not a gap.** An undated task in a project is found in the
+project, in Todoist, Things and OmniFocus alike. What is worth stating is the
+consequence for this app: it has no *"show me everything undated"* view, and
+after lists it will not have one. Today Inbox looks like that view; it will stop
+being it, and nobody should read that as a regression.
+
+### 7. What this disturbs downstream — reported, not fixed
+
+Design owns every call below and this amendment briefs them; per its scope it
+**reports and does not fix**. Three are arithmetic rather than taste.
+
+- **§ TaskList, "Which collections group at all" — Inbox's row rests on a premise
+  that is gone.** It reads *"Inbox **is** 'no date', so `Anytime` is true of
+  every row it can ever hold"* and sets grouping to `none — flat`. Inbox can now
+  hold overdue, today-dated and future-dated rows, and can produce all five
+  groups. In the live store it holds **7 overdue ones today**, and § TaskList's
+  own *"One signal, not two"* rule put lateness in the group heading and nowhere
+  else — so a flat Inbox does not merely miss a grouping, it renders those 7 late
+  tasks with **no lateness signal anywhere on the surface every account opens**.
+- **§ ListsMenu, LM-COLLECTION — the `Source` cell is now wrong for one of its
+  four rows.** It reads *"the four date predicates of ADR-009 § Amendment"*;
+  Inbox is not a date predicate. Two further consequences the row does not carry:
+  the four rows are no longer four of a kind (two views, one container, one
+  status filter), and **the counts nest** — Inbox's number contains Today's and
+  Upcoming's, so the column sums to nothing (measured: 744 against 737 live
+  rows). Whether Inbox sits with the views or heads the lists section is a real
+  question now; the reference apps separate the two groups visually and
+  § ListsMenu's LM-COLLECTION / LM-LIST / LM-ACTION split is already the seam.
+- **§ LandingSummary, `inbox_count` — one name, two facts, differing by
+  `open_today + upcoming`.** It is defined as *"open tasks with no date at all"*,
+  which is now the `undated` cell and **not** the Inbox container. Both numbers
+  are wanted: LSM-CLEAR-TODAY's *"{count} tasks are waiting in Inbox"* is a claim
+  about a place and wants the container; the selection rule wants whichever it
+  actually means. This is L-004's shape and the identical split § LandingSummary
+  already performed once today on `open_all`.
+- **§ LandingSummary, LSM-CLEAR-AHEAD is now unreachable — arithmetic.** Row 8
+  branches on `inbox_count = 0`. If `inbox_count` means the Inbox container, then
+  `inbox_count = 0` ⟺ no open task exists ⟺ `open_all = 0` ⟺ rows 1–2 have
+  already fired, so the branch is unsatisfiable and the frame **added this
+  morning (T-128) is dead by this afternoon.** It survives only if `inbox_count`
+  is rebound to the `undated` cell — the same rebinding the bullet above asks
+  for, so one decision settles both. Note the shape: Amendment 1 found LSM-OVERDUE
+  dead by the same mechanism, and § *"The rule is total, and that is the property
+  to test"* asks a change to re-prove totality rather than add a row. **This is
+  that re-proof, and it finds a second dead row.**
+- **§ LandingSummary, `open_all` — its source expression is still correct**
+  (`open_today + upcoming + inbox_count`, once `inbox_count` names the undated
+  cell). What returns is the *identity*
+  `open_all == collectionCount(tasks, 'inbox', now)`, exactly true again today in
+  every account. That identity is INV-INBOX-FILING's subject and must never
+  become a source.
+- **Code and tests, routed to the implementation pass, not to design.**
+  `src/assistant/_shared/model/tasks.ts:224` claims *"for any task and any clock
+  exactly one collection returns `true`, by construction"*, and
+  `src/assistant/web/__tests__/collections.test.ts:91` asserts that as a suite
+  (*"the four buckets are total and disjoint"*). Both are correct about the date
+  axis and **false about the model**, and the store now holds 7 live
+  counterexamples. The header comment at `tasks.ts:21–27` and the superset
+  narration in `web/components/ListsMenu.tsx:25` and
+  `mobile/components/ListsMenu.tsx:25` are in the same position.
+- **Unaffected, checked rather than assumed:** § PathSwitch's badge
+  (`openTodayCount` is a date call and is not on the filing axis); § SaveNotice
+  (a task created with no date is still unfiled *and* still undated, so it is in
+  Inbox by both axes and the receipt still tells the truth); `dueAtForCollection`
+  including its still-open Upcoming cell (T-130); and § TaskList's `Overdue`
+  group, which becomes *more* load-bearing rather than less, since Inbox now
+  needs it too.
+
+### 8. What did **not** change
+
+- **The date axis, entire.** Today is `<= today`, Upcoming is `> today`, both
+  day-granular on the device clock, overdue folded into Today deliberately.
+  Amendment 1 §§ 1–3 stand word for word; only the name on the third cell was
+  wrong.
+- **§ 1's core claim, its mechanism and its reasons.** Today is a date; no status
+  leg; `now` is the device clock; the server stores an instant and has no opinion
+  about which day it is.
+- **§ 2 in full, and `TaskStatus` untouched a third time.** Same four members,
+  same three vocabularies, `'today'` still record-only and still rejected on the
+  wire. There is no status named `upcoming` and none named after a list — filing
+  is not a status, exactly as Upcoming is not. The Neutral bullet's rule
+  (*changing one must not touch the other*) gets its second exercise: the
+  collection set was restructured and `TaskStatus` did not move.
+- **§ 3.** Un-completing writes `status: 'inbox'` and does not touch `due_at`. A
+  task returns to the date collection *and* the container it came from, still
+  with no new field.
+- **§ 4's Today, Inbox and Done rows.** Inbox keeps its value and gains a cleaner
+  reason: a container names no date, so nothing is derivable from it, and the
+  task is created unfiled and undated — which lands it in Inbox on **both** axes.
+- **§ The migration that is deliberately not run.** Re-measured above: 4 live
+  rows, all undated, all landing in Inbox as before. No new reason to migrate.
+- **The wire.** No `list_id`, no new field, no new status, no endpoint change, no
+  collection parameter. `api-contracts.md` records this explicitly, in the same
+  place it records that `upcoming` changed nothing on the wire.
+- **`Collection`'s four members and `COLLECTIONS`' order.** The union now spans
+  two axes and one status, which is what a menu is; the members and their order
+  are unchanged, and § 7 leaves the Inbox row's *position* to design.
+
+### The ACs this owes, added to § Who owns the ACs
+
+Amendment 1 left five. This amendment revises one, adds one, and annotates AC-24.
+
+3. *(revised — was "the four collections are total and disjoint: every open task
+   is in exactly one of Today, Upcoming and Inbox")* — that is one property no
+   longer, and it becomes **two**, both testable directly:
+   - **3a.** The **date axis** is total and disjoint: for any open task and any
+     clock, exactly one of Today, Upcoming and `undated` is true.
+   - **3b.** The **filing axis** is total and disjoint: for any open task,
+     exactly one of Inbox and the personal lists is true. With no lists, that is
+     Inbox for every open task.
+6. **(new) The two axes are independent.** A task's date collection does not
+   change when it is filed or unfiled, and its filing does not change when its
+   date changes. This is the property that says the model is two axes rather than
+   one partition with cases, and it is the first thing a re-merge breaks
+   (INV-INBOX-FILING).
+
+**AC-24's set half is now carried by 3b, not by 3a** — reachability is a property
+of the filing axis (§ 6). Whichever spec writes these should say so, because the
+same bound has now been justified three different ways and twice the reason
+expired without the AC changing a word.
+
+**spec-agent owns writing them**; architect-agent does not author acceptance
+criteria.
+
+### Sequencing
+
+`specs/` first — this amendment, `data-model.md` (which gains
+§ INV-INBOX-FILING) and the `api-contracts.md` note, in one task so the three
+describe one end state (**done**). Then **design**, which has more to decide here
+than at Amendment 1 and is briefed by § 7: § TaskList's Inbox row, § ListsMenu's
+`Source` cell and where the Inbox row sits, and § LandingSummary's `inbox_count`
+rebinding — which settles the dead LSM-CLEAR-AHEAD row as a side effect. Then the
+code, **in one change**: `inCollection`, the `isFiled` seam, the doc comments at
+`tasks.ts:21–27` and `:224`, the two `ListsMenu` narrations, and
+`collections.test.ts`'s disjointness suite move together — splitting them leaves
+a window in which the code asserts a partition the model does not have. QA last,
+and QA must be able to **construct a filed task**: the store holds none, cannot
+hold one, and the invariant's test is the one that would otherwise never run.

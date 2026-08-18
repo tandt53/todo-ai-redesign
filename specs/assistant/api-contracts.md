@@ -314,8 +314,9 @@ any pure-CRUD scenario (AC-18, AC-25 offline local path).
 `status?` on both write endpoints is narrower than `TaskStatus` — see
 § `status` on the wire below. Un-completing a task sends `status: "inbox"` and
 **does not send `due_at`**: leaving the date untouched is what returns the task
-to the collection it came from — one of four since the 2026-08-18 amendment
-(ADR-009).
+to the date collection it came from. Since the second 2026-08-18 amendment it
+returns to its **container** too, for the same reason — filing is not a status
+either, so completion never disturbed it (ADR-009).
 
 `id` on `POST /tasks` is optional and **client-generated** (uuid): the
 offline local path (AC-25) creates the task locally under a real id and
@@ -332,7 +333,14 @@ retired as a live value: membership in Today is `due_at`, not `status`
 (data-model.md § The four collections). **The 2026-08-18 amendment adding the
 Upcoming collection changes nothing on the wire**: `upcoming` is a client-side
 view over `due_at`, never a status, so it is neither an accepted nor a returnable
-`status` value. The union keeps the member because historical
+`status` value. **The second 2026-08-18 amendment — Inbox is the tasks filed into
+no personal list — likewise changes nothing on the wire, and specifically adds no
+`list_id`.** `task` gains no field, the write vocabulary is untouched, no status
+is named after a list, and no endpoint learns about filing. Inbox is a
+client-side predicate over a filing state this app cannot yet express, so its
+answer today is *unfiled* for every task; ADR-009 § Amendment 2 § 3 records why
+shipping an always-null column was rejected rather than deferred. The union keeps
+the `today` member because historical
 records hold it; the wire is the write path, and the write path is where it is
 stopped from being minted again.
 
@@ -359,7 +367,7 @@ by `owner-decision-2026-08-18-today-is-a-date.md`):
 |---|---|
 | Today | `status: "inbox"`, `due_at:` **the local start of today**, as an ISO instant |
 | **Upcoming** | **open — no contract value yet.** Upcoming's predicate is `due_at` *after today*, which names no single instant the way Today's day does, so no date is derivable and none is invented. The candidates (local start of tomorrow · `null` with the task announced as landing in Inbox · no composer on Upcoming at all) and their costs are in ADR-009 § The one cell this amendment refuses to fill; the call is design's / the owner's. **Until it is made, the client sends `due_at: null`** — the accidental answer today's code gives, recorded here so it is visible rather than silent |
-| Inbox | `status: "inbox"`, `due_at: null` |
+| Inbox | `status: "inbox"`, `due_at: null` — **value unchanged by the 2026-08-18 filing amendment, and its reason is now cleaner**: Inbox is a container and a container names no date, so nothing is derivable from it. The task is created unfiled *and* undated, which lands it in Inbox on both axes |
 | Done | `status: "inbox"`, `due_at: null` — a task cannot be created finished |
 
 **The start of the local day, not the moment of creation.** `due_at` is a
