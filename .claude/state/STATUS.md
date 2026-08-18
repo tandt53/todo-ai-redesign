@@ -40,6 +40,12 @@
 
 ---
 
+## Handover
+
+**Start here: [reports/HANDOVER-2026-08-18.md](../../reports/HANDOVER-2026-08-18.md).** Sessions before 2026-08-19 ran from a different repository; that file carries the day's four owner decisions, F-005's Gate 1 verdict (REJECT, 20 HIGH), the six open questions still owed an answer, and the queue rows whose premises went stale the same day. **Next action: T-143.**
+
+---
+
 ## Agent Results
 <!-- Sub-agents return summaries; orchestrator records them here. -->
 <!-- Recent entries only — archive old results when the file grows. -->
