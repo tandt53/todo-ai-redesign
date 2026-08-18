@@ -114,15 +114,63 @@ mirror of the undo endpoint's 200 body; `transcript` recorded on voice undo
 undo (`nothing_reverted: true`) still transitions the turn `applied → undone`
 — the undo is consumed and a retry is the AC-6 idempotent replay (TC-22).
 
-## task (existing — unchanged)
+## task (existing — no fields added)
 
-F-001 adds **no** task fields (spec, Out of Scope). Prototype serves:
+F-001 adds **no** task fields (spec, Out of Scope), and **ADR-009 adds none
+either** — that is the point of it. Prototype serves:
 `id (uuid, client-generatable — POST /tasks accepts optional id, 409
 TASK_ID_EXISTS on collision), title, due_at, reminder_at, priority,
 status(inbox|today|done|archived), updated_at, deleted_at (soft delete),
 created_at`. Owned per `user_id`; the assistant marks rows only via
 `turn.changed_task_ids`, never by writing marker fields onto tasks (AC-4:
 only the turn's own changes are marked).
+
+### `status` — three vocabularies, one union (ADR-009)
+
+The union is unchanged at four members. What changed is that **only three of
+them may ever be written**: `'today'` is retired as a live value and survives
+only inside historical records.
+
+| Vocabulary | Values | Who enforces it |
+|---|---|---|
+| **Write** — what a client, the interpreter or the app may set | `inbox`, `done`, `archived` | `POST /tasks` and `PATCH /tasks/{id}` reject `today` with `400 INVALID_INPUT` (api-contracts.md § Prototype task CRUD) |
+| **Live** — what a non-deleted row may hold | the write vocabulary, plus a small number of pre-existing rows still carrying `today` | nothing; the value is inert and drains as those rows are next written |
+| **Record** — what `turn.undo_snapshot`, `question.ask_snapshot`, `turn.post_apply` and `turn.diff.old/new` may hold | all four | never narrowed. These are **past states**; rewriting them so an enum reads tidily would make the app report a diff the user never saw |
+
+**A stored `'today'` is inert, and that is why the member is retained rather
+than deleted.** After ADR-009 nothing branches on it: a row carrying it is not
+done, so it appears in Inbox, and Today is read from the date, so it does not
+appear there. Undo replaying a pre-ADR-009 `undo_snapshot` therefore restores a
+value that is harmless rather than one that is invalid. `archived` is a separate
+question (never assigned, never stored) and ADR-009 does not touch it.
+
+### Today is a date
+
+**Today is exactly the open tasks whose `due_at` falls on the current day.** A
+task with no date is never in Today — open or ticked. `status` does not
+participate.
+
+Three consequences are contract, not implementation detail:
+
+- **`now` is the device clock, and the bucket is computed client-side.** The
+  server stores an instant and serves it; it never buckets tasks by date and has
+  no opinion about which day "today" is.
+- **`due_at` survives completion.** Completing a task writes `status` only;
+  un-completing writes `status: 'inbox'` and likewise leaves `due_at` alone. A
+  task therefore returns to the collection it came from with no `doneFrom`
+  field — the requirement `uc-coverage-map.md` D6 records as unmet (UC-45
+  AC-45.2).
+- **`done_today` is derivable** as `status: 'done'` **and** `due_at` today. It
+  needs no `completed_at` column. Read what it measures before using it: it is
+  *"was due today and is done"*, not *"was completed today"* — the two differ
+  for a task due today and ticked last night (counted) and for a task due
+  yesterday and ticked this morning (not counted). ADR-009 § Consequences
+  carries the copy consequence.
+
+**`Collection` is not `TaskStatus`.** `src/assistant/_shared/model/tasks.ts`
+defines `Collection = 'inbox' | 'today' | 'done'` — a **view** over tasks, which
+keeps all three members and in which `'today'` stays fully meaningful. The two
+sets share three names and nothing else. Changing one must not change the other.
 
 ## Client-side stores (client contracts — not server entities)
 

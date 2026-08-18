@@ -311,8 +311,56 @@ prototype serves the fields in data-model.md `task`.
 None of these touch the Interpreter — the AI-call counter must read zero for
 any pure-CRUD scenario (AC-18, AC-25 offline local path).
 
+`status?` on both write endpoints is narrower than `TaskStatus` — see
+§ `status` on the wire below. Un-completing a task sends `status: "inbox"` and
+**does not send `due_at`**: leaving the date untouched is what returns the task
+to the collection it came from (ADR-009).
+
 `id` on `POST /tasks` is optional and **client-generated** (uuid): the
 offline local path (AC-25) creates the task locally under a real id and
 replays the create on reconnect — no temporary-id mapping exists. A colliding
 id → `409 TASK_ID_EXISTS`; a client replaying its own create treats that 409
 as already-synced (its ack). Omitted `id` → server generates one.
+
+### `status` on the wire (ADR-009)
+
+**Accepted values on `POST /tasks` and `PATCH /tasks/{id}` are `inbox`, `done`
+and `archived`.** `today` is **rejected** — `400 INVALID_INPUT`, `field:
+"status"` — and it is the one member of `TaskStatus` that this is true of. It is
+retired as a live value: membership in Today is `due_at`, not `status`
+(data-model.md § Today is a date). The union keeps the member because historical
+records hold it; the wire is the write path, and the write path is where it is
+stopped from being minted again.
+
+`GET /tasks` may still **return** `status: "today"` for rows created before
+ADR-009. Clients treat it as equivalent to `inbox` — not done, not in Today —
+and never send it back.
+
+**No offline replay is affected.** The offline local path creates tasks with
+`status: "inbox"`, so a queued create can never carry `today` (AC-25). The one
+break is a **stale client** whose bundle predates ADR-009: un-ticking a task
+sends `status: "today"`, gets a 400, and — because `toggleTask` dispatches
+optimistically and ignores the response — shows the task un-ticked until its next
+`GET /tasks`. The window is one page load wide; ADR-009 takes it deliberately
+over silently normalising `today` to `inbox`, which would keep a translation rule
+alive forever for a value nothing should send.
+
+### Creating a task in a collection
+
+`POST /tasks` sets **the date, not the status**, when the client creates from a
+collection (`owner-decision-2026-08-18-landing-and-collections.md` §2, sharpened
+by `owner-decision-2026-08-18-today-is-a-date.md`):
+
+| Created while viewing | Body sends |
+|---|---|
+| Today | `status: "inbox"`, `due_at:` **the local start of today**, as an ISO instant |
+| Inbox | `status: "inbox"`, `due_at: null` |
+| Done | `status: "inbox"`, `due_at: null` — a task cannot be created finished |
+
+**The start of the local day, not the moment of creation.** `due_at` is a
+timestamp and "today" is a day, so the instant is fixed here or web and mobile
+pick differently and group the same task differently. Ordering inside the Today
+group is unaffected — this repo orders by `created_at` (`uc-coverage-map.md` D5).
+
+The collection is a **client** concept. The server receives a `due_at` and has no
+opinion about which day it belongs to; no endpoint takes a collection parameter.
