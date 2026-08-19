@@ -18,10 +18,11 @@
 
 import { useState } from 'react'
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
-import { Check, Plus, Trash2 } from 'lucide-react-native'
+import { Check, Plus, Repeat, Trash2 } from 'lucide-react-native'
 import type { AppState } from '../../_shared/model/reducer.ts'
 import { formatDue } from '../../_shared/model/format.ts'
-import type { DiffLine, TaskView } from '../../_shared/types.ts'
+import { priorityOf, rendersClockTime, seriesLive } from '../../_shared/model/task-fields.ts'
+import type { DiffLine, Priority, TaskView } from '../../_shared/types.ts'
 import type { MobileAssistantController } from '../controller.ts'
 import { A11Y_IDS, SHELL_A11Y_IDS, a11yProps } from '../model/a11y.ts'
 import type { MobilePlatform } from '../model/permissions.ts'
@@ -37,29 +38,86 @@ import {
 import type { Collection, TasksSurfaceView } from '../model/tasks-view.ts'
 import { useStyles } from './styles.ts'
 
+/**
+ * `components.md § TaskRow → The row's mark budget`, TR-URGENCY's accessible
+ * name: **four literals, never assembled from the level name.**
+ *
+ * All four states are distinguished in the accessible name **regardless** of
+ * whether they render a glyph (AC-9's own clause, AC-33's 4.1.2) — which is the
+ * half assertable across the whole set. Three of the four render no element at
+ * all, so the name lives on the **row**, not on a mark that exists only in the
+ * `high` state.
+ *
+ * The cost of the clause is honest and design states it: an unmarked row
+ * announces `no priority`, a word on every row that has none. It is here because
+ * the AC requires it.
+ */
+const PRIORITY_A11Y: Record<Priority, string> = {
+  none: 'no priority',
+  low: 'low priority',
+  medium: 'medium priority',
+  high: 'high priority',
+}
+
 function TaskRow({
   task,
   mark,
   arrived,
   controller,
   platform,
+  now,
 }: {
   task: TaskView
   mark: DiffLine | null
   arrived: boolean
   controller: MobileAssistantController
   platform: MobilePlatform
+  /** F-005 AC-44 — one clock for the whole render, the controller's. */
+  now: Date
 }) {
   const { styles, colors } = useStyles()
   const [renaming, setRenaming] = useState(false)
   const [draft, setDraft] = useState(task.title)
   const done = task.status === 'done'
+  const priority = priorityOf(task)
+  const repeats = seriesLive(task)
   const meta =
     task.due_at !== null
-      ? formatDue(task.due_at)
+      ? // ── F-005 AC-13, and the behaviour it forbids was already shipped here ──
+        // `formatDue` returned a clock time unconditionally for a same-day due, and
+        // `dueAtForCollection('today')` writes **local midnight** for every task
+        // created while viewing Today — the default landing collection. So those
+        // rows rendered as **"12:00 AM"**: a time the user never picked, on the
+        // phone as well as on web, which is why AC-13 carries `(mobile)`.
+        //
+        // `due_all_day` is what tells a date-only deadline from one at midnight,
+        // and `null` (NOT DETERMINED) suppresses the clock too — that is the
+        // direction AC-13 exists to protect, so `rendersClockTime` prints a clock
+        // only for an explicit `false`.
+        formatDue(task.due_at, now, { allDay: !rendersClockTime(task) })
       : task.local === true
         ? 'saved on the device'
         : null
+  // ── AC-9 + AC-39 — the row's accessible name carries every mark ─────────────
+  // The mobile bound for both is an accessible-name assertion on the EXISTING
+  // `taskRow` id: `F-003`'s catalogue is closed and structurally asserted, and
+  // neither mark is a control, so neither is owed a new id (platform mobile.md).
+  //
+  // AC-9's `(mobile)` reason is the owner's voice answer, not a mobile surface:
+  // AC-36 makes `priority` settable by voice and the turn path runs on both
+  // clients, so a phone user can say *"make this high priority"*, have the write
+  // succeed, and find the phone byte-identical afterwards — the write-only data
+  // path AC-38 exists to close, rebuilt for a different field.
+  //
+  // AC-39 is read from the wire's `series_live` and **never keyed off
+  // `series_id`**, which is never cleared: that predicate passes the positive case
+  // and marks every ex-repeating task forever. `seriesLive` is `_shared/`'s single
+  // reader, so all four of AC-25's endings are the server's to evaluate.
+  //
+  // TR-STEPS is **web only** (§ TaskRow), so the phone's name carries two marks.
+  const rowName = [task.title, PRIORITY_A11Y[priority], repeats ? 'repeats' : '']
+    .filter((s) => s !== '')
+    .join(', ')
   const rowTouch = touchProps(A11Y_IDS.taskRow, platform)
   const boxTouch = touchProps(A11Y_IDS.taskCheckbox, platform)
   const delTouch = touchProps(SHELL_A11Y_IDS.tasksDeleteButton, platform)
@@ -73,7 +131,7 @@ function TaskRow({
 
   return (
     <View
-      {...a11yProps(A11Y_IDS.taskRow)}
+      {...a11yProps(A11Y_IDS.taskRow, { label: rowName })}
       style={[styles.taskRow, arrived ? styles.rowArrived : null]}
       hitSlop={rowTouch.hitSlop}
     >
@@ -122,7 +180,37 @@ function TaskRow({
               {mark.label === 'new' ? 'NEW' : 'EDITED'}
             </Text>
           )}
-          {meta !== null && <Text style={styles.taskMeta}>{meta}</Text>}
+          {/* § TaskRow's mark budget, in its fixed order:
+                title · urgency · deadline · repeat · (steps — web only).
+              Neither mark carries colour: the accent set is closed at five and
+              every one already has an assigned meaning, this row already renders
+              under a `danger` Overdue heading, and urgency has levels a single hue
+              cannot encode. Each is shape, weight and its accessible name — which
+              is what AC-33's 1.4.3 requires of it regardless. */}
+          <View style={styles.rowMarks}>
+            {/* TR-URGENCY — **a single `!`, and only `high` wears it.** AC-9 fixes
+                the vocabulary at one glyph, deliberately *"not Apple's graduated
+                `!` / `!!` / `!!!`"*, and 1.4.3 forbids carrying the level in
+                colour; one glyph cannot render three levels perceivably, so
+                `none`, `low` and `medium` render nothing and all four states are
+                distinguished in the row's name instead. */}
+            {priority === 'high' && (
+              <Text style={styles.urgencyMark} accessibilityElementsHidden importantForAccessibility="no">
+                !
+              </Text>
+            )}
+            {meta !== null && <Text style={styles.taskMeta}>{meta}</Text>}
+            {/* TR-REPEAT — Lucide `repeat`, `text.muted`, on a row belonging to a
+                LIVE series. It explains where a row the user never typed came
+                from, which is the whole of AC-39. */}
+            {repeats && (
+              <Repeat
+                size={tokens.icon.size.sm}
+                color={colors.text.muted}
+                strokeWidth={tokens.icon.stroke}
+              />
+            )}
+          </View>
         </Pressable>
       )}
 
@@ -219,7 +307,12 @@ export function TaskList({
   // day it is — and this file used to mint a second `new Date()` inline for the
   // grouping while the skeleton's header read a third. Two clocks in one render
   // can straddle midnight and put the same row under two headings.
-  const now = new Date()
+  // F-005 AC-44 — the injected seam. This was the other mobile inline site the AC
+  // counts: the single render clock that decides the Overdue/Today grouping. The
+  // note below about "two clocks in one render" was already this file's own
+  // argument; AC-44 extends it from two clocks in one render to two clocks on one
+  // client, and the controller's is the one that wins.
+  const now = controller.nowDate()
 
   if (view.view === 'loading') {
     return (
@@ -258,6 +351,7 @@ export function TaskList({
           {g.label !== null && <Text style={styles.dayHead}>{g.label}</Text>}
           {g.tasks.map((t) => (
             <TaskRow
+              now={now}
               key={t.id}
               task={t}
               mark={state.marks?.byTask[t.id] ?? null}

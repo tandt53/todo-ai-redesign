@@ -335,3 +335,53 @@ export function touchProps(
   const painted = PAINTED[id]
   return { hitSlop: hitSlopFor(painted, platform), painted }
 }
+
+/**
+ * The platform minimum as a **style**, for a control whose painted floor design
+ * has deliberately not published yet.
+ *
+ * ── WHY THIS EXISTS RATHER THAN A `PAINTED` ENTRY ──────────────────────────
+ *
+ * `PAINTED` + `hitSlopFor` is the *measure-then-extend* route: read the control's
+ * real painted box and add symmetric slop until the hit area clears 44/48. It
+ * needs a measured box, and § Touch is explicit that **its floors are measured
+ * from a shipped control** — so for § CarriedNotice's three controls design
+ * published none and recorded the measurement as *owed at `phase: screens`*
+ * (`TOUCH_FLOORS_OWED` below).
+ *
+ * Inventing a `PAINTED` entry for them would be the worst of the options
+ * available. An over-stated floor makes `hitSlopFor` believe the box is wider than
+ * it is and **under-compute the slop**, yielding a hit area below the platform
+ * minimum while every test stays green — which is the exact failure mode the
+ * floors' own re-measure note calls out, and it is a fabricated measurement on top
+ * of it (ethos §9).
+ *
+ * So these controls take the other route: **built to the minimum by construction**
+ * rather than measured against it. `minWidth`/`minHeight` make the painted box at
+ * least the platform minimum, so the guarantee holds without anyone claiming to
+ * have measured anything. When design publishes the floors, these three move to
+ * `PAINTED` and join `SHELL_INTERACTIVE_IDS`.
+ */
+export function minTouchSize(platform: MobilePlatform): { minWidth: number; minHeight: number } {
+  const min = MIN_TOUCH_TARGET[platform]
+  return { minWidth: min, minHeight: min }
+}
+
+/**
+ * Interactive controls that are **built** but whose painted floor design has not
+ * published, each with what is owed and by whom.
+ *
+ * Same shape and same purpose as `a11y.ts`'s `SHELL_IDS_BLOCKED`: an absent floor
+ * and a forgotten floor look identical from here, so the difference is written
+ * down. These ids are deliberately **not** in `SHELL_INTERACTIVE_IDS` — the
+ * hit-area assertion there consumes a measured floor, and there is none to consume
+ * — and they clear the minimum by `minTouchSize` instead.
+ */
+export const TOUCH_FLOORS_OWED: Record<string, string> = {
+  [SHELL_A11Y_IDS.carriedNoticeRetry]:
+    '§ CarriedNotice publishes no content-width floor — "no content-width floor is published, for § Touch\'s reason"; the two-line worst case at breakpoints.mobile is a measurement owed at phase: screens (design)',
+  [SHELL_A11Y_IDS.carriedNoticeUndo]:
+    'as above — `Put back` is the new § Buttons `neutral` variant and has never shipped, so there is no rendered width to measure a floor from (design, phase: screens)',
+  [SHELL_A11Y_IDS.carriedNoticeDismiss]:
+    'as above — icon-only Dismiss; § CarriedNotice specifies the glyph and its contrast but publishes no box (design, phase: screens)',
+}

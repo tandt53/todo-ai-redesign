@@ -198,3 +198,31 @@ export function affordanceAnnouncement(
   if (view === null) return null
   return { text: view.accessibleName, assertive: false }
 }
+
+/**
+ * `AppState.announce` → an announcement (F-005 AC-33's 4.1.3, `(mobile)` half).
+ *
+ * The **second constructor** in this module, and the reason it lives here rather
+ * than at the call site is this file's own contract: *"every string is built from
+ * a `Message` record"* was the rule while every announcement had a `Message`
+ * behind it. F-005 adds several that do not — AC-2's offline refusal, AC-43's undo
+ * offer and its outcome, AC-47's notice failures and supersessions, AC-38's
+ * passed-reminder surfacing — and `platform/mobile.md` is explicit that the
+ * announcement path is therefore **widened rather than bypassed**.
+ *
+ * So this is the widening: the status slot gets a constructor beside
+ * `announcementFor` and `affordanceAnnouncement`, every announcement on this
+ * client still resolves through one module, and the controller composes nothing.
+ *
+ * It authors no copy of its own — the text is the shared controller's, which took
+ * it from `§ CarriedNotice`'s literal tables or from `messages.ts`. What this
+ * function adds is the one decision that is the client's: **`polite`, never
+ * assertive.** Nothing in this family is time-critical, its whole promise is that
+ * it waits, and interrupting would claim an urgency it does not have.
+ *
+ * An empty slot announces nothing rather than announcing emptiness.
+ */
+export function statusAnnouncement(text: string): Announcement | null {
+  if (text.trim() === '') return null
+  return { text, assertive: false }
+}

@@ -29,8 +29,9 @@ import type { PermissionState } from '../_shared/model/client-stores.ts'
 import type { TurnSource } from '../_shared/types.ts'
 import { initialShellState, shellBack, shellReducer } from './model/shell.ts'
 import type { ShellAction, ShellState } from './model/shell.ts'
+import { revealTask } from './model/task-link.ts'
 
-import { affordanceAnnouncement, announcementsFor } from './model/announce.ts'
+import { affordanceAnnouncement, announcementsFor, statusAnnouncement } from './model/announce.ts'
 import type { AffordanceView } from './model/follow.ts'
 import { backAction } from './model/lifecycle.ts'
 import type { AudioInterruptionReason } from './model/lifecycle.ts'
@@ -90,6 +91,13 @@ export class MobileAssistantController extends AssistantController {
    * (components.md) is this imperative announcement — same port, same rule as
    * every other announcement (platform mobile.md). */
   private lastAffordanceAnnouncement: string | null = null
+  /**
+   * The last `AppState.announce.seq` this client has spoken (AC-33's 4.1.3).
+   * `seq` rather than the text, because the same sentence twice is deliberately
+   * two announcements — a second failed retry has to be heard as a second event,
+   * and de-duping on text would swallow it.
+   */
+  private lastAnnounceSeq = 0
 
   private readonly shellListeners = new Set<() => void>()
 
@@ -215,6 +223,27 @@ export class MobileAssistantController extends AssistantController {
     this.publishShell()
   }
 
+  /**
+   * F-001 AC-31 — **THE reveal routine, called from every entry and nowhere
+   * re-derived.** It lives here rather than in the view because since revision 7
+   * the routine does two things (switch to a collection that holds the row, then
+   * reveal it) and both need the shell state and the clock, which the controller
+   * owns.
+   *
+   * The view used to call `revealTask` for its answer and then dispatch a bare
+   * `{ type: 'reveal' }` of its own — so the routine's **collection switch would
+   * have been computed and thrown away**, leaving the reveal pointed at a row the
+   * list does not draw. That is two implementations of one postcondition, which is
+   * what `task-link.ts`'s header and L-005 both forbid; a grep for `revealTask`
+   * now returns this method and the routine, and no third thing.
+   */
+  revealTask(taskId: string): void {
+    const next = revealTask(this.shell, taskId, this.state, this.nowDate())
+    if (next === this.shell) return
+    this.shell = next
+    this.publishShell()
+  }
+
   private publishShell(): void {
     for (const cb of this.shellListeners) cb()
   }
@@ -275,7 +304,29 @@ export class MobileAssistantController extends AssistantController {
       // The session read is FIRST — the server is the source of truth for
       // conversation history, and everything below reconciles against it.
       await this.syncSession()
+      // ADR-010 — the zone before the dates. `loadAccount` is documented in the
+      // shared controller as "read at boot and on foreground", and the resume was
+      // the door that never called it: the cached zone would go stale for a whole
+      // session, and every date this client computes resolves in it (F-005 AC-13,
+      // AC-44). Same shape as `openingSync` below — two doors, one obligation.
+      await this.loadAccount()
       await this.refreshTasks()
+      // ── F-005 AC-38, and this is the SECOND DOOR ────────────────────────────
+      // *"When the app opens"* is two openings — `init()` (cold open) and this
+      // resume — and **a phone user's ordinary open is a resume**: a foreground
+      // happens dozens of times a day while a cold open happens once. `F-003 AC-8`
+      // names both in one breath **because BUG-002 was one obligation installed at
+      // one door**, on this very file, and L-005's scope line names this file.
+      //
+      // `openingSync()` is the single installer in the shared controller; `init()`
+      // calls it and this now does too. The obligation attaches to the
+      // **transition**, not to one of its callers, and a grep for the installer's
+      // name returns both doors.
+      //
+      // It runs AFTER `refreshTasks()` because it reads `state.tasks` — and an
+      // offline open surfaces what the client already holds and writes nothing,
+      // which is what `refreshTasks` leaves in state on that path.
+      this.openingSync()
       const pending = this.stores.pendingInput()
       if (pending !== '' && this.state.composer === '') {
         this.dispatch({ type: 'composer', text: pending })
@@ -584,11 +635,60 @@ export class MobileAssistantController extends AssistantController {
   }
 
   private drainAnnouncements(): void {
+    this.drainStatusAnnouncements()
     const fresh = this.state.messages.filter((m) => !this.announced.has(m.id))
     for (const m of this.state.messages) this.announced.add(m.id)
     if (this.suppressAnnouncements || fresh.length === 0) return
     for (const a of announcementsFor(fresh, this.undoable())) {
       this.announcer.announce(a.text, { assertive: a.assertive })
     }
+  }
+
+  /**
+   * ── AC-33's 4.1.3 on the phone, and it is a RULE rather than an enumeration ──
+   *
+   * *"Every refusal and every status message this spec states is announced."*
+   * `AppState.announce` is the shared controller's one status slot, and everything
+   * that writes it was silent on this client: **AC-2's offline refusal** (*"the one
+   * that fires during an outage when a screen-reader user has least other
+   * information"*, in AC-33's own words), **AC-43's undo offer and its outcome**,
+   * AC-47's notice failures and supersessions, **AC-38's passed-reminder
+   * surfacing**, the empty-title refusal, and a failed delete. Web renders the same
+   * slot into a frame-level live region (`web/components/CarriedNotices.tsx`'s
+   * `shell-status-announcer`); this client had **no consumer at all**, so on the
+   * phone every one of them was dispatched and never spoken.
+   *
+   * **This is why it is one drain and not one branch per obligation.** AC-33 states
+   * the rule and then lists the four announcements it *"was never updated for"* —
+   * and warns in the same breath that *"an implementer widening `announce.ts` for
+   * the undo offer alone leaves that one with no path, which is the enumeration
+   * failing the rule stated four lines above it"*. A drain of the slot satisfies the
+   * rule for every present writer and for every future one; a switch over row kinds
+   * would need editing each time the spec adds a refusal, which is the failure mode
+   * named.
+   *
+   * **`announce.ts` is widened rather than bypassed** (platform mobile.md): that
+   * module builds every string from a `Message` record, and none of these is a
+   * `Message`, so `statusAnnouncement` is its second constructor — the strings
+   * still resolve through one module, and this method does not compose a sentence
+   * of its own.
+   *
+   * `polite`, never assertive: nothing in this family is time-critical — its whole
+   * promise is that it waits — and interrupting would claim an urgency it does not
+   * have.
+   *
+   * It is deliberately **outside** `suppressAnnouncements`. That flag exists so a
+   * resume does not read the whole restored conversation aloud; a status message is
+   * not history and is never restored by a session read, so suppressing it would
+   * silence exactly the announcements a foreground produces (AC-38's surfacing runs
+   * on that path).
+   */
+  private drainStatusAnnouncements(): void {
+    const status = this.state.announce
+    if (status === null || status.seq === this.lastAnnounceSeq) return
+    this.lastAnnounceSeq = status.seq
+    const a = statusAnnouncement(status.text)
+    if (a === null) return
+    this.announcer.announce(a.text, { assertive: a.assertive })
   }
 }

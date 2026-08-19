@@ -115,7 +115,23 @@ export class SabotageStore implements Store {
 ;(globalAgent as unknown as { options: { keepAlive?: boolean } }).options.keepAlive = false
 
 export interface Harness {
+  /**
+   * The ordinary client. It carries `X-Timezone: UTC` on every request, because
+   * F-005 makes that a **convention of the API, not an option**
+   * (api-contracts § Conventions: *`X-Timezone: <IANA zone>` on every request*)
+   * — every real client sends it, `recordClientZone` records it in the auth step
+   * before routing, and every date computation reads the zone it establishes.
+   *
+   * A harness whose default client sent no zone would test a **client contract
+   * violation** on every case instead of the contract, and would make
+   * `409 TIMEZONE_UNKNOWN` the expected answer to an ordinary create with a due
+   * date. `zonelessAgent` below is the client that never sends the header, so the
+   * refusal keeps a home of its own and is asserted deliberately rather than
+   * everywhere.
+   */
   agent: InstanceType<typeof TestAgent>
+  /** a client that has NEVER sent `X-Timezone` — the only state 409 TIMEZONE_UNKNOWN is reachable from */
+  zonelessAgent: InstanceType<typeof TestAgent>
   clock: FakeClock
   interpreter: CountingInterpreter
   store: SabotageStore
@@ -181,7 +197,14 @@ export async function buildHarness(
         server.close(() => resolve())
       }),
   )
-  return { agent: request(server), clock, interpreter, store, server }
+  // `request.agent(...).set(...)` installs a DEFAULT header on every request the
+  // agent makes (superagent's `_defaults`); `request(server)` has no such hook,
+  // which is why the ordinary client is an agent and the zoneless one is not.
+  const agent = (request.agent(server) as unknown as InstanceType<typeof TestAgent>).set(
+    'X-Timezone',
+    'UTC',
+  ) as unknown as InstanceType<typeof TestAgent>
+  return { agent, zonelessAgent: request(server), clock, interpreter, store, server }
 }
 
 export const uid = (): string => randomUUID()

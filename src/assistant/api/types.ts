@@ -5,7 +5,23 @@
 
 export type TaskStatus = 'inbox' | 'today' | 'done' | 'archived'
 
-/** task (existing todo-ai model — unchanged; F-001 adds no fields). */
+export type TaskPriority = 'none' | 'low' | 'medium' | 'high'
+
+export type RepeatFrequency = 'day' | 'week' | 'month' | 'year'
+
+/**
+ * task — the F-001 baseline plus the F-005 fields (`data-model.md § task — the
+ * F-005 fields`).
+ *
+ * **Every F-005 field is declared OPTIONAL, and that is the schema telling the
+ * truth rather than a convenience.** No migration is run (platform doc: *do not
+ * write a backfill*), so the 790 existing rows genuinely do not carry these
+ * keys: 783 hold `priority: null`, 0 carry `due_all_day`, 53 soft-deleted rows
+ * carry no `delete_gesture_id`. A required declaration would be a claim about
+ * the store that is false, and it is exactly the claim AC-34's comparison rule
+ * exists to survive — `engine/task-equals.ts` reads *absent* as "not recorded".
+ * Reads apply the defaults (`serialize.ts`); writes store them.
+ */
 export interface TaskRow {
   id: string
   /** internal — never serialized (data-model serves the task without user_id) */
@@ -13,11 +29,63 @@ export interface TaskRow {
   title: string
   due_at: string | null
   reminder_at: string | null
+  /**
+   * **`none` is the ABSENCE of a stored value, not the string `'none'`** (AC-8,
+   * architect F8). The row stores `null`; `serializeTask` emits `"none"`. A
+   * literal `'none'` would add a `priority: none` diff row to F-001 AC-4's
+   * message on every create, and would make `taskEquals`'s `===` report every
+   * one of the 783 pre-F-005 `null` rows modified in the gate AC-34 protects.
+   * Reads stay tolerant: an out-of-set stored value reads as `none`.
+   */
   priority: string | null
   status: TaskStatus
   created_at: string
   updated_at: string
   deleted_at: string | null
+  // ---- F-005 fields ----
+  /** AC-6, AC-37 — whitespace-only and newline-only store `null`, never `""` */
+  note?: string | null
+  /** AC-13 — `null`/absent = NOT DETERMINED; resolved on read, stored on write */
+  due_all_day?: boolean | null
+  /** AC-38 — written by `POST /tasks/{id}/reminder-ack` and by no other door */
+  reminder_shown_at?: string | null
+  /** AC-18 — a step has exactly one parent; one level only */
+  parent_id?: string | null
+  /** AC-15, ADR-015 — sparse, gaps of 1024, per parent; never derived from a date */
+  step_order?: number | null
+  /** AC-19 — set by the cascade, cleared by any hand tick or untick of the step */
+  completed_by_parent?: boolean
+  /** AC-25, ADR-014 — set on the first transition to done, NEVER cleared. Internal. */
+  ever_completed?: boolean
+  repeat_frequency?: RepeatFrequency | null
+  repeat_interval?: number | null
+  /** canonical: a subset of `mo,tu,we,th,fr,sa,su` in that fixed order */
+  repeat_weekdays?: string | null
+  /** canonical: ascending ints 1-31, comma-joined */
+  repeat_month_days?: string | null
+  /** inclusive ISO calendar date; exclusive with `repeat_count` */
+  repeat_until?: string | null
+  /** >= 1; exclusive with `repeat_until`; runs are COUNTED, never stored */
+  repeat_count?: number | null
+  /** AC-25 — assigned when a repeat is first set, NEVER cleared */
+  series_id?: string | null
+  /** AC-30's series delete, written on EVERY row of the series. Internal. */
+  series_ended_at?: string | null
+  /** ADR-012 — one id per delete gesture, on every row it trashed. Internal. */
+  delete_gesture_id?: string | null
+}
+
+/** account (new entity — ADR-010). One row per `user_id`, created lazily. */
+export interface AccountRow {
+  user_id: string
+  /** the ONE source every date computation reads (AC-44) */
+  timezone: string | null
+  timezone_source: 'first-report' | 'user' | null
+  timezone_set_at: string | null
+  /** the most recent client report, applied or not — so a client can OFFER a change */
+  timezone_last_report: string | null
+  timezone_last_report_at: string | null
+  created_at: string
 }
 
 export type TurnStatus = 'pending' | 'applied' | 'asked' | 'failed' | 'undone'
@@ -61,6 +129,15 @@ export type TurnOutcome =
   | { kind: 'unclassifiable'; question_turn_id: string }
   | { kind: 'no_match'; heard_transcript: string }
   | { kind: 'unsupported_query'; alternative: string }
+  /**
+   * The seventh member (F-005 AC-36/AC-40, api-contracts § The refused turn).
+   * **The turn's `status` stays `applied`** — the existing status machine is
+   * untouched. The task is unchanged, the refusal is whole-write (one legal and
+   * one illegal field writes NOTHING), `changed_task_ids` is empty and no
+   * `undo_snapshot` is captured, so a refused turn never occupies or advances
+   * the undo window, exactly like `no_match`.
+   */
+  | { kind: 'refused'; reason: RefusalReason; field: string | null; task_id: string | null }
 
 export interface QuestionResolution {
   result: ResolutionResult
@@ -71,12 +148,52 @@ export interface QuestionResolution {
 /** The pending operation a clarify question will execute once answered. Internal. */
 export type PendingOp = { op: 'delete' } | { op: 'edit'; changes: TaskChanges }
 
+/**
+ * The closed enumeration of refusal reasons (api-contracts § The refused turn).
+ * One validator produces these; the two doors render them differently — the
+ * HTTP door answers `400 VALIDATION` with a field name to a client that sent a
+ * bad body, the turn door answers with the `refused` outcome to a person who
+ * spoke a well-formed sentence (AC-40, platform doc § One validator, two doors).
+ */
+export type RefusalReason =
+  | 'empty_title'
+  | 'priority_not_in_set'
+  | 'note_not_text'
+  | 'structural_field_not_settable'
+  | 'step_not_addressable'
+  | 'nesting_too_deep'
+  | 'repeat_on_step'
+  | 'until_and_count'
+  | 'end_before_due'
+  | 'clear_due_while_repeating'
+  | 'timezone_unknown'
+  | 'length_exceeded'
+
+/**
+ * The AI-facing change shape. It **carries the structural fields and the write
+ * path refuses them at runtime** — a deliberate choice of a runtime refusal over
+ * a type-level impossibility (AC-36): *a refusal is a fact you can test, an
+ * incapacity is not*. Before F-005 no fixture row could express `parent_id`,
+ * `step_order` or a repeat member at all, so *"refused with a visible outcome"*
+ * had no reachable test and its earliest catch was never.
+ */
 export interface TaskChanges {
   title?: string
+  note?: string | null
   due_at?: string | null
+  due_all_day?: boolean | null
   reminder_at?: string | null
   priority?: string | null
   status?: TaskStatus
+  // ---- structural: expressible so that a turn attempting one is REFUSED ----
+  parent_id?: string | null
+  step_order?: number | null
+  repeat_frequency?: RepeatFrequency | null
+  repeat_interval?: number | null
+  repeat_weekdays?: string | null
+  repeat_month_days?: string | null
+  repeat_until?: string | null
+  repeat_count?: number | null
 }
 
 export interface Question {

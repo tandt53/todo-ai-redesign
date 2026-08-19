@@ -29,9 +29,19 @@ import type {
   TurnSource,
   UndoOutcomeWire,
 } from '../types.ts'
-import { applyCreate, applyDelete, applyEdit, type ApplyResult } from './apply.ts'
+import { newTaskChanges } from './apply.ts'
 import { isUndoPhrase } from './normalize.ts'
-import { serializeTurn, sessionTurns, type TurnWire } from './serialize.ts'
+import {
+  executePlan,
+  planContext,
+  planCreate,
+  planDelete,
+  planEdits,
+  type ExecutedPlan,
+  type PlanContext,
+  type PlanStep,
+} from './plan.ts'
+import { serializeTurn, sessionTurns, type TaskView, type TurnWire } from './serialize.ts'
 import {
   findOpenSession,
   lazyIdleClose,
@@ -41,7 +51,9 @@ import {
   openSession,
 } from './sessions.ts'
 import { cloneTask, taskEquals } from './task-equals.ts'
+import { violationToRefusedOutcome, type FieldViolation } from './task-fields.ts'
 import { performUndo, undoRefusedNoAppliedTurn } from './undo.ts'
+import { accountZone, recordClientZone } from './zone.ts'
 
 /**
  * The working alternative named by an `unsupported_query` outcome (AC-15).
@@ -192,6 +204,11 @@ export async function processTurn(
 
   const phaseA: PhaseA = store.transact((s) => {
     const at = nowIso(clock)
+    // ADR-010: the turn body's `timezone` is the SECOND reporting channel and it
+    // goes through the SAME installer as `X-Timezone` (which app.ts's auth step
+    // records). Neither is ever read by a computation — every computation reads
+    // `account.timezone`. A grep for `recordClientZone` returns every door.
+    recordClientZone(s, userId, req.timezone, at)
     lazyIdleClose(s, userId, clock, idleCloseMs)
 
     // rule 1 — session resolution
@@ -367,14 +384,34 @@ export async function processTurn(
 
     // rule 5 — interpretation context read fresh inside this queue slot (OQ 7),
     // handed to the model as opaque handles t1..tn — never uuids (ADR-002)
+    //
+    // **The handle list excludes steps** (F-005 AC-35, AC-36). A task with eight
+    // steps contributes ONE handle, not nine — otherwise the assistant can
+    // rename, complete and bulk-delete steps by name and read step titles aloud
+    // in a `bulk_delete` confirmation. It also closes F-001 AC-31's
+    // door-to-nowhere: that door opens by bringing a row into view IN THE TASK
+    // LIST, which AC-35 makes empty for a step, so the assistant would report
+    // changing a task and the link would be inert with no explanation.
     const liveTasks = Object.values(s.tasks)
-      .filter((t) => t.user_id === userId && t.deleted_at === null)
+      .filter((t) => t.user_id === userId && t.deleted_at === null && (t.parent_id ?? null) === null)
       .sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id))
     const handleMap: Record<string, string> = {}
+    // **The assistant must be able to read what it may write** (AC-36): `note`
+    // and `reminder_at` join the context, because *"push the reminder an hour
+    // later"* had nothing to read and the note was invisible to the model that
+    // may now change it.
     const ctxTasks = liveTasks.map((t, i) => {
       const handle = `t${i + 1}`
       handleMap[handle] = t.id
-      return { handle, title: t.title, status: t.status, due_at: t.due_at, priority: t.priority }
+      return {
+        handle,
+        title: t.title,
+        status: t.status,
+        note: t.note ?? null,
+        due_at: t.due_at,
+        reminder_at: t.reminder_at,
+        priority: t.priority,
+      }
     })
     const recent = sessionTurns(s, session.id)
       .filter((t) => t.status !== 'pending')
@@ -408,7 +445,7 @@ export async function processTurn(
         session_id: sessionId,
         kind: 'turn' as const,
         replayed,
-        turn: serializeTurn(turn),
+        turn: serializeTurn(turn, taskView(s, userId, clock)),
         undo: null,
         resolutions: structuredClone(turn.caused_resolutions),
       }
@@ -460,7 +497,9 @@ export async function processTurn(
     interp = await interpreter.interpret(ctx)
   } catch (err) {
     markFailed() // the turn row and transcript persist; retry re-attempts (AC-23, AC-16)
-    const turnWire = store.read((s) => serializeTurn(s.turns[turnId]!))
+    const turnWire = store.read((s) =>
+      serializeTurn(s.turns[turnId]!, taskView(s, userId, clock)),
+    )
     const message = err instanceof Error ? err.message : 'interpretation failed'
     throw new ApiError(502, 'AI_ERROR', `interpretation failed: ${message}`, {
       bodyExtra: { turn: turnWire },
@@ -472,12 +511,24 @@ export async function processTurn(
   // transcript preserved (AC-23) and the same id re-attempts (TC-02)
   try {
     store.transact((s) => {
-      applyInterpretation(s, userId, turnId, boundQuestionTurnId, handleMap, interp, nowIso(clock), uuid)
+      applyInterpretation(
+        s,
+        userId,
+        turnId,
+        boundQuestionTurnId,
+        handleMap,
+        interp,
+        nowIso(clock),
+        uuid,
+        clock.now(),
+      )
     })
   } catch (err) {
     if (err instanceof ApiError) throw err
     markFailed()
-    const turnWire = store.read((s) => serializeTurn(s.turns[turnId]!))
+    const turnWire = store.read((s) =>
+      serializeTurn(s.turns[turnId]!, taskView(s, userId, clock)),
+    )
     throw new ApiError(
       500,
       'APPLY_FAILED',
@@ -491,7 +542,14 @@ export async function processTurn(
 
 // ---------------------------------------------------------------------------
 
-function attachApply(turn: TurnRow, res: ApplyResult): void {
+/** The derived-field context every serializer needs (`serialize.ts § TaskView`). */
+export const taskView = (s: StoreState, userId: string, clock: Clock): TaskView => ({
+  state: s,
+  zone: accountZone(s, userId),
+  nowMs: clock.now(),
+})
+
+function attachApply(turn: TurnRow, res: ExecutedPlan): void {
   turn.changed_task_ids = [...res.anatomy.changed_task_ids]
   turn.diff = structuredClone(res.anatomy.diff)
   turn.undo_snapshot = res.snapshot.map(cloneTask)
@@ -516,12 +574,41 @@ function applyInterpretation(
   interp: Interpretation,
   at: string,
   uuid: () => string,
+  nowMs: number,
 ): void {
   const turn = s.turns[turnId]!
   const session = s.sessions[turn.session_id]!
+  // **This is the turn path's half of AC-40's *one validator, two doors*.** The turn
+  // door reaches `engine/task-fields.ts enforceFieldRules` through `planCreate` /
+  // `planEdits` — the same planner `app.ts`'s HTTP handlers call — and renders the
+  // violation with `violationToRefusedOutcome` where the HTTP door renders it with
+  // `violationToApiError`. So a grep for `engine/task-fields.ts` returns BOTH doors,
+  // and `ValidatedChanges` makes the route structural rather than conventional:
+  // nothing can reach the write phase without having been through the validator.
+  const plans: PlanContext = planContext(s, userId, accountZone(s, userId), nowMs, at, uuid)
 
   const noMatch = (): void =>
     setResolved(turn, { kind: 'no_match', heard_transcript: turn.transcript_raw }, at)
+
+  /**
+   * The seventh `TurnOutcome` member (AC-36/AC-40). **The task is unchanged and
+   * the refusal is whole-write** (AC-18): a turn carrying one legal and one
+   * illegal field writes nothing at all, the task does not enter
+   * `changed_task_ids`, no diff row is emitted, and no message can name a task
+   * and then fail to say what happened to it. Because `changed_task_ids` is empty
+   * and no `undo_snapshot` is captured, a refused turn never occupies or advances
+   * the undo window — exactly like `no_match`, which is why no new turn status is
+   * needed and the turn's `status` stays `applied`.
+   *
+   * The three improvisations are excluded by name: `no_match` is a lie (the task
+   * WAS matched), the `500` failure envelope reports a server fault for a healthy
+   * turn, and *write nothing and say nothing* passes AC-40's own fixture row.
+   */
+  const refused = (violation: FieldViolation, taskId: string | null): void =>
+    setResolved(turn, violationToRefusedOutcome(violation, taskId), at)
+
+  const runPlan = (steps: PlanStep[]): ExecutedPlan =>
+    executePlan(plans, { steps, addressed_id: null })
 
   const boundTurn = boundQuestionTurnId === null ? undefined : s.turns[boundQuestionTurnId]
   const bound =
@@ -531,7 +618,7 @@ function applyInterpretation(
 
   if (bound !== undefined) {
     if (interp.kind === 'answer') {
-      handleAnswer(s, turn, bound, interp.answer, handleMap, at)
+      handleAnswer(plans, turn, bound, interp.answer, handleMap, at)
       return
     }
     if (interp.kind === 'no_match') {
@@ -564,7 +651,16 @@ function applyInterpretation(
 
   switch (interp.kind) {
     case 'create': {
-      const res = applyCreate(s, userId, interp.tasks, at, uuid)
+      // the turn-path create allowlist is `NewTaskFields`, widened to
+      // TURN_WRITE_FIELDS (AC-36): `applyCreate` used to hard-code
+      // `reminder_at: null` and carry no note
+      const steps: PlanStep[] = []
+      for (const fields of interp.tasks) {
+        const planned = planCreate(plans, newTaskChanges(fields))
+        if (!planned.ok) return refused(planned.violation, null)
+        steps.push(...planned.plan.steps)
+      }
+      const res = runPlan(steps)
       attachApply(turn, res)
       setResolved(turn, { kind: 'applied', ...structuredClone(res.anatomy) }, at)
       return
@@ -573,7 +669,10 @@ function applyInterpretation(
       const edits = interp.edits
         .map((e) => ({ task_id: handleMap[e.handle] ?? '', changes: e.changes }))
         .filter((e) => e.task_id !== '')
-      const res = applyEdit(s, edits, at)
+      if (edits.length === 0) return noMatch()
+      const planned = planEdits(plans, edits, { door: 'turn' })
+      if (!planned.ok) return refused(planned.violation, edits[0]?.task_id ?? null)
+      const res = executePlan(plans, planned.plan)
       if (res.anatomy.changed_task_ids.length === 0) return noMatch()
       attachApply(turn, res)
       setResolved(turn, { kind: 'applied', ...structuredClone(res.anatomy) }, at)
@@ -583,8 +682,11 @@ function applyInterpretation(
       const ids = idsFromHandles(interp.handles)
       if (ids.length === 0) return noMatch()
       if (ids.length === 1) {
-        // single-task delete applies immediately with undo (AC-9)
-        const res = applyDelete(s, ids, at)
+        // single-task delete applies immediately with undo (AC-9); AC-19 takes
+        // its steps with it and ADR-012 mints one gesture id for the cluster
+        const planned = planDelete(plans, ids, 'occurrence')
+        if (!planned.ok) return refused(planned.violation, ids[0] ?? null)
+        const res = executePlan(plans, planned.plan)
         attachApply(turn, res)
         setResolved(turn, { kind: 'applied', ...structuredClone(res.anatomy) }, at)
         return
@@ -642,13 +744,14 @@ function askQuestion(
 }
 
 function handleAnswer(
-  s: StoreState,
+  plans: PlanContext,
   turn: TurnRow,
   bound: TurnRow,
   answer: AnswerClass,
   handleMap: Record<string, string>,
   at: string,
 ): void {
+  const s = plans.state
   const q = bound.question!
 
   const resolve = (result: ResolutionResult): void => {
@@ -657,7 +760,7 @@ function handleAnswer(
   }
   const unclassifiable = (): void =>
     setResolved(turn, { kind: 'unclassifiable', question_turn_id: bound.id }, at)
-  const executed = (res: ApplyResult): void => {
+  const executed = (res: ExecutedPlan): void => {
     attachApply(turn, res)
     setResolved(
       turn,
@@ -685,7 +788,9 @@ function handleAnswer(
         const cur = s.tasks[id]
         return cur !== undefined && cur.deleted_at === null && taskEquals(cur, askById.get(id))
       })
-      executed(applyDelete(s, survivors, at))
+      const planned = planDelete(plans, survivors, 'occurrence')
+      if (!planned.ok) return unclassifiable()
+      executed(executePlan(plans, planned.plan))
       return
     }
     if (answer.type === 'negative') return declined()
@@ -697,11 +802,17 @@ function handleAnswer(
     const taskId = handleMap[answer.handle]
     if (taskId !== undefined && q.task_ids.includes(taskId) && s.tasks[taskId] !== undefined) {
       const op = bound.pending_op ?? { op: 'delete' }
-      const res =
+      const planned =
         op.op === 'delete'
-          ? applyDelete(s, [taskId], at)
-          : applyEdit(s, [{ task_id: taskId, changes: op.changes }], at)
-      executed(res)
+          ? planDelete(plans, [taskId], 'occurrence')
+          : planEdits(plans, [{ task_id: taskId, changes: op.changes }], { door: 'turn' })
+      if (!planned.ok) {
+        setResolved(turn, violationToRefusedOutcome(planned.violation, taskId), at)
+        // the question is still resolved by this answer — it was classified
+        resolve('executed')
+        return
+      }
+      executed(executePlan(plans, planned.plan))
       return
     }
     return unclassifiable()

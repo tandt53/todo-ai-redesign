@@ -39,6 +39,7 @@ import type { Message, TaskView, TurnSource } from '../_shared/types.ts'
 import { MobileAssistantController } from './controller.ts'
 import { expectedIds } from './model/a11y.ts'
 import type { A11yId } from './model/a11y.ts'
+import { tasksSurfaceView } from './model/tasks-view.ts'
 import type { MobilePlatform } from './model/permissions.ts'
 import {
   FakeAppLifecycle,
@@ -241,7 +242,37 @@ export class Surface {
   ): Set<A11yId> {
     return expectedIds(this.controller.state, {
       tasksVisible: ctx.tasksVisible ?? true,
-      hasTasks: ctx.hasTasks ?? this.controller.state.tasks.length > 0,
+      // ── F-005 AC-35 — this reader reads the DRAWN ROWS, not raw cardinality ──
+      // One of the three mobile readers AC-35 names, and the three need
+      // **opposite** inputs, which is why the AC states the outcome per reader
+      // rather than one rule over the group:
+      //
+      //   - `tasks-view.ts`'s empty-state choice must read RAW cardinality
+      //     (`state.tasks.length > 0`), so an account whose rows are all parents
+      //     with steps gets the empty-COLLECTION state and not the first-run one;
+      //   - **this one must read the drawn rows**, so `a11y.ts` requires no
+      //     `taskRow` / `taskCheckbox` ids when the collection on screen draws
+      //     nothing.
+      //
+      // It used to be `state.tasks.length > 0`. In the account AC-35 names — every
+      // parent excluded from the collection on screen (all done, or all dated
+      // outside it), so `collectionTasks` is empty while `state.tasks` is not —
+      // that expected a row in a view that returns `tasks: []`. Revision 3 offered
+      // deriving all three from `collectionTasks` as equally satisfying the AC and
+      // withdrew it, because in that same account it makes `tasks-view.ts` return
+      // the first-run state the AC forbids two lines earlier.
+      //
+      // A step reaches neither reader as a row: the single `inCollection` gate in
+      // `_shared/` excludes it, and `tasks-view.ts` re-exports from there, so this
+      // client gets that half for free (AC-35's own "good news, checked rather than
+      // assumed").
+      hasTasks:
+        ctx.hasTasks ??
+        tasksSurfaceView(
+          this.controller.state,
+          this.controller.shellState().collection,
+          this.controller.nowDate(),
+        ).tasks.length > 0,
       unseenBelowFold: ctx.unseenBelowFold ?? 0,
     })
   }

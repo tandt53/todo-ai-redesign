@@ -96,6 +96,129 @@ const NOT_BUILT: Record<string, string> = {
   'tasks-save-notice-dismiss': 'dismisses a notice that does not render yet (components.md § SaveNotice)',
 }
 
+/**
+ * ── THE OTHER DIRECTION, AND F-005 IS WHY IT NOW EXISTS ─────────────────────
+ *
+ * `NOT_BUILT` names ids the mockups declare and the build does not render. This is
+ * its mirror: ids the build **renders** and the mockups do not declare yet. Before
+ * F-005 the set was empty, and `invented` being empty-or-fail was the whole check.
+ *
+ * It is not a loophole, and design said so first. `components.md § Testid catalogue
+ * — app shell` (T-152) records the situation in as many words: *"The `src/`
+ * catalogue assertions go red on the five new ids by design … the fix belongs to
+ * whoever owns `src/`"*, and *"F-005's `phase: screens` dispatch must extend the
+ * three shell mockups"* — the drawings are owed, the ids are published, and the
+ * component renders on Talk and on Settings which only `app-shell*.html` draw.
+ *
+ * **Two tiers, because they are two different debts and collapsing them would hide
+ * the second one.**
+ */
+
+/**
+ * Tier 1 — **published in `components.md`, not yet drawn in a mockup.** Every
+ * entry is checked against the catalogue prose below, so this list cannot excuse an
+ * id design has never published. That check is what makes the exclusion auditable
+ * rather than a shrug: the test reads the **owning artifact** (L-008), not a
+ * retyped copy.
+ */
+const AHEAD_OF_MOCKUPS: Record<string, string> = {
+  'shell-carried-notices': '§ CarriedNotice (T-152) — the region; drawing owed at phase: screens',
+  'shell-carried-notice': '§ CarriedNotice (T-152) — one notice row exemplar',
+  'shell-carried-notice-retry': '§ CarriedNotice (T-152) — CN-FAILED / CN-OFFLINE Retry',
+  'shell-carried-notice-undo': '§ CarriedNotice (T-152) — CN-UNDO’s Put back',
+  'shell-carried-notice-dismiss': '§ CarriedNotice (T-152) — any row’s trailing dismiss',
+  'tasks-row-priority-mark': '§ TaskRow → the row’s mark budget (T-152) — TR-URGENCY',
+  'tasks-row-repeat-mark': '§ TaskRow → the row’s mark budget (T-152) — TR-REPEAT',
+  'tasks-row-steps-mark': '§ TaskRow → the row’s mark budget (T-152) — TR-STEPS, web only',
+}
+
+/**
+ * Tier 2 — **not published anywhere yet, because the control's design is owed.**
+ * These are ids this build proposes, following the catalogue's
+ * `{surface}-{control}` convention, for controls `components.md` has not specced:
+ * the task detail's own fields (design has `§ Skeletons` SK-DETAIL and
+ * `§ SurfaceError` SE-DETAIL for that surface but no `§ TaskDetail`), AC-38's
+ * passed-reminder surfacing (design decided only that it is **not**
+ * `§ CarriedNotice`'s family and left the component *"the open call"*), the row's
+ * activation control, and the status region AC-33's 4.1.3 announces through.
+ *
+ * **This list is the reported debt, and it is deliberately a list rather than a
+ * pattern.** A prefix rule (`/^detail-/`) would let any future id in silently,
+ * which is the property `NOT_BUILT` exists not to have. Adopting design's spellings
+ * is one edit here and one in the component.
+ */
+const PROPOSED_IDS: Record<string, string> = {
+  // AC-1 — activating a row opens its detail; the gesture is distinct from the
+  // inline rename, which keeps `tasks-rename-input`.
+  'tasks-row-open': 'AC-1’s row activation — § TaskRow owes the gesture’s id',
+  // AC-33's 4.1.3 region. Not § CarriedNotice's: that one is aria-atomic="false"
+  // for N rows, this one announces a status message whole.
+  'shell-status-announcer': 'AC-33 4.1.3’s status region — no § for it yet',
+  // AC-38's surfacing. Design: "has no component yet … whether it is
+  // § LandingSummary widened or a third family is the open call."
+  'shell-passed-reminders': 'AC-38’s surfacing — component owed (§ CarriedNotice, owed item 1)',
+  'shell-passed-reminder': 'AC-38’s surfacing — one row exemplar',
+  'shell-passed-reminder-open': 'AC-38 — names its task and is reachable from there',
+  'shell-passed-reminder-ack': 'AC-38 — the deliberate per-reminder acknowledge',
+  // S6's own controls (AC-1, AC-2, AC-6, AC-8, AC-10 … AC-31, AC-45).
+  'detail-surface': 'S6 — no § TaskDetail in components.md yet',
+  'detail-close-button': 'AC-45 — the unconditionally available close',
+  'detail-back-button': 'AC-4’s way back out of the terminal state',
+  'detail-retry-button': 'SE-DETAIL’s Retry (the row IS published; the id is not)',
+  'detail-surface-error': 'SE-DETAIL’s frame',
+  'detail-deleted': 'AC-4’s terminal state',
+  'detail-deleted-text': 'AC-4 — the unsaved text, still legible',
+  'detail-fields': 'AC-1’s account of its own controls',
+  'detail-field': 'AC-1 — one entry per user-settable field',
+  'detail-field-failure': 'AC-2 — the failure stated on the field',
+  'detail-field-retry': 'AC-2/AC-47 — the field’s half of the one retry path',
+  'detail-title-input': 'AC-37',
+  'detail-note-input': 'AC-6',
+  'detail-priority-control': 'AC-8',
+  'detail-priority-option': 'AC-8 — four states',
+  'detail-deadline-date': 'AC-10, AC-13',
+  'detail-deadline-time': 'AC-10, AC-13',
+  'detail-deadline-clear': 'AC-10 — clearing stores no value',
+  'detail-deadline-shortcut': 'AC-12 — the three named shortcuts',
+  'detail-deadline-collection': 'AC-12 — the visible consequence',
+  'detail-reminder-date': 'AC-10, AC-11',
+  'detail-reminder-time': 'AC-10, AC-11',
+  'detail-reminder-clear': 'AC-10',
+  'detail-steps': 'AC-14',
+  'detail-steps-refused': 'AC-18 — a step has no steps of its own',
+  'detail-step-row': 'AC-14',
+  'detail-step-checkbox': 'AC-14',
+  'detail-step-name': 'AC-14',
+  'detail-step-move': 'AC-16 — the move mode’s handle, a button',
+  'detail-step-delete': 'AC-14, AC-43',
+  'detail-step-add-input': 'AC-14',
+  'detail-step-add-button': 'AC-14',
+  'detail-repeat-summary': 'AC-20',
+  'detail-repeat-refused': 'AC-18/AC-21 — only a whole task can repeat',
+  'detail-repeat-edit': 'AC-20',
+  'detail-repeat-clear': 'AC-25 — ending a repeat is not deleting a task',
+  'detail-repeat-picker': 'AC-20 — the one preview-then-commit control',
+  'detail-repeat-cadence': 'AC-20 — named cadences',
+  'detail-repeat-interval': 'AC-21',
+  'detail-repeat-weekday': 'AC-21 — weekly only',
+  'detail-repeat-until': 'AC-25',
+  'detail-repeat-count': 'AC-25',
+  'detail-repeat-end': 'AC-25 — one ending, never both',
+  'detail-repeat-preview': 'AC-22, AC-23 — disclosed before commit',
+  'detail-repeat-preview-date': 'AC-22, AC-23',
+  'detail-repeat-preview-collection': 'AC-22, AC-23',
+  'detail-repeat-refusal': 'AC-25 — reported, not corrected',
+  'detail-repeat-commit': 'AC-20',
+  'detail-repeat-cancel': 'AC-20',
+  'detail-delete-button': 'AC-31',
+  'detail-delete-series-button': 'AC-30 — two controls, not one that asks sometimes',
+}
+
+/** The ids this build may render that the mockups do not declare. */
+function aheadOfMockups(): Set<string> {
+  return new Set([...Object.keys(AHEAD_OF_MOCKUPS), ...Object.keys(PROPOSED_IDS)])
+}
+
 /** The contract, straight from the design mockups — never hand-copied. */
 function catalogue(): Set<string> {
   const union = new Set<string>()
@@ -534,10 +657,46 @@ describe('testid contract (design mockup catalogue)', () => {
       cleanup()
     }
 
+    const ahead = aheadOfMockups()
     const missing = [...expected].filter((id) => !seen.has(id)).sort()
-    const invented = [...seen].filter((id) => !expected.has(id)).sort()
+    // `invented` still means *rendered and unaccounted for* — the exclusion is
+    // enumerated, not a prefix rule, so a new id has to be named before it passes.
+    const invented = [...seen].filter((id) => !expected.has(id) && !ahead.has(id)).sort()
     expect(missing).toEqual([])
     expect(invented).toEqual([])
+  })
+
+  it('every AHEAD_OF_MOCKUPS id is really published in components.md', () => {
+    // The exclusion's own guard, and it reads the OWNING artifact rather than a
+    // retyped copy (L-008): a tier-1 entry claims *"design published this id and
+    // owes only the drawing"*, so the claim is checked against the catalogue itself.
+    // Without this, tier 1 would be a place to park any id at all, which is exactly
+    // what `NOT_BUILT`'s own `throw` prevents in the other direction.
+    const md = readFileSync(resolve(process.cwd(), 'design/_shared/components.md'), 'utf8')
+    const unpublished = Object.keys(AHEAD_OF_MOCKUPS).filter((id) => !md.includes(`\`${id}\``))
+    expect(unpublished).toEqual([])
+    // …and no tier-1 id has quietly reached a mockup: once it does, it belongs in
+    // the catalogue proper and this list must shrink, or the exclusion outlives its
+    // reason (L-019).
+    const drawn = Object.keys(AHEAD_OF_MOCKUPS).filter((id) => catalogue().has(id))
+    expect(drawn, 'these ids are drawn now — remove them from AHEAD_OF_MOCKUPS').toEqual([])
+  })
+
+  it('every PROPOSED id is one this build actually renders', () => {
+    // The tier-2 guard. A proposed id nobody renders is a proposal that has already
+    // been abandoned, and leaving it here makes the reported debt bigger than the
+    // real one — which is how a list of obligations stops being trusted.
+    //
+    // Not every proposed id is reachable from `STATES` (the detail's repeat picker
+    // needs a task with a repeat, the deleted terminal needs a deleted task), so the
+    // check is against the SOURCE that renders them rather than against a render:
+    // a text scan, and it says so, per L-002. The behavioural coverage for these
+    // ids is `task-detail.test.tsx`.
+    const src = ['components/TaskDetail.tsx', 'components/CarriedNotices.tsx', 'components/PassedReminders.tsx', 'components/TasksSurface.tsx']
+      .map((f) => readFileSync(resolve(process.cwd(), 'src/assistant/web', f), 'utf8'))
+      .join('\n')
+    const orphans = Object.keys(PROPOSED_IDS).filter((id) => !src.includes(`"${id}"`))
+    expect(orphans).toEqual([])
   })
 
   it('renders no id it declared not-built — the exclusions are real, not aspirational', () => {

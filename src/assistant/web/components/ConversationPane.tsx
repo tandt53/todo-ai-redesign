@@ -73,6 +73,10 @@ function MessageTaskLink({
     <button
       className="diff-task tasklink"
       data-testid="talk-task-link"
+      // § MessageTaskLink — **the visible text is a PREFIX of the accessible name,
+      // never a replacement** (2.5.3), the same rule § NewMessageAffordance states.
+      // `{title}` is a `verbatim` slot: the task's own title, never re-worded.
+      aria-label={`${title}, see this task`}
       onClick={() => reveal.revealTask(taskId)}
     >
       {title}
@@ -118,24 +122,51 @@ function AppliedBubble({
   undoableTurnId,
   controller,
   reveal,
+  isNewestDoor,
 }: {
   m: Extract<Message, { kind: 'applied' }>
   undoableTurnId: string | null
   controller: AssistantController
   reveal: RevealHandle
+  /** § MessageTaskLink — this is the newest message that carries a live door, so
+   * it is the one that renders the note. */
+  isNewestDoor: boolean
 }) {
   // AC-5/AC-8: exactly one Undo affordance — on the newest applied-and-still-
   // undoable turn. A newer applied turn or session close removes it visibly;
   // the bubble keeps an honest note so history does not silently change.
   const showUndo = !m.undone && undoableTurnId === m.turnId
   const anyDoor = m.lines.some((l) => reveal.canReveal(l.taskId))
-  // Width-independent on purpose: below the split this tap navigates, at and
-  // above it only scrolls the centre column. "find it in the list" is true of
-  // both; "open it in Tasks" was true of one and would have needed a second
-  // string selected by viewport (app-shell.html, the note by this line).
-  const meta = anyDoor
-    ? `${formatClock(m.at)} · tap a task to find it in the list`
-    : formatClock(m.at)
+  // ── § MessageTaskLink — the note, replaced (F-001 AC-31 rev 6 and rev 7) ────
+  //
+  // The shipped string was `tap a task to find it in the list`, chosen
+  // width-independent on purpose because *"open it in Tasks"* was true only below
+  // the split. **Two later decisions falsified the replacement too:** with a detail
+  // in the centre column the door produces a **detail**, not a row in a list — and
+  // the list is on screen at **no** width while the detail is open (F-005 AC-45) —
+  // and rev 7 widens the gate so that nearly every applied message now carries at
+  // least one door, which turns that state from rare into ordinary.
+  //
+  // Design's replacement, checked against all five states the door can be activated
+  // from rather than by reading well in one: **`tap a task to see it`**. It names
+  // the outcome the door actually guarantees (*that task is now what you are looking
+  // at*) and promises no mechanism, which is what makes one string true at every
+  // width. *Rejected, kept so it is not re-proposed:* **"go to it"** implies travel
+  // and is false where nothing navigates; **"open it"** is false where the row is
+  // scrolled into view rather than opened; **naming the mechanism per state** is two
+  // strings selected by viewport, which AC-31's own constraint forbids.
+  //
+  // **And it renders on the newest door-carrying message only** (§ MessageTaskLink,
+  // second half of the same call). With the gate widened, repeating one instruction
+  // under every bubble in the thread is the filler this catalogue refuses elsewhere:
+  // after the first reading it removes no information, and **the underline is the
+  // persistent cue** — the note is the one-time teaching. It is derivable from the
+  // thread, so there is no new stored fact and no "has the user learned this yet"
+  // flag.
+  const meta =
+    anyDoor && isNewestDoor
+      ? `${formatClock(m.at)} · tap a task to see it`
+      : formatClock(m.at)
   return (
     <AiMsg meta={meta} className={m.undone ? 'undone' : undefined}>
       <div className="bubble-head">{m.head}</div>
@@ -222,11 +253,13 @@ function MessageView({
   undoableTurnId,
   controller,
   reveal,
+  isNewestDoor,
 }: {
   m: Message
   undoableTurnId: string | null
   controller: AssistantController
   reveal: RevealHandle
+  isNewestDoor: boolean
 }) {
   switch (m.kind) {
     case 'user':
@@ -253,6 +286,7 @@ function MessageView({
           undoableTurnId={undoableTurnId}
           controller={controller}
           reveal={reveal}
+          isNewestDoor={isNewestDoor}
         />
       )
 
@@ -387,6 +421,15 @@ export function ConversationPane({
   const loading = state.sessionLoad === 'loading'
   const failed = state.sessionLoad === 'failed'
   const empty = state.messages.length === 0 && !loading && !failed
+  // § MessageTaskLink — the note renders on the **newest door-carrying message
+  // only**, and **only while at least one door in that message is live**: a message
+  // all of whose named tasks are inert (deleted — plain text, not a control, per
+  // F-001 AC-31) carries no note, because an instruction to tap something untappable
+  // is worse than silence. Derived from the thread; nothing new is stored.
+  let newestDoorId: string | null = null
+  for (const m of state.messages) {
+    if (m.kind === 'applied' && m.lines.some((l) => reveal.canReveal(l.taskId))) newestDoorId = m.id
+  }
   return (
     <div className="conv-scroll" ref={scrollerRef} onScroll={onScroll}>
       {/* SK-BUBBLE. **A loading surface never renders its empty state**: a
@@ -450,6 +493,7 @@ export function ConversationPane({
             undoableTurnId={undoableTurnId}
             controller={controller}
             reveal={reveal}
+            isNewestDoor={m.id === newestDoorId}
           />
         ))}
         {state.surface === 'thinking' && (

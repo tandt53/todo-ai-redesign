@@ -22,6 +22,7 @@
 // because the Lists menu's group break is part of that order, not a mobile
 // rendering choice (ADR-009 § Amendment 2; components.md § ListsMenu).
 
+import { nowDate } from '../../_shared/model/clock.ts'
 import type { AppState, LoadState } from '../../_shared/model/reducer.ts'
 import {
   COLLECTIONS,
@@ -103,7 +104,16 @@ export type EmptyRow = 'ET-FIRST' | 'ET-COLLECTION' | 'ET-DONE'
 export function tasksSurfaceView(
   state: AppState,
   collection: Collection,
-  now: Date = new Date(),
+  /**
+   * F-005 AC-44 — **the installed seam, never a fresh `new Date()`.** This was
+   * one of the two mobile inline clock sites the AC counts (`## Impact` names this
+   * line); `nowDate()` resolves to `ControllerDeps.now` through the one provider
+   * `boot.ts` installs, so a default here is a read of the seam rather than a
+   * second clock (L-004). The day grouping this feeds is day-sensitive, so a wall
+   * clock here and an injected one in the controller can put the same row under
+   * two headings — L-023's defect, on the client.
+   */
+  now: Date = nowDate(),
 ): TasksSurfaceView {
   const load: LoadState = state.tasksLoad
   const inCollection = collectionTasks(state.tasks, collection, now)

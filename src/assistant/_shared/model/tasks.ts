@@ -87,6 +87,8 @@
 // tasks: `undated` on the date axis, Inbox on the filing axis — the same place
 // the three-bucket and four-bucket predicates both put them.
 
+import { nowDate } from './clock.ts'
+import { isStep } from './task-fields.ts'
 import type { TaskView } from '../types.ts'
 
 /**
@@ -252,7 +254,7 @@ export function isUndated(iso: string | null, now: Date): boolean {
  * time-of-day commitment the user never made. Ordering inside the group is
  * unaffected — this repo orders by `created_at` (uc-coverage-map D5).
  */
-export function startOfTodayIso(now: Date = new Date()): string {
+export function startOfTodayIso(now: Date = nowDate()): string {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString()
 }
 
@@ -265,7 +267,7 @@ export function startOfTodayIso(now: Date = new Date()): string {
  * fallthrough would answer it silently — which is how it got answered the first
  * time.
  */
-export function dueAtForCollection(c: Collection, now: Date = new Date()): string | null {
+export function dueAtForCollection(c: Collection, now: Date = nowDate()): string | null {
   switch (c) {
     case 'today':
       // The collection is exactly one day, so the day's local start is
@@ -383,6 +385,27 @@ export function isFiled(t: TaskView): boolean {
  *   asserts both halves of.
  */
 export function inCollection(t: TaskView, c: Collection, now: Date): boolean {
+  // ── F-005 AC-35 — a step is in NO collection, and this gate is why ─────────
+  //
+  // It sits **beside the done gate, and deliberately NOT inside `isFiled`**: a
+  // step is not a container, and calling it *filed* breaks the reading
+  // INV-INBOX-FILING rests on — `inbox(t)` would stop meaning "filed into no
+  // personal list" and start meaning "filed into no personal list, or a step",
+  // which is two facts in one predicate and the exact re-merge the invariant
+  // guards.
+  //
+  // Placed **before** the Done branch, which is a real difference and not
+  // ordering taste: a done step must be in Done no more than an open one is in
+  // Today. Otherwise ticking a step through AC-19's cascade would put eight rows
+  // the user has never seen into the Done collection, each drawn as a top-level
+  // row, on the surface AC-35's opening sentence forbids them from appearing on.
+  //
+  // This is the ONE gate that reaches both clients — `mobile/model/tasks-view.ts`
+  // re-exports from here — which is why the five other readers that decide
+  // behaviour from raw row cardinality have to be named separately (AC-35's
+  // six-readers bullet); they never consult this function.
+  if (isStep(t)) return false
+
   // The gate empties both axes: a done task is in Done and in no cell of
   // either, which is what `open(t)` gating every predicate below means.
   if (c === 'done') return t.status === 'done'
@@ -407,6 +430,53 @@ export function collectionTasks(tasks: readonly TaskView[], c: Collection, now: 
 }
 
 /**
+ * F-001 AC-31 revision 7 — **which collection to switch to so the row is on
+ * screen**, or `null` to leave the collection where it is.
+ *
+ * This is the **route** half of AC-31's door. The *gate* is the task existing
+ * (`web/shell.ts`'s `canReveal`, `mobile/model/task-link.ts`'s `taskLinkState`);
+ * the switch is what makes the postcondition — *"that task's row is on screen and
+ * has flashed exactly once"* — reachable for a row the collection on screen does
+ * not hold. Revision 7's whole move was taking the collection question **out** of
+ * the gate and giving it to the single reveal routine, so this must be one
+ * function rather than one per client: two answers to *"which collection holds
+ * it"* is L-004, and on a door whose two predicates L-005 already names by path.
+ *
+ * **Open Question 12 is open and this does not close it.** The collections are
+ * explicitly not a partition (ADR-009 § Amendment 2 — an unfiled task dated today
+ * is in Today **and** Inbox at once, measured `|Inbox ∩ Today| = 7`), so *"the
+ * collection holding it"* names exactly one collection only for a done task. What
+ * is already binding, so nothing is left unowned while the OQ is open: AC-31's
+ * postcondition is satisfied by **any** collection that holds the row, so the
+ * requirement stays falsifiable and the assertion is the same whichever answer the
+ * owner picks.
+ *
+ * Order: `done` first, because a done task is in Done and in no cell of either
+ * axis, so the date preference has nothing to prefer for it.
+ *
+ * `now` is **required**, not defaulted: this is a date computation and F-005 AC-44
+ * forbids one that can silently read the wall clock.
+ */
+export function collectionHolding(
+  tasks: readonly TaskView[],
+  taskId: string,
+  current: Collection,
+  now: Date,
+): Collection | null {
+  const task = tasks.find((t) => t.id === taskId)
+  if (task === undefined) return null
+  if (inCollection(task, current, now)) return null
+  for (const c of ['done', 'today', 'upcoming', 'inbox'] as const) {
+    if (inCollection(task, c, now)) return c
+  }
+  // A step is in no collection at all (F-005 AC-35) and is never named in a
+  // message (AC-36 refuses it a handle), so this is unreachable through the door.
+  // `null` leaves the collection where it was rather than switching to one that
+  // would not show the row either.
+  return null
+}
+
+/**
  * The one count, parameterised by collection — one definition ("open tasks in
  * this collection"), never two implementations.
  *
@@ -426,13 +496,13 @@ export function collectionTasks(tasks: readonly TaskView[], c: Collection, now: 
 export function collectionCount(
   tasks: readonly TaskView[],
   c: Collection,
-  now: Date = new Date(),
+  now: Date = nowDate(),
 ): number {
   return collectionTasks(tasks, c, now).length
 }
 
 /** The PathSwitch badge's number, named for what it is. */
-export function openTodayCount(tasks: readonly TaskView[], now: Date = new Date()): number {
+export function openTodayCount(tasks: readonly TaskView[], now: Date = nowDate()): number {
   return collectionCount(tasks, 'today', now)
 }
 

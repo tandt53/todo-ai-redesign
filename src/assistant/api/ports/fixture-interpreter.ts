@@ -6,7 +6,8 @@
 // An unmatched utterance interprets as no_match.
 
 import { normalizeTranscript } from '../engine/normalize.ts'
-import type { PendingOp, TaskChanges, TaskStatus } from '../types.ts'
+import type { PendingOp, TaskChanges } from '../types.ts'
+import type { NewTaskFields } from '../engine/apply.ts'
 import type {
   AnswerClass,
   Interpretation,
@@ -15,15 +16,11 @@ import type {
 } from './interpreter.ts'
 
 export type FixtureResult =
-  | {
-      kind: 'create'
-      tasks: {
-        title: string
-        due_at?: string | null
-        priority?: string | null
-        status?: TaskStatus
-      }[]
-    }
+  /** create carries `NewTaskFields` — widened in F-005 so a spoken note and a
+   * spoken reminder are EXPRESSIBLE, which is what makes AC-36's permitted half
+   * a capability rather than a permission (one fixture row per permitted field,
+   * on the create path as well as the edit path). */
+  | { kind: 'create'; tasks: NewTaskFields[] }
   | { kind: 'edit'; targets: string[]; changes: TaskChanges }
   | { kind: 'delete'; targets: string[] }
   | { kind: 'clarify'; targets: string[]; pending_op: PendingOp }

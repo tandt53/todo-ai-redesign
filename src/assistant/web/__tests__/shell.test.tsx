@@ -151,13 +151,20 @@ describe('AC-31 — a message is a door to the row', () => {
     }
   })
 
-  it('a task the list does not hold is not activatable AT ALL — text, not a disabled control', () => {
+  it('a task that no longer EXISTS is not activatable AT ALL — text, not a disabled control', () => {
     // `task-9` was deleted by this or a later turn: no row remains anywhere to
     // open. The message still NAMES it (AC-4 is undamaged); it is simply not a
     // door. The two assertions are different claims and both matter: no link,
     // and no disabled button either — a disabled control still announces itself
     // as a control that is temporarily off, which is a promise the list cannot
     // keep.
+    //
+    // **AC-31 revision 7 renamed the reason, not the outcome.** This case was
+    // filed under "the list does not hold it" and now stands on its own: **no row
+    // exists anywhere to bring into view**, so no collection change and no layout
+    // can meet the postcondition. That is why *"rendered as an inert control it
+    // would be an affordance that does nothing"* stays exactly true of THIS case
+    // after rev 7 removed it from the filtered one.
     const { container } = mount(seed({ tasks: TASKS }, [appliedNaming(['task-9', 'task-2'])]))
     const links = screen.getAllByTestId('talk-task-link')
     expect(links).toHaveLength(1)
@@ -167,20 +174,34 @@ describe('AC-31 — a message is a door to the row', () => {
     expect(container.querySelectorAll('.conv button[disabled]')).toHaveLength(0)
   })
 
-  it('a task filtered out of the collection on screen is not activatable either', () => {
-    // Same rule, the other cause AC-31 names. The surface opens on TODAY
-    // (DEFAULT_COLLECTION), and `task-3` is done, so that collection does not
-    // hold it — a link that navigates to a list which will not show the row is
-    // the affordance that does nothing.
+  it('a task filtered out of the collection on screen IS activatable — AC-31 rev 7', () => {
+    // ── FOUR ASSERTIONS INVERTED, and the reason is F-001 AC-31 revision 7 ─────
+    //
+    // This test read *"a task filtered out of the collection on screen is not
+    // activatable either"* and asserted exactly one link out of three named tasks.
+    // **Revision 7 makes the gate the task EXISTING**, so all three are doors, and
+    // *"switches to a collection that holds the row"* is part of the route.
+    //
+    // **The old assertion was right when it was written**, and the rev keeps the
+    // reason on the record rather than deleting it: it holds only while the
+    // postcondition is *bring the row into view in the list*, which a filtered-out
+    // row genuinely could not satisfy, because no collection change had been
+    // specified anywhere. Two later decisions falsified it — rev 6's swap
+    // postcondition needs nothing from the list at all, and the owner's direction
+    // of 2026-08-19 supplies the collection change the first postcondition was
+    // missing.
+    //
+    // **Why the inversion is urgent rather than a tidy-up:** `DEFAULT_COLLECTION`
+    // is Today and the assistant creates dateless tasks, which are in Inbox — so
+    // under the old gate the task the assistant has just created was the one task
+    // in the message that was NOT a door, with nothing on screen saying why. The
+    // `undated` row below is exactly that row.
     const done = task({ id: 'task-3', title: 'Morning stand-up', status: 'done' })
-    const now = new Date()
+    const now = new Date(T0)
+    // The membership facts are unchanged and are kept as the setup's proof: these
+    // two rows really are outside the collection on screen, which is what makes
+    // the inversion meaningful rather than vacuous.
     expect(inCollection(done, 'today', now)).toBe(false)
-    // ADR-009 opened a SECOND way to be filtered out that did not exist while
-    // the surface was Inbox: an open row with no date. Inbox held every open
-    // task, so "not in the collection" could only mean "done"; Today can also
-    // mean "undated". Both doors are shut here, in one mount. (§ Amendment
-    // opened a third — an open row dated in the future, which is in Upcoming
-    // and in no other list; the collection walk in app.test.tsx covers it.)
     const undated = task({ id: 'task-8', title: 'Someday', status: 'inbox', due_at: null })
     expect(inCollection(undated, 'today', now)).toBe(false)
     expect(inCollection(undated, 'inbox', now)).toBe(true)
@@ -198,10 +219,27 @@ describe('AC-31 — a message is a door to the row', () => {
       undone: false,
       at: T0,
     }
-    mount(seed({ tasks: [...TASKS, done, undated] }, [msg]))
+    const { container } = mount(seed({ tasks: [...TASKS, done, undated] }, [msg]))
     const links = screen.getAllByTestId('talk-task-link')
-    // both excluded rows are named by the message and neither is a control
-    expect(links.map((l) => l.textContent)).toEqual(['Pay the electricity bill'])
+    // All three are doors now. This is the assertion that inverted.
+    expect(links.map((l) => l.textContent)).toEqual([
+      'Morning stand-up',
+      'Someday',
+      'Pay the electricity bill',
+    ])
+
+    // …and the switch is part of the ROUTE, not a second postcondition: activating
+    // the dateless row lands the user on a collection that holds it, with the row
+    // on screen and flashed. Asserted through the DOM rather than through the
+    // shell's internals, because "the row is on screen" is the postcondition and a
+    // collection name is not (L-002: check the rendered observable).
+    act(() => {
+      fireEvent.click(links[1] as HTMLElement)
+    })
+    expect(surfaceOf(container)).toBe('tasks')
+    const row = rowFor(container, 'task-8')
+    expect(row, 'the switch put the row on screen').not.toBeNull()
+    expect(row?.className).toContain('on-arrival')
   })
 
   it('deleted tasks named in an outcome are never links (the delete case)', () => {

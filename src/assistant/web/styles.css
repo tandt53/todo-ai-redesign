@@ -225,6 +225,11 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 .app[data-surface="talk"]     .s-talk     { display: flex; }
 .app[data-surface="tasks"]    .s-tasks    { display: flex; }
 .app[data-surface="settings"] .s-settings { display: flex; }
+/* F-005 AC-45 — the detail is one more value of the same enum, selected by the
+   same one rule. Below the split it IS the surface; the branch at the split (far
+   below, in the single container-query block) gives it the centre column, as
+   `settings` already does. No second mechanism, and no width read in JS. */
+.app[data-surface="detail"]   .s-detail   { display: flex; }
 
 .topbar {
   flex: none; display: flex; align-items: center; gap: var(--sp-md);
@@ -722,6 +727,20 @@ html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); 
      between a panel and a screen. */
   .app[data-surface="settings"] .s-tasks { display: none; }
 
+  /* F-005 AC-45 — **the detail occupies the column the task list occupies**, and
+     `settings` above is the shipped precedent it copies: *replaces the centre,
+     never the panel*. So the conversation stays rendered beside it, which is what
+     keeps AC-3's arriving change a subject and what makes AC-48's swap possible at
+     all — a task named in a message is activatable while a DIFFERENT task's detail
+     is open.
+
+     Two lines, and they are the whole of the layout half of AC-45. There is no
+     JavaScript counterpart: crossing `breakpoints.split` while the detail is open
+     changes nothing it holds, because nothing it holds is keyed to a width. */
+  .s-detail { grid-column: 1; }
+  .app[data-surface="detail"] .s-tasks { display: none; }
+  .detail-col { max-width: 720px; padding-left: var(--sp-xxl); padding-right: var(--sp-xxl); }
+
   /* PathSwitch is ABSENT — both paths are on screen, and a control that
      switches to what the user is already looking at is a dead control. This is
      what makes `shell-tasks-button` / `shell-talk-button` below-split-only ids:
@@ -745,4 +764,194 @@ html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); 
 /* ============ reduced motion — end states kept ============ */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 80ms !important; animation-iteration-count: 1 !important; transition-duration: 80ms !important; }
+}
+
+
+/* ===================================================================== *
+ * F-005 — the task detail (S6), § CarriedNotice, § TaskRow's marks, and
+ * AC-38's passed-reminder surfacing.
+ * ===================================================================== */
+
+/* ---- § CarriedNotice (AC-47) --------------------------------------------
+ * A region docked directly below the top bar, spanning the FULL FRAME WIDTH, in
+ * flow, **outside the surface stack**. `App.tsx` mounts it as a sibling of
+ * `.surfaces`, which is what puts it above both columns at or above the split —
+ * ONE region, not one per column, which is what makes AC-47's *"visible wherever
+ * the user is"* one implementation instead of two.
+ *
+ * `z-index` puts it **above** the stacking layer: S3 Lists menu, S4 Settings and
+ * S5 New list slide over the content and UNDER it. Otherwise the family is
+ * invisible on Settings, and AC-47's requirement is met at three of five surfaces.
+ *
+ * **The visible ceiling is a ROW COUNT, not a fraction of the screen**: at most two
+ * rows below the split and three at or above it, and further rows scroll within the
+ * region. Nothing is hidden behind a tap — scrolling inside a visible region is not
+ * a door, which is the distinction design D24 rejected a badge-then-tap design over.
+ *
+ * There is no transition, no animation and no timer that removes anything here. */
+.carried-notices { flex: none; position: relative; z-index: 60; }
+.carried-notices:empty { display: none; }
+.cn-row {
+  display: flex; align-items: flex-start; gap: var(--sp-md);
+  padding: var(--sp-sm) var(--gutter);
+  background: var(--bg-raised); border-bottom: 1px solid var(--hairline);
+}
+.cn-icon { flex: none; display: flex; padding-top: 2px; color: var(--tx-2); }
+.cn-carried-failed    .cn-icon { color: var(--danger); }
+.cn-carried-offline   .cn-icon { color: var(--question); }
+.cn-body { flex: 1; min-width: 0; }
+.cn-sentence { font-size: var(--fs-body); color: var(--tx); }
+/* The user's own words are not chrome and are never muted. */
+.cn-label { font-size: var(--fs-meta); color: var(--tx-muted); margin-top: 2px; }
+.cn-value {
+  font-size: var(--fs-body); color: var(--tx);
+  white-space: pre-wrap; overflow-wrap: anywhere;
+  /* Up to three lines, then the value area scrolls **within the row**. It is never
+     truncated with an ellipsis: *carries the user's value* is the component's
+     reason to exist, and a value the user cannot read back is not carried. */
+  max-height: calc(3 * 1.5em); overflow-y: auto;
+}
+.cn-actions { flex: none; display: flex; align-items: center; gap: var(--sp-sm); }
+.cn-dismiss {
+  width: 32px; height: 32px; border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center; color: var(--tx-muted);
+}
+/* § Buttons' `neutral` variant — built entirely from neutrals, adding no colour
+   meaning. It exists because AC-43's offer reverses the USER's act and violet is
+   fixed as *the assistant's own act*, so it could wear none of the three existing
+   variants. Hover strengthens the border only; lifting the fill toward `bg.raised`
+   would make the button match the strip it sits on. */
+.btn-neutral {
+  padding: 6px 12px; border-radius: var(--r-sm);
+  background: var(--hairline); border: 1px solid var(--tx-muted);
+  color: var(--tx); font-weight: var(--font-weight-emphasis);
+}
+.btn-neutral:hover { border-color: var(--tx-2); }
+
+/* ---- AC-38's passed-reminder surfacing ---------------------------------
+ * Its own region, not § CarriedNotice's: design decided **two families** on
+ * 2026-08-19 because their lifetimes are opposite (this one retires on
+ * acknowledgement, that one never self-retires), they report opposite news, and
+ * their verbs would sit a keystroke apart with opposite consequences. */
+.passed-reminders { flex: none; position: relative; z-index: 59; }
+.pr-row {
+  display: flex; align-items: center; gap: var(--sp-md);
+  padding: var(--sp-sm) var(--gutter);
+  background: var(--bg-raised); border-bottom: 1px solid var(--hairline);
+}
+.pr-icon { flex: none; display: flex; color: var(--tx-2); }
+.pr-body { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: var(--sp-sm); flex-wrap: wrap; }
+.pr-open { text-align: left; text-decoration: underline; text-underline-offset: 2px; color: var(--tx); }
+.pr-when { font-size: var(--fs-meta); color: var(--tx-muted); }
+.pr-ack { flex: none; }
+
+/* ---- § TaskRow's three marks (AC-9, AC-17, AC-39) ----------------------
+ * **None carries colour** — the accent set is closed at five and every accent
+ * already has an assigned meaning, this row already renders under a `danger`
+ * Overdue heading and can carry a NEW/EDITED marker, and urgency has three levels
+ * one hue cannot encode. Shape, weight and the accessible name. A mark carried by
+ * colour alone fails AC-33's 1.4.3 regardless.
+ *
+ * **Nothing drops at a narrow width**: `.task-main` already wraps, so the marks
+ * wrap under the title rather than being truncated or hidden — a mark that
+ * disappears at one width is a mark the user cannot rely on, and the accessible
+ * name would then disagree with the visible row. */
+.task-mark { flex: none; display: inline-flex; align-items: center; gap: 2px; color: var(--tx-muted); }
+/* TR-URGENCY — the one item in this line that is NOT muted, which is the "weight"
+   half of *shape, weight, name*. `!!!` stays quiet because it is meta-sized, not
+   because it is timid. */
+.task-priority {
+  color: var(--tx); font-weight: var(--font-weight-emphasis); font-size: var(--fs-meta);
+  letter-spacing: 0.5px;
+}
+.task-open {
+  text-align: left; padding: 0; color: inherit; font: inherit;
+  border-radius: var(--r-sm);
+}
+.task-open:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+/* ---- S6 · the detail --------------------------------------------------- */
+.s-detail { min-width: 0; background: var(--bg-base); }
+.detail-heading {
+  font-family: var(--font-family-display); font-size: var(--fs-title);
+  font-weight: var(--font-weight-title); overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.detail-body { flex: 1; min-height: 0; overflow-y: auto; }
+.detail-col { padding: var(--sp-lg) var(--gutter) var(--sp-xxl); width: 100%; }
+.detail-fields { display: flex; flex-direction: column; gap: var(--sp-lg); }
+.detail-field { display: flex; flex-direction: column; gap: var(--sp-xs); }
+.detail-field-label { font-size: var(--fs-meta); color: var(--tx-muted); }
+.detail-field-hint { font-size: var(--fs-meta); color: var(--tx-muted); display: flex; gap: var(--sp-sm); flex-wrap: wrap; align-items: baseline; }
+.detail-field-failure { color: var(--danger); display: inline-flex; gap: var(--sp-sm); align-items: baseline; }
+.detail-field-icon { display: inline-flex; color: var(--tx-muted); }
+.detail-input {
+  padding: 8px 10px; border-radius: var(--r-sm);
+  border: 1px solid var(--hairline); background: var(--bg-raised); color: var(--tx);
+  min-width: 0;
+}
+.detail-number { width: 5em; }
+.detail-time { width: 8em; }
+/* AC-6 — a long note **scrolls within the surface and is never truncated**. The
+   height at which it starts scrolling is design's number; *never truncated* is the
+   falsifiable half, and `resize: vertical` plus a scrolling box is what makes it
+   true for a note of any length. */
+.detail-note {
+  padding: 8px 10px; border-radius: var(--r-sm);
+  border: 1px solid var(--hairline); background: var(--bg-raised); color: var(--tx);
+  resize: vertical; min-height: 96px; max-height: 40vh; overflow-y: auto;
+  white-space: pre-wrap;
+}
+.detail-priority { display: flex; gap: var(--sp-xs); flex-wrap: wrap; }
+.detail-priority-option {
+  padding: 6px 12px; border-radius: var(--r-sm);
+  border: 1px solid var(--hairline); color: var(--tx-2);
+}
+.detail-priority-option.is-on { border-color: var(--tx-2); color: var(--tx); font-weight: var(--font-weight-emphasis); }
+.detail-datetime { display: flex; align-items: center; gap: var(--sp-sm); flex-wrap: wrap; }
+.detail-shortcuts { display: flex; gap: var(--sp-xs); flex-wrap: wrap; margin-top: var(--sp-xs); }
+.detail-hint-text { color: var(--tx-muted); }
+.detail-steps { display: flex; flex-direction: column; gap: var(--sp-sm); }
+.detail-step-list { display: flex; flex-direction: column; gap: var(--sp-xs); }
+.detail-step { display: flex; align-items: center; gap: var(--sp-sm); }
+.detail-step.is-held { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--r-sm); }
+.detail-step-name {
+  flex: 1; min-width: 0; padding: 6px 8px; border-radius: var(--r-sm);
+  border: 1px solid transparent; background: none; color: inherit;
+}
+.detail-step-name:hover, .detail-step-name:focus { border-color: var(--hairline); background: var(--bg-raised); }
+/* AC-16 — the move handle is a BUTTON, keyboard-operable, and the mode it enters
+   is announced position by position. Dragging is never the only way (2.5.1). */
+.detail-step-move { width: 32px; height: 32px; border-radius: var(--r-sm); color: var(--tx-muted); display: flex; align-items: center; justify-content: center; }
+.detail-step-move.is-held { color: var(--tx); }
+.detail-step-add { display: flex; gap: var(--sp-sm); align-items: center; }
+.detail-repeat-summary { display: flex; align-items: center; gap: var(--sp-sm); flex-wrap: wrap; }
+.detail-repeat-picker {
+  display: flex; flex-direction: column; gap: var(--sp-sm);
+  padding: var(--sp-md); border: 1px solid var(--hairline); border-radius: var(--r-sm);
+  background: var(--bg-raised);
+}
+.detail-cadences, .detail-weekdays, .detail-repeat-end, .detail-repeat-actions {
+  display: flex; gap: var(--sp-xs); flex-wrap: wrap; align-items: center;
+}
+.detail-weekday { padding: 4px 8px; border-radius: var(--r-sm); border: 1px solid var(--hairline); color: var(--tx-2); text-transform: uppercase; font-size: var(--fs-meta); }
+.detail-weekday.is-on { border-color: var(--tx-2); color: var(--tx); font-weight: var(--font-weight-emphasis); }
+.detail-preview { font-size: var(--fs-meta); color: var(--tx-2); }
+.detail-danger { margin-top: var(--sp-xl); display: flex; gap: var(--sp-md); flex-wrap: wrap; }
+.detail-delete { color: var(--danger); display: inline-flex; align-items: center; gap: var(--sp-xs); }
+/* AC-4's terminal state — a way back, the unsaved text still legible, and NO
+   retry. `§ SurfaceError` is the nearest existing shape and its whole anatomy is a
+   Retry, which is the one action that must never be offered here. */
+.detail-terminal { display: flex; flex-direction: column; gap: var(--sp-md); align-items: flex-start; padding: var(--sp-xl) 0; }
+.detail-terminal-text { display: flex; flex-direction: column; gap: var(--sp-sm); }
+/* SK-DETAIL — a title bar, five label/value pairs, a three-bar step block. No
+   text and no testid: nothing about a skeleton is assertable except that it is not
+   the empty state. */
+.detail-sk { display: flex; flex-direction: column; gap: var(--sp-lg); padding-top: var(--sp-md); }
+.detail-sk-pair { display: flex; flex-direction: column; gap: var(--sp-xs); }
+.detail-sk-steps { display: flex; flex-direction: column; gap: var(--sp-xs); }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }

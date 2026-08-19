@@ -3,7 +3,15 @@
 // else is a message. The only transitions are the spec flowchart's edges;
 // every action below implements exactly one (or none, when guarded off).
 
-import type { Marks, Message, Surface, TaskView } from '../types.ts'
+import type {
+  Marks,
+  Message,
+  Notice,
+  PassedReminder,
+  Surface,
+  TaskView,
+  UndoOffer,
+} from '../types.ts'
 import type { NewMsg } from './messages.ts'
 import type { SpeechCapability } from '../ports/transcript-source.ts'
 
@@ -40,6 +48,36 @@ export interface AppState {
   queuedTurnId: string | null
   /** turn_id currently being undone — double-activation guard (AC-5) */
   undoInFlight: string | null
+
+  // ── F-005 ────────────────────────────────────────────────────────────────
+  // All four live here rather than in the web tree because their mechanisms
+  // observe writes, and only the shared controller and `state.tasks` see every
+  // write (F-005 AC-47, AC-38, AC-43). The RENDERING of each is per platform;
+  // the STATE is one.
+
+  /** AC-47 — failed and offline-refused values that outlived their surface.
+   * **One per task, never one per field.** No timer touches this list: elapsing
+   * is not a resolution (AC-33's 2.2.1 at AC-43's strength). */
+  notices: Notice[]
+  /** AC-43 — the hand-action undo. **Single slot: it does not stack**, and a
+   * second undoable action replaces the first offer while the replaced action
+   * stays done. It is NOT the turn undo (F-001 AC-5) and the two are never
+   * substitutes. */
+  undoOffer: UndoOffer | null
+  /** ADR-010 — `account.timezone`, the ONE source every client date computation
+   * reads. `null` means the account has no zone yet: writes that need a date
+   * computation are refused server-side and reads carry `due_all_day: null`.
+   * Never `Intl.DateTimeFormat().resolvedOptions().timeZone`. */
+  accountTimezone: string | null
+  /** AC-38 — passed, unacknowledged reminders surfaced **on open**. N of them
+   * are ONE surfacing, oldest first, and only what the user acknowledges is
+   * marked. Rendering is not resolution. */
+  reminders: PassedReminder[]
+  /** AC-33's 4.1.3 — every refusal and every status message this feature states
+   * is announced. `seq` advances on every announcement so the same text twice
+   * is two announcements rather than a no-op the live region ignores. */
+  announce: { seq: number; text: string } | null
+
   nextId: number
 }
 
@@ -58,6 +96,11 @@ export function initialState(capability: SpeechCapability): AppState {
     activeTurnId: null,
     queuedTurnId: null,
     undoInFlight: null,
+    notices: [],
+    undoOffer: null,
+    accountTimezone: null,
+    reminders: [],
+    announce: null,
     nextId: 1,
   }
 }
@@ -96,6 +139,12 @@ export type Action =
   | { type: 'offline'; offline: boolean }
   | { type: 'session-load'; load: LoadState }
   | { type: 'tasks-load'; load: LoadState }
+  // ── F-005 ──
+  | { type: 'notices'; notices: Notice[] }
+  | { type: 'undo-offer'; offer: UndoOffer | null }
+  | { type: 'account-timezone'; timezone: string | null }
+  | { type: 'reminders'; reminders: PassedReminder[] }
+  | { type: 'announce'; text: string }
 
 function withIds(state: AppState, msgs: NewMsg[]): { messages: Message[]; nextId: number } {
   let nextId = state.nextId
@@ -337,6 +386,32 @@ export function reducer(state: AppState, action: Action): AppState {
       if (action.offline === state.offline) return state
       return { ...state, offline: action.offline }
     }
+
+    // ── F-005 ───────────────────────────────────────────────────────────────
+    // Each of these is a whole-slice replacement computed by a pure function in
+    // `notices.ts` / the controller, rather than per-case logic here. That is
+    // deliberate: AC-47's rules (supersede-not-end, one-per-task, no timer) are
+    // properties of the *set*, and a reducer case per rule is how one of them
+    // ends up enforced at one door and merely intended at another (L-005).
+
+    case 'notices':
+      return { ...state, notices: action.notices }
+
+    case 'undo-offer':
+      // Assignment, never a push: AC-43's offer does not stack, and the
+      // replaced action stays done.
+      return { ...state, undoOffer: action.offer }
+
+    case 'account-timezone':
+      return state.accountTimezone === action.timezone
+        ? state
+        : { ...state, accountTimezone: action.timezone }
+
+    case 'reminders':
+      return { ...state, reminders: action.reminders }
+
+    case 'announce':
+      return { ...state, announce: { seq: (state.announce?.seq ?? 0) + 1, text: action.text } }
   }
 }
 

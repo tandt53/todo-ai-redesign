@@ -226,6 +226,71 @@ export function unsupportedMessage(alternative: string, at: string): NewMsg {
   return { kind: 'unsupported', alternative, at }
 }
 
+/**
+ * **A refused turn is its own outcome** (F-005 AC-36, AC-40; api-contracts § The
+ * refused turn) — the seventh `TurnOutcome` member, and the reason it had to be
+ * one rather than an improvisation over the existing six:
+ *
+ * - `no_match` is a **lie** — the task *was* matched;
+ * - the failure envelope reports a **server fault** for a healthy turn;
+ * - *write nothing and say nothing* **passes AC-40's own fixture row** if that
+ *   row asserts only that nothing was written.
+ *
+ * So: the task is unchanged (AC-18's whole-write scope), the turn is not applied,
+ * and **the user is told the change was refused and why**. Rendering it here is
+ * what makes AC-36's *"visible outcome"* verified on web as well as api (tester
+ * W12): left as an `(api)`-tagged promise, no client tier checks it.
+ *
+ * **The WORDING is F-002's and this is a placeholder.** `F-002 ## What speaks,
+ * and from what` is declared exhaustive and closed and carries **no refusal
+ * frame**, so a refused turn selects none — which is an amendment F-002 owes and
+ * this client cannot make (`F-005 ## Impact §3`, routed to the orchestrator).
+ * Until it lands, the reason is stated from a **closed switch of literals**, never
+ * a template over the reason code: a template is how an unenumerated combination
+ * ships fluent text nobody reviewed (L-008). An unknown reason falls back to a
+ * sentence that names no cause rather than inventing one.
+ */
+export function refusedMessage(
+  reason: string,
+  field: string | null,
+  at: string,
+): NewMsg {
+  return { kind: 'outcome', head: 'That change was refused', body: [refusalBody(reason, field)], at }
+}
+
+function refusalBody(reason: string, field: string | null): string {
+  switch (reason) {
+    case 'empty_title':
+      return 'A task needs a name, so nothing was changed.'
+    case 'priority_not_in_set':
+      return 'Priority can be none, low, medium or high — nothing was changed.'
+    case 'note_not_text':
+      return 'A note has to be text, so nothing was changed.'
+    case 'structural_field_not_settable':
+      return "Steps and repeats are set by hand on the task itself, not by asking — nothing was changed."
+    case 'step_not_addressable':
+      return 'Steps live inside their task and cannot be changed by asking — nothing was changed.'
+    case 'nesting_too_deep':
+      return 'A step cannot have steps of its own, so nothing was changed.'
+    case 'repeat_on_step':
+      return 'Only a whole task can repeat, not one of its steps — nothing was changed.'
+    case 'until_and_count':
+      return 'A repeat ends on a date or after a number of runs, not both — nothing was changed.'
+    case 'end_before_due':
+      return 'That end date is before the task is due, so nothing was changed.'
+    case 'clear_due_while_repeating':
+      return 'A repeating task needs a due date — end the repeat first. Nothing was changed.'
+    case 'timezone_unknown':
+      return "This app doesn't know your time zone yet, so the date couldn't be worked out. Nothing was changed."
+    case 'length_exceeded':
+      return 'That was too long to save, so nothing was changed.'
+    default:
+      return field === null
+        ? 'Nothing was changed.'
+        : 'That is not something the assistant can change. Nothing was changed.'
+  }
+}
+
 export function aiErrorMessage(retryTurnId: string | null, at: string): NewMsg {
   return {
     kind: 'error',
@@ -344,6 +409,12 @@ export function turnOutcomeMessages(turn: TurnWire, ctx: MessageContext, isLast:
       return { messages: [noMatchMessage(outcome.heard_transcript, at)], marks: null }
     case 'unsupported_query':
       return { messages: [unsupportedMessage(outcome.alternative, at)], marks: null }
+    // F-005 AC-36 / AC-40 — a refused turn carries NO marks: the task did not
+    // enter `changed_task_ids`, so there is nothing to attribute, and attributing
+    // a change that did not happen is the F-001 AC-4 failure `## Impact §1` exists
+    // to prevent (a message that names a task and cannot say what happened to it).
+    case 'refused':
+      return { messages: [refusedMessage(outcome.reason, outcome.field, at)], marks: null }
   }
 }
 

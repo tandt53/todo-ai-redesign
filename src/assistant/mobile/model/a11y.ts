@@ -139,7 +139,64 @@ export const SHELL_A11Y_IDS = {
   // and not built.
   tasksSaveNotice: 'tasks-save-notice',
   tasksSaveNoticeDismiss: 'tasks-save-notice-dismiss',
+  // ── § CarriedNotice (T-152) — five ids, TRANSCRIBED not invented ───────────
+  //
+  // F-005 AC-47's notice family. All five are published `(web, mobile)` in
+  // `components.md § CarriedNotice → Testids and states`, and design records that
+  // they *"close the debt `## Impact` §8(d) records as the mobile ids for
+  // AC-42/AC-43's undo offer, which is an element that does not exist"*.
+  //
+  // **This is why they are new rather than owed to F-003.** F-003's catalogue is
+  // closed and structurally asserted, and AC-9's and AC-39's mobile bounds needed
+  // nothing from it — they are accessible-name assertions on the existing
+  // `taskRow`. AC-43's offer is different: it is an **element that does not
+  // exist**, so it is owed an id, and design published it rather than leaving it
+  // to be invented here (platform mobile.md § F-005, last bullet).
+  //
+  // `tasksSaveNotice` above stays BLOCKED and that is not an inconsistency:
+  // § SaveNotice is a **sibling** of this family, not this family widened —
+  // design decided that explicitly, and the deciding reason is lifetime (rule 3
+  // clears § SaveNotice on *"leaving the surface"*, which is precisely what AC-47
+  // forbids, and below the split `PathSwitch` is one tap and primary navigation).
+  carriedNotices: 'shell-carried-notices',
+  carriedNotice: 'shell-carried-notice',
+  carriedNoticeRetry: 'shell-carried-notice-retry',
+  carriedNoticeUndo: 'shell-carried-notice-undo',
+  carriedNoticeDismiss: 'shell-carried-notice-dismiss',
 } as const
+
+/**
+ * Shell ids design has **published in the `components.md` testid table but not yet
+ * drawn into the three shell mockups**, each with what is owed and by whom.
+ *
+ * This is not a loophole in the anti-invention rule — it is the second half of it.
+ * The rule the mockup comparison enforces is *the client invents no id*, and the
+ * catalogue's upstream is normally the drawing. For § CarriedNotice it is the
+ * **published table**: design added the five ids and the component's whole
+ * specification on 2026-08-19 and recorded, in the same pass, that *"F-005's
+ * `phase: screens` dispatch must extend the three shell mockups, not only draw the
+ * detail — this family renders on Talk and Settings, which only `app-shell*.html`
+ * draw"*, and that *"the `src/` catalogue assertions go red on the five new ids by
+ * design; the fix belongs to whoever owns `src/`"*.
+ *
+ * So an id here is still traceable to design, in writing, with a row-by-row
+ * specification — it is just traceable to the table rather than to the drawing. An
+ * id in **neither** is invented and still fails. The entries are removed when
+ * `phase: screens` extends the mockups, at which point the mockup comparison
+ * covers them and a stale entry here fails on its own (asserted below).
+ */
+export const SHELL_IDS_AWAITING_MOCKUP: Record<string, string> = {
+  [SHELL_A11Y_IDS.carriedNotices]:
+    'components.md § CarriedNotice → Testids and states publishes it (web, mobile); the three shell mockups are extended at phase: screens (design, § CarriedNotice item 4)',
+  [SHELL_A11Y_IDS.carriedNotice]:
+    'as above — the notice row exemplar; its six row states are enumerated for the drawing pass as carried-failed … carried-undone',
+  [SHELL_A11Y_IDS.carriedNoticeRetry]:
+    'as above — one per field block, so a row with two failed fields carries two (AC-2: each field keeps its own retry)',
+  [SHELL_A11Y_IDS.carriedNoticeUndo]:
+    "as above — CN-UNDO's `Put back`, the new § Buttons `neutral` variant",
+  [SHELL_A11Y_IDS.carriedNoticeDismiss]:
+    "as above — any row's trailing Dismiss, icon-only with the accessible name `Dismiss`",
+}
 
 export type ShellA11yId = (typeof SHELL_A11Y_IDS)[keyof typeof SHELL_A11Y_IDS]
 
@@ -353,10 +410,12 @@ export function expectedShellIds(
     ids.add(SHELL_A11Y_IDS.pathTasks)
     const view = talkView(state)
     if (view === 'failed') ids.add(SHELL_A11Y_IDS.talkSessionRetryButton)
-    // AC-31: a task title is a control only when the list currently holds it.
+    // AC-31 rev 7: a task title is a control iff **the task still exists**. Not
+    // "the list currently holds it" — the route switches collection (`revealTask`),
+    // so a filter here would be a second gate. One condition, both clients.
     for (const m of state.messages) {
       for (const taskId of linkableTaskIds(m)) {
-        if (taskLinkState(taskId, state.tasks, shell.collection) === 'link') {
+        if (taskLinkState(taskId, state.tasks) === 'link') {
           ids.add(SHELL_A11Y_IDS.talkTaskLink)
         }
       }

@@ -55,6 +55,7 @@
 
 import { useEffect } from 'react'
 import type { AppState } from '../../_shared/model/reducer.ts'
+import { nowDate } from '../../_shared/model/clock.ts'
 import { COLLECTION_GROUPS, collectionCount, collectionName } from '../../_shared/model/tasks.ts'
 import type { Collection } from '../../_shared/model/tasks.ts'
 import {
@@ -106,7 +107,12 @@ export function ListsMenu({
     return () => globalThis.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  const now = new Date()
+  // F-005 AC-44 — **the injected clock, not an inline `new Date()`.** The per-row
+  // counts here are date computations, so they resolve against the one seam like
+  // every other one; `nowDate()` reads the provider `web/main.tsx` installs from
+  // `ControllerDeps.now`, which `window.__assistantSeams.setClock` drives. A
+  // component minting its own instant is a clock the harness cannot hold.
+  const now = nowDate()
   return (
     <>
       <div className="scrim" onClick={onClose} />

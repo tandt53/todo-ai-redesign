@@ -58,7 +58,11 @@ export function TasksSurface({
   const { styles, colors } = useStyles()
   const [draft, setDraft] = useState('')
   const [adding, setAdding] = useState(false)
-  const view = tasksSurfaceView(state, collection)
+  // F-005 AC-44 — one clock for this surface, the controller's. Passed explicitly
+  // rather than left to the parameter's default so the surface and the list it
+  // renders cannot straddle a day boundary between two reads of the same seam.
+  const now = controller.nowDate()
+  const view = tasksSurfaceView(state, collection, now)
   const menuTouch = touchProps(SHELL_A11Y_IDS.listsMenuButton, platform)
   const addTouch = touchProps(A11Y_IDS.addTaskButton, platform)
   const retryTouch = touchProps(SHELL_A11Y_IDS.tasksListRetryButton, platform)

@@ -6,6 +6,7 @@
 // gating, persistence, dedupe and undo always run real.
 
 import type { PendingOp, QuestionKind, TaskChanges, TaskStatus, TurnSource } from '../types.ts'
+import type { NewTaskFields } from '../engine/apply.ts'
 
 /**
  * AI endpoint parameters, resolved SERVER-side (api-contracts.md): the model
@@ -20,12 +21,22 @@ export const INTERPRETER_DEFAULTS = {
   max_tokens: 1024,
 } as const
 
-/** Candidate task as the model sees it — handle, no uuid (ADR-002). */
+/**
+ * Candidate task as the model sees it — handle, no uuid (ADR-002).
+ *
+ * **`note` and `reminder_at` joined it in F-005 (AC-36): the assistant must be
+ * able to READ what it may write.** *"Push the reminder an hour later"* had
+ * nothing to read, and the note was invisible to the model that may now change
+ * it. Steps are not in this list at all (AC-35) — a task with eight steps
+ * contributes one handle.
+ */
 export interface ContextTask {
   handle: string
   title: string
   status: TaskStatus
+  note: string | null
   due_at: string | null
+  reminder_at: string | null
   priority: string | null
 }
 
@@ -54,15 +65,8 @@ export type AnswerClass =
   | { type: 'selection'; handle: string }
 
 export type Interpretation =
-  | {
-      kind: 'create'
-      tasks: {
-        title: string
-        due_at?: string | null
-        priority?: string | null
-        status?: TaskStatus
-      }[]
-    }
+  /** create carries `NewTaskFields` — the turn-path create allowlist (AC-36) */
+  | { kind: 'create'; tasks: NewTaskFields[] }
   | { kind: 'edit'; edits: { handle: string; changes: TaskChanges }[] }
   | { kind: 'delete'; handles: string[] }
   | { kind: 'clarify'; handles: string[]; pending_op: PendingOp }

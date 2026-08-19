@@ -16,6 +16,7 @@ import type { Message } from '../../_shared/types.ts'
 import {
   LANDING_SURFACE,
   SURFACE_ERROR,
+  SURFACE_ERRORS_NOT_ON_PHONE,
   actionsToList,
   initialShellState,
   listAffordanceEnabled,
@@ -498,17 +499,39 @@ describe('published copy is transcribed from components.md, not composed', () =>
     return rows
   }
 
-  it('SE-SESSION and SE-TASKS carry design’s exact two lines', () => {
+  it('every SurfaceError row design publishes is either carried verbatim or recorded as not-on-phone', () => {
     // Parsing the OWNING artifact rather than a retyped copy is the direction
     // drift actually travels: this goes red when components.md moves, which a
     // check comparing two things the implementation controls never would.
+    //
+    // **It used to assert `rows.size === 2`, and that was the wrong shape of
+    // upstream check.** Design added SE-DETAIL for the web-only task detail and
+    // the suite went red with nothing wrong on either side — the count was
+    // standing in for "and no others", which is a claim about THIS client's
+    // surfaces rather than about design's table. So the count is gone and the
+    // partition is asserted instead: every published row is carried or excluded
+    // with a reason, and nothing is both or neither. A new row design adds still
+    // fails here (it is in neither set) — which is the property the count was
+    // there for — but it now fails saying which row and that it needs a decision.
     const rows = tableRows('SurfaceError')
-    expect(rows.size).toBe(2)
+    expect(rows.size).toBeGreaterThanOrEqual(2)
     for (const [id, cells] of rows) {
       const copy = SURFACE_ERROR[id as keyof typeof SURFACE_ERROR]
-      expect(copy, `${id} has no literal in the model`).toBeDefined()
+      const excluded = SURFACE_ERRORS_NOT_ON_PHONE[id]
+      expect(
+        (copy === undefined) !== (excluded === undefined),
+        `${id} must be either carried in SURFACE_ERROR or recorded in SURFACE_ERRORS_NOT_ON_PHONE — not both, not neither`,
+      ).toBe(true)
+      if (copy === undefined) continue
       expect(copy.line1).toBe(cells[1])
       expect(copy.line2).toBe(cells[2])
+    }
+    // The exclusions are for rows that EXIST upstream. A stale entry for a row
+    // design has removed would otherwise sit here forever looking deliberate.
+    for (const id of Object.keys(SURFACE_ERRORS_NOT_ON_PHONE)) {
+      expect(rows.has(id), `${id} is recorded as not-on-phone but design no longer publishes it`).toBe(
+        true,
+      )
     }
   })
 

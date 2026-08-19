@@ -171,6 +171,34 @@ export function makeStyles(c: Palette) {
       lineHeight: lineHeightFor(font.size.meta, 'meta'),
       color: c.text.muted,
     },
+    /**
+     * § TaskRow's mark budget: all the marks live on the row's baseline-aligned
+     * wrapping line, as inline siblings AFTER the title, in one fixed order.
+     *
+     * `flexWrap` is design's requirement rather than a default — *"nothing drops at
+     * a narrow width"*: at `breakpoints.mobile` the marks wrap under the title
+     * rather than being truncated or hidden, because a mark that disappears at one
+     * width is a mark the user cannot rely on, and the accessible name would then
+     * disagree with the visible row.
+     */
+    rowMarks: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      gap: spacing.xs,
+    },
+    /**
+     * TR-URGENCY — `font.size.meta`, `font.weight.emphasis`, **`text.primary`**:
+     * the one item on this line that is not muted, which is the "weight" half of
+     * design's *shape, weight, name*. No colour (§ Colour rules 5).
+     */
+    urgencyMark: {
+      fontFamily: font.family.body,
+      fontSize: font.size.meta,
+      lineHeight: lineHeightFor(font.size.meta, 'meta'),
+      fontWeight: String(font.weight.emphasis) as '600',
+      color: c.text.primary,
+    },
     badge: {
       alignSelf: 'flex-start',
       paddingHorizontal: spacing.xs,
@@ -580,6 +608,104 @@ export function makeStyles(c: Palette) {
       lineHeight: lineHeightFor(font.size.meta, 'meta'),
       color: c.text.primary,
     },
+    // ── § CarriedNotice (T-152) ────────────────────────────────────────────
+    //
+    // A region docked directly below the top bar, spanning the full frame width,
+    // **in flow, outside the surface stack**. Zero new colour, radius, shadow or
+    // motion tokens — design published none for it and none is invented here.
+    //
+    // The region PRE-EXISTS and is empty when there is nothing to report: a live
+    // region created at the same moment as its content is not reliably announced
+    // (§ SaveNotice's reasoning, with more force here because this one is created
+    // once per app rather than once per surface). `cnRegionEmpty` is that empty
+    // state — mounted, zero-height, no hairline.
+    cnRegion: { backgroundColor: c.bg.raised },
+    cnRegionEmpty: { height: 0 },
+    // The below-split ceiling is TWO rows; further rows scroll within the region,
+    // which never grows past that and always shows the first row in full.
+    cnScrollCapped: { maxHeight: 216 },
+    cnRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: spacing.sm,
+      paddingHorizontal: spacing.gutter_mobile,
+      paddingVertical: spacing.sm,
+      backgroundColor: c.bg.raised,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.bg.hairline,
+    },
+    cnBody: { flex: 1, gap: spacing.xs },
+    cnSentence: {
+      fontFamily: font.family.body,
+      fontSize: font.size.body,
+      lineHeight: lineHeightFor(font.size.body),
+      color: c.text.primary,
+    },
+    cnBlock: { gap: spacing.xs },
+    cnFieldLabel: {
+      fontFamily: font.family.body,
+      fontSize: font.size.meta,
+      lineHeight: lineHeightFor(font.size.meta, 'meta'),
+      color: c.text.muted,
+    },
+    // Three lines of the value, then it scrolls inside itself. Never truncated
+    // with an ellipsis — *carries the user's value* is the component's reason to
+    // exist, and a value the user cannot read back is not carried.
+    cnValueScroll: { maxHeight: lineHeightFor(font.size.body) * 3 },
+    // **The user's own words are not chrome and are never muted** — `text.primary`
+    // while the label above it is `text.muted`, which is the opposite of the usual
+    // emphasis and is design's point.
+    cnValue: {
+      fontFamily: font.family.body,
+      fontSize: font.size.body,
+      lineHeight: lineHeightFor(font.size.body),
+      color: c.text.primary,
+    },
+    cnSuperseded: {
+      fontFamily: font.family.body,
+      fontSize: font.size.meta,
+      lineHeight: lineHeightFor(font.size.meta, 'meta'),
+      color: c.text.muted,
+    },
+    // `Retry` keeps § Buttons' `ghost` variant — retry is not an undo, and
+    // § InlineRetryBanner and § SurfaceError already ship a ghost Retry: one word,
+    // one treatment, three sites.
+    cnGhostButton: {
+      alignSelf: 'flex-start',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.md,
+      borderRadius: radius.pill,
+    },
+    cnGhostButtonText: {
+      fontFamily: font.family.body,
+      fontSize: font.size.body,
+      fontWeight: String(font.weight.emphasis) as '600',
+      color: c.primary,
+    },
+    // `Put back` takes § Buttons' NEW `neutral` variant, and that variant exists
+    // for one reason: AC-43's offer is the one control in the catalogue with an
+    // explicit prohibition on a colour. § UndoAffordance fixes violet as *the
+    // assistant's own act* and this reverses the **user's** act, so the control
+    // must not wear the accent that would claim otherwise.
+    cnNeutralButton: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.md,
+      borderRadius: radius.pill,
+      borderWidth: 1,
+      borderColor: c.bg.hairline,
+      backgroundColor: c.bg.base,
+    },
+    cnNeutralButtonText: {
+      fontFamily: font.family.body,
+      fontSize: font.size.body,
+      fontWeight: String(font.weight.emphasis) as '600',
+      color: c.text.primary,
+    },
+    cnDismiss: { alignItems: 'center', justifyContent: 'center' },
     // § Empty states — Tasks
     emptyState: { padding: spacing.gutter_mobile, gap: spacing.sm, alignItems: 'flex-start' },
     emptyHead: {

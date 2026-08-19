@@ -8,6 +8,7 @@
 // here on purpose — a default would be a guess that only works on a simulator.
 
 import { AssistantApi } from '../_shared/api/client.ts'
+import { installClock } from '../_shared/model/clock.ts'
 import { ClientStores } from '../_shared/model/client-stores.ts'
 import { MobileAssistantController } from './controller.ts'
 import type { AsyncKeyValueBackend } from './ports/durable-store.ts'
@@ -82,6 +83,26 @@ export async function boot(opts: BootOptions): Promise<BootResult> {
     announcer: new RNAnnouncer(),
     reduceMotion,
   })
+
+  // ── F-005 AC-44 — ONE clock per side, and this is the phone's install ──────
+  // `ControllerDeps.now` is the seam, but it could never reach the **defaulted**
+  // `now: Date = nowDate()` parameters in `_shared/model/{format,tasks}.ts` and
+  // `mobile/model/tasks-view.ts` — a default is what makes a missed injection
+  // silently read the wall clock instead of raising a type error, which is the
+  // class AC-44 singles out by name. `installClock` points those defaults at the
+  // controller's already-injected clock and account zone.
+  //
+  // **Without this call the phone's defaulted `now` parameters read the wall clock
+  // while the controller holds a seam** — two clocks on one client, which is
+  // exactly what AC-44 forbids and exactly the defect L-023 records in the web
+  // harness: green only while the view reads the wrong one. `web/main.tsx:79`
+  // makes the same call, and `_shared/model/clock.ts` says in writing that
+  // `mobile/boot.ts` owes it.
+  //
+  // It is installed BEFORE `init()`: the cold open computes dates (the zone read,
+  // the collection predicates, AC-38's reminder read) and an install afterwards
+  // would leave the first render on the wall clock.
+  installClock(controller.clockProvider())
 
   await controller.init()
 

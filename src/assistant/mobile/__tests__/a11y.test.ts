@@ -30,6 +30,7 @@ import {
   RETIRED_A11Y_IDS,
   SHELL_A11Y_IDS,
   SHELL_IDS_BLOCKED,
+  SHELL_IDS_AWAITING_MOCKUP,
   a11yProps,
   expectedIds,
   expectedShellIds,
@@ -340,8 +341,14 @@ describe('the APP SHELL catalogue — one source, three attribute spellings', ()
   const android = catalogueOf('design/assistant/screens/app-shell-android.html', 'resource-id')
   const web = catalogueOf('design/assistant/screens/app-shell.html', 'data-testid')
 
-  it('all three shell mockups declare the same 31 ids', () => {
-    expect(sorted(ios)).toHaveLength(31)
+  it('all three shell mockups declare the same ids as each other', () => {
+    // The COUNT is deliberately gone. It was 31, and a hardcoded count is a claim
+    // about how many ids design has drawn — which is design's to change and did
+    // change. What is worth asserting is that the three variants agree with each
+    // other, byte for byte: one contract, three surface spellings. A drawing pass
+    // that extends one platform and forgets another is the real defect here, and
+    // the count never caught it.
+    expect(sorted(ios).length).toBeGreaterThanOrEqual(31)
     expect(sorted(android)).toEqual(sorted(ios))
     expect(sorted(web)).toEqual(sorted(ios))
   })
@@ -351,8 +358,38 @@ describe('the APP SHELL catalogue — one source, three attribute spellings', ()
     expect(sorted([...ios].filter((id) => !known.has(id)))).toEqual([])
   })
 
-  it('the shell catalogue invents nothing the mockups do not draw', () => {
-    expect(sorted([...ALL_SHELL_A11Y_IDS].filter((id) => !ios.has(id)))).toEqual([])
+  it('the shell catalogue invents nothing — every id is drawn, or published and awaiting its drawing', () => {
+    // The anti-invention rule, with the upstream stated as design actually
+    // publishes it. The drawing is the normal upstream; for § CarriedNotice's five
+    // ids the upstream is the **published testid table**, and design recorded in
+    // the same pass that the three shell mockups are extended at `phase: screens`
+    // and that *"the `src/` catalogue assertions go red on the five new ids by
+    // design"*. An id in neither the drawings nor the published table is invented
+    // and still fails here.
+    const undrawn = sorted([...ALL_SHELL_A11Y_IDS].filter((id) => !ios.has(id)))
+    const awaiting = new Set(Object.keys(SHELL_IDS_AWAITING_MOCKUP))
+    expect(undrawn.filter((id) => !awaiting.has(id)), 'neither drawn nor published').toEqual([])
+  })
+
+  it('every id awaiting a drawing is genuinely published in components.md, with a reason', () => {
+    // Otherwise the map above is a place to hide an invented id. Each entry has to
+    // point at a real row of design's own testid table — parsed, not retyped
+    // (L-008) — and carry a reason someone can act on.
+    const md = readFileSync(resolve(ROOT, 'design/_shared/components.md'), 'utf8')
+    const section = md.split('## CarriedNotice')[1] as string
+    expect(section, '§ CarriedNotice is missing from components.md').toBeDefined()
+    for (const [id, reason] of Object.entries(SHELL_IDS_AWAITING_MOCKUP)) {
+      expect(section.includes('`' + id + '`'), `${id} is not published in § CarriedNotice`).toBe(true)
+      expect((reason as string).length, `${id}'s reason is not a reason`).toBeGreaterThan(20)
+    }
+  })
+
+  it('nothing sits in the awaiting-a-drawing map once the mockups have caught up', () => {
+    // The entry's own expiry. Once `phase: screens` draws these ids, the mockup
+    // comparison covers them and a leftover entry here would keep a satisfied debt
+    // on the books forever, which is how a scope boundary decays into folklore.
+    const stale = Object.keys(SHELL_IDS_AWAITING_MOCKUP).filter((id) => ios.has(id))
+    expect(stale, 'drawn in the mockups but still recorded as awaiting a drawing').toEqual([])
   })
 
   it('the seven carried-over controls keep their existing ids rather than gaining new ones', () => {

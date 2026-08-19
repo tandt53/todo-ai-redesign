@@ -291,3 +291,21 @@ export const SURFACE_ERROR = {
     line2: 'Nothing is saved on this device yet. You can still add one by hand.',
   },
 } as const
+
+/**
+ * `§ SurfaceError` rows this client deliberately does NOT carry, each with the
+ * thing that makes it unreachable here — the same shape as `a11y.ts`'s
+ * `SHELL_IDS_BLOCKED`, and for the same reason: **an absent row and an
+ * unimplemented row look identical**, so the difference between a scope boundary
+ * and an oversight has to be written down.
+ *
+ * `shell.test.ts` reads this map. Every row design publishes must be either a
+ * literal above **or** recorded here, so design adding a row fails loudly rather
+ * than passing quietly (which is what happened when SE-DETAIL landed and the
+ * assertion was a hardcoded `rows.size === 2`), and building a surface without
+ * removing its row here fails too.
+ */
+export const SURFACE_ERRORS_NOT_ON_PHONE: Record<string, string> = {
+  'SE-DETAIL':
+    'the task detail (S6) is web-only this phase — "There is no detail surface on the phone" (F-005 ## Out of Scope, platform/mobile.md § F-005), so there is no read for it to fail and no column for it to take',
+}

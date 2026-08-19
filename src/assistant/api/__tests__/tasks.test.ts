@@ -66,15 +66,39 @@ describe('prototype task CRUD', () => {
       .send({ title: 'x', status: 'someday' })
     expect(badStatus.status).toBe(400)
     expect(badStatus.body.error.field).toBe('status')
-    // unknown fields → 400 naming the field, zero side effects (TC-34);
-    // reminder_at is not part of the create shape
+    // ---- THE INVERSION, and why it is not a regression --------------------
+    //
+    // This assertion used to read `expect(unknown.status).toBe(400)` on
+    // `reminder_at`, and it was correct for F-001: `POST /tasks` refused the
+    // field. **F-005 closes exactly that gap** — `reminder_at` is in
+    // `TASK_CREATE_FIELDS` (api-contracts § `POST /tasks`, which names this very
+    // line: *"that assertion must now be inverted — it pins the gap F-005
+    // closes"*), because *"add a task to call the dentist and remind me at
+    // nine"* is the most natural sentence for the field the owner's decision
+    // exists to make reachable, and `applyCreate` used to hard-code
+    // `reminder_at: null`.
+    //
+    // It is inverted rather than weakened: the write is asserted to LAND and to
+    // be observable on read-back, which is a stronger claim than the 400 it
+    // replaces. The unknown-field policy it used to exercise keeps its own case
+    // below, on a field that is genuinely not in the create shape.
+    const withReminder = await h.agent
+      .post('/tasks')
+      .set('X-User-Id', user)
+      .send({ title: 'Call the dentist', reminder_at: '2026-08-19T08:00:00.000Z' })
+    expect(withReminder.status).toBe(201)
+    expect(withReminder.body.task.reminder_at).toBe('2026-08-19T08:00:00.000Z')
+    expect((await listTasks(h, user))[0]!.reminder_at).toBe('2026-08-19T08:00:00.000Z')
+
+    // the policy itself is unchanged (TC-34): a field that is NOT in the create
+    // shape is still 400 naming the field, with zero side effects
     const unknown = await h.agent
       .post('/tasks')
       .set('X-User-Id', user)
-      .send({ title: 'x', reminder_at: '2026-08-19T08:00:00.000Z' })
+      .send({ title: 'x', reminder_shown_at: '2026-08-19T08:00:00.000Z' })
     expect(unknown.status).toBe(400)
-    expect(unknown.body.error.field).toBe('reminder_at')
-    expect(await listTasks(h, user)).toHaveLength(0)
+    expect(unknown.body.error.field).toBe('reminder_shown_at')
+    expect(await listTasks(h, user)).toHaveLength(1) // only the create above landed
 
     const task = await createTask(h, user, 'Buy milk')
     const badPatch = await h.agent

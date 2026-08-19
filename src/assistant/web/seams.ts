@@ -25,6 +25,13 @@
 //     // undo window (AC-8, AC-28). Wire fireIdleClose as: harness close via
 //     // injectable clock, then await window.__assistantSeams.resync().
 //     resync(): Promise<void>
+//     // F-005 AC-44 — hold BOTH sides of the clock at one instant and one zone
+//     // for the length of a run. Paired with the server's POST /__qa__/set-clock,
+//     // this is the half that did not exist: the web harness drove only the
+//     // server-side FakeClock while the browser under test ran on the real wall
+//     // clock, so the two sides were already at different instants — AC-44's own
+//     // failure mode surviving AC-44's own remedy (L-014).
+//     setClock(opts: {at: string, zone?: string}): Promise<void>
 //   }
 //
 // The two remaining spec seams are HARNESS-side, not client-side:
@@ -47,6 +54,22 @@ export interface AssistantSeamsGlobal {
     state: 'available' | 'none' | 'permission-denied' | 'transient-failure' | 'recovered',
   ): Promise<void>
   resync(): Promise<void>
+  /**
+   * **F-005 AC-44's client-side harness door.** Sets the controller's `now` and
+   * its computation zone for the rest of the run, then re-renders. **Held** — it
+   * does not advance on its own.
+   *
+   * `api-contracts § Harness doors → the client seam` names this seam by name and
+   * states why: `ControllerDeps.now` is an **in-process constructor parameter**,
+   * `web/main.tsx` passes none, and `window.__assistantSeams` exposed four methods
+   * and **no clock** — so AC-44's *"the test harness can set every seam and hold
+   * them at one instant and one zone"* was satisfied only by the unit harness,
+   * while the web e2e tier the AC names as broken had no door at all.
+   *
+   * **A second client seam is not introduced.** `ControllerDeps.now` is the
+   * existing injection point and this method drives it (`controller.setClock`).
+   */
+  setClock(opts: { at: string; zone?: string | null }): Promise<void>
 }
 
 export function testModeEnabled(search: string, storage: Pick<Storage, 'getItem'> | null): boolean {
@@ -95,6 +118,9 @@ export function installSeams(
     },
     resync: async () => {
       await controller.syncSession()
+    },
+    setClock: async (opts) => {
+      controller.setClock(opts)
     },
   }
   target['__assistantSeams'] = seams

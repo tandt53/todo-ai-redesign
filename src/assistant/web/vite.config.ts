@@ -27,6 +27,12 @@ export default defineConfig({
     proxy: {
       '/assistant': { target: apiTarget, changeOrigin: true },
       '/tasks': { target: apiTarget, changeOrigin: true },
+      // F-005 added `GET`/`PATCH /account` (ADR-010). Without this line the
+      // browser's /account request is answered by Vite with index.html, and
+      // `loadAccount` throws on `.timezone` before `refreshTasks()` ever runs —
+      // so the task list renders empty. Found by running the app; no unit test
+      // covers it, because they use a fake server rather than this proxy.
+      '/account': { target: apiTarget, changeOrigin: true },
     },
   },
   preview: {

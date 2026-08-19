@@ -671,8 +671,53 @@ describe('offline creates replay on reconnect (AC-25, BUG-001)', () => {
     h.controller.setOnline(true)
     await settle()
 
+    // ── THE REPLAY LITERAL WIDENED, and the widening is required (F-005) ───────
+    //
+    // This assertion pinned the five-field projection `## Impact §1` counts as its
+    // **fifteenth closed field list**: `{id, title, due_at, priority, status}`.
+    // Three facts made that a silent defect rather than a visible one — it is not a
+    // constructor, so "a missed field is `undefined` rather than its declared empty
+    // value" does not reach it; **every field on `TaskCreateBody` is optional**, so
+    // widening the type produces **no compile error** there; and it is shared code,
+    // so the phone has it too. A note, reminder, step, priority or repeat set on an
+    // offline-created task was accepted by the surface and **discarded at
+    // reconnect**.
+    //
+    // **F-005 AC-14 requires the widening on the CREATE path** — an offline-created
+    // step whose `parent_id` is dropped *"returns as an ordinary top-level task, in
+    // every collection and every count"*, which is what AC-35 exists to prevent —
+    // and **AC-13 requires `due_all_day`**, or the row replays as a bare local
+    // midnight and renders as "12:00 AM".
+    //
+    // **This is not the thing OQ6 declined.** What the owner declined is
+    // queue-and-replay for offline **edits**; this is the create-replay's field set,
+    // and `## Out of Scope` carries the qualification. The whole body is asserted,
+    // not a `toMatchObject` subset, so a field that starts being dropped again turns
+    // this red instead of passing quietly — which is the property the old assertion
+    // had and the reason it is widened rather than relaxed.
     expect(taskPosts(s)).toEqual([
-      { id: created.id, title: 'qaweb-bug001-offline', due_at: null, priority: null, status: 'inbox' },
+      {
+        id: created.id,
+        title: 'qaweb-bug001-offline',
+        note: null,
+        due_at: null,
+        // `null` here rather than `true`: this create was made on **Inbox**, so it
+        // has no date at all, and there is no day for a flag to be about. The Today
+        // case — where the flag is `true` and carries the device zone's answer about
+        // which day the user meant — is its own case below.
+        due_all_day: null,
+        reminder_at: null,
+        priority: 'none',
+        status: 'inbox',
+        parent_id: null,
+        step_order: null,
+        repeat_frequency: null,
+        repeat_interval: null,
+        repeat_weekdays: null,
+        repeat_month_days: null,
+        repeat_until: null,
+        repeat_count: null,
+      },
     ])
     // the user-visible half of the bug: it is on the server now, under the very
     // id the device assigned it, and no longer marked device-only

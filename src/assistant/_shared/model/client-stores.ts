@@ -127,6 +127,32 @@ export class ClientStores {
     this.store.set(`${this.prefix}.permission_state`, JSON.stringify(state))
   }
 
+  // ---- account.timezone (ADR-010) ----
+
+  /**
+   * The zone every client-side date computation reads, **cached durably** because
+   * that is what ADR-010 asks of clients: read `GET /account` at boot and on
+   * foreground and cache the value.
+   *
+   * The cache is not a convenience. Without it an offline cold open has no zone at
+   * all, and `null` would then be indistinguishable from *this account has never
+   * reported one* — two states with different correct behaviours. It is also the
+   * reason nothing here ever falls back to
+   * `Intl.DateTimeFormat().resolvedOptions().timeZone`: that is the *one row,
+   * three answers* source ADR-010 rejects by name.
+   */
+  accountTimezone(): string | null {
+    return read<{ timezone: string | null }>(this.store, `${this.prefix}.account`)?.timezone ?? null
+  }
+
+  saveAccountTimezone(timezone: string | null): void {
+    if (timezone === null) {
+      this.store.remove(`${this.prefix}.account`)
+      return
+    }
+    this.store.set(`${this.prefix}.account`, JSON.stringify({ timezone }))
+  }
+
   // ---- local (device-only) tasks — offline no-AI path ----
 
   localTasks(): TaskView[] {

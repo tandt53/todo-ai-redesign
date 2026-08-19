@@ -17,13 +17,46 @@ import { startOfTodayIso } from '../model/tasks.ts'
 
 export const T0 = '2026-08-16T14:04:00.000Z'
 
+/**
+ * A task on the wire. **Every field `TaskWire` declares is here**, and that is the
+ * point of the builder: `## Impact §1` counts sixteen enumerations of the task's
+ * field list and this is one of them, so a field the server starts sending and
+ * this builder does not carry is a shape the client tiers never test against.
+ * Widened for F-005 with the fields the detail reaches (AC-6, AC-8, AC-13, AC-14,
+ * AC-15, AC-18, AC-19, AC-25, AC-38, ADR-011).
+ *
+ * Empty values, not sample ones: a default task is a **plain, top-level, unfiled,
+ * undated, unrepeating task with no note and no steps**, so a test that means
+ * anything else has to say so. `emptyDetailFields` is the shared source for the
+ * F-005 half, so this builder and `createLocalTask` cannot drift.
+ */
 export function task(over: Partial<TaskWire> = {}): TaskWire {
   return {
     id: 'task-1',
     title: 'Review Q3 budget draft',
+    note: null,
     due_at: null,
+    // AC-13 — `null` is NOT DETERMINED, which is the honest default for a row
+    // with no due at all, and it renders as a date with no clock time.
+    due_all_day: null,
     reminder_at: null,
-    priority: null,
+    reminder_shown_at: null,
+    // AC-8 — never `null` on the wire: a stored `null` serializes as `"none"`.
+    priority: 'none',
+    parent_id: null,
+    step_order: null,
+    completed_by_parent: false,
+    repeat_frequency: null,
+    repeat_interval: null,
+    repeat_weekdays: null,
+    repeat_month_days: null,
+    repeat_until: null,
+    repeat_count: null,
+    series_id: null,
+    // AC-25 / AC-39 — false, and NOT derived from `series_id`: a builder that
+    // guessed liveness from the id would bake in the exact defect AC-39's third
+    // negative case exists to catch.
+    series_live: false,
     // `'inbox'`, not `'today'` — ADR-009 retired `status: 'today'` as a live
     // value, so a builder defaulting to it would mint rows the app can no
     // longer produce and put every un-overridden fixture in a state no user
@@ -48,7 +81,7 @@ export function task(over: Partial<TaskWire> = {}): TaskWire {
  * has exactly one spelling across both tiers.
  */
 export function todayTask(over: Partial<TaskWire> = {}): TaskWire {
-  return task({ due_at: startOfTodayIso(), ...over })
+  return task({ due_at: startOfTodayIso(new Date(T0)), ...over, due_all_day: over.due_all_day ?? true })
 }
 
 /**
@@ -87,9 +120,9 @@ export function filedTask(over: Partial<TaskWire> = {}): TaskWire & { list_id: s
 }
 
 export function upcomingTask(over: Partial<TaskWire> = {}): TaskWire {
-  const d = new Date(startOfTodayIso())
+  const d = new Date(startOfTodayIso(new Date(T0)))
   d.setDate(d.getDate() + 7)
-  return task({ due_at: d.toISOString(), ...over })
+  return task({ due_at: d.toISOString(), ...over, due_all_day: over.due_all_day ?? true })
 }
 
 export function turn(over: Partial<TurnWire> = {}): TurnWire {
@@ -222,7 +255,11 @@ export interface Call {
   headers: Record<string, string>
 }
 
-type Reply = { status: number; body: unknown } | { throws: unknown }
+type Reply =
+  | { status: number; body: unknown }
+  | { throws: unknown }
+  /** `holdOnce` — a reply the caller settles later. See the method for why. */
+  | { pending: Promise<Reply> }
 
 export class FakeServer {
   readonly calls: Call[] = []
@@ -233,8 +270,20 @@ export class FakeServer {
   private serverIds = 0
 
   private key(method: string, path: string): string {
-    // collapse ids so `POST /assistant/turn/{id}/undo` has one key
-    return `${method} ${path.replace(/\/assistant\/turn\/[^/]+\/undo/, '/assistant/turn/:id/undo').replace(/\/tasks\/[^/]+$/, '/tasks/:id')}`
+    // Collapse ids so `POST /assistant/turn/{id}/undo` has one key.
+    //
+    // **F-005 adds three task SUB-routes and they have to be collapsed too**
+    // (`POST /tasks/{id}/restore`, `/reminder-ack`, `/repeat-preview`). The old
+    // `/tasks/[^/]+$` anchor only matched a path ENDING in an id, so a scripted
+    // reply for one of them silently matched nothing and the caller got the
+    // catch-all `200 {}` — which is L-007's shape exactly: a fake that answers
+    // whatever it likes reads as a green test about a route nobody exercised.
+    // The query string is stripped first, so `?scope=series` shares its key.
+    const [bare = ''] = path.split('?')
+    return `${method} ${bare
+      .replace(/\/assistant\/turn\/[^/]+\/undo/, '/assistant/turn/:id/undo')
+      .replace(/\/tasks\/[^/]+\/(restore|reminder-ack|repeat-preview)$/, '/tasks/:id/$1')
+      .replace(/\/tasks\/[^/]+$/, '/tasks/:id')}`
   }
 
   /** Reply once (queued, in order). */
@@ -257,6 +306,37 @@ export class FakeServer {
     q.push({ throws: error })
     this.queues.set(route, q)
     return this
+  }
+
+  /**
+   * **A request that has not resolved yet**, and the caller decides when and how it
+   * does.
+   *
+   * `failOnce` throws *inside* the call, so every reply this fake can give has
+   * already arrived by the time the next line runs — there is no window for
+   * anything to happen *during* one. `F-005 AC-2` lives in exactly that window:
+   * *"the ordinary order in an outage is close, then fail"* — leaving a field is the
+   * gesture that precedes closing, so the write is in flight precisely when the user
+   * closes, and it fails after. Revision 2's AC-2 keyed the notice to the write's
+   * state *at the moment of closing*, which excludes that order; three lenses found
+   * it independently, and this is what makes the corrected trigger assertable.
+   *
+   * (The same shape as `animateScrollTo` in the web helpers, and for the same
+   * reason: a fake whose every effect lands synchronously cannot model a defect that
+   * lives mid-flight.)
+   */
+  holdOnce(route: string): { fail: (error?: unknown) => void; ok: (status: number, body: unknown) => void } {
+    let settle: ((r: Reply) => void) | null = null
+    const pending = new Promise<Reply>((res) => {
+      settle = res
+    })
+    const q = this.queues.get(route) ?? []
+    q.push({ pending })
+    this.queues.set(route, q)
+    return {
+      fail: (error: unknown = new TypeError('Failed to fetch')) => settle?.({ throws: error }),
+      ok: (status: number, body: unknown) => settle?.({ status, body }),
+    }
   }
 
   /**
@@ -304,7 +384,7 @@ export class FakeServer {
         id,
         title: String(b.title ?? ''),
         due_at: b.due_at ?? null,
-        priority: b.priority ?? null,
+        priority: b.priority ?? 'none',
         status: b.status ?? 'inbox',
       })
       store.set(id, row)
@@ -353,9 +433,11 @@ export class FakeServer {
     })
     const k = this.key(method, path)
     const queued = this.queues.get(k)?.shift()
-    const reply = queued ??
+    const chosen: Reply = queued ??
       this.defaults.get(k) ??
       this.taskReply(method, path, body) ?? { status: 200, body: {} }
+    const reply: Reply = 'pending' in chosen ? await chosen.pending : chosen
+    if ('pending' in reply) throw new Error('holdOnce settled with another pending reply')
     if ('throws' in reply) throw reply.throws
     return new Response(JSON.stringify(reply.body), {
       status: reply.status,

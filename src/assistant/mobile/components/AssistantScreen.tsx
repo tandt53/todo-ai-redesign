@@ -21,7 +21,8 @@ import { useCallback, useState, useSyncExternalStore } from 'react'
 import { View } from 'react-native'
 import type { MobileAssistantController } from '../controller.ts'
 import { pathSwitch } from '../model/shell.ts'
-import { revealTask, taskLinkState } from '../model/task-link.ts'
+import { taskLinkState } from '../model/task-link.ts'
+import { CarriedNotices } from './CarriedNotices.tsx'
 import { AssistantSurfaceHost } from './ShellHost.tsx'
 import { ThemeChoiceContext } from './styles.ts'
 import type { ThemeChoice } from './styles.ts'
@@ -66,20 +67,36 @@ function Shell({
   )
   const platform = controller.platform
 
-  // AC-31 — THE routine, reached from exactly one entry on a phone (a task
-  // named inside a message) and never re-implemented. A grep for `revealTask`
-  // returns every caller.
+  // AC-31 — THE routine, reached from exactly one entry on a phone (a task named
+  // inside a message) and never re-implemented. It is the CONTROLLER's method
+  // since revision 7, because the routine now switches collection before
+  // revealing and this view used to compute that switch and then dispatch a bare
+  // `{ type: 'reveal' }` of its own — throwing the switch away. A grep for
+  // `revealTask` returns the controller method and the routine, and nothing else.
   const openTask = useCallback(
     (taskId: string) => {
-      const next = revealTask(shell, taskId, state)
-      if (next === shell) return
-      controller.shellDispatch({ type: 'reveal', taskId })
+      controller.revealTask(taskId)
     },
-    [controller, shell, state],
+    [controller],
   )
 
   return (
     <View style={styles.screen}>
+      {/* ── § CarriedNotice — AT THE FRAME, and that placement is a requirement ──
+          F-005 AC-47: the notice is **visible wherever the user is** — not merely
+          reachable from there — including Talk and Settings. It is docked directly
+          below the top bar, in flow, **outside the surface stack**: the stacked
+          surfaces (S3 Lists menu, S4 Settings) slide over the content and UNDER
+          this region.
+
+          Mounted here rather than in `ShellHost` because `ShellHost` returns early
+          for S4 Settings — a region inside it would be invisible there, meeting
+          AC-47's requirement at three of five surfaces, which is the failure mode
+          the AC names. It also outranks every surface-owned strip
+          (§ OfflineBanner, § InlineRetryBanner, § SaveNotice): a notice about a
+          task the user cannot see would otherwise be buried by a condition of the
+          screen they happen to be standing on. */}
+      <CarriedNotices state={state} controller={controller} platform={platform} />
       <AssistantSurfaceHost
         state={state}
         controller={controller}
@@ -89,7 +106,7 @@ function Shell({
         theme={theme}
         onThemeChange={onThemeChange}
         onOpenTask={openTask}
-        canOpenTask={(taskId) => taskLinkState(taskId, state.tasks, shell.collection) === 'link'}
+        canOpenTask={(taskId) => taskLinkState(taskId, state.tasks) === 'link'}
       />
     </View>
   )

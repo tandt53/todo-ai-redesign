@@ -11,6 +11,7 @@ import { createRoot } from 'react-dom/client'
 import { App } from './App.tsx'
 import { AssistantApi } from '../_shared/api/client.ts'
 import { AssistantController } from '../_shared/controller.ts'
+import { installClock } from '../_shared/model/clock.ts'
 import { ClientStores } from '../_shared/model/client-stores.ts'
 import { LocalStorageDurableStore } from './ports/durable-store.ts'
 import { ScriptedTranscriptSource } from '../_shared/ports/transcript-source.ts'
@@ -61,6 +62,21 @@ export function bootstrap(container: HTMLElement): AssistantController {
     speech,
     stores: new ClientStores(new LocalStorageDurableStore(), userId),
   })
+
+  // ── F-005 AC-44 — install the ONE clock, from the ONE seam ─────────────────
+  //
+  // `_shared/model/clock.ts` holds no clock of its own: this call points it at
+  // `ControllerDeps.now` (and at `account.timezone` for the zone), so the eight
+  // `now: Date = nowDate()` default parameters in `_shared/model/{format,tasks}.ts`
+  // resolve against the seam a harness can hold instead of against the wall clock.
+  // **A default is what makes a missed injection silently wall-clock rather than a
+  // type error**, which is the class AC-44 singles out — so the defaults now BEING
+  // the seam is the fix, and this is its one installer. `window.__assistantSeams
+  // .setClock` drives the same object.
+  //
+  // `mobile/boot.ts` owes the identical call. Reported to mobile-agent rather than
+  // made here: `src/assistant/mobile/` is not this dispatch's to touch.
+  installClock(controller.clockProvider())
 
   if (testMode && speech instanceof ScriptedTranscriptSource) {
     installSeams(globalThis as unknown as Record<string, unknown>, speech, controller, store)

@@ -32,9 +32,71 @@ import {
   openTodayCount,
 } from '../../_shared/model/tasks.ts'
 import type { Collection } from '../../_shared/model/tasks.ts'
+import { priorityOf, remainingSteps, rendersClockTime, seriesLive } from '../../_shared/model/task-fields.ts'
+import type { Priority } from '../../_shared/types.ts'
 import type { ShellHandle } from '../shell.ts'
-import { AlertIcon, CheckIcon, MenuIcon, PencilIcon, PlusIcon, TrashIcon } from './icons.tsx'
+import {
+  AlertIcon,
+  CheckIcon,
+  ListChecksIcon,
+  MenuIcon,
+  PencilIcon,
+  PlusIcon,
+  RepeatIcon,
+  TrashIcon,
+} from './icons.tsx'
 import { PathSwitch } from './Chrome.tsx'
+
+/**
+ * § TaskRow § The row's mark budget — **three marks, one line, one decision.**
+ *
+ * F-005 asks the row for three new marked meanings at once: **AC-9's urgency**,
+ * **AC-17's remaining-step count** and **AC-39's repeating-series indicator**.
+ * Design decided the row once rather than absorbing three independent additions,
+ * and the order below is that decision, not arrival order:
+ *
+ *   checkbox · **title** · urgency · deadline · repeat · steps · (delete control)
+ *
+ * Urgency leads because it is the only item the **user** set as emphasis and it
+ * changes how the title is read; the deadline follows because it is the fact most
+ * often consulted; repeat explains where a row the user never typed came from; the
+ * step count is a number about a different set and is last. **Four items is the
+ * ceiling** — a fifth marked meaning is refused until one is removed, because the
+ * row's own record spent an explicit argument keeping it clean (*"One signal, not
+ * two"*) and a budget that can be topped up is not a budget.
+ *
+ * **None of the three carries colour.** The accent set is closed at five and every
+ * one already carries an assigned meaning; this row already renders under a
+ * `danger` Overdue heading on every row of Today in the live store and can also
+ * carry a `NEW`/`EDITED` marker. Each mark is **shape, weight and its accessible
+ * name** — which is what AC-33's 1.4.3 requires of it regardless.
+ *
+ * **AC-43's undo affordance is NOT one of them**: the owner placed it in
+ * § CarriedNotice on 2026-08-19, not on the row.
+ */
+const PRIORITY_GLYPH: Record<Priority, string> = {
+  none: '',
+  low: '!',
+  medium: '!!',
+  high: '!!!',
+}
+
+/** Three literals, never assembled from the level name (§ TaskRow). All four
+ * states are distinguished in the accessible name **regardless** of whether they
+ * render a glyph, which is the half assertable across the whole set and the half
+ * AC-33's 4.1.2 covers (tester W15). */
+const PRIORITY_A11Y: Record<Priority, string> = {
+  none: '',
+  low: 'low priority',
+  medium: 'medium priority',
+  high: 'high priority',
+}
+
+/** Two literals, singular and plural — not a template over a noun (§ TaskRow,
+ * L-008's reason). */
+function stepsLeftText(n: number): string {
+  return n === 1 ? '1 step left' : `${n} steps left`
+}
 
 function DiffChips({ line }: { line: DiffLine }) {
   return (
@@ -66,6 +128,9 @@ function TaskRow({
   flashing,
   flashPhase,
   controller,
+  now,
+  stepsLeft,
+  onOpen,
 }: {
   task: TaskView
   mark: DiffLine | null
@@ -73,13 +138,28 @@ function TaskRow({
   flashing: boolean
   flashPhase: 'a' | 'b'
   controller: AssistantController
+  /** F-005 AC-44 — the injected clock, never a fresh `new Date()`. */
+  now: Date
+  /** AC-17 — a **different number about a different set**, computed once per
+   * render for the whole list and never sourced from `collectionCount` (L-004). */
+  stepsLeft: number
+  /** AC-1 — activating the row opens its detail in ONE action. */
+  onOpen: (taskId: string) => void
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(task.title)
   const done = task.status === 'done'
+  const priority = priorityOf(task)
   const meta =
     task.due_at !== null
-      ? formatDue(task.due_at)
+      ? // F-005 AC-13 — **a due date set without a time never displays or behaves
+        // as a time the user did not choose.** `formatDue` returned a clock time
+        // unconditionally for a same-day due, so a task created while viewing Today
+        // rendered as **"12:00 AM"** — the behaviour AC-13 forbids, shipped, on the
+        // default landing collection. `due_all_day` is what tells a date-only
+        // deadline apart from one at midnight, and `null` (NOT DETERMINED) suppresses
+        // the clock too: that is the direction AC-13 exists to protect.
+        formatDue(task.due_at, now, { allDay: !rendersClockTime(task) })
       : task.local === true
         ? 'saved on this device'
         : null
@@ -90,11 +170,25 @@ function TaskRow({
   // second tap on the same task restarts the CSS animation rather than
   // inheriting a class that never changed.
   const arrival = flashing ? ` on-arrival on-arrival-${flashPhase}` : ''
+  const repeats = seriesLive(task)
+  // **The row's accessible name carries every mark** (AC-9, AC-17, AC-39, and
+  // AC-33's 4.1.2): all four priority states are distinguished here even though
+  // `none` renders no glyph, because one glyph cannot render three levels and
+  // 1.4.3 forbids carrying the difference in colour.
+  const rowName = [
+    task.title,
+    PRIORITY_A11Y[priority],
+    repeats ? 'repeats' : '',
+    stepsLeft > 0 ? stepsLeftText(stepsLeft) : '',
+  ]
+    .filter((s) => s !== '')
+    .join(', ')
   return (
     <li
       className={`task-row${done ? ' done' : ''}${arrival}`}
       data-testid="assistant-task-row"
       data-task-id={task.id}
+      aria-label={rowName}
     >
       <Toggle.Root
         className="checkbox"
@@ -131,7 +225,34 @@ function TaskRow({
           />
         ) : (
           <>
-            <span className="task-title">{task.title}</span>
+            {/* AC-1 — **activating a task row opens that task's detail in ONE
+                action**, and **the activation gesture is distinct from the inline
+                rename**: F-001 AC-18 puts an inline rename on this row, so a
+                title-tap that opened the detail would take a shipped affordance
+                away by collision. The rename keeps the pencil control it already
+                has; the title becomes the activation. Keyboard-operable, with
+                name/role/value, per AC-33's 2.1.1 and 4.1.2. */}
+            <button
+              className="task-title task-open"
+              data-testid="tasks-row-open"
+              aria-label={`Open “${task.title}”`}
+              onClick={() => onOpen(task.id)}
+            >
+              {task.title}
+            </button>
+            {/* TR-URGENCY — the one item in this line that is not muted, which is
+                the "weight" half of *shape, weight, name*. `none` renders NO mark,
+                so the marks stay meaningful. */}
+            {priority !== 'none' && (
+              <span
+                className="task-mark task-priority"
+                data-testid="tasks-row-priority-mark"
+                data-priority={priority}
+                aria-hidden="true"
+              >
+                {PRIORITY_GLYPH[priority]}
+              </span>
+            )}
             {mark !== null && (
               <span
                 className={`badge show ${mark.label === 'new' ? 'badge-new' : 'badge-edited'}`}
@@ -141,6 +262,34 @@ function TaskRow({
               </span>
             )}
             {meta !== null && <span className="task-meta">{meta}</span>}
+            {/* TR-REPEAT — AC-39: **a generated successor is never
+                indistinguishable from a task the user created.** Read from
+                `series_live` on the wire, NEVER keyed off `series_id`: that field is
+                assigned when a repeat is first set and never cleared, so a
+                predicate built on it passes the positive case and marks every task
+                that ever repeated as repeating for good — which on the phone is
+                wrong on the only thing that explains the row. */}
+            {repeats && (
+              <span
+                className="task-mark task-repeat"
+                data-testid="tasks-row-repeat-mark"
+                aria-hidden="true"
+              >
+                <RepeatIcon />
+              </span>
+            )}
+            {/* TR-STEPS — AC-17, **web only**. A task with no steps shows nothing;
+                the count is the remaining set and is never `collectionCount`. */}
+            {stepsLeft > 0 && (
+              <span
+                className="task-mark task-steps"
+                data-testid="tasks-row-steps-mark"
+                aria-hidden="true"
+              >
+                <ListChecksIcon />
+                <span className="num">{stepsLeft}</span>
+              </span>
+            )}
             {mark !== null && mark.label === 'edit' && mark.chips.length > 0 && (
               <DiffChips line={mark} />
             )}
@@ -219,7 +368,11 @@ export function TasksSurface({
 }) {
   const [adding, setAdding] = useState(false)
   const [draft, setDraft] = useState('')
-  const now = new Date()
+  // F-005 AC-44 — **the injected clock, not an inline `new Date()`.** This was one
+  // of the five inline sites the AC counts: a component minting its own instant is
+  // a clock the harness cannot hold, and a `setClock` that the list ignores is the
+  // *"adopted and unusable by the tier that needs it"* failure (L-014).
+  const now = controller.nowDate()
   const collection: Collection = shell.collection
   const tasks = collectionTasks(state.tasks, collection, now)
   // Grouping is per collection: Today gets `Overdue` + `Today · {date}`,
@@ -238,6 +391,25 @@ export function TasksSurface({
   // PathSwitch badge makes, which is the identity § PathSwitch asserts.
   const showCount = collection === 'today'
   const openToday = openTodayCount(state.tasks, now)
+  // ── F-005 AC-35, the web trio: `nothingAnywhere` / `loading` / `failedBlank` ──
+  //
+  // These are three of the **six readers** AC-35 names — and they *"decide behaviour
+  // from raw row cardinality and never consult `inCollection`"*, which is exactly
+  // why the AC names them separately from the one gate that reaches both clients.
+  //
+  // **The reading is deliberate and it is the AC's own** (tester-mobile M11,
+  // verified by running that account through all three): in the account AC-35
+  // names — every parent excluded from the collection on screen, so `collectionTasks`
+  // is empty while `state.tasks` is not — `nothingAnywhere` is **false**, so the
+  // surface renders the **empty-collection** state and not the first-run one. Telling
+  // a user with 40 tasks that they have none is the lie the generic empty state tells.
+  //
+  // So this stays `state.tasks.length === 0` and is NOT rewritten to read
+  // `collectionTasks`: revision 3 offered that as equally satisfying the AC and it
+  // is wrong — in the very account the same sentence names, `collectionTasks` is
+  // empty, so the surface would return the first-run state the sentence forbids two
+  // lines earlier. What DOES change is that steps never reach `collectionTasks` at
+  // all (the `inCollection` gate), so a step is never drawn as a top-level row.
   const nothingAnywhere = state.tasks.length === 0
   const loading = state.tasksLoad === 'loading' && state.tasks.length === 0
   // SE-TASKS is only for the case where there is genuinely nothing to show.
@@ -380,6 +552,9 @@ export function TasksSurface({
                         flashing={shell.flashTaskId === t.id}
                         flashPhase={shell.flashPhase}
                         controller={controller}
+                        now={now}
+                        stepsLeft={remainingSteps(state.tasks, t.id)}
+                        onOpen={shell.openDetail}
                       />
                     ))}
                   </ul>

@@ -11,6 +11,7 @@
 import { describe, expect, it } from 'vitest'
 import { initialState } from '../../_shared/model/reducer.ts'
 import type { AppState } from '../../_shared/model/reducer.ts'
+import { collectionTasks } from '../../_shared/model/tasks.ts'
 import type { Message } from '../../_shared/types.ts'
 import { SHELL_A11Y_IDS, expectedShellIds } from '../model/a11y.ts'
 import { initialShellState, shellReducer } from '../model/shell.ts'
@@ -23,9 +24,16 @@ import {
   taskLinkState,
 } from '../model/task-link.ts'
 import { motion } from '../model/theme.ts'
-import { task, todayTask } from './_helpers.ts'
+import { T0, task, todayTask } from './_helpers.ts'
 
 const AT = '2026-08-17T09:00:00.000Z'
+/**
+ * ONE instant for the fixtures and for every predicate under test (L-023). The
+ * `_shared` fixtures build their dates from `T0`, so reading the wall clock here
+ * would assert the agreement of two clocks rather than the behaviour — and this
+ * file's subject is a predicate that used to read the wall clock by default.
+ */
+const NOW = new Date(T0)
 
 function appliedMessage(taskId: string, title: string): Message {
   return {
@@ -69,19 +77,19 @@ function stateWith(over: Partial<AppState> = {}): AppState {
   }
 }
 
-describe('AC-31 — the door, when the list holds the row', () => {
+describe('AC-31 rev 7 — the door, when the task exists', () => {
   // Dated today — after ADR-009 that is the ONLY thing that puts a row in the
   // Today collection; `status: 'today'` would leave it in Inbox and make every
   // assertion below quietly about a different list.
   const held = todayTask({ id: 'task-1', title: 'Review the Q3 budget draft' })
 
   it('a named task the current collection holds is a control', () => {
-    expect(taskLinkState('task-1', [held], 'today')).toBe('link')
+    expect(taskLinkState('task-1', [held])).toBe('link')
   })
 
   it('activating it brings the row into view on the Tasks surface', () => {
     const state = stateWith({ tasks: [held], messages: [appliedMessage('task-1', held.title)] })
-    const next = revealTask(initialShellState('talk'), 'task-1', state)
+    const next = revealTask(initialShellState('talk'), 'task-1', state, NOW)
     expect(next.surface).toBe('tasks')
     expect(revealTarget(next)).toBe('task-1')
   })
@@ -94,15 +102,17 @@ describe('AC-31 — the door, when the list holds the row', () => {
   })
 })
 
-describe('AC-31 — a task the list does not hold is NOT ACTIVATABLE AT ALL', () => {
+describe('AC-31 rev 7 — a task that DOES NOT EXIST is not activatable at all', () => {
   // "Rendered as an inert control it would be an affordance that does nothing,
   // which is worse than none; rendered as plain text it is honest."
   //
-  // Two causes, two tests, and they are not the same case. Written apart on
-  // purpose: a single parameterised test over "the row is missing" would pass
-  // with either cause unimplemented (L-005).
+  // Revision 7 left ONE cause of inertness — the task not existing — and it has
+  // two structurally different shapes. Written apart on purpose: a single
+  // parameterised test over "the row is missing" passes with either shape
+  // unimplemented (L-005), and the second shape had no test at all before, so the
+  // `deleted_at` half of the predicate was asserted by nobody.
 
-  it('the task was DELETED — the message names it by title and there is no id to open', () => {
+  it('the task was DELETED and the client holds NO row for it — no id to open', () => {
     const state = stateWith({ tasks: [], messages: [deleteOutcome()] })
     // nothing in a delete outcome is linkable, so there is no id to guard
     expect(linkableTaskIds(deleteOutcome())).toEqual([])
@@ -111,45 +121,101 @@ describe('AC-31 — a task the list does not hold is NOT ACTIVATABLE AT ALL', ()
     )
   })
 
-  it('the task is FILTERED OUT of the collection currently shown', () => {
-    // The row exists. The list on screen does not hold it, so the
-    // postcondition — that row is on screen and has flashed once — could not
-    // be met by navigating there, and the title is plain text.
-    // The row Today does not hold is an UNDATED one: the four buckets split
-    // the open tasks by date, so an open row is in Today (dated on or before
-    // today), Upcoming (dated after) or Inbox (no date at all), and exactly one
-    // of them. An undated row is therefore the shortest way to say "in a
-    // collection that is not the one on screen" — it was chosen when Inbox was
-    // a superset of Today and it stays correct now that it is not, for a
-    // different reason.
-    const elsewhere = task({ id: 'task-9', title: 'Buy milk', status: 'inbox', due_at: null })
+  it('the client STILL HOLDS the row but the server soft-deleted it — inert for its own reason', () => {
+    // Structurally distinct from the case above, and this is the one the
+    // existence predicate is actually about: `tasks` contains the row, so a
+    // membership-only gate would answer `link`. `deleted_at` is what makes it
+    // inert — no row exists anywhere to bring into view — and web's `canReveal`
+    // checks exactly the same two things, which is what keeps AC-31's door meaning
+    // ONE thing on two clients (L-005, and rev 7 binds both predicates by path).
+    const gone = todayTask({ id: 'task-7', title: 'Order the cake' })
     const state = stateWith({
+      tasks: [{ ...gone, deleted_at: AT }],
+      messages: [appliedMessage('task-7', gone.title)],
+    })
+    expect(taskLinkState('task-7', state.tasks)).toBe('inert')
+    expect(expectedShellIds(initialShellState('talk'), state)).not.toContain(
+      SHELL_A11Y_IDS.talkTaskLink,
+    )
+    // and the routine refuses it rather than navigating to a row that is not there
+    const shell = initialShellState('talk')
+    expect(revealTask(shell, 'task-7', state, NOW)).toBe(shell)
+  })
+
+  it('the routine refuses a task the client has never heard of', () => {
+    const state = stateWith({ tasks: [] })
+    const shell = initialShellState('talk')
+    expect(revealTask(shell, 'no-such-task', state, NOW)).toBe(shell)
+  })
+})
+
+describe('AC-31 rev 7 — the collection is ROUTE, not a gate', () => {
+  // This is the behaviour revision 7 REPLACED, and the replacement is the reason
+  // these assertions are inverted rather than deleted. Rev 4 gated the door on the
+  // task being in the collection currently shown, justified by *"rendered as an
+  // inert control it would be an affordance that does nothing"*. Two later
+  // decisions falsified that reason — rev 6 gave the door a postcondition needing
+  // nothing from the list (F-005 AC-48), and the owner's direction of 2026-08-19
+  // supplies the switch. The gate is now the task existing; the switch belongs to
+  // the single reveal routine.
+  //
+  // The row Today does not hold is an UNDATED one: the date axis splits the open
+  // tasks into Today / Upcoming / Inbox and exactly one holds an undated row.
+  const elsewhere = task({ id: 'task-9', title: 'Buy milk', status: 'inbox', due_at: null })
+
+  function stateElsewhere(): AppState {
+    return stateWith({
       tasks: [elsewhere],
       messages: [appliedMessage('task-9', elsewhere.title)],
     })
+  }
+
+  it('a task the collection on screen does NOT hold is still a control', () => {
+    const state = stateElsewhere()
     const onToday = shellReducer(initialShellState('talk'), {
       type: 'select-collection',
       collection: 'today',
     })
-    expect(taskLinkState('task-9', state.tasks, onToday.collection)).toBe('inert')
-    expect(expectedShellIds(onToday, state)).not.toContain(SHELL_A11Y_IDS.talkTaskLink)
-
-    // …and it becomes a control again once the collection that holds it is the
-    // one on screen. Same row, same message, different list — which is what
-    // makes the rule about the LIST rather than about the task.
-    const onInbox = shellReducer(onToday, { type: 'select-collection', collection: 'inbox' })
-    expect(taskLinkState('task-9', state.tasks, onInbox.collection)).toBe('link')
+    expect(taskLinkState('task-9', state.tasks)).toBe('link')
+    expect(expectedShellIds(onToday, state)).toContain(SHELL_A11Y_IDS.talkTaskLink)
   })
 
-  it('the routine refuses an inert target rather than navigating to a row that is not there', () => {
-    const elsewhere = task({ id: 'task-9', status: 'inbox', due_at: null })
-    const state = stateWith({ tasks: [elsewhere] })
-    const shell = shellReducer(initialShellState('talk'), {
+  it('activating it switches to a collection that holds the row, THEN reveals it', () => {
+    // The postcondition — "that task's row is on screen and has flashed exactly
+    // once" — is what this asserts, and it is only reachable because the routine
+    // switched the collection. Asserting the reveal target alone would pass
+    // against a routine that revealed a row the list does not draw, which is the
+    // defect the switch exists to remove.
+    const state = stateElsewhere()
+    const onToday = shellReducer(initialShellState('talk'), {
       type: 'select-collection',
       collection: 'today',
     })
-    expect(revealTask(shell, 'task-9', state)).toBe(shell)
-    expect(revealTask(shell, 'no-such-task', state)).toBe(shell)
+    const next = revealTask(onToday, 'task-9', state, NOW)
+    expect(next.collection).toBe('inbox')
+    expect(next.surface).toBe('tasks')
+    expect(revealTarget(next)).toBe('task-9')
+    // and the row is genuinely drawn by the collection the route chose
+    expect(collectionTasks(state.tasks, next.collection, NOW).map((t) => t.id)).toContain('task-9')
+  })
+
+  it('a collection that already holds the row is not switched away from', () => {
+    const held = todayTask({ id: 'task-1', title: 'Review the Q3 budget draft' })
+    const state = stateWith({ tasks: [held], messages: [appliedMessage('task-1', held.title)] })
+    const onToday = shellReducer(initialShellState('talk'), {
+      type: 'select-collection',
+      collection: 'today',
+    })
+    const next = revealTask(onToday, 'task-1', state, NOW)
+    expect(next.collection).toBe('today')
+    expect(revealTarget(next)).toBe('task-1')
+  })
+
+  it('one predicate, no clock — existence is not a date question', () => {
+    // The ninth of AC-44's nine defaulted `now` parameters used to live on
+    // `taskLinkState` and decided this door's link/inert answer from the wall
+    // clock. Its absence is assertable: the function takes two arguments.
+    expect(taskLinkState.length).toBe(2)
   })
 })
 
@@ -173,7 +239,7 @@ describe('AC-31 — ONE routine, and it flashes exactly once', () => {
       s = shellReducer(s, action)
       expect(revealTarget(s), `${action.type} set a reveal target`).toBe(null)
     }
-    expect(revealTarget(revealTask(s, 'task-1', state))).toBe('task-1')
+    expect(revealTarget(revealTask(s, 'task-1', state, NOW))).toBe('task-1')
   })
 
   it('the same row arrived at twice is two events, so the second flash still fires', () => {
@@ -181,10 +247,10 @@ describe('AC-31 — ONE routine, and it flashes exactly once', () => {
     // row has to be dated for the routine to accept it at all.
     const held = todayTask({ id: 'task-1' })
     const state = stateWith({ tasks: [held] })
-    const first = revealTask(initialShellState('tasks'), 'task-1', state)
+    const first = revealTask(initialShellState('tasks'), 'task-1', state, NOW)
     const consumed = shellReducer(first, { type: 'reveal-consumed' })
     expect(revealTarget(consumed)).toBe(null)
-    const second = revealTask(consumed, 'task-1', state)
+    const second = revealTask(consumed, 'task-1', state, NOW)
     expect(revealTarget(second)).toBe('task-1')
     expect(second.reveal?.seq).toBeGreaterThan(first.reveal!.seq)
   })

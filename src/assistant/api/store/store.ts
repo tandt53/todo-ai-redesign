@@ -3,7 +3,14 @@
 // clone and commits by swapping — a mid-mutation throw discards the clone, so
 // partial writes can never land (AC-1, AC-6).
 
-import type { SessionRow, TaskRow, TurnRow, TurnSource, UndoOutcomeWire } from '../types.ts'
+import type {
+  AccountRow,
+  SessionRow,
+  TaskRow,
+  TurnRow,
+  TurnSource,
+  UndoOutcomeWire,
+} from '../types.ts'
 
 /**
  * Dedupe record for voice-guard undos (no turn row exists — ADR-006).
@@ -27,6 +34,16 @@ export interface StoreState {
   tasks: Record<string, TaskRow>
   /** keyed `${user_id}:${client_turn_id}` */
   undo_records: Record<string, UndoDedupeRecord>
+  /**
+   * account rows keyed by `user_id` (ADR-010, F-005). **Optional, because the
+   * live snapshot predates the entity**: measured 2026-08-19, the store's
+   * top-level keys are `sessions`, `turns`, `tasks`, `undo_records`. ADR-005
+   * decided on 2026-08-16 that *the account* is the scope and there has never
+   * been a row; `recordClientZone` creates the key lazily on the first
+   * authenticated request rather than a migration adding it (platform doc:
+   * migrations, none).
+   */
+  accounts?: Record<string, AccountRow>
 }
 
 export const emptyState = (): StoreState => ({
@@ -34,6 +51,7 @@ export const emptyState = (): StoreState => ({
   turns: {},
   tasks: {},
   undo_records: {},
+  accounts: {},
 })
 
 export interface Store {

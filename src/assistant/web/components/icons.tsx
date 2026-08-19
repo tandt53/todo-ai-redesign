@@ -196,6 +196,75 @@ export function AlertIcon() {
   )
 }
 
+/** Lucide `history` — § CarriedNotice's CN-SUPERSEDED glyph, `text.muted`:
+ * nothing is wrong and there is no action, so it takes no accent. */
+export function HistoryIcon() {
+  return (
+    <Ic className="ic-sm">
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+      <path d="M12 7v5l4 2" />
+    </Ic>
+  )
+}
+
+/** Lucide `repeat` — § TaskRow's TR-REPEAT mark (F-005 AC-39), `text.muted`.
+ * **Carried without colour**: `DESIGN.md § Colour rules` closes the accent set at
+ * five and every one already carries an assigned meaning, so the mark is shape,
+ * weight and its accessible name. A mark carried by colour alone fails AC-33's
+ * 1.4.3 regardless. */
+export function RepeatIcon() {
+  return (
+    <Ic className="ic-sm">
+      <path d="m17 2 4 4-4 4" />
+      <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
+      <path d="m7 22-4-4 4-4" />
+      <path d="M21 13v1a4 4 0 0 1-4 4H3" />
+    </Ic>
+  )
+}
+
+/** Lucide `list-checks` — § TaskRow's TR-STEPS mark (F-005 AC-17), web only. */
+export function ListChecksIcon() {
+  return (
+    <Ic className="ic-sm">
+      <path d="m3 17 2 2 4-4" />
+      <path d="m3 7 2 2 4-4" />
+      <path d="M13 6h8" />
+      <path d="M13 12h8" />
+      <path d="M13 18h8" />
+    </Ic>
+  )
+}
+
+/** Lucide `grip-vertical` — the step's move handle (F-005 AC-15/AC-16). It is a
+ * BUTTON, not a drag-only affordance: AC-16 makes the keyboard-operable
+ * single-pointer path a requirement, not a nicety. */
+export function GripIcon() {
+  return (
+    <Ic className="ic-sm">
+      <circle cx="9" cy="6" r="1" />
+      <circle cx="9" cy="12" r="1" />
+      <circle cx="9" cy="18" r="1" />
+      <circle cx="15" cy="6" r="1" />
+      <circle cx="15" cy="12" r="1" />
+      <circle cx="15" cy="18" r="1" />
+    </Ic>
+  )
+}
+
+/** Lucide `bell` — AC-38's passed-reminder surfacing and the detail's reminder
+ * field. Not the same object as the deadline (AC-11: *"they are two moments, and
+ * the surface says which one makes a sound"*). */
+export function BellIcon() {
+  return (
+    <Ic className="ic-sm">
+      <path d="M10.268 21a2 2 0 0 0 3.464 0" />
+      <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" />
+    </Ic>
+  )
+}
+
 export function MicSlash() {
   return (
     <span className="mic-slash" aria-hidden="true">
