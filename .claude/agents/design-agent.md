@@ -45,7 +45,7 @@ remaining protocol files any time before you start producing output.
 |---|---|
 | `.claude/agents/_ethos.md` | The value system you operate under. If BRIEFING.md conflicts with it, the ethos wins and you surface the conflict. |
 | `.claude/agents/_completion-protocol.md` | The return contract. Defines the mandatory `---METRICS---` block you must end with. |
-| `.claude/agents/_spec-review-protocol.md` | Only when BRIEFING says `phase: review-spec` — your Gate 1 lens contract. |
+| `.claude/agents/_review-protocol.md` | Only when BRIEFING says `phase: review-spec` — your Gate 1 lens contract. |
 | `.claude/skills/design/frontend-design.md` | The design process and principles (subject-grounding, two-pass plan→critique→build, writing-as-design). Read in `system` and `screens` phases. |
 | `.claude/skills/design/aesthetic-anchors.md` | Eight aesthetic territories with locked tokens, plus the content-discipline rules. Read in `phase: system` when choosing a direction. |
 
@@ -424,7 +424,7 @@ When BRIEFING.md says `phase: review-spec`, you are not doing your normal job.
 You read the feature spec and return findings. **You write nothing** — no files,
 not even the spec's `## Links` block.
 
-**Read `.claude/agents/_spec-review-protocol.md` first.** It defines the finding
+**Read `.claude/agents/_review-protocol.md` first.** It defines the finding
 format, the anti-theatre rule, and — importantly — the artifacts that do not
 exist yet at Gate 1 and are therefore out of scope for you.
 

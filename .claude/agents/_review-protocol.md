@@ -1,12 +1,16 @@
-# Spec Review Protocol (shared by every Gate 1 lens)
+# Review Protocol (shared by every review lens)
 
-<!-- Read by any agent dispatched with `phase: review-spec`. -->
-<!-- Defines the lens contract, the finding format, and what Gate 1 cannot assess. -->
-<!-- The orchestrator's half of this is ORCHESTRATION.md "Gate 1". -->
+<!-- Read by any agent dispatched with `phase: review-spec` or `phase: review-design`. -->
+<!-- Defines the lens contract, the finding format, and what each gate cannot assess. -->
+<!-- The orchestrator's half is ORCHESTRATION.md "Gate 1" and "Gate 1.5". -->
 
-At Gate 1 several agents read the same feature spec at the same time, each asking
-only the questions its role is qualified to ask. You are one of them. You produce
-**findings, not artifacts** — you write no files at all.
+**Two gates, one contract.** At **Gate 1** several agents read the same feature
+spec; at **Gate 1.5** several read the same design. In both, each asks only the
+questions its role is qualified to ask, and in both you produce **findings, not
+artifacts** — you write no files at all.
+
+Everything below applies to both unless a section names one. The section
+`## Reviewing a design` is the only part specific to Gate 1.5.
 
 This exists because a spec reviewed from one angle ships defects that the other
 angles would have caught for free. Measured on a real run: five requirement
@@ -43,6 +47,71 @@ You may **not** assess, and must not comment on:
 A finding about an artifact that does not exist yet is noise, and noise is what
 makes a review gate get switched off. If you catch yourself writing "the mockup
 should…", stop — that belongs to design-agent's own dispatch, not to your review.
+
+---
+
+## Reviewing a design (`phase: review-design`)
+
+**What exists at Gate 1.5:** the feature spec with its ACs, the design system
+(tokens, component inventory), and the screens or component entries this dispatch
+produced. **What does not:** code, tests, and any implementation of the contracts
+the design implies.
+
+**Why this gate exists at all.** Before it, a design went straight from its author
+to the implementers. The spec got five lenses before anything was built; the
+design got none; the code got fifteen deterministic checks. That is backwards
+against cost — a design defect is cheapest to fix before anyone builds against
+it, and the design is where a large share of a feature's consequential decisions
+are actually made.
+
+**The lenses are the design's consumers, and that is the rule rather than a list.**
+The implementer builds it, QA writes tests against it, and the spec is the
+contract it has to satisfy. Anyone who has to *act* on the drawing is qualified
+to say whether they can.
+
+- **dev lens** — can this be built? Does it need data, a field or a state the
+  system cannot produce? Does it contradict a platform rule?
+- **tester lens** — are the states enumerable and reachable? Is there a stable
+  way to address each element? Can an assertion about this actually fail?
+- **spec lens** — does every AC this design was briefed with have a drawn state,
+  and does the design **assert a rule the spec does not contain**? The second
+  half is the one nobody else is positioned to ask.
+
+**design-agent is not a lens here.** It is the author, and an author reviewing
+their own drawing is the self-consistency problem this gate exists to break.
+
+**product-agent is deliberately not a lens here either.** Value judgement stays
+at Gate 3, where the built thing can be judged rather than the picture of it.
+The counter-argument is real — catching *"this does not deliver what was asked"*
+at design time is far cheaper than at Gate 3 — and it is recorded here rather
+than settled, so the owner can pull product in by changing the switch.
+
+### What is out of scope at Gate 1.5
+
+| Not yours here | Covered by |
+|---|---|
+| token drift, overflow, contrast, duplicate testids | `design-check`, which design-agent runs before returning |
+| whether the mockup renders at all | C11 |
+| whether the implementation honours the testid catalogue | C14 |
+| whether the tests pass | C5 |
+
+**Taste is out of scope, and the boundary is sharper than it sounds.** *"I would
+have chosen a different colour"* is not a finding. *"This colour already means
+something else in the system"* is — the first is preference, the second is a
+rule the design breaks. If you cannot name the rule, you are reviewing taste.
+
+### The two failures this gate is aimed at
+
+Both are drawn from a real run, and neither is visible in a spec:
+
+1. **A design that asserts a rule no artifact contains.** Two rules once shipped
+   living only in the mockups — a heading's colour and a title naming its
+   collection. The drawing became the sole authority for both, which is the wrong
+   way round: the spec should say it and the drawing should show it.
+2. **Something true in the markup and invisible on screen.** A heading meant to
+   mark missed work rendered identically to an ordinary date heading. Every word
+   of the spec was satisfied and the point of the heading was not. A lens that
+   reads the *rendered* output catches this; one that reads the file does not.
 
 ---
 

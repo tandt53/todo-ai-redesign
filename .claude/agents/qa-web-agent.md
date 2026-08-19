@@ -43,7 +43,7 @@ remaining protocol files any time before you start producing output.
 |---|---|
 | `.claude/agents/_ethos.md` | The value system you operate under. If BRIEFING.md conflicts with it, the ethos wins and you surface the conflict. |
 | `.claude/agents/_completion-protocol.md` | The return contract. Defines the mandatory `---METRICS---` block you must end with. |
-| `.claude/agents/_spec-review-protocol.md` | Only when BRIEFING says `phase: review-spec` — your Gate 1 lens contract. |
+| `.claude/agents/_review-protocol.md` | Only when BRIEFING says `phase: review-spec` — your Gate 1 lens contract. |
 | `.claude/agents/_qa-foundations.md` | Shared QA craft: test design, priority rubric, triage, bug format, test-data namespacing. |
 
 Then, before you start work:
@@ -383,7 +383,7 @@ When BRIEFING.md says `phase: review-spec`, you are not doing your normal job.
 You read the feature spec and return findings. **You write nothing** — no files,
 not even the spec's `## Links` block.
 
-**Read `.claude/agents/_spec-review-protocol.md` first.** It defines the finding
+**Read `.claude/agents/_review-protocol.md` first.** It defines the finding
 format, the anti-theatre rule, and — importantly — the artifacts that do not
 exist yet at Gate 1 and are therefore out of scope for you.
 
@@ -403,6 +403,29 @@ silence. A lens that reports nothing without saying what it examined cannot be
 told apart from a lens that did not run.
 
 ---
+
+
+---
+
+## Phase: `review-design` (Gate 1.5 lens — tester)
+
+When BRIEFING.md says `phase: review-design`, you read the design — the screens
+and component entries this feature produced — and return findings. **You write
+nothing**, no test cases.
+
+**Read `.claude/agents/_review-protocol.md` § Reviewing a design first.**
+
+Your lens is **tester**, asked of a drawing rather than a spec:
+
+1. Are the states enumerable and each one reachable? A state nobody can drive is
+   a state nobody can verify.
+2. Is every element this design expects a test to address given a stable way to
+   address it — and is that way consistent with the catalogue rather than new?
+3. Could an assertion about this screen **fail**? A design whose only observable
+   is "it looks right" produces tests that pass against anything.
+
+Do **not** assess whether the implementation honours the testid catalogue — that
+is C14, at Gate 2, and it needs code that does not exist yet.
 
 ## Returning to the Orchestrator
 

@@ -247,13 +247,13 @@ run_case R15 "spec-agent stops requiring the Impact section" \
 # to read it. The scope-discipline rule then quietly excludes it, since it is not
 # any single lens's own question.
 run_case R15 "the protocol stops putting Impact in scope for every lens" \
-  "sed -i.bak 's/in scope for every lens/written by spec-agent/' $A/_spec-review-protocol.md"
+  "sed -i.bak 's/in scope for every lens/written by spec-agent/' $A/_review-protocol.md"
 
 # The absence loophole: a missing section reads as nothing to review rather than
 # as the finding it is. This is how the requirement dies without anyone editing
 # the requirement.
 run_case R15 "a missing Impact section stops being a finding" \
-  "sed -i.bak 's/itself a HIGH finding/itself unremarkable/' $A/_spec-review-protocol.md"
+  "sed -i.bak 's/itself a HIGH finding/itself unremarkable/' $A/_review-protocol.md"
 
 # R17 — the executor half. Three cases, one per way the link can break: the
 # playbook forgets it is the writer, the protocol stops naming an executor (so
@@ -271,6 +271,21 @@ run_case R17 "the protocol stops delegating, so the sweep examines nothing" \
 # unproven, which was the sweep working.
 run_case R17 "MANIFEST stops declaring where memory lives" \
   "sed -i.bak 's/^  memory_agent:/  disabled_memory_agent:/' MANIFEST.md"
+
+# R15 — Gate 1.5. Three cases, one per way the design gate dies while the rest of
+# it keeps looking healthy.
+run_case R15 "the design gate is removed from the pipeline" \
+  "sed -i.bak 's/Gate 1.5/Gate ONE-POINT-FIVE-REMOVED/g' .claude/ORCHESTRATION.md"
+
+# The author quietly becomes a lens over its own work — the self-consistency
+# problem the gate exists to break, reintroduced by deleting one sentence.
+run_case R15 "the design's author is allowed to review it" \
+  "sed -i.bak 's/design-agent is not a lens here/design-agent may also review/' $A/_review-protocol.md"
+
+# The class of finding the gate exists for, routed as a design defect instead of
+# to the spec — which deletes a good rule for being written in the wrong file.
+run_case R15 "a rule found only in the design stops routing to the spec" \
+  "sed -i.bak 's/Deleting a good rule because/Removing the rule is fine because/' .claude/ORCHESTRATION.md"
 
 # R16 — design craft. The scenario's claim is that the aesthetic direction is
 # delegated to the vendored skills rather than restated in prose, so the case

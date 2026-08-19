@@ -48,7 +48,7 @@ remaining protocol files any time before you start producing output.
 | `.claude/agents/_ethos.md` | The value system you operate under. If BRIEFING.md conflicts with it, the ethos wins and you surface the conflict. |
 | `.claude/agents/_completion-protocol.md` | The return contract. Defines the mandatory `---METRICS---` block you must end with. |
 | `.claude/agents/_qa-foundations.md` | AC quality spectrum and the evidence standard you judge against. |
-| `.claude/agents/_spec-review-protocol.md` | In `phase: review-spec` you are one lens of several — that file defines the shared finding format and the anti-theatre rule. Your four lenses below are unchanged. |
+| `.claude/agents/_review-protocol.md` | In `phase: review-spec` you are one lens of several — that file defines the shared finding format and the anti-theatre rule. Your four lenses below are unchanged. |
 
 Then, before you start work:
 

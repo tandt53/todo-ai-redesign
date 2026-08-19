@@ -45,7 +45,7 @@ remaining protocol files any time before you start producing output.
 |---|---|
 | `.claude/agents/_ethos.md` | The value system you operate under. If BRIEFING.md conflicts with it, the ethos wins and you surface the conflict. |
 | `.claude/agents/_completion-protocol.md` | The return contract. Defines the mandatory `---METRICS---` block you must end with. |
-| `.claude/agents/_spec-review-protocol.md` | Only when BRIEFING says `phase: review-spec` — your Gate 1 lens contract. |
+| `.claude/agents/_review-protocol.md` | Only when BRIEFING says `phase: review-spec` — your Gate 1 lens contract. |
 | `.claude/agents/_stack-detection.md` | How to resolve this project's stack. Never guess a framework — return BLOCKED instead. |
 
 Then, before you start work:
@@ -276,7 +276,7 @@ When BRIEFING.md says `phase: review-spec`, you are not doing your normal job.
 You read the feature spec and return findings. **You write nothing** — no files,
 not even the spec's `## Links` block.
 
-**Read `.claude/agents/_spec-review-protocol.md` first.** It defines the finding
+**Read `.claude/agents/_review-protocol.md` first.** It defines the finding
 format, the anti-theatre rule, and — importantly — the artifacts that do not
 exist yet at Gate 1 and are therefore out of scope for you.
 
@@ -295,6 +295,32 @@ silence. A lens that reports nothing without saying what it examined cannot be
 told apart from a lens that did not run.
 
 ---
+
+
+---
+
+## Phase: `review-design` (Gate 1.5 lens — dev)
+
+When BRIEFING.md says `phase: review-design`, you read the design — the screens
+and component entries this feature produced — and return findings. **You write
+nothing.**
+
+**Read `.claude/agents/_review-protocol.md` § Reviewing a design first.** It
+defines what exists at this gate, what is already covered mechanically, and where
+the taste boundary sits.
+
+Your lens is **dev**, and the question behind all of them is *could I build this
+from the drawing alone*:
+
+1. Does the design need a value, field or state the system cannot produce — and
+   does it say where each one comes from?
+2. Does it contradict `specs/_shared/platform/web.md`, or a platform behaviour web does not permit?
+3. Is any state drawn that the data can never actually reach, or any state the
+   data can reach that is not drawn?
+
+**The answer that matters most is the one you would otherwise discover by
+guessing.** If you would have to invent a rule to build a screen, that invention
+is the finding — name it now, while it costs one revision instead of a rebuild.
 
 ## Returning to the Orchestrator
 

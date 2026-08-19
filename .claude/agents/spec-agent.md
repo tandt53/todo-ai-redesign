@@ -403,6 +403,32 @@ Best-effort only. Skip silently if the tools are unavailable. Never block your d
 
 ---
 
+## Phase: `review-design` (Gate 1.5 lens — spec)
+
+When BRIEFING.md says `phase: review-design`, you are not writing a spec. You read
+the design against the spec it was built from and return findings. **You write
+nothing** — not the spec, not the design.
+
+**Read `.claude/agents/_review-protocol.md` § Reviewing a design first.**
+
+Your lens is the one no other role can hold, because you own the contract the
+design has to satisfy. Two questions, and the second is why this lens exists:
+
+1. **Coverage** — does every AC this design was briefed with have a drawn state?
+   Name the ACs with none. If the briefing did not say which ACs the design was
+   given, say so and review coverage against the whole feature.
+2. **Assertion** — does the design **state a rule the spec does not contain**? A
+   colour that carries a meaning, a heading that names its collection, a control
+   that appears only under a condition nobody wrote down. These are usually
+   *good* rules, discovered while drawing — and they are recorded in the wrong
+   file, which leaves the drawing as the only authority for them.
+
+**A rule found only in the design is not a defect in the design.** Report it as
+owed to the spec. Do not recommend removing it: a rule deleted for being written
+in the wrong place is the worst outcome this gate can produce.
+
+---
+
 ## Returning to the orchestrator
 
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# R15 — Gate 1's multi-lens review is wired, scoped, and cannot pass by silence.
+# R15 — the review gates (1 and 1.5) are wired, scoped, and cannot pass by silence.
 #
 # The gate's whole value rests on two properties that are easy to lose in an edit:
 #
@@ -20,17 +20,17 @@ source "$SCRIPT_DIR/../lib/assert.sh"
 CLAUDE_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 PROJECT_ROOT="$(cd "$CLAUDE_ROOT/.." && pwd)"
 AGENTS="$CLAUDE_ROOT/agents"
-PROTO="$AGENTS/_spec-review-protocol.md"
+PROTO="$AGENTS/_review-protocol.md"
 ORCH="$CLAUDE_ROOT/ORCHESTRATION.md"
 MANIFEST="$PROJECT_ROOT/MANIFEST.md"
 
-echo "─── R15 — Gate 1 multi-lens spec review ───"
+echo "─── R15 — multi-lens review gates (spec + design) ───"
 
 # The lenses that must carry a review-spec section, and the lens each declares.
 LENSES="architect-agent:architect backend-agent:dev web-agent:dev mobile-agent:dev \
 design-agent:design qa-api-agent:tester qa-web-agent:tester qa-mobile-agent:tester"
 
-assert_file_exists "$PROTO" "_spec-review-protocol.md present"
+assert_file_exists "$PROTO" "_review-protocol.md present"
 
 # --- the protocol states the boundary, or lenses will review thin air ---
 assert_file_contains "$PROTO" 'only artifact' "protocol states the spec is the only artifact at Gate 1"
@@ -50,12 +50,12 @@ for pair in $LENSES; do
   agent="${pair%%:*}"; lens="${pair##*:}"
   f="$AGENTS/${agent}.md"
   [ -f "$f" ] || { _record_fail "missing agent file: ${agent}.md"; continue; }
-  grep -q '_spec-review-protocol.md' "$f" || missing_proto="${missing_proto}${agent} "
+  grep -q '_review-protocol.md' "$f" || missing_proto="${missing_proto}${agent} "
   grep -q 'Phase: `review-spec`' "$f"     || missing_section="${missing_section}${agent} "
   grep -q "Gate 1 lens — ${lens}" "$f"    || wrong_lens="${wrong_lens}${agent}(want ${lens}) "
 done
 
-[ -z "$missing_proto" ]   && _record_pass "every lens references _spec-review-protocol.md" \
+[ -z "$missing_proto" ]   && _record_pass "every lens references _review-protocol.md" \
                           || _record_fail "lens(es) not referencing the protocol: ${missing_proto}"
 [ -z "$missing_section" ] && _record_pass "every lens carries a review-spec phase section" \
                           || _record_fail "lens(es) with no review-spec section: ${missing_section}"
@@ -97,6 +97,44 @@ assert_file_contains "$PROTO" 'true and incomplete' \
   "protocol names incompleteness, not only error, as a reviewable impact failure"
 assert_file_contains "$PROTO" 'itself a HIGH finding' \
   "protocol makes a MISSING Impact section a finding rather than nothing to review"
+
+# --- Gate 1.5: the design review, which for a long time did not exist ---
+#
+# The spec got five lenses before anything was built, the code got fifteen
+# deterministic checks, and the design got neither — it went from its author
+# straight to the implementers. Backwards against cost: a design defect is
+# cheapest before anyone builds on it, and the design is where a large share of a
+# feature's decisions are actually taken.
+#
+# Three properties are asserted because each dies differently. The gate can be
+# deleted; it can be kept while its author quietly becomes one of its own lenses;
+# and the class of finding it exists for can be routed to the wrong place.
+assert_file_contains "$ORCH" 'Gate 1.5' "ORCHESTRATION defines the design gate"
+assert_file_contains "$ORCH" 'review-design' "ORCHESTRATION names the design-review phase"
+assert_file_contains "$PROTO" 'Reviewing a design' "the protocol carries the design-review contract"
+assert_file_contains "$PROTO" 'design-agent is not a lens here' \
+  "the protocol bars the author from reviewing its own design"
+assert_file_contains "$PROTO" 'you are reviewing taste' \
+  "the protocol draws the taste boundary — a rule broken, not a preference"
+
+# The finding that says the design asserts a rule no spec contains must be routed
+# to the SPEC, not treated as a design defect. Deleting a good rule because it
+# was written in the wrong file is the worst outcome available here.
+# Anchored on a fragment that survives a reflow. The first version quoted a
+# phrase that happened to span a line break in the source, so it matched nothing
+# and failed against text that said exactly what it wanted — an assertion about
+# prose has to be written against how prose actually wraps.
+assert_file_contains "$ORCH" 'Deleting a good rule because' \
+  "a rule found only in the design is routed to the spec, not deleted"
+
+assert_file_contains "$MANIFEST" 'design_review' "MANIFEST declares design_review"
+for mode in full skip; do
+  if grep -qE "^design_review:[[:space:]]+${mode}|# *${mode} =" "$MANIFEST"; then
+    _record_pass "MANIFEST documents design_review mode: ${mode}"
+  else
+    _record_fail "MANIFEST does not document design_review mode: ${mode}"
+  fi
+done
 
 # --- the orchestrator half ---
 assert_file_contains "$ORCH" 'Gate 1 — multi-lens spec review' "ORCHESTRATION defines the gate"

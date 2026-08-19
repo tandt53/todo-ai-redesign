@@ -274,6 +274,7 @@ dashboard, so silently accepting it corrupts the metrics.
 | 1 | Spec | spec-agent | — |
 | 2 | **Gate 1**: Multi-lens spec review | tester + dev + architect + design + product, `phase: review-spec` | yes |
 | 3 | Architecture + Design | architect-agent, design-agent (`phase: system` if needed, then `phase: screens`) | architect yes; design phases are sequential |
+| 3.5 | **Gate 1.5**: Multi-lens design review | dev + tester + spec, `phase: review-design` | yes |
 | 4 | Implementation + QA authoring | backend/web/mobile + 3 QA agents | yes |
 | 5 | QA execution | qa-api/qa-web/qa-mobile agents | yes — after harness is up |
 | 6 | **Gate 2**: Structural review | reviewer-agent (C1–C15 deterministic checks) | — |
@@ -294,8 +295,9 @@ is absent rather than improvising one.
 
 **Phase 5 sequencing:** wait for all implementers to return, bring the test harness up yourself, then dispatch all three QA agents with `phase: execute` in one batch. They run simultaneously against the same stack — collision is prevented by test-data namespacing, not by serializing them (`.claude/agents/_qa-foundations.md` §10). Bring the harness down after all three return.
 
-**Three quality gates:**
+**Four quality gates:**
 - **Gate 1** (after spec) — the spec is reviewed through several role lenses before any build work
+- **Gate 1.5** (after design, before implementation) — the design is reviewed by the three roles that have to act on it: the implementer, QA, and the spec it must satisfy
 - **Gate 2** (after QA) — reviewer-agent runs deterministic structural checks (files, tests, contracts, security)
 - **Gate 3** (after reviewer pass) — product-agent does final UX/value review before human signs off
 
@@ -342,7 +344,7 @@ feature dispatches neither the web nor the mobile lens, and not design.
 
 All of them get `phase: review-spec` and the same read list: the feature spec, the
 relevant platform docs, MANIFEST. They write nothing — their contract is
-`.claude/agents/_spec-review-protocol.md`.
+`.claude/agents/_review-protocol.md`.
 
 **A lens that returns neither findings nor a `checked:` list has violated the
 protocol.** Re-dispatch it once; if it does so again, record it in
@@ -426,6 +428,74 @@ that silently ships wrong money arithmetic outranks a HIGH about naming.
 the correct default — proceeding past an unresolved requirement conflict is how
 the wasted dispatches happen in the first place. Say so in the header so an
 unattended queue is never a surprise.
+
+## Gate 1.5 — multi-lens design review
+
+Runs after phase 3's design dispatches return and **before** phase 4 dispatches
+any implementer. Configured by `MANIFEST ## Product.design_review`:
+`full` (default) or `skip`. Contract: `.claude/agents/_review-protocol.md`
+§ Reviewing a design.
+
+**Why it exists.** The spec gets five lenses before anything is built, the code
+gets fifteen deterministic checks, and the design used to get neither — it went
+from its author straight to the implementers. That is backwards against cost: a
+design defect is cheapest before anyone builds on it, and the design is where a
+large share of a feature's consequential decisions are actually taken.
+
+### Step 1 — the free check first
+
+```bash
+bash .claude/tools/design-check/run-design-check.sh
+```
+
+design-agent already runs this, so it should be green. Run it anyway: a lens
+dispatched against a design that fails its own mechanical check will spend its
+findings on things this reports for free.
+
+### Step 2 — dispatch three lenses in parallel, `phase: review-design`
+
+| Lens | Agent | Asks |
+|---|---|---|
+| dev | the implementer for this feature's primary platform | can it be built; does it need state the system cannot produce |
+| tester | the QA agent for that platform | are the states enumerable and reachable; can an assertion fail |
+| spec | spec-agent | does every briefed AC have a drawn state; **does the design assert a rule the spec does not contain** |
+
+**design-agent is not dispatched** — it is the author. **product-agent is not
+either**; value judgement stays at Gate 3. Both exclusions and the argument
+against the second are recorded in the protocol.
+
+Dispatch the same way as any agent: agent file content + briefing, in the prompt.
+Each lens gets the **spec**, the **design system**, and the **screens under
+review** — and is told which ACs this design was briefed with, because the spec
+lens cannot check coverage of a set it was never given.
+
+### Step 3 — classify what came back
+
+**HIGH** → revision task to design-agent, naming the screens or component
+entries. HIGH blocks only what it names; unaffected screens proceed to
+implementation.
+**MEDIUM / LOW** → route as a revision note, or record against the component
+entry. You are not the writer of `design/`; design-agent owns the body.
+
+**One class routes elsewhere entirely.** A finding that the design asserts a rule
+no spec contains is **not** a design defect — the rule may be right. Route it to
+spec-agent to write down, and let the design stand. Deleting a good rule because
+it was recorded in the wrong file is the worst available outcome.
+
+**Conflict** — two lenses giving incompatible directives on the same screen. A
+human decides, same as Gate 1.
+
+### Step 4 — round cap
+
+Same as Gate 1: one review round, at most one re-review, third round escalates.
+
+### Step 5 — present the decisions to the human
+
+Same block format as Gate 1 § Step 5. One addition worth making: **name the
+screens a human should look at with their own eyes**, because two of the defects
+this gate is aimed at are invisible in a file and obvious in a render.
+
+---
 
 ## Optional: qa-explorer-agent (exploratory crawl)
 

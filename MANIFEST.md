@@ -263,6 +263,10 @@ spec_review:    full      # full = every applicable role lens reviews the spec a
                           # product-only = previous behaviour, product-agent alone
                           # skip = static spec checks only
                           # C13 runs in all three modes. See ORCHESTRATION "Gate 1".
+design_review:  full      # full = dev + tester + spec lenses read the design at
+                          #        Gate 1.5, before any implementer is dispatched
+                          # skip = design-check only (mechanical)
+                          # See ORCHESTRATION "Gate 1.5".
 ```
 
 <!-- What `skip` gives up, stated so the choice is informed rather than silent: -->
