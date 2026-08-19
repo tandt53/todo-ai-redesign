@@ -7,3 +7,12 @@ dist/
 
 # Playwright run output — regenerated per run
 test-results/
+
+# Ephemeral output — regenerable, never an input to anything. One rule decides
+# what belongs here: could a tool make this again from what is in the repo?
+# Reports and QA run summaries are AUTHORED records and stay in git, however
+# much they look like output in a file tree.
+#
+# design-shots and mobile-preview moved here on 2026-08-19; 57 of their files
+# had been tracked, which is 4.2 MB of regenerable renders sitting in history.
+output/

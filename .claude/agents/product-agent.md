@@ -111,7 +111,7 @@ Narrower evaluation:
 **Look at the screens, do not read them.** For features with a UI:
 
 ```bash
-bash .claude/tools/design-check/run-design-check.sh --screenshots .claude/eval/design-shots
+bash .claude/tools/design-check/run-design-check.sh --screenshots output/design-shots
 ```
 
 Then Read the resulting PNGs — one per screen per breakpoint per state — and

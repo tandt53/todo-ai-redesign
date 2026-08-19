@@ -8,7 +8,9 @@ The iOS Simulator and Android emulator are **shut down and not to be started**. 
 behaviour is verified at two tiers instead of three:
 
 1. **Model tier** (vitest, `createSurface()`) — unchanged, and it carries most of AC-30.
-2. **Browser render** (`.mobile-preview/`) — the real React Native components rendered
+2. **Browser render** (`.mobile-preview/`, moved to `output/mobile-preview/` on
+   2026-08-19 when ephemeral output was consolidated — the path in this record is
+   left as written, because it says what was true when the decision was taken) — the real React Native components rendered
    through `react-native-web`, driven by the real `MobileAssistantController`.
 
 The device tier is **deferred, not deleted**. `qa/assistant/F-001/mobile/TC-009` stays

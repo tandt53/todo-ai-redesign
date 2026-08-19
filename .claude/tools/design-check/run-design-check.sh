@@ -3,7 +3,7 @@
 # never lets a missing browser break a review.
 #
 #   bash .claude/tools/design-check/run-design-check.sh
-#   bash .claude/tools/design-check/run-design-check.sh --screenshots .claude/eval/design-shots
+#   bash .claude/tools/design-check/run-design-check.sh --screenshots output/design-shots
 #
 # Exit: 0 = no failures (including "skipped because no browser"), 1 = failures.
 #

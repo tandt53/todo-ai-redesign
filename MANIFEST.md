@@ -84,6 +84,12 @@ patterns:
   memory:             "memory/"                             # _memory-protocol.md read layers 2-5; ORCHESTRATOR is the sole writer
   memory_log:         "memory/MEMORY.md"                    # project-wide append-only log (layers 2-4)
   memory_agent:       "memory/{agent}.md"                   # one file per agent — layer 5, procedural knowledge for that role
+
+  # Ephemeral output — regenerable, gitignored, never an input. `reports/` and
+  # `{qa}/{module}/runs/` are AUTHORED records and stay in git.
+  output:             "output/"
+  output_screens:     "output/design-shots/"                # design-check --screenshots; the renders the owner reviews at Gate 1.5
+  output_test:        "output/test-results/"                # Playwright run output, traces, videos
 ```
 
 <!-- Alternate layouts (not active — switch by changing `layout:` above):
