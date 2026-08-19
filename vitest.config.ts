@@ -1,7 +1,7 @@
 // Root vitest config (T-007e, phase: execute).
 //
 // Why this file exists: `npm run test:all` (`vitest run`) was collecting
-// qa/assistant/automation/e2e/*.spec.ts — those files call @playwright/test's
+// tests/assistant/e2e/*.spec.ts — those files call @playwright/test's
 // own `test()`, which is a different function than vitest's `test()` (no
 // vitest runtime backs it), so vitest parsed the files but ran zero of their
 // tests, and Gate 2's C5 read that as a red suite. vitest's default `include`
@@ -21,8 +21,8 @@ export default defineConfig({
       '**/dist/**',
       '**/.{idea,git,cache,output,temp}/**',
       '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build}.config.*',
-      'qa/**/automation/e2e/**',
-      'qa/**/automation/harness/**',
+      'tests/**/e2e/**',
+      'tests/harness/**',
     ],
   },
 })

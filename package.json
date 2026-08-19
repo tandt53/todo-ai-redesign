@@ -16,7 +16,7 @@
     "build:web": "vite build --config src/assistant/web/vite.config.ts",
     "preview:web": "vite preview --config src/assistant/web/vite.config.ts",
     "test:e2e": "playwright test",
-    "test:e2e:harness": "node --experimental-strip-types qa/assistant/automation/harness/qa-test-server.ts",
+    "test:e2e:harness": "node --experimental-strip-types tests/harness/qa-test-server.ts",
     "test:mobile": "vitest run src/assistant/mobile"
   },
   "dependencies": {

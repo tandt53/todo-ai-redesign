@@ -1,10 +1,10 @@
 // Playwright e2e config (T-007e, phase: execute). Owned by qa-web-agent per
 // specs/_shared/platform/web.md ## Test Harness ("e2e (Playwright) is
-// QA-owned under qa/…/automation/e2e/") and MANIFEST writers:.
+// QA-owned under tests/{module}/e2e/") and MANIFEST writers:.
 //
 // webServer starts BOTH processes the suite needs, so the orchestrator never
 // manages background processes for this:
-//   1. The assistant API — but via qa/assistant/automation/harness/qa-test-server.ts,
+//   1. The assistant API — but via tests/harness/qa-test-server.ts,
 //      NOT the plain `npm run dev:assistant` entrypoint. That entrypoint hardcodes
 //      systemClock and the static FIXTURE_TABLE, exposing neither the AI-call
 //      counter nor an injectable idle-close timer over HTTP — both named as
@@ -31,15 +31,19 @@ const WEB_PORT = Number(process.env['WEB_PORT'] ?? 5173)
 const API_PORT = Number(process.env['PORT'] ?? 4460)
 
 export default defineConfig({
-  testDir: 'qa/assistant/automation/e2e',
+  testDir: 'tests/assistant/e2e',
   testMatch: '**/*.spec.ts',
-  // Keep generated output inside qa/ (qa-web-agent's writers subtree,
-  // MANIFEST) rather than littering the project root with test-results/.
-  outputDir: 'qa/assistant/runs/.playwright-results',
+  // Generated output goes to output/ (MANIFEST ## Paths.output), not into
+  // qa/…/runs/. That directory holds AUTHORED run records — a QA agent's
+  // written summary of what happened — and burying regenerable traces and
+  // screenshots inside it is how the two stop being distinguishable. The
+  // original reason for putting them there was that qa/ was the only writable
+  // subtree; output/ is now a declared root and is gitignored.
+  outputDir: 'output/test-results',
   fullyParallel: false,
   workers: 1,
   retries: 0, // QA triages flakes manually (three-run rule, _qa-foundations §8) — CI retries would hide them
-  reporter: [['list'], ['html', { open: 'never', outputFolder: 'qa/assistant/runs/.playwright-report' }]],
+  reporter: [['list'], ['html', { open: 'never', outputFolder: 'output/playwright-report' }]],
   use: {
     baseURL: `http://localhost:${WEB_PORT}`,
     trace: 'retain-on-failure',
@@ -54,7 +58,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'node --experimental-strip-types qa/assistant/automation/harness/qa-test-server.ts',
+      command: 'node --experimental-strip-types tests/harness/qa-test-server.ts',
       url: `http://localhost:${API_PORT}/tasks`,
       // /tasks 401s with no X-User-Id, which still proves the server answered.
       reuseExistingServer: !process.env['CI'],
