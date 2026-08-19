@@ -7,6 +7,14 @@ not yet specced. **§ 12 is a question for the owner, not a decision.**
 stops rendering the task list) and `reports/owner-decision-2026-08-17-settings-and-lists.md`
 (the app needs Settings; the todo needs personal lists).
 
+**Revised 2026-08-19 (T-152)** for `F-005 AC-45` — the map gains a **sixth surface, S6 Task detail**,
+and the frame-level component family `components.md § CarriedNotice` that renders on all six. Four
+sections changed and each says so in place: **§2** (the surface, and the two shell-level components that
+reach it), **§3** (what lives on S6, and the message-door row, which two revisions of `F-001 AC-31`
+falsified), **§4** (three new edges, plus the answer this table owed for the two navigations it already
+contained), **§6** (S6's empty, loading and seven failing states — the section every other surface already
+had). Nothing else moved. **S6 is web-only this phase**; the phone reaches no detail.
+
 **Revised 2026-08-17 (T-105/T-106)** for
 `reports/owner-decision-2026-08-17-desktop-list-is-primary.md` — on a wide screen the task list
 takes the centre and the assistant becomes a right panel. That decision **supersedes the
@@ -117,13 +125,33 @@ Two things this does **not** change, and both are load-bearing:
 | **S3** | **Lists menu** | Choose which collection you are looking at, make a new list, and reach Settings. | No — the hamburger toggles the pane and opens nothing |
 | **S4** | **Settings** | The switches that belong to you rather than to a task. | No |
 | **S5** | **New list** | Name a new list. A sheet over S3, not a place you navigate to. | No — and the field it writes does not exist |
+| **S6** | **Task detail** | Every field one task has, set by hand — title, note, priority, deadline, reminder, steps, repeat. | No — F-005 builds it, **web only this phase** |
 
-Five surfaces, three of which do not exist. Two things that look like surfaces and are
-deliberately **not** surfaces:
+**Six surfaces, four of which do not exist.** *(S6 added 2026-08-19, T-152, for `F-005 AC-45`. It is
+**one application state placed by CSS at both widths**, never two states selected by a measured width:
+above `tokens.json breakpoints.split` it occupies the column S2 occupies, and below the split it is the
+surface reached from S2. A JS width read does not exist and is not to be introduced —
+`owner-decision-2026-08-17-desktop-list-is-primary.md` constraint 2. Crossing the split while it is open
+changes nothing about what it holds: same task, same focused field, same dirty value, same uncommitted
+repeat preview, same outstanding notice.)*
+
+**S6 has no mobile surface this phase**, so the phone reaches no detail; what the phone does gain from
+F-005 is stated per-AC in `F-005 ## Impact` §7 and, for the two row marks, in `components.md § TaskRow`.
+
+Two things that look like surfaces and are deliberately **not** surfaces:
 
 - **The permission message, the offline banner, the queued-turn notice** are shell-level
   components that can appear on S1 *and* S2 — the offline banner in particular must appear on S2,
-  because S2 is what AC-25 hands over to. They are not screens.
+  because S2 is what AC-25 hands over to, **and on S6, which is a third place a by-hand user can be
+  sitting while the connection drops** *(added T-152: `F-005 AC-2`'s third state refuses an offline edit
+  on this surface and states the reason there, so a banner that cannot show on S6 is a banner missing
+  from the surface where the refusal happens)*. They are not screens.
+- **`components.md § CarriedNotice` is a shell-level component too, and it is the first one that appears
+  on *every* surface** *(added T-152, for `F-005 AC-47`)*. It is docked below the top bar at the **frame**,
+  spanning the full frame width, and it sits **outside the stacking layer** — S3, S4 and S5 slide over the
+  content and **under** it. That is a requirement rather than a drawing: AC-47 needs the user's failed
+  value *visible* wherever the user is, including Talk and Settings, and a region inside the stacking
+  layer is invisible on two of the six surfaces. It is not a screen and it is not owned by any surface.
 - **Inbox / Today / Done** are not surfaces. They are collections that S2 renders; the menu picks
   which. This matters for §9: `Upcoming` and `Logbook` are *the same kind of thing*, so leaving
   them out costs one menu row each, not a screen each.
@@ -160,7 +188,25 @@ check the owner asked for — *"design lại app cho đầy đủ ứng với c�
 | **Theme (dark / light)** | **nowhere** | **S4** | `tokens.json` ships both themes and the app has no control — a capability that exists today with no surface |
 | **Personal lists** | **nowhere; no field** | **S3**, and S2's header | §7 |
 | **Move a task to a list** | **nowhere; no field** | **S2** row action | §7 |
-| Go from a message to the task it changed | nowhere | **S1 bubble → S2** | new; §5 — below the split this navigates; above it, it only scrolls the centre |
+| Go from a message to the task it changed | nowhere | **S1 bubble → S2, or → S6** | new; §5 — **rewritten T-152, see below** |
+| **Set priority, deadline, reminder, steps, repeat by hand** (F-005 AC-1) | **nowhere; no control** | **S6** | the surface F-005 adds; **web only** this phase |
+| **Rename / delete a task from its own surface** (F-005 AC-31) | S2 row only | **S2 row and S6** | two doors into one action deliberately — AC-42 requires the row's delete and the detail's delete to be equally undoable |
+| **A value the app failed to keep** (F-005 AC-2, AC-47) | the field it was typed in, and nowhere after that | **every surface**, in `components.md § CarriedNotice` | not a surface — a frame-level component (§2). It is the only thing in this table whose answer is *all of them* |
+| **Put back a delete or a reorder made by hand** (F-005 AC-43) | nowhere | **every surface**, in § CarriedNotice | owner decision 2026-08-19 §2 — the offer follows the user rather than sitting on the row, because a row-local offer loses the reversal exactly when the user navigates away |
+
+**The message-door row, rewritten 2026-08-19 (T-152), because two revisions of `F-001 AC-31` falsified
+it.** It read *"below the split this navigates; above it, it only scrolls the centre"*. Both halves are
+still true and they are no longer the whole route. **AC-31 revision 7** makes the door **switch collection
+first** when the collection on screen does not hold the row — at *either* width, which matters because
+`DEFAULT_COLLECTION` is Today and the assistant creates dateless tasks that land in Inbox, so the task the
+assistant has just created was the one task in the message that was not a door. **AC-31 revision 6** adds
+the case this table had no cell for: when the centre column holds a **task detail** (S6), activating the
+door **replaces the open detail with the named task's detail** (`F-005 AC-48`), because at or above the
+split the conversation renders beside the detail and the swap is one context change instead of two. When
+the named task is the one the detail already holds, nothing is replaced. A task that no longer exists is
+**not** a door at all — plain text, never an inert control. The postcondition is unchanged at every width
+and in every one of those states, which is why the note describing the door had to stop naming the list:
+the replacement copy is `components.md § MessageTaskLink`.
 
 **Read the "Seeing what a turn changed" row carefully after the desktop revision.** Above the
 split a task list *is* on screen beside the conversation again, which looks like the row's "the
@@ -187,6 +233,43 @@ this list.
 | S3 | S4 Settings | `Settings` row, at the foot | 1 |
 | S4 | back to S3 | back control | 1 |
 | S5 | back to S3 | `Create` or `Cancel` | 1 |
+| **S2 Tasks** | **S6 Task detail** | **activating a task row** — a gesture distinct from the inline rename, which stays on the row (F-001 AC-18) | **1** |
+| **S1 Talk** | **S6, re-subjected** | **tap a task title inside a message bubble while S6 is open in that column** — the door swaps the detail's subject (F-001 AC-31 rev 6, F-005 AC-48). At or above the split only: below it, S1 and S6 are never on screen together, so no door is there to activate | **1** |
+| **S6** | **back to S2 Tasks** | the detail's own close affordance | **1** |
+
+**The three S6 edges added 2026-08-19 (T-152)** for `F-005 AC-45`, which states them and routes them
+here. The AC's own reason for counting them is this table's rule: *nothing reaches a surface except
+through an edge on this list*, so an undercount at the moment a surface is introduced is how the map goes
+stale on day one — and F-005's revision 2 claimed *"one surface and one edge"* (design D18).
+
+**The two navigations this table already contained, and what they do to an open S6** — the answer was
+owed and is `F-005 AC-45`'s: **in all of them the detail is not preserved. Leaving the Tasks surface
+closes it, and `Tasks · N` returns the user to their list, not to a detail they had forgotten.**
+
+| The navigation | With S6 open |
+|---|---|
+| below the split: S6 → S1 Talk (`Talk` in the top bar), then S1 → S2 (`Tasks · N`) | S6 closes on leaving; `Tasks · N` lands on the **list** |
+| at or above the split: S3 Lists menu or S4 Settings stacking over the centre | the centre holds S6, and S6 **closes** |
+
+**Two consequences of that, both stated rather than left to be discovered.**
+
+- **`F-001 AC-24`'s "zero actions to reach the list" clause is false while S6 is open** — the list is on
+  screen at **no** width in that state, so the honest bound is AC-24's own below-the-split one applied at
+  both: **at most one action**, with the affordance that closes S6 *neither hidden nor disabled by the
+  failure being recovered from*. That amendment is F-001's and was **made** (revision 5, completed by
+  revision 6).
+- **The close is unconditionally safe, and exactly one object needed a rule for it to be true.** Anything
+  a close would otherwise lose is governed by `F-005 AC-2` and `AC-47` — except an **uncommitted repeat
+  preview**, which is not a failure at all, so AC-47 never carries it. `AC-48` decided the identical case
+  at the swap door (**discarded, and the user is told, once**, as a status message under AC-33's 4.1.3) and
+  F-005 revision 4 applies the same rule at the close door. Otherwise the sequence *configure a repeat,
+  see the disclosure, tap `Talk` before committing* is silent at one door and announced at the other, for
+  the same object.
+
+**One cost worth the owner's eye, recorded here because this table is where it becomes visible:** opening
+the Lists menu — a slide-over the user may well **cancel** — closes an open S6 above the split. That
+follows from AC-45 as written and this map does not overturn it; it is named so it is a decision rather
+than a discovery.
 
 **Entry — revised T-105/T-106.** Two different questions, and until today they had one answer.
 
@@ -286,6 +369,29 @@ new surface with no failure design inherits none of it.
 | **Empty** | The state it opens in: name field focused, `Create` inactive until a name is typed. |
 | **Loading** | `Create` takes the standard loading treatment (`components.md § Buttons` — spinner replaces label, width locked). |
 | **Failing** | Inline, under the field, and **the sheet does not close**: "A list called Work already exists." The typed name is never discarded. |
+
+### S6 Task detail (added 2026-08-19, T-152 — web only this phase)
+
+For `F-005 AC-45`, `AC-1`, `AC-2`, `AC-4` and `AC-47`. **This section's opening sentence is why it
+exists:** a new surface inherits none of F-001's failure design, and S6 was the only surface in this map
+with no row here. It has more failure states than any other surface, because it is the only one where the
+user **types** and the only one that can be **closed while a write it started is still in the air**.
+
+| | |
+|---|---|
+| **Empty** | **There is no empty state, and that is a decision rather than an omission.** Under AC-1 every field with no value renders as an **empty, settable, reachable** control — never as absent — so "a task with nothing on it" is the surface's ordinary appearance, not a degraded one. The one genuinely empty region is the **step list**, which renders its own invitation (`Add step`) rather than nothing; a task with no steps is the common case, so the invitation is the default first experience of that region and gets the attention § Empty states gives ET-FIRST. |
+| **Loading** | **SK-DETAIL** (`components.md § Skeletons`) — a title-sized bar, five label/value bar pairs, and a three-bar step block. It exists because the loading state and the all-empty task are otherwise **pixel-identical** (design D8): a user's first look at their own task would be a lie that corrects itself. Per § Skeletons it carries no text and asserts no field label. Above the split it fills the centre column and the conversation stays rendered beside it; below the split it fills the surface. **Never the empty-step invitation while loading** — § Skeletons' rule. |
+| **Failing — one field's write fails** | `F-005 AC-2`: **the value stays in the field**, the reason is stated **on the field**, and the retry is offered there. The surface does **not** close and never silently reverts. Concurrent failures on several fields **aggregate into one announcement**, not N (AC-33's 4.1.3). This is § SettingsRow's rule — *a failure that lives nowhere else may not be a toast* — applied one surface over. |
+| **Failing — offline** | `AC-2`'s third state: an edit to a task the **server already holds** is **refused**, with the value kept on screen and the reason stated. **It is not a queue** — nothing replays it, no spinner, no pending badge, no silent acceptance, and the retry is invoked by the user, never by a timer and never by reconnection. An edit to a task the user created **offline** is still kept and replayed, exactly as it is today. § OfflineBanner shows here (§2). |
+| **Failing — the surface closes over it** | The failure **does not close with the surface**: it becomes a row in `components.md § CarriedNotice`, visible wherever the user goes, carrying the value, naming the task and the field, offering the same retry, and removing itself only on the user's own act or a reload (`AC-47`). This is the one failure state in this whole table that is **not** owned by the surface it happened on. |
+| **Failing — the task is gone** | `AC-4`'s terminal state, and it is deliberately not a retry: unsaved text **legible on the surface that is reporting the deletion**, a **way back**, and **no retry** — a retry aimed at a deleted row is dead or a resurrection. **No § CarriedNotice row is created for it either**; AC-4's terminal state is the whole of that case. A notice that already existed when the task was deleted becomes § CarriedNotice's CN-DELETED and stops offering retry. |
+| **Failing — the detail's own read fails** | **SE-DETAIL** (`components.md § SurfaceError`): "Couldn't load this task" · "Your other tasks are unaffected. Try again, or go back to the list." · Retry. It takes the **column**, not the frame, so above the split the conversation stays beside it. **The way back stays live** — the affordance that closes the detail is neither hidden nor disabled by the failure being recovered from (`AC-45`, `F-001 AC-24` rev 6), which is the clause that exists for precisely this state, because with the detail open the list is on screen at no width. |
+
+**One state that is not a failure and needed a rule anyway** (design D25): an **uncommitted repeat
+preview** is neither in flight, failed, nor refused, so `AC-47` never carries it. On leaving the surface it
+is **discarded and the user is told, once**, as a status message under AC-33's 4.1.3 — the rule `AC-48`
+already set at the swap door, applied at the close door so the same object does not vanish silently at one
+and announced at the other.
 
 ---
 

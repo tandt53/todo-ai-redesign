@@ -141,6 +141,104 @@ Purpose: the source of truth (F-001 Purpose) — flat row, `radius.taskRow` 0, n
 States: default · hover · focused · pressed · done (strikethrough `motion` MO-3, 60% fade) · editing (inline, manual path) · flashing (above) · marker-expanded (diff visible) · empty list state ("No tasks yet — say one." + hint).
 Manual path: create/edit/complete/delete all doable by touch with zero AI calls (AC-18).
 
+### The row's mark budget — three marks, one line, one decision (added 2026-08-19, T-152)
+
+F-005 asks the row for three new marked meanings at once: **AC-9's urgency**, **AC-17's remaining-step
+count** and **AC-39's repeating-series indicator**. `## Impact` §8 asks design to decide the row
+**once** rather than absorb three independent additions, and that is what this subsection is. **AC-43's
+hand-action undo is not on the list** — the owner placed it in AC-47's notice family on 2026-08-19
+(`reports/owner-decision-2026-08-19-close-gate-one.md` §2), so it renders in `§ CarriedNotice` and never
+on the row. This is the correction of the count `## Impact` §8 got wrong twice (design D23).
+
+**None of the three carries colour.** `DESIGN.md ## Colour rules 5` records the decision and its
+reasons; the short form is that the accent set is closed at five, this row already renders under a
+`danger` Overdue heading on every row of Today in the live store and can also carry a `NEW`/`EDITED`
+marker in green or red, and urgency has three levels that a single hue cannot encode. Each mark is
+carried by **shape, weight and its accessible name** — which is also what AC-33's 1.4.3 requires of it
+regardless of what colour it were given.
+
+**The budget, stated as a rule rather than as three additions.** All three marks live in `.task-main`
+— the baseline-aligned, wrapping line the title and the deadline meta already share — as inline
+siblings **after** the title, in one fixed order:
+
+> checkbox · **title** · urgency · deadline · repeat · steps · (delete control)
+
+The order is not alphabetical and not arrival order. Urgency leads because it is the only item the
+**user** set as emphasis and it changes how the title is read; the deadline follows because it is the
+fact most often consulted; repeat explains where a row the user never typed came from; the step count
+is a number about a different set and is last. **Four items is the ceiling.** A fifth marked meaning on
+this row is refused until one of these is removed — the row's own record spent an explicit argument
+keeping it clean (*"One signal, not two"*, Overdue, T-133) and a budget that can be topped up is not a
+budget.
+
+**Nothing drops at a narrow width.** `.task-main` already wraps (`flex-wrap: wrap`), so at
+`breakpoints.mobile` the marks wrap under the title rather than being truncated or hidden: a mark that
+disappears at one width is a mark the user cannot rely on, and the accessible name would then disagree
+with the visible row. The ceiling on the wrap is **two lines at `breakpoints.mobile`** with all four
+items present. **That figure is a requirement here and a measurement owed at `phase: screens`** — no
+content-width floor is published for these marks, for § Touch's stated reason: its floors are measured
+from a shipped control and none of these has shipped.
+
+| ID | Mark | Rendering | Renders when | Renders nothing when | Accessible name |
+|---|---|---|---|---|---|
+| **TR-URGENCY** | urgency (AC-9) | **a single `!`** at `font.size.meta`, `font.weight.emphasis`, **`text.primary`** — the one item in this line that is not muted, which is the "weight" half of *shape, weight, name* | `priority` is **`high`** | `priority` is `none`, `low` or `medium` — see the decision below | the **row's** name carries the priority in all four states: `high priority` · `medium priority` · `low priority` · `no priority` — four literals, never assembled from the level name |
+| **TR-REPEAT** | repeating series (AC-39) | Lucide `repeat` at `icon.size.sm`, `text.muted` | the task belongs to a **live** series — AC-25's `series_live`, read from the wire, never keyed off `series_id` | the repeat was cleared · the series ended by end-date or run count · the series was deleted (AC-30's fourth ending) — and a **completed occupant of a live series keeps the mark** | `repeats` |
+| **TR-STEPS** | remaining steps (AC-17, **web only**) | Lucide `list-checks` at `icon.size.sm` + the count in tabular numerals at `font.size.meta`, `text.muted` | the task has ≥1 step outstanding; the count is that number, never `collectionCount` (L-004) | the task has no steps, or none outstanding | `1 step left` · `{count} steps left` — **two literals**, singular and plural, not a template over a noun (§ NewMessageAffordance's rule, L-008's reason) |
+
+**One glyph, and only `high` wears it — the decision AC-9 hands to design *"within the one-glyph
+vocabulary"*.** AC-9 fixes the vocabulary at **one glyph**, deliberately *"not Apple's graduated
+`!` / `!!` / `!!!`"*, and 1.4.3 forbids carrying the difference in colour. That leaves the level
+undistinguishable by any means the vocabulary allows, so the question is which of the four states render a
+mark at all. **`high` renders the `!`; `none`, `low` and `medium` render nothing.** Three reasons:
+
+1. **One glyph cannot render three levels perceivably.** Weight, opacity or size on a 13px `!` produces
+   two states a user cannot reliably tell apart, and a mark that might mean *high* or might mean *medium*
+   is worse than no mark: it asks the user to open the task to find out, which is the one thing AC-9
+   exists to avoid.
+2. **It is the AC's own reason for `none`, applied consistently.** AC-9 has `none` render nothing *"so
+   the marks stay meaningful"*. `low` is the level a user picks to say *this one matters least*; marking
+   it makes the mark mean *has a priority*, which is a fact about the data rather than a signal about the
+   work. Marking two of four levels dilutes the one signal exactly as marking all of them would.
+3. **It is the inheritance, not a reduction of it.** The source product had one top-level priority and one
+   `!`; AC-9 tells this row to start there.
+
+**All four states are distinguished in the accessible name regardless** (AC-9's own clause), and because
+three of the four render no element, that name lives on the **row** — `assistant-task-row` — not on
+`tasks-row-priority-mark`, which exists only in the `high` state. QA asserts `low`, `medium` and `none`
+through the row's name and `high` through both. The cost of the clause is honest: an unmarked row
+announces `no priority`, which is a word on every row that has none. It is stated because the AC requires
+it, and it is where an owner who finds it noisy should look.
+
+**Two documents disagree about whose call this is, and it is flagged rather than resolved here.** AC-9's
+sub-bullet says it is *"design's within the one-glyph vocabulary"* (which is what this subsection has
+just exercised); **OQ5** lists *"whether `low` and `medium` carry a mark at all, or only `high` does"*
+among the things still the owner's. Nothing structural rides on it — if the owner rules that `low` and
+`medium` do mark, they wear the **same single `!`**, the order, the ceiling and the ids are untouched, and
+only the `renders nothing when` cell changes.
+
+**Testids — web here, mobile owed to F-003.**
+
+| Testid | Mark | Platform |
+|---|---|---|
+| `tasks-row-priority-mark` | TR-URGENCY | web |
+| `tasks-row-repeat-mark` | TR-REPEAT | web |
+| `tasks-row-steps-mark` | TR-STEPS | web |
+
+All three sit on non-interactive elements, exactly like `tasks-save-notice` and
+`assistant-offline-banner`: the mark **is** the deliverable of AC-9, AC-17 and AC-39, so a catalogue
+that skipped it would leave the one observable each AC has untestable. **They are deliberately not in
+§ Testid catalogue — app shell**, because that catalogue is mirrored one-for-one into
+`src/assistant/mobile/model/a11y.ts SHELL_A11Y_IDS` and TR-STEPS is `(web)`; putting a web-only id
+there would make the mirror assert an id the phone must never carry.
+
+**What is owed to F-003 and is not invented here.** AC-9 and AC-39 are `(web, mobile)`, so the phone's
+row gains **two** of the three marks (not TR-STEPS). `F-003` owns the mobile list and **its id catalogue
+is closed and structurally asserted** (`ALL_A11Y_IDS`, 23, parsed from the two mockups in both
+directions), so the mobile spellings of TR-URGENCY and TR-REPEAT are **F-003's amendment to make, not
+this pass's** — recorded here as a named debt rather than as a pointer, because a pointer that names no
+item is how an obligation gets believed-recorded (design D27). Until F-003 carries them, a QA author has
+no legal selector for either mark on the phone and must not invent one.
+
 ## TaskList
 
 Groups rows by day; hairline section headers (`font.size.label` uppercase `text.muted`). Works untouched when AI is off/erroring/offline (ADR-7). States: default · empty · offline (unchanged — the banner carries the news).
@@ -332,8 +430,10 @@ The idle-auto-close marker (AC-28) — same rendering family as BoundaryMarker; 
 
 ## Buttons
 
-Variants: primary (fill `primary`, text `text.onAccent`) · ghost (text `primary`, no fill) · danger (fill `danger`, text `text.onAccent` — confirm-delete contexts only).
+Variants: primary (fill `primary`, text `text.onAccent`) · ghost (text `primary`, no fill) · danger (fill `danger`, text `text.onAccent` — confirm-delete contexts only) · **neutral** (fill `bg.hairline`, 1px `text.muted` border, label `text.primary` at `font.weight.emphasis`) — added T-152.
 States: default · hover · focused · pressed (scale 0.96) · disabled (40% opacity, no pointer) · loading (spinner replaces label, width locked).
+
+**Why `neutral` exists, because three variants were not a shortage until F-005** (added 2026-08-19, T-152). Every one of the three carries an assigned meaning through its fill or its text: `primary` and `ghost` are both the **violet** `primary` token, which § Colour rules 1 assigns to *the assistant* and § UndoAffordance fixes as *"the assistant's own act"*; `danger` is red. F-005 AC-43's hand-action undo is an action the user's own hand caused, and the AC forbids violet for it **wherever it renders** — so it could wear none of the three, and the catalogue had no way to draw an action that means nothing beyond *this is a button*. `neutral` is that: built entirely from neutrals, adding no colour meaning, and reusable anywhere an action must not claim one. **Contrast, computed (§ Contrast's method, not eyeballed):** label `text.primary` on `bg.hairline` **13.28** dark / **13.34** light; the 1px `text.muted` border against `bg.raised` **5.01** dark / **5.78** light, clearing 1.4.11's 3:1 for a non-text boundary — which is why the border is `text.muted` and not `bg.hairline` (that pairing measures 1.19 / 1.24 and would draw a button nobody can see the edge of). Zero new tokens. States and focus/pressed/disabled/loading behaviour are the rows above, unchanged. **Hover strengthens the 1px border from `text.muted` to `text.secondary` and leaves the fill alone** — there is no fifth neutral to lift the fill toward, and lifting it toward `bg.raised` would make the button match the strip it sits on. `text.secondary` on `bg.raised` is 8.1 dark / 8.4 light in § Contrast, so the hover boundary clears 1.4.11 as comfortably as the default one.
 Standard copy for standard actions: "Undo", "Retry", "Send", "Cancel" — no themed replacements ("Take it back", "Give it another go", "Off it goes" are all wrong, however well they fit the voice).
 
 **One word per concept — the rule, not a preference.** The Vietnamese catalogue needed a house spelling (`Xoá` vs `Xóa`); that problem leaves with the Vietnamese and English supplies its own, synonym drift, which is worse because both spellings are correct and nothing looks broken. A user who is told "Delete 3 tasks?" and then reads "3 items removed" cannot tell whether the same thing happened. Fixed choices, binding on this catalogue, the mockups, and the strings implementers ship:
@@ -353,7 +453,13 @@ Standard copy for standard actions: "Undo", "Retry", "Send", "Cancel" — no the
 | putting a task in a different list | **move** | assign, file, categorise |
 | the dark/light choice | **theme** | appearance mode, dark mode toggle, colour scheme |
 | **todo-ai's own settings screen** | **Settings** — see the collision note in § App shell | — |
+| **reversing a delete or a reorder the user performed by hand** (F-005 AC-43) | **put back** | undo, revert, restore, undelete, take back, bring back, recover |
+| the date a task must be done by (F-005 AC-10) | **deadline** | due date, due, when, target, by-date |
+| a task inside a task (F-005 AC-14 … AC-18) | **step** | subtask, sub-task, child, checklist item, item |
 
+**The three rows added 2026-08-19 (T-152), and the first one needs its reasoning beside it.** `put back` is not a synonym for `undo` sneaking past the row above it — it is the row above's rule being *obeyed*: **undo** is bound to reversing the last applied **turn**, F-005 AC-43 defines a different mechanism (reversing a delete or a reorder the user's own hand performed), and one word per concept means the second mechanism gets its own word rather than sharing one. `§ SaveNotice` refused to carry an `Undo` action for exactly this reason, in writing, and that refusal stands. Note `take back` is forbidden **as a synonym for undo** and `put back` is close to it in shape — the difference is the whole point of the two rows, so they are read together: *undo* reverses what the assistant did, *put back* returns what your hand removed. The word has precedent outside this catalogue (Apple Photos' *Put Back* for recovering a deleted photo), which is what keeps it standard copy for a standard action rather than a themed replacement. It renders in `§ CarriedNotice` as CN-UNDO, in the `neutral` variant above, never in violet.
+
+**`deadline` and `step` are here because this pass publishes strings that use them.** F-005's own vocabulary is *deadline* and *step*, `§ CarriedNotice`'s literal message table names both, and a word that appears in published copy and not in this table is the drift the table exists to stop. `due_at` and `parent_id` remain the field names; these are the words the user reads.
 ## Drawer (carried, pending Open Question 1)
 
 Assumption per spec OQ-1: drawer + full list stay reachable. Carries the existing app's drawer unchanged (active row = 7% `primary` tint — the one legal chrome tint). Not restyled in this feature; flagged for design review when OQ-1 resolves.
@@ -383,6 +489,8 @@ Heights are not published here: they are derived from `font.size` + `spacing` to
 ## Contrast — verified pairs (AC-19 / WCAG 1.4.3, AA ≥ 4.5:1 normal text)
 
 Computed (not eyeballed) via WCAG 2.1 relative-luminance formula; every pair passed. Dark theme: `text.primary`(17.5/15.8), `text.secondary`(9.0/8.1), `text.muted`(5.6/5.0) on `bg.base`/`bg.raised`; `primary` 7.0/6.3; `voice.listening` 12.3/11.1; `danger` 7.7/6.9; `success`&`diff.add` 11.2/10.1; `question` 12.0/10.8 on base/raised; `text.onAccent` on `primary` 7.0, on `voice.listening` 12.3, on `danger` 7.7; accents on own tints: add 9.3, remove 6.8, question 9.9, listening 10.1, `text.primary` on `primaryTint` 15.6. Light theme: `text.primary` 15.5/16.6, `text.secondary` 7.8/8.4, `text.muted` 5.4/5.8 on `bg.base`/`bg.raised`; `primary` 6.1/6.5; `voice.listening` 4.6/4.8; `danger` 5.3/5.7; `success` 5.0/5.3; `question` 5.5/5.9; white on `primary` 6.5; accents on own tints: add 4.6, remove 4.8, question 5.1, listening 4.8, `text.primary` on `primaryTint` 13.7.
+**One pair added 2026-08-19 (T-152)** for § Buttons' new `neutral` variant, computed by the same formula: `text.primary` on `bg.hairline` **13.28** dark / **13.34** light. It is a neutral-on-neutral pair, so the accent rule below does not bind it; the variant's 1px boundary is `text.muted` against `bg.raised` at **5.01** dark / **5.78** light, which clears 1.4.11's 3:1 for non-text. No accent gained a new ground and no new colour token exists, so every other pair in this section is unchanged and still complete.
+
 Rule for implementers: accent text is legal only on `bg.base`, `bg.raised`, or its own tint token — any new pairing must be re-verified before use. The `gradient.voice` surface never carries body text; the live transcript renders on `bg.base` beside it, `text.primary`.
 
 ---
@@ -673,6 +781,62 @@ a row that no longer exists is a promise the list cannot keep).
 
 New behaviour, in no F-doc. It is the smallest useful part of `UC-52 AC-52.5 / 52.6`.
 
+### The note that describes the door — replacement copy (added 2026-08-19, T-152)
+
+**The shipped string is false in a state that is about to become ordinary.** Both clients render a note
+on any message that carries a door; web ships it as *"tap a task to find it in the list"*
+(`src/assistant/web/components/ConversationPane.tsx:131-136`, and the same string in all three
+`app-shell*.html` mockups). It was made width-independent on purpose (IA §11) — *"open it in Tasks"* was
+true only below the split. **F-001 AC-31 revision 6 and 7 falsify the replacement too:** with a detail in
+the centre column the door produces a **detail**, not a row in a list, and revision 7 widens the gate so
+that nearly every applied message now carries at least one door. F-001 AC-31 states the constraint and
+routes the wording here, which is the convention.
+
+**The constraint, restated so the copy can be checked against it:** the note must be true in **every**
+state the door can be activated from. There are five, and the copy below was chosen by testing it against
+all five rather than by reading well in one:
+
+| State | What activating the door does | Is the copy true? |
+|---|---|---|
+| below the split, the collection on screen holds the row | navigates to Tasks, scrolls the row into view, flashes once | yes |
+| below the split, it does not | switches to a collection that holds the row **first**, then the same (AC-31 rev 7) | yes |
+| at or above the split, the centre holds the list | the centre list only scrolls and flashes — no navigation | yes — and this is the state *"find it in the list"* was written for and *"open it in Tasks"* failed |
+| at or above the split, the centre holds a **different** task's detail | the detail changes subject to the named task (AC-31 rev 6, F-005 AC-48) | yes — and this is the state *"find it in the list"* fails, because there is no list on screen at any width while the detail is open (F-005 AC-45) |
+| at or above the split, the centre holds **that** task's detail | nothing is replaced; the postcondition is already true (AC-31 rev 6) | yes — the user is already seeing it |
+
+**The copy:** `tap a task to see it`
+
+Rendered after the timestamp with the existing `·` separator, `font.size.meta`, `text.muted` — the
+placement and styling are unchanged, only the words. It names the outcome the door actually guarantees
+(*that task is now what you are looking at*) and promises no mechanism, which is what makes one string
+true at every width and in every one of the five states. *Rejected, with the reason kept so it is not
+re-proposed:* **"go to it"** implies travel and is false in the third and fifth states, where nothing
+navigates; **"open it"** is false in the third, where the row is scrolled into view rather than opened;
+and **naming the mechanism per state** is two strings selected by viewport, which is the discipline
+AC-31's own constraint forbids.
+
+**A link's accessible name is `{title}, see this task`** — the visible text is a prefix of the
+accessible name, never a replacement (2.5.3), the same rule § NewMessageAffordance states. `{title}` is a
+`verbatim` slot (§ Spoken frames' closed vocabulary).
+
+### The note is not per-message any more, and that is the second half of the same call
+
+AC-31 rev 7 notes that with the gate widened the note *"goes from occasional to near-permanent — also
+design's call"*. Repeating one instruction under every bubble in the thread is the filler this catalogue
+refuses elsewhere (§ NewMessageAffordance's *one control, however many messages arrived*): after the
+first reading it removes no information, and the **underline is the persistent cue** — the note is the
+one-time teaching.
+
+**So: the note renders on the newest door-carrying message only.** Older bubbles keep their underlines
+and drop the note. One note on screen at a time, at the bottom of the thread where the newest message
+already sits (§ Message bubbles, *newest at bottom*), which is where the user is looking. It is derivable
+from the thread — no new stored fact, nothing to persist, and no "has the user learned this yet" flag.
+
+**And it renders only while at least one door in that message is live.** A message all of whose named
+tasks are **inert** (deleted — plain text, not a control, per AC-31) carries no note, because an
+instruction to tap something untappable is worse than silence.
+
+
 ## Skeletons
 
 Purpose: loading mirrors the real content's silhouette. **No spinner in a void anywhere in this
@@ -683,6 +847,7 @@ app** — the only spinner is the one § Buttons puts inside a button that was p
 | **SK-ROW** | § TaskRow | checkbox square + two bars (title 62%, meta 24%), five rows under a **heading-shaped bar** — see the note below |
 | **SK-BUBBLE** | § Message bubbles | three bubbles, alternating sides, 70% / 45% / 80% width |
 | **SK-LISTROW** | LM-LIST | icon square + one bar at 55%, two rows |
+| **SK-DETAIL** | the F-005 task detail (IA § 6, S6) | one bar at 70% at title size, then five field-shaped pairs — a short label bar at 30% over a value bar at 55% — and one step-list block of three SK-ROW-shaped bars. Added 2026-08-19, T-152 |
 
 Fill `bg.hairline` on `bg.raised`, `radius.sm`, a 1600ms opacity pulse between 100% and 55%.
 Under `prefers-reduced-motion` the pulse stops and the bars hold at 78% — still visibly
@@ -691,6 +856,14 @@ except that they are not the empty state.
 
 **A loading surface never renders its empty state.** A returning user who sees "Say it. I'll
 write it down." while their conversation is still loading reads it as history lost.
+
+**SK-DETAIL exists because the detail's empty state and its loading state are otherwise identical**
+(F-005 AC-45's loading clause, design D8). Under AC-1 every field with no value renders as an **empty,
+settable** control, so a detail that has not read the task yet looks exactly like a task with nothing on
+it — a user's first look at their own task would be a lie that corrects itself a moment later. The rule
+two paragraphs up already forbids that; SK-DETAIL is the shape that obeys it. Like every other skeleton
+it carries **no text and no testid**, so it asserts none of the field labels — the same reason SK-ROW's
+day header is a bar and not words.
 
 **SK-ROW's day header is a bar, not words** (changed 2026-08-18, T-128). The cell read *"five rows
 under a real day header"*, and `TasksSurface.tsx:179` renders `todayGroupLabel(now)` — the literal
@@ -736,6 +909,14 @@ lie about what the app can do.
 |---|---|---|---|
 | **SE-SESSION** | Talk | Couldn't load your conversation | Your tasks are unaffected. Try again, or carry on by hand. |
 | **SE-TASKS** | Tasks | Couldn't load your tasks | Nothing is saved on this device yet. You can still add one by hand. |
+| **SE-DETAIL** | Task detail (S6) | Couldn't load this task | Your other tasks are unaffected. Try again, or go back to the list. |
+
+**SE-DETAIL added 2026-08-19 (T-152)**, for `F-005 AC-45` and IA §6's opening rule that a new surface
+inherits no failure design. It takes the detail's column rather than the frame, so the conversation stays
+rendered beside it above the split. The part that is not decoration applies unchanged: **the way back
+stays live** — the close affordance is *neither hidden nor disabled by the failure being recovered from*
+(AC-45, and `F-001 AC-24` revision 6, which exists for exactly this state) — and it is the only control
+besides Retry.
 
 It looks **calm**: body-size supporting text, one accent, one button. An error state that shouts
 makes users abandon.
@@ -798,6 +979,11 @@ Genuinely new controls, and only those, take new ids:
 | `tasks-delete-button` | the row's delete control, which ships on web today with no testid |
 | `tasks-save-notice` | SN-ONE / SN-MANY — the notice itself (§ SaveNotice, added T-135) |
 | `tasks-save-notice-dismiss` | SaveNotice's trailing dismiss control (added T-135) |
+| `shell-carried-notices` | § CarriedNotice — the region itself; carries the region's accessible name and is what QA asserts the family's *presence on every surface* against (added T-152) |
+| `shell-carried-notice` | one notice row exemplar — carries the message and the user's value (added T-152) |
+| `shell-carried-notice-retry` | CN-FAILED / CN-OFFLINE Retry (added T-152) |
+| `shell-carried-notice-undo` | CN-UNDO's `Put back` control — F-005 AC-43's offer, and the id `## Impact` §8(d) records as owed for an element that did not exist (added T-152) |
+| `shell-carried-notice-dismiss` | any row's trailing dismiss control (added T-152) |
 
 **`assistant-drawer-button` is retired by this IA** — the hamburger stops toggling a pane and
 becomes navigation to a different surface, which is a different control wearing the same glyph.
@@ -807,6 +993,29 @@ tests that parse them are untouched by this section.
 No content-width floor is published for any control above. § Touch's floors are measured from a
 shipped control; none of these has shipped, and publishing a floor measured only in Chromium
 would put a number into a table whose whole value is that its numbers are checkable.
+
+**The counts, and the assertions in `src/` that go red by design (added 2026-08-19, T-152).** This table
+goes **24 → 29** new-control rows and the three shell mockups' totals go **31 → 36** (24 new + 7 carried,
+verified by parsing all three). `src/assistant/mobile/model/a11y.ts SHELL_A11Y_IDS` holds 24 and
+`src/assistant/mobile/__tests__/a11y.test.ts` pins the mockup total at 31; both, plus
+`src/assistant/web/__tests__/app.test.tsx`'s `NOT_BUILT` map, need the five new ids. This is L-008's
+mechanism working in the direction drift actually travels — the suite fails because the **upstream**
+artifact moved — and the fix belongs to whoever owns `src/`, not to this file. All five are
+`(web, mobile)` like the component they belong to, so the one-catalogue-three-spellings invariant holds.
+
+**One asymmetry is deliberate and is recorded so it is not read as an omission.** § TaskRow's three mark
+ids (`tasks-row-priority-mark`, `tasks-row-repeat-mark`, `tasks-row-steps-mark`) are **not** in this
+table and are **web only**: TR-STEPS is `(web)` by AC-17, and the mobile spellings of the other two are
+owed to F-003's closed catalogue rather than invented here (§ TaskRow, last paragraph). So at
+`phase: screens` the **web** shell mockup gains eight ids and the two mobile shell mockups gain five. A
+check that asserts the three mockups carry identical catalogues will fail on that difference; the
+difference is the recorded debt, not a defect in the drawing.
+
+**And one dependency the drawing pass cannot avoid.** § CarriedNotice renders on **every** surface,
+including Talk and Settings, which only `app-shell*.html` draw. So F-005's `phase: screens` dispatch must
+extend the three **shell** mockups with the CN-* states as well as drawing the detail; a family drawn only
+in a detail mockup would be untestable in the two states — on Talk, on Settings — that are the whole
+reason AC-47 rejected the Tasks banner stack.
 
 ---
 
@@ -1430,6 +1639,15 @@ So: a **persistent, dismissible strip**, not a toast. The owner chose the outcom
 went — and the outcome is delivered more completely by a message that waits than by one that
 races the user's attention.
 
+**This component is not the home for F-005 AC-47's outliving notice, and the question was asked and
+answered rather than left open** (added 2026-08-19, T-152). AC-47 needs the nearest thing this catalogue
+has and it is this one — same strip class, and the no-self-dismiss argument three paragraphs up **is**
+AC-47's rule, already reasoned. It is still a **sibling**, `§ CarriedNotice`, and not this component
+widened. The four reasons are set out there; the one that decides it is **Lifetime rule 3 below** —
+*leaving the surface … another collection, Settings, or Talk* clears this notice, which is precisely what
+AC-47 forbids, and on a phone `PathSwitch` is one tap and is the app's primary gesture. Nothing in this
+section changed for F-005; this paragraph exists so the next reader does not widen it by mistake.
+
 ### Anatomy and placement
 
 It joins the **Tasks surface's banner stack**, the strip family § OfflineBanner and
@@ -1732,3 +1950,422 @@ mentions Inbox, changed at all.
   `tasks.ts:224`'s exactly-one-collection comment and `collections.test.ts:91`'s disjointness
   suite are false about the model and the store now holds 7 counterexamples. Named here only so
   that a reader of this file does not re-file them.
+
+---
+
+## CarriedNotice — the notice that outlives the surface it was typed in (T-152)
+
+**Added 2026-08-19 (T-152), additive**, for `F-005 AC-47`, `AC-2`'s failed and offline-refused states,
+and `AC-43`'s hand-action undo offer — which the owner placed in this family on 2026-08-19
+(`reports/owner-decision-2026-08-19-close-gate-one.md` §2) rather than on the task's row. **Nothing above
+this line was moved, renamed or reordered.** Five new testids, **zero new colour, radius, shadow or
+motion tokens**; one new § Buttons variant (`neutral`) and one new § Contrast pair, both published in
+their own sections. Four cells above changed content and one table gained five rows; all are listed at the
+foot.
+
+### What it is for
+
+**A value the user typed does not disappear because the surface it was typed into is gone.** F-005 AC-2
+guarantees a failed write *"never silently reverts"*; AC-45 makes closing the detail unconditionally
+available and AC-48 lets a message swap its subject — so the surface that was holding the guarantee can
+leave at any moment, including while the write is still in flight. This component is where the guarantee
+goes when that happens. It carries **the user's value**, names **the task and the field**, offers **the
+same retry** the field offered, and **does not remove itself** — not on a timer, not on a navigation, not
+on a surface change, and not on crossing `breakpoints.split`.
+
+It carries four kinds of unfinished business, all of them belonging to a **task** rather than to a
+surface:
+
+1. a write that **failed** (AC-2, AC-47);
+2. a write **refused because the app is offline** (AC-2's third state — refused, not queued: nothing
+   replays it and nothing retries it but the user);
+3. the **report** that a notice's task has since been deleted (AC-4, AC-47) — no retry, because a retry
+   aimed at a deleted row is dead or a resurrection;
+4. the **hand-action undo offer** (AC-43) — the one reversal of the one irreversible thing in the
+   feature.
+
+**Two boundaries are already decided and this section does not re-open them.** It **does not survive a
+reload** (the owner's OQ6 answer of 2026-08-18: there is no durable store here, so there is nothing to
+carry across one), and **a failure whose cause is that the task is gone produces no notice at all** —
+AC-4's terminal state on the detail is the whole of that case.
+
+### Why it is a sibling of § SaveNotice, not § SaveNotice widened
+
+AC-47 asks for this decision explicitly, once. § SaveNotice is the nearest thing the catalogue has: the
+same strip class, and its central argument — *"a component that exists because something vanished may not
+itself vanish on a timer"* — **is** AC-47's no-self-dismiss rule, already reasoned. It is still a sibling,
+for four reasons, of which the first decides it on its own:
+
+1. **Lifetime.** § SaveNotice's Lifetime rule 3 clears it on *"leaving the surface — another collection,
+   Settings, or Talk"*. That is precisely what AC-47 forbids, and below the split `PathSwitch` is one tap
+   and is the app's primary navigation. Widening the component means its defining lifetime rule becomes
+   conditional per instance — which is the same objection that keeps AC-38 out of this family (below), so
+   applying it consistently means not doing it here either.
+2. **Where it lives.** § SaveNotice belongs to the **Tasks surface's** banner stack. This family belongs
+   to the **app frame**: it renders on Talk and on Settings, which no component in this catalogue does.
+3. **Multiplicity.** § SaveNotice is one strip that *"never stacks"* and aggregates into a count. This
+   family is **0..N, one per task**, and cannot aggregate — each row carries a *different value the user
+   typed*, and the value is the whole deliverable. A count would discard exactly what the component
+   exists to preserve.
+4. **Actions.** § SaveNotice *"carries no action"* and declined an `Undo` in writing. This family carries
+   `Retry`, `Put back` and `Dismiss`.
+
+Widened, one component would hold two lifetimes, two homes, two multiplicity rules and two action
+policies, told apart by a flag — a single name over two components. § SaveNotice is unchanged; it gained
+one cross-reference so nobody widens it by mistake.
+
+### Why AC-38's passed reminder is not in this family either — the other half of the same decision
+
+AC-47 and AC-38 both ask design to decide **once** whether the two share a component family, so that a
+single family, if chosen, is chosen deliberately rather than by whichever AC is built first. **Two
+families.** Three reasons, and the first is AC-38's own observation:
+
+1. **Their lifetimes are opposite.** This family never self-retires and ends only by the user's own act;
+   AC-38's surfacing **retires on acknowledgement**, which the owner defined on 2026-08-19 as a
+   deliberate, per-reminder action. A shared family would need a per-instance lifetime rule — reason 1
+   above, again.
+2. **Different objects, opposite news.** This family reports **the app failing to keep something the user
+   typed**. AC-38's surfacing reports **a moment that has passed** — the app doing exactly its job. A
+   strip that reports both teaches the user nothing about what either means.
+3. **Different verbs.** This family's verbs are retry, put back, dismiss. AC-38's is *acknowledge*, one
+   per reminder, with **no bulk dismissal** (owner, §3). Merged, one strip carries four verbs and the one
+   that retires a reminder sits beside the one that dismisses a notice — two gestures a keystroke apart
+   with opposite consequences.
+
+**So `§ CarriedNotice` may not carry a passed reminder**, and that prohibition is the deliverable of this
+subsection. Where AC-38's surfacing *does* render is **not decided here and is not implied by this
+decision** — see *What is owed elsewhere* at the foot, which names the constraints rather than pointing at
+them.
+
+### Placement — one region, at the frame, above the stacking layer
+
+**A region docked directly below the top bar, spanning the full frame width, in flow, outside the surface
+stack.** Below `breakpoints.split` it sits under the top bar of whichever surface is showing; at or above
+the split it spans **both** the centre column and the right panel — one region, not one per column, which
+is what makes *"visible wherever the user is"* one implementation instead of two.
+
+**It is outside the stacking layer, and that is the load-bearing half.** S3 Lists menu, S4 Settings and S5
+New list slide over the **content** and **under** this region. Otherwise the family is invisible on
+Settings, and AC-47's requirement — visible on Talk and Settings and at both widths — is met at three of
+five surfaces, which is the failure mode it names.
+
+**Visible, not reachable.** The catalogue pushes the other way and this component must not follow it: the
+only strip family that existed was the Tasks banner stack, and a badge-then-tap design would put the
+user's typed value one navigation away during an outage, which is the loss AC-47 exists to prevent
+wearing an affordance (design D24). There is no badge, no collapsed pill and no "N unsaved changes" door.
+
+**Strip order when several co-occur, outermost first:**
+
+> § CarriedNotice → § InlineRetryBanner → § OfflineBanner → § SaveNotice → the surface's content
+
+§ SaveNotice's rule was *condition first, consequence last*; this extends it by one step. **A strip that
+is not about the surface it appears on outranks every strip that is** — put under a surface-owned strip,
+a notice about a task the user cannot see would be buried by a condition of the screen they happen to be
+standing on. On Talk the question mostly does not arise: § OfflineBanner docks above the Composer at the
+bottom of that surface, so only this region is at the top.
+
+### Multiplicity — 0..N notices, 0..1 offer, and what stops it taking the screen
+
+- **One notice per task, never one per field** (AC-47) — the same aggregation AC-2 requires of concurrent
+  in-field failures. A second failed field on a task the region already holds **joins that task's row as
+  a second field block**; it does not create a second row. The row grows; the region's row count does
+  not.
+- **At most one CN-UNDO**, and it renders **first**. It is the newest event and the only row with a
+  window another action closes, so it is the one the eye should reach first.
+- **Notices order newest first**, under CN-UNDO. The value the user typed most recently is the one in
+  front of them.
+- **The visible ceiling is a row count, not a fraction of the screen:** at most **two** rows below
+  `breakpoints.split` and **three** at or above it. Further rows **scroll within the region** — the
+  region never grows past that, and the first row is always fully visible. This satisfies AC-47's
+  *"N notices do not stack into a column that obscures what they report on"* without introducing the
+  navigation D24 rejected: scrolling inside a visible region is not a door, nothing is hidden behind a
+  tap, and every row keeps its position and its controls.
+- **The two-line worst case at `breakpoints.mobile` is a measurement owed at `phase: screens`** — two
+  rows, each with a three-line value, at 375px. Stated as a requirement here; no content-width floor is
+  published, for § Touch's reason.
+
+### Anatomy of one row
+
+Full-width, `bg.raised`, 1px `bg.hairline` bottom hairline, `padding: sm gutter`, in flow. Leading Lucide
+icon at `icon.size.sm`; then the body; then the actions and the dismiss control at the trailing edge.
+
+**A row is one task, and it carries one block per affected field.** This follows from two ACs that pull in
+different directions and are both satisfied by the same shape: AC-47 says **one notice per task, not one
+per field**, and AC-2 says several fields can be in flight together, **each keeping its own value and its
+own retry**, with the failures aggregating into **one** status message. So the row is the aggregation and
+the blocks inside it are the per-field guarantees.
+
+| Part | Rendering |
+|---|---|
+| the sentence | `font.size.body`, `text.primary` — names the event and the task. Which sentence is chosen is the precedence rule below |
+| **one field block per affected field** | the field's **label** at `font.size.meta` `text.muted`; the typed value beneath at `font.size.body` **`text.primary`** — the user's own words are not chrome and are never muted; then `Now saved` + the stored value when that field is superseded; then that field's `Retry` if it is still retryable |
+| the trailing controls | one **Dismiss** for the row — dismissal is of the notice, and there is one notice per task |
+
+**The seven field labels, one literal each:** `Name` (the title — `aria-label="Task name"` is what the
+shipped rename input already says) · `Note` · `Priority` · `Deadline` · `Reminder` · `Step` · `Repeat`.
+**This is how AC-2's *"naming the fields that failed"* is met** — as labels on the blocks, not as a
+comma-joined noun list inside a sentence, which would be a template over a list and is exactly what
+L-008 forbids.
+
+**Retry is per field, not per row** (AC-2: *each keeps its own value and its own retry*). A row with two
+failed fields carries two Retry controls, and each resolves only its own field. A field that is
+**superseded** carries no Retry, whatever the rest of the row does.
+
+**The precedence rule for the sentence and the icon — one row, several fields, one worst state.** In
+order: **deleted** (task-level, so it dominates everything) → **failed** → **offline-refused** →
+**superseded**. The row wears the state of its worst field; each block still states its own.
+
+**Two sentence forms, because one field and several are different facts:**
+- **one affected field** → the per-field literal from the table below;
+- **two or more** → `Couldn't save your changes to "{task}".` (failed) · `You're offline — your changes
+  to "{task}" weren't saved.` (offline) · `"{task}" has changed since. What you typed wasn't saved.`
+  (all superseded). Three literals, and the fields are named by their blocks.
+
+**Each value renders in full, wrapping, up to three lines; past that that block's value area scrolls
+within itself.** It is never truncated with an ellipsis: *carries the user's value* is the component's
+reason to exist, and a value the user cannot read back is not carried. The full value is in the block's
+accessible name either way.
+
+**Icons reuse assignments that already exist; none of them is a new meaning** (§ Colour rules 1 and 3 —
+the words carry the meaning alone, in every row):
+
+| Row | Lucide icon | Colour | Why that colour is already legal |
+|---|---|---|---|
+| CN-FAILED | `alert-circle` | `danger` | § InlineRetryBanner already uses a `danger` icon for a write/read that failed |
+| CN-OFFLINE | `wifi-off` | `question` | § OfflineBanner already carries the offline news in the `question` accent |
+| CN-SUPERSEDED | `history` | `text.muted` | nothing is wrong and there is no action |
+| CN-DELETED | `trash-2` | `text.muted` | as above |
+| CN-UNDO | `corner-up-left` | `text.muted` | **must not be violet.** § UndoAffordance fixes violet as *the assistant's own act* and AC-43's offer reverses the **user's** act — the constraint travels with the affordance, wherever it renders |
+| CN-UNDONE | `corner-up-left` | `text.muted` | same glyph, no action |
+
+### The rows
+
+| ID | Shown when | Actions |
+|---|---|---|
+| **CN-FAILED** | a write on this task failed, and nothing newer has been stored for that field | `Retry` (ghost) **per field** · Dismiss |
+| **CN-OFFLINE** | a write to a **server-owned** task was refused because the app is offline (AC-2's third state) — see the provenance scope below | `Retry` (ghost) · Dismiss |
+| **CN-SUPERSEDED** | something newer has been stored for that field — the user's retry or an assistant turn (AC-36) | Dismiss **only** |
+| **CN-DELETED** | the task this notice belongs to has been deleted (AC-4) | Dismiss **only** |
+| **CN-UNDO** | an undoable hand action has just happened (AC-43) | `Put back` (**neutral**) · Dismiss |
+| **CN-UNDONE** | `Put back` was used | Dismiss **only** |
+
+**CN-OFFLINE is scoped by row provenance, and getting that wrong removes working behaviour.** AC-2's
+refusal covers a row **the server already holds** (`local !== true`) and nothing else. An edit to a task
+the user created **while offline** is kept and replayed today — `persistLocal()` saves it, `pushLocalTasks`
+sends it — so such an edit **produces no CN-OFFLINE row at all**; a notice saying it *wasn't saved* would
+be false, and drawing one would be this component asserting a regression. Four Gate 1 lenses found the
+unscoped version of that rule independently.
+
+**And CN-OFFLINE is not a pending indicator.** AC-2 forbids a spinner, a pending badge and silent
+acceptance for this state, because each of them implies a queue that does not exist. This row implies
+none: it says the write **did not happen**, in the past tense, and the only thing that will ever retry it
+is the user pressing `Retry`. Nothing here fires on reconnection and nothing fires on a timer — the same
+rule AC-38's offline acknowledgement was corrected to obey.
+
+**Neither CN-SUPERSEDED nor CN-DELETED offers a retry, and that is a rule rather than an omission.** A
+retry on a superseded field **overwrites the newer stored value with the stale failed one** — the
+resurrection door AC-4 and AC-47 close everywhere else; a retry on a deleted task is dead or a
+resurrection. Retyping the value is the available action in both cases, and it is an ordinary edit rather
+than a recovery path.
+
+**`Retry` keeps § Buttons' `ghost` variant; only `Put back` takes `neutral`.** Retry is not an undo, and
+§ InlineRetryBanner and § SurfaceError already ship a ghost Retry — one word, one treatment, three sites.
+AC-43's offer is the one control in the catalogue with an explicit prohibition on the ghost variant's
+colour, which is why `neutral` exists.
+
+### The literal messages
+
+**Literals cited by row ID, never a template over a noun** — § SaveNotice's rule and § NewMessageAffordance's,
+for **L-008**'s reason: a template that interpolates the field name renders fluent text for combinations
+nobody enumerated, and here the domain is closed at seven fields. `{task}` and `{value}` are `verbatim`
+slots (§ Spoken frames' closed vocabulary) — the task's own title and the user's own text, never
+re-worded.
+
+| Field | CN-FAILED | CN-OFFLINE | CN-SUPERSEDED |
+|---|---|---|---|
+| title | `Couldn't rename "{task}".` | `You're offline — "{task}" wasn't renamed.` | `"{task}" has been renamed since. What you typed wasn't saved.` |
+| note | `Couldn't save the note on "{task}".` | `You're offline — the note on "{task}" wasn't saved.` | `The note on "{task}" has changed since. What you typed wasn't saved.` |
+| priority | `Couldn't save the priority on "{task}".` | `You're offline — the priority on "{task}" wasn't saved.` | `The priority on "{task}" has changed since. What you typed wasn't saved.` |
+| deadline | `Couldn't save the deadline on "{task}".` | `You're offline — the deadline on "{task}" wasn't saved.` | `The deadline on "{task}" has changed since. What you typed wasn't saved.` |
+| reminder | `Couldn't save the reminder on "{task}".` | `You're offline — the reminder on "{task}" wasn't saved.` | `The reminder on "{task}" has changed since. What you typed wasn't saved.` |
+| step | `Couldn't save the step on "{task}".` | `You're offline — the step on "{task}" wasn't saved.` | `The step on "{task}" has changed since. What you typed wasn't saved.` |
+| repeat | `Couldn't save the repeat on "{task}".` | `You're offline — the repeat on "{task}" wasn't saved.` | `The repeat on "{task}" has changed since. What you typed wasn't saved.` |
+
+**The seven fields are the user-settable set F-005 AC-1 names**, and no more: `due_all_day`, `parent_id`,
+`step_order` and `series_id` are not user controls (AC-1), so no write of theirs can produce a notice.
+
+**CN-DELETED**, one literal — the field is named by the `You typed` label, and the task is gone, so no
+per-field sentence exists to write: `"{task}" was deleted. What you typed wasn't saved.`
+
+**CN-UNDO**, four literals, one per class of undoable action in AC-43:
+
+| Action (AC) | Message |
+|---|---|
+| delete a task, from the detail (AC-31) or from a list row (AC-42) | `Deleted "{task}".` |
+| delete a step (AC-14) | `Deleted a step from "{task}".` |
+| delete a whole series (AC-30) — the restore unit is the series (AC-41) | `Deleted "{task}" and the rest of its series.` |
+| reorder steps (AC-15) | `Moved a step in "{task}".` |
+
+**A reorder that changes nothing creates no row at all** (AC-43's no-op clause) — an offer to reverse
+something that did not happen is a control with no meaning.
+
+**CN-UNDONE**, four literals, one per class above: `"{task}" is back on the list.` ·
+`The step is back in "{task}".` · `"{task}" and its series are back.` · `The step is back where it was.`
+
+### Lifetime — what removes each row, and the two transitions that are not endings
+
+**There is no timer anywhere in this family, so WCAG 2.2.1 is not engaged** — there is no time limit to
+adjust, and the reduce-motion and screen-reader users who lose timed messages lose nothing here. That is
+§ SaveNotice's position and this family's central rule.
+
+| Row | Removed by |
+|---|---|
+| CN-FAILED | a retry that **succeeds** · Dismiss · reload |
+| CN-OFFLINE | a retry that **succeeds** · Dismiss · reload |
+| CN-SUPERSEDED | Dismiss · reload |
+| CN-DELETED | Dismiss · reload |
+| CN-UNDO | `Put back` (→ CN-UNDONE) · Dismiss · **the next undoable action replaces it** · reload |
+| CN-UNDONE | Dismiss · reload |
+
+**And by nothing else.** Not by elapsing, not by a navigation, not by a surface change, not by crossing
+`breakpoints.split`, not by the region scrolling, not by a retry that fails again.
+
+**The two transitions are transitions, not endings — and this is the answer to a state that had no
+lifetime** (design D26). AC-47 lists the task's deletion among the things that *end* a notice, and
+separately requires the deletion to be *"reported once, with the value still legible, and with no
+retry"*. Read as an ending, nothing governs how long that report stays on screen — and **the report is
+the last legible copy of text the user typed, and it is the one state that offers no retry**, so a report
+that self-dismissed would lose the value by elapse, which is what this family exists to prevent, one
+ender over. So:
+
+- **CN-FAILED → CN-DELETED** when the task is deleted. The retry **obligation** ends; the row does not.
+- **CN-FAILED → CN-SUPERSEDED** when something newer is stored. Supersession is not an ender (AC-47's own
+  revision 4 correction); the notice stands, carrying the superseded text and no retry, until dismissed.
+
+Both terminal states keep the family's rule: **removed only by the user's own act, or by a reload.**
+
+**Reopening the detail on a task that has an outstanding notice** shows that field holding **the user's
+value**, still failed, still offering retry — **unless something newer has been stored**, in which case
+the field shows the stored value and the row is CN-SUPERSEDED (AC-47). The notice and the surface never
+disagree because there is one failure behind both.
+
+**One permanent-loss mechanism is visible in this table and is the owner's open question, not a design
+gap.** A second undoable action replaces CN-UNDO and the replaced action stays done, with nothing reported
+— and a reload ends the offer. Both are named in `F-005 OQ13`, which asks the owner about the depth of
+recovery. This family implements the depth of one; a recoverable-items view is a surface F-005 does not
+build.
+
+### Retry is one path called from two places
+
+The field's Retry (AC-2) and this row's Retry are **one write, invoked from two sites** — they retry the
+same write once and resolve the same row. Two implementations of one postcondition drift, and that is
+**L-005**'s shape applied to a recovery path. The catalogue publishes an id per site
+(`shell-carried-notice-retry` here, the field's own at `phase: screens`) because they are two controls;
+the observable is one write, and QA asserts that a retry from either site produces exactly one attempt.
+
+### Accessibility
+
+- **The region pre-exists and is empty when there is nothing to report.** `role="status"`,
+  `aria-live="polite"`, `aria-label` — a live region injected into the DOM at the same moment as its
+  content is not reliably announced, which is § SaveNotice's reasoning and applies with more force here,
+  because this region is created once per app rather than once per surface.
+- **`aria-atomic="false"`, which is where it diverges from § SaveNotice.** SaveNotice is one sentence and
+  re-announces whole; this region holds N rows, and re-reading all of them when the third arrives is the
+  *"N polite announcements"* failure AC-2 and AC-47 both aggregate to avoid. A new or changed row
+  announces itself; the rest stay quiet.
+- **`polite`, never `assertive`.** Nothing here is time-critical — the family's whole promise is that it
+  waits — and interrupting would claim an urgency it does not have. It joins AC-33's 4.1.3 list.
+- **Two literals for the region's accessible name:** `Unsaved changes` when it holds ≥1 notice;
+  `Undo offer` when CN-UNDO is the only row.
+- **It never takes focus.** Focus stays where the action left it — which after leaving a field is the
+  next field, and after a delete is the list.
+- **Keyboard-reachable without a steal** (2.1.1): the region sits in DOM order immediately after the top
+  bar, so `Tab` out of the top bar reaches `Retry` / `Put back` / `Dismiss` before the surface's content.
+  On dismissing a row, focus moves to the next row's dismiss control; if the region empties, back to the
+  control that had focus before.
+- **Visible labels are prefixes of accessible names** (2.5.3): `Retry`, `Put back`. `Dismiss` is
+  icon-only with the accessible name `Dismiss`; the glyph is `text.muted` on `bg.raised`, clearing
+  1.4.11's 3:1 at 5.01 dark / 5.78 light.
+- **The row's accessible name carries the whole value**, including the part that scrolled.
+- **Motion is not load-bearing.** Rows enter at `motion.duration_ms.standard`; under
+  `prefers-reduced-motion` that collapses to the 80ms opacity change per `motion.reducedMotion`, and —
+  because there is no timer — **nothing else about the component changes at all.**
+- **No new contrast pair beyond the one § Contrast now publishes** for the `neutral` variant.
+  `text.primary` / `text.muted` on `bg.raised`, and `danger` / `question` as non-text icons, are all
+  verified there already.
+
+### Testids and states
+
+| Testid | Control |
+|---|---|
+| `shell-carried-notices` | the region — non-interactive, exactly like `tasks-save-notice` and `assistant-offline-banner`: its **presence on every surface** is the observable AC-47's placement requirement has, and a catalogue that skipped it would leave that untestable |
+| `shell-carried-notice` | one notice row exemplar — carries the sentence and the value |
+| `shell-carried-notice-retry` | CN-FAILED / CN-OFFLINE Retry — **one per field block**, so a row with two failed fields carries two of them (AC-2: each field keeps its own retry) |
+| `shell-carried-notice-undo` | CN-UNDO's `Put back` |
+| `shell-carried-notice-dismiss` | any row's trailing Dismiss |
+
+All five are `(web, mobile)`, like the component. **AC-47 carries `(web, mobile)` and the phone's half is
+this family's lifetime, reach and content** — the detail-close *trigger* is web-only because the phone has
+no detail, but AC-2's refused or failed value and AC-43's `(mobile)` undo offer both need a home whose
+lifetime is this one. So these five ids close the debt `## Impact` §8(d) records as *"the mobile ids for
+AC-42/AC-43's undo offer, which is an element that does not exist"*.
+
+**States owed at `phase: screens`, one per row plus the four that are about the region rather than a
+row** — named here so the drawing pass has a list rather than a judgement: `carried-failed` ·
+`carried-offline` · `carried-superseded` · `carried-deleted` · `carried-undo` · `carried-undone` ·
+`carried-two` (the below-split ceiling) · `carried-scrolled` (above the ceiling) ·
+`carried-on-talk` · `carried-on-settings` (the two surfaces that decide the placement requirement) ·
+`carried-with-banners` (co-occurring with § OfflineBanner and § InlineRetryBanner, which is the stack
+order drawn rather than asserted).
+
+### What is owed elsewhere, and is not written here
+
+Listed as items rather than as pointers, because a pointer that names no item is how an obligation gets
+believed-recorded (design D27, and D14's own failure mode).
+
+1. **AC-38's passed-reminder surfacing has no component yet.** This pass decided only that it is **not**
+   this family (above). Its constraints, for whoever draws it: it renders **on open** — and *open* is two
+   doors, `init()` and `onForeground()` (AC-38); N passed reminders are **one** surfacing ordered oldest
+   first; each carries a **deliberate per-reminder acknowledge control** and there is **no bulk
+   dismissal** (owner, 2026-08-19 §3); rendering is **not** acknowledgement and neither is opening the
+   task or scrolling past; below the split the app opens on Talk, where **§ LandingSummary** already owns
+   what is said on open; and it carries `(api, web, mobile)`. Whether it is § LandingSummary widened or a
+   third family is the open call.
+2. **The mobile spellings of TR-URGENCY and TR-REPEAT** (§ TaskRow) are owed to **F-003's** closed id
+   catalogue, not invented here.
+3. **The three shell mockups still carry the falsified § MessageTaskLink note** — *"tap a task to find it
+   in the list"* at `app-shell.html:811`, `app-shell-ios.html:746`, `app-shell-android.html:750`, and in
+   `src/assistant/web/components/ConversationPane.tsx:131-136`. The replacement copy is published in
+   § MessageTaskLink; propagating it into the drawings is `phase: screens` and into `src/` is web-agent's.
+4. **F-005's `phase: screens` dispatch must extend the three shell mockups**, not only draw the detail —
+   this family renders on Talk and Settings, which only `app-shell*.html` draw (§ Testid catalogue's
+   closing note).
+5. **The `src/` catalogue assertions go red on the five new ids** by design; the fix belongs to whoever
+   owns `src/` (§ Testid catalogue's closing note names the three files).
+6. **One coordination item, because the model for this family was being written in `src/` at the same time
+   as this section.** `src/assistant/_shared/model/notices.ts` (new, unreviewed here, and correctly in
+   `_shared/` for AC-47's stated reason) already implements one-notice-per-task, per-field entries,
+   supersede-does-not-end, no timer, and one retry path — it agrees with this section on all five. **The
+   one thing it cannot decide, because it is a rendering rule, is what this section calls the D26
+   answer:** its `ended` marker makes `retryableFields` empty, which is right, and whether an `ended`
+   notice **still renders** is design's. It does: **CN-DELETED renders and is removed only by Dismiss or a
+   reload.** An `ended` notice filtered out of the region is the last legible copy of the user's typed
+   value disappearing on a deletion it did not cause — the defect D26 named. Whoever owns that file and
+   the web rendering should read *Lifetime* above rather than infer the rule from the type.
+
+### Cells above that changed content in this pass
+
+Five, and none of them is a rename or a reorder.
+
+1. **§ Buttons** gains the `neutral` variant and three rows in the one-word-per-concept table
+   (`put back`, `deadline`, `step`), with the reasoning for the first beside it.
+2. **§ TaskRow** gains *The row's mark budget* — the three marks, their order, the four-item ceiling,
+   their renderings and their web ids, and the F-003 debt for the two mobile spellings.
+3. **§ MessageTaskLink** gains the replacement note copy, the five states it was checked against, and the
+   decision that the note renders on the newest door-carrying message only.
+4. **§ Skeletons** gains SK-DETAIL and the paragraph saying why the detail's loading and empty states are
+   otherwise identical.
+5. **§ SaveNotice** gains one paragraph recording that AC-47's notice is a sibling and not this component
+   widened, so the next reader does not widen it by mistake. **§ Contrast** gains one computed pair and
+   **§ Testid catalogue — app shell** gains five rows and a counts note; both are listed here rather than
+   separately because neither changed a decision.
