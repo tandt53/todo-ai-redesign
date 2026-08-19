@@ -1,108 +1,111 @@
-# BRIEFING — T-160 · F-005 architecture
+# BRIEFING — T-177
 
-- **Task ID:** T-160 · **Module:** assistant · **Feature:** F-005
-- **Agent:** architect-agent · **Date:** 2026-08-19 · **Depends on:** T-159, T-157 (both DONE)
-- **Project root:** /Users/tandt/projects/todo-ai-redesign
+- **Task ID:** T-177
+- **Description:** F-005 amendment — § CarriedNotice moves to the bottom, and the undo rows gain a 10s life
+- **Module:** assistant
+- **Feature:** F-005
+- **Agent:** spec-agent
+- **Date:** 2026-08-19
 
-## What you are walking into
+## Context
 
-F-005 went through **three Gate 1 review rounds and four revisions** — 221 findings
-across nine lenses. The gate is closed by owner decision. **You were one of those
-lenses**, twice, and your round-3 return is in the read list: two of the findings you
-raised are now settled in the spec because you named them as things nothing downstream
-could catch.
+F-005's Gate 1 was closed by the owner on 2026-08-19 and revision 4 shipped. This is
+**not** a fifth review round. It is an amendment forced by an owner decision taken
+after the gate closed, while looking at the feature running on an iOS simulator.
 
-The owner made an explicit split when closing the gate, and **it is the reason this
-dispatch has more input than usual**:
+The owner saw `CN-UNDONE` (*"Buy milk" is back on the list.*) docked under the top bar
+and asked whether design or the implementers had got it wrong. **Neither had** — both
+built exactly what this spec requires. So the requirement is what changes.
 
-> *A contradiction must be fixed in the spec, because only the spec can say which of its
-> two sentences is true. **An unstated mechanism is what the architecture phase exists to
-> state.** Making spec-agent invent answers means architect either inherits a guess or
-> unpicks it.*
+**The amend-only constraint from revisions 3 and 4 still holds: 48 ACs before, 48
+after. Nothing renumbered, nothing added, nothing deleted.** Four existing ACs are
+amended and one open question closes.
 
-So revision 4 fixed 45 contradictions and **deliberately left 12 questions unanswered,
-marked `Recorded, not answered` in `## API Touch Points`, in the lens's own words about
-what is unknown.** Those are yours. They are not gaps in the spec; they are the spec
-declining to pre-empt you.
+There is a companion new feature, **F-006 (the trash)**, queued as T-178 and specced
+separately. **Edit (d) below depends on it**, and that dependency must be visible in
+the AC text rather than assumed.
 
-## Read these first
+## Read these files first
 
-1. `specs/assistant/F-005-task-detail.md` — 48 ACs, `## Data`, `## API Touch Points`
-   (**the seven `Recorded, not answered` bullets are your work list**), `## Impact`'s
-   fourteen subsections, `## Ops`, `## Test strategy`, `## Open Questions`.
-2. `specs/assistant/api-contracts.md` and `specs/assistant/data-model.md` — what exists.
-   F-005 changes both.
-3. `specs/_shared/ARCHITECTURE.md` and `specs/_shared/adr/` — **especially `ADR-005`
-   (session and dedupe scope is *the account*) and `ADR-009 § Amendment 2`** (the
-   two-axis collection model F-005 sits on top of).
-4. `reports/gate1-lenses/F-005-r3-architect.md` and `F-005-r2-architect.md` — your own
-   findings, and which of them the spec answered.
-5. `reports/gate1-lenses/F-005-revision-4-log.md` — what was fixed versus recorded, and
-   why. Its `## What a reader should check first` section is written for you.
-6. `specs/assistant/F-001-voice-assistant-view.md` — **AC-24 (rev 5) and AC-31 (rev 7)**,
-   both amended *because* F-005 needed them. AC-31 rev 7 names two client predicates by
-   path; the contract you write must not re-narrow either.
+1. `reports/owner-decision-2026-08-19-carried-notice-placement-and-timer.md` — the
+   decision, all five sections. §2's table and §4's last paragraph are the two that
+   change AC text most directly.
+2. `specs/assistant/F-005-task-detail.md` — **AC-43, AC-47, AC-33 and OQ13**. AC-47's
+   lifetime bullet and AC-33's 2.2.1 bullet both carry parenthetical revision history
+   explaining why the current wording is as strong as it is; read those before
+   weakening either, because both were tightened deliberately in revision 4 and one of
+   them was tightened *to remove exactly the reading a timer reintroduces*.
+3. `design/_shared/components.md` **§ CarriedNotice** (from `## Placement` through the
+   lifetime rules) — what design published against the current AC, including the
+   composer constraint on Talk.
+4. `src/assistant/mobile/model/carried.ts` — `carriedRows()`. The row-type boundary
+   edit (b) needs is already visible here: `CN-UNDONE` is built with `blocks: []` and
+   `action: null`.
+5. `reports/owner-decision-2026-08-19-close-gate-one.md` §2 — the decision this one
+   amends. The undo offer was put in AC-47's family there; that placement stands.
 
-## The twelve, and the one that is largest
+## Write to
 
-**The timezone is the big one — four lenses, and it lands on a hole ADR-005 did not
-know it had.** AC-44 makes an account-stored `timezone` the single source every
-date-computing path reads, and refuses a computation that has none. The spec records
-three things it cannot settle:
+- `/Users/tandt/projects/todo-ai-redesign/specs/assistant/F-005-task-detail.md`
+  (amend in place — revision 5)
+- `/Users/tandt/projects/todo-ai-redesign/specs/assistant/index.md`
+  (the revision number — revision 4 shipped without this being updated once already,
+  and it is the one file a fresh session reads to learn where a feature stands)
+- `/Users/tandt/projects/todo-ai-redesign/reports/gate1-lenses/F-005-revision-5-log.md`
+  (one row per edit, with the AC ids touched)
 
-- **No writer.** *"Refreshed from what the client reports"* names no door, and
-  `req.timezone` rides `POST /assistant/turn` alone while the CRUD endpoints 400 on it.
-- **No account record.** The dev lens measured the store: top-level keys are `sessions`,
-  `turns`, `tasks`, `undo_records`, and auth is an `X-User-Id` header stub. **There is no
-  account entity for a zone to live on** — while `ADR-005` already decided that *the
-  account* is the scope for sessions and dedupe. That ADR's premise is now load-bearing
-  and unbuilt.
-- **The refusal is write-shaped and one use of it is a read.** AC-13's absent-flag
-  resolution happens on every read of every row without a stored `due_all_day` —
-  **measured: 0 of 790 rows carry one**, so on day one that is every row on every
-  `GET /tasks`. Refusing the read means the list cannot render; falling back silently is
-  forbidden by name in the same sentence. **AC-32 guarantees this surface works with zero
-  AI calls while the assistant is erroring**, so a by-hand-only account must not be the
-  account that cannot compute a date.
+## The four edits
 
-The other recorded items: **the 53 rows already soft-deleted with no `delete_membership`**
-(18 accounts, all predating the field, and AC-41 makes them addressable); **where a
-reordered step's prior position comes from** (AC-15 gives it two sources in one sentence
-pair); **the client-side test-harness clock door** (AC-44 requires the harness to hold
-both seams at one instant, and `/__qa__/advance-clock` is server-only — `window.__assistantSeams`
-is the existing guarded precedent); **how the run count is derived** (AC-25 forbids a
-stored counter and `## Data` records no completion event, so "completed at least once"
-has no source once an occurrence is un-completed); **who may write `reminder_shown_at`**
-(caller scoping, and whether a turn may set it — silently retiring a reminder the user
-never saw); **how a set-valued recurrence member appears in a diff row** that declares
-`old|null, new|null`.
+**(a) AC-47 — placement is the frame's bottom edge.** No AC constrained the edge
+before; AC-47 requires *visible wherever the user is*, which the bottom satisfies as
+well as the top. **The constraint that travels with it:** on Talk the composer is at
+the bottom and the keyboard rises over it, so the region docks **above the composer**
+and moves with the keyboard, not against the screen edge. Design owns the exact rule;
+the AC states that the bottom edge may not occlude the app's primary input.
 
-## What to produce
+**(b) AC-47 — the lifetime rule splits, and the split is by what the row carries.**
 
-Your own definition governs. In outline: `api-contracts.md` and `data-model.md` updated
-for F-005, ADRs for the decisions that have real alternatives, and whatever platform-doc
-changes follow. **Write an ADR wherever you choose between costed options** — the
-timezone's home almost certainly earns one, and it may need to amend or supersede
-ADR-005 rather than sit beside it.
+| Row | Carries | Lifetime |
+|---|---|---|
+| `CN-FAILED`, `CN-OFFLINE`, `CN-DELETED` | text the user typed that the app could not store | never self-dismisses — unchanged |
+| `CN-UNDO`, `CN-UNDONE` | nothing the user typed | 10s, then gone |
 
-## Three rules for this dispatch
+**State the rule by carried content, not by row id.** A rule written as a list of ids
+is one the next row added to this family joins by default and probably wrongly; a rule
+written as *"a row carrying a value the user typed never self-dismisses"* decides that
+case in advance. AC-2's guarantee is the reason the first group exists at all, and it
+is untouched.
 
-1. **Do not re-open the spec.** Gate 1 is closed. If an AC is genuinely unbuildable as
-   written, return **BLOCKED** naming the AC and why — do not amend it, and do not design
-   around it silently.
-2. **Answer the recorded twelve, or say explicitly which you are deferring and to what.**
-   A recorded question that comes back unanswered has cost the project a full extra round
-   for nothing.
-3. **Never touch the spec's `## Links` block** — report paths under `links_to_record:`.
-   Do not write `design/`, `qa/` or `src/`.
+**(c) AC-43 — a fifth ender.** The list is *used, dismissed, replaced, reloaded* and
+now **elapsed**. Its *"and by nothing else"* must name it. Revision 4 had to make this
+exact edit once already, for the reload, and recorded why leaving the phrase standing
+over an incomplete list is worse than having no phrase at all.
+
+**(d) AC-33 — 2.2.1, and this is the edit with a trap in it.** A ten-second limit on
+an affordance carrying an action is precisely what **2.2.1 Timing Adjustable**
+governs. Revision 4 specifically removed the reading that *a five-second timer extended
+on focus* would satisfy the rule, so **pause-on-hover is not the answer and citing it
+repeats the error that revision was written to fix.**
+
+What makes the timer conformant is **F-006's trash**: once an equivalent, untimed path
+to the same outcome exists, nothing is lost by elapse. **Write that dependency into
+the AC.** An AC that says *"the timer is fine"* without saying *"because the trash
+exists"* becomes a false conformance claim the moment F-006 slips — and this feature
+declares WCAG 2.1 AA by name.
+
+**(e) OQ13 closes:** recovery is the trash, for its retention period; the undo offer
+is a shortcut to it, not the remedy itself.
 
 ## Success criteria
 
-1. Every `Recorded, not answered` bullet has an answer in a contract, a data-model entry
-   or an ADR — or an explicit deferral with its owner named.
-2. `AC-46`'s capture-before-apply ordering, which you called uncatchable-later, is
-   expressible in the contract you write — the record-to-row mapping (successor →
-   `created_ids`; cascaded step → snapshot / `post_apply`) is yours to state.
-3. The contracts you touch stay consistent with **F-001 AC-24 rev 5 and AC-31 rev 7**.
-4. Your return ends with `---METRICS---` and carries `memory_entry:`,
-   `agent_memory_entry:` and `links_to_record:`.
+- 48 ACs before, 48 after. No id renumbered, added or deleted. Verify by counting.
+- `bash .claude/tools/spec-check/declared-elements.sh specs/assistant/F-005-task-detail.md`
+  exits 0.
+- AC-47's lifetime rule is stated **by carried content**, and both groups are named.
+- AC-43's ender list has five enders and its closing phrase matches the list.
+- AC-33's 2.2.1 text states the F-006 dependency explicitly. **If you judge that a
+  timed limit cannot be made conformant this way and needs an owner answer rather than
+  a statement, say so and return BLOCKED on that edit alone** — the other four stand
+  on their own. A false AA claim is not a detail to settle by default.
+- OQ13 is closed with its answer recorded, not deleted.
+- The revision log has one row per edit with the AC ids touched.

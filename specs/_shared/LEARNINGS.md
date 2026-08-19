@@ -262,3 +262,59 @@ Entries are **append-only by agents**; humans may edit or delete.
 - **Related** — **L-013** (a feature owes an impact section because nothing else asks) and **L-015**. This is the same family: work that no role's lens is pointed at, made visible by writing it down where the next role will look.
 - **Scope** — project-wide; the spec → architecture handover.
 - **Stale check** — permanent.
+
+### L-021 — A truncated read is indistinguishable from a complete one, and specs put their prohibitions at the end
+
+- **Date added** — 2026-08-19 by orchestrator, from design-agent's self-report on T-152.
+- **Trigger** — design-agent drafted the urgency mark as `!` / `!!` / `!!!`, with a paragraph of reasoning about why inheriting that scale was right. **AC-9 forbids exactly that, by name**: *"deliberately one glyph, not Apple's graduated `!` / `!!` / `!!!`"*. The prohibition was in the part of the AC the agent's read had truncated. It caught it only by going back and reading AC-9's **tail** specifically.
+- **Why nothing would have caught it** — the draft was internally coherent, cited the source audit, and would have passed every structural check. `design-check` verifies tokens, contrast, testid uniqueness and state coverage; **none of them knows what the AC forbids.** C11 renders the mockup and C14 checks the testid contract — a graduated glyph scale satisfies both. The earliest catch was a human reading the screens against an AC nobody was re-reading.
+- **The mechanism, which generalises past design** — this spec is large: F-005 runs to 805 lines, single ACs exceed 6 KB, and a plain read of the file returns a preview. **The truncated part is not a random sample — it is the end.** And specs put their constraints at the end: the reasoning comes first, then the prohibitions, then the "which of the N states" clauses. So truncation removes disproportionately the sentences that would have stopped you, and leaves the ones that sound like agreement.
+- **How to apply** — before publishing any artifact that implements an AC, **re-read that AC's last paragraphs specifically.** Extract one AC at a time (`awk '/^- \[ \] \*\*AC-9\*\*/{f=1} f&&/^- \[ \] \*\*AC-10/{exit} f'`) and check the extraction's byte count against what you were shown, or read the tail explicitly (`| tail -c 3000`). The same discipline applies to any long document read in full: **if a tool truncated, ask what was at the end, not whether the middle looked right.**
+- **Related** — this is **L-007**'s shape (a check that silently scanned nothing) and **L-016**'s (a gate that failed on its own plumbing) moved to the reading step: a partial input that reports as a complete one. It is also why L-009 insists the individual lens returns are read rather than only the consolidation.
+- **Scope** — project-wide; any agent reading a large spec, and any orchestrator briefing that says "read AC-N".
+- **Stale check** — permanent.
+
+### L-022 — During a parallel dispatch the test baseline is stale before the agent reads it, and a red suite is not attributable by reading it
+
+- **Date added** — 2026-08-19 by orchestrator, from backend-agent's return on T-162. **The orchestrator caused the half of this that is a process defect**, and it is recorded that way.
+- **Trigger** — phase 4 dispatched backend, web and design in parallel. Each briefing told the agent *"the baseline is 771/771 across 27 files"*. By the time any of them ran, it was false: web-agent was editing `src/assistant/_shared/`, which the mobile and web tests compile, so the full suite's failure set moved **12 → 6 → 28 → 9** across one task with nobody touching those tests. The suite ended at 898 tests because two agents were adding their own.
+- **What the agent did instead of guessing** — `git worktree add <tmp> HEAD`, copied the *other* agents' current non-overlapping files in, and ran the suite there. The same 28 failures appeared **without any of its own changes**. That is what separated "mine" from "theirs", and it let it say *2 of the 11 are mine, in a subtree I may not touch, and here is the one-line fix* — rather than "pre-existing", which is the claim this project's ethos forbids without proof.
+- **The orchestrator's half of the lesson** — **do not quote a baseline count into a briefing during a parallel dispatch.** It reads as ground truth, it is stale on arrival, and it invites the agent either to panic at someone else's red or to launder its own red as "pre-existing". Say instead: *other agents are editing X in parallel; establish your own baseline before you start, and attribute any failure you find with a counterfactual tree.* Naming the parallel agents and their subtrees is useful; naming a number is not.
+- **The agent's half** — measure the baseline, do not accept it; diff the failure **sets**, never the counts; and **never fix a red test in another agent's subtree to make your own number look right.** Backend left two qa/ failures it had caused, named them, and gave the one-line fix, because the file belongs to qa-api-agent.
+- **Related** — **L-002** (a tool verdict is evidence, not proof) and **L-012**. Also the reason the queue rule forbids overlapping subtrees: this is the *unavoidable* residue when the subtrees are disjoint but the compile graph is not.
+- **Scope** — project-wide; any phase-4-style parallel dispatch, and every briefing written for one.
+- **Stale check** — permanent.
+
+### L-023 — A harness with two clocks is green only while the view reads the wrong one
+
+- **Date added** — 2026-08-19 by orchestrator, from web-agent's self-report on T-163.
+- **Trigger** — `_shared/testing/fixtures.ts`'s `todayTask()` / `upcomingTask()` read the **real clock**, while the test harness pinned `ControllerDeps.now` to a fixed `T0`. **771 tests were green**, and they were green *because the view also read the real clock* — agreeing with the fixture and disagreeing with the controller. Routing the view onto the injected seam, which AC-44 requires, turned **29 tests red at once**, every one of them about a row that was "in Today" for one clock and "in Upcoming" for the other.
+- **Why this is worse than an ordinary two-sources bug** — it is **L-004 living inside the instrument built to detect it.** The harness exists to pin time so date behaviour is assertable; a harness that pins the seam and leaves the fixtures on the wall clock does not fail, it *agrees with itself for the wrong reason*, and it converts the correct change into a 29-test regression that looks like the change broke something. The pressure at that moment is to revert the seam, which is exactly backwards.
+- **How to apply** — **before routing any layer onto an injected clock, read what the fixtures read.** Anchor fixtures and seam to one instant *first*, confirm the suite is still green with the view unchanged, and only then move the view. If the suite goes red at the anchoring step, that redness is the pre-existing defect surfacing and is information — not something to route around.
+- **The general form** — when a test's setup and its subject both read an ambient value, the test asserts their agreement, not the behaviour. Ask of any green date-, locale- or random-dependent test: *would this still pass if the subject read the injected value and the fixture did not?*
+- **Related** — **L-004** (one fact, two sources), **L-012** (an assertion green for the wrong reason), and F-005's AC-44, whose whole purpose is one seam per side.
+- **Scope** — project-wide; any suite with fixtures and an injectable ambient dependency.
+- **Stale check** — permanent.
+
+### L-024 — A held clock is a per-assertion choice, not a uniform good
+
+- **Date added** — 2026-08-19 by orchestrator, from qa-api-agent's return on T-166.
+- **Trigger** — F-005 mandates an injectable clock (AC-44) and **L-023** says anchor the fixtures and the seam to one instant. That is necessary and **not sufficient**. Two cases in the same suite need opposite things:
+  - **AC-5's proof requires the instant HELD.** `task-equals` contains `updated_at`, so under a moving clock a hand edit is "modified-since" for a reason unrelated to the claim — it would pass for the wrong reason (tester T8 raised this at Gate 1).
+  - **AC-28's third condition requires the clock ADVANCED.** The condition *is* `updated_at == created_at`, so under a held clock **an edit is byte-indistinguishable from no edit** and the state the condition describes **cannot be constructed at all.**
+- **The deeper point, which is about the AC and not the harness** — a condition whose predicate is a timestamp comparison is **unconstructible under a frozen seam**, and in production it is blind to any edit inside one clock tick. That is a property of the condition, not a defect in the tooling; the ACs and ADR-013 chose the proxy deliberately, and the fixture has to work with it.
+- **How to apply** — for every case, ask the extra question: **does this assertion turn on two timestamps being EQUAL or DIFFERENT?** Equal → hold the clock and assert the equality *explicitly* before the subject assertion. Different → advance it and assert the inequality first. **State which one the case needs, in the case**, because the next author will inherit the run's default and not know it was a choice.
+- **Related** — **L-023** (two clocks in one harness), **L-012** (green for the wrong reason). L-023 is the floor; this is the part that is still per-case after the floor is in place.
+- **Scope** — project-wide; any suite over an injectable clock.
+- **Stale check** — permanent.
+
+### L-025 — A file-watching runtime turns a git probe into a crash that looks like the product's
+
+- **Date added** — 2026-08-19 by orchestrator, from a crash the owner saw on the iOS simulator.
+- **Trigger** — the app was running on the simulator under Metro with Fast Refresh. To attribute a test regression, the orchestrator ran `git stash push src/assistant/mobile src/assistant/_shared`, re-ran the suite, and `git stash pop`. Metro saw the files change **twice**, hot-swapped modules into the live app both times, and the app red-boxed: `TypeError: Cannot read property 'used' of undefined` inside `carriedRows`, a function that had just been loaded in its **new** version against state built by the **old** reducer's `initialState`, which had no `undoOffer` field. Two module generations in one running process.
+- **Why it is worth a lesson** — the crash is indistinguishable from a product defect at the point of observation: real stack, real component, real file, and the owner sees a red screen. Nothing in the red box says "you edited the working tree three minutes ago." The natural next move is to open `carried.ts` and start hardening `offer !== null` into `offer != null` — **fixing correct code to silence an artefact of the observer**, and shipping a weaker guard permanently.
+- **How to apply** — **treat any running dev-server app as a consumer of the working tree, not just a producer of evidence.** Before `git stash`, `git checkout`, worktree swaps, or branch switches, either stop the watcher or accept that the running app is now invalid. And when a crash appears in an app that was healthy minutes ago with no deliberate code change, **relaunch on a clean bundle and re-drive the flow before diagnosing** — a defect that survives a cold start is real; one that does not was manufactured by the measurement.
+- **The general form** — a diagnostic that mutates shared state is not read-only just because it restores what it touched. It is read-only only if nothing observed the interval.
+- **Related** — **L-018** (measure the disk before re-dispatching), **L-022** (a baseline moves under you during parallel work). This is the same family: the act of measuring changed the thing measured.
+- **Scope** — project-wide; any watcher-backed runtime (Metro, Vite HMR, `tsc --watch`, nodemon).
+- **Stale check** — permanent.
