@@ -267,6 +267,11 @@ design_review:  full      # full = dev + tester + spec lenses read the design at
                           #        Gate 1.5, before any implementer is dispatched
                           # skip = design-check only (mechanical)
                           # See ORCHESTRATION "Gate 1.5".
+design_signoff: required  # required = the owner sees the rendered screens and
+                          #            answers design-agent's review_guide
+                          #            questions before any implementer runs
+                          # skip = agents only; nothing then judges whether the
+                          #        design is any GOOD
 ```
 
 <!-- What `skip` gives up, stated so the choice is informed rather than silent: -->

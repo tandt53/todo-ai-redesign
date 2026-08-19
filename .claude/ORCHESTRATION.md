@@ -491,9 +491,51 @@ Same as Gate 1: one review round, at most one re-review, third round escalates.
 
 ### Step 5 — present the decisions to the human
 
-Same block format as Gate 1 § Step 5. One addition worth making: **name the
-screens a human should look at with their own eyes**, because two of the defects
-this gate is aimed at are invisible in a file and obvious in a render.
+Same block format as Gate 1 § Step 5.
+
+### Step 6 — the owner looks at it, and implementation waits
+
+Controlled by `MANIFEST ## Product.design_signoff`: `required` (default) or
+`skip`. **No implementer is dispatched until this returns.**
+
+**Why it blocks.** The three lenses check that the design can be built, tested
+and traced to its ACs. **None of them judges whether it is any good** — the
+protocol puts taste explicitly out of scope, because an agent scoring a screen
+produces an opinion that sounds reasonable and is not reliable, and worse,
+*manufactures the feeling that someone judged it*. design-agent's own file
+already says it: *the human is the only real taste gate in this pipeline*.
+
+Every design-level correction in this project's history came from the owner
+seeing a render — a crowded phone layout, a menu control with nothing behind it,
+a list that should not be on that surface at all. **No agent raised any of them.**
+
+**What you present.** design-agent's return ends with a `review_guide:` — the
+three states most worth a human's eyes and two or three plain questions a
+non-designer can answer. That field exists for this step and, before this step
+existed, nothing read it. Present exactly that: **the named states, the render of
+each, and the questions as written.**
+
+**What you must not do:**
+
+- **Do not present a gallery.** Twenty screenshots and "look OK?" is not a review;
+  it is a way of getting a yes. Three states, chosen by the agent that drew them.
+- **Do not summarise the screens in prose instead of showing them.** The whole
+  point is that these defects are invisible in a description — that is why the
+  render is the artifact.
+- **Do not infer approval from silence, or from the owner replying about
+  something else.** Same rule as the anti-theatre rule one level up: no answer is
+  not an answer.
+
+**Recording it.** Write the verdict to `reports/design-signoff-{feature}.md`:
+which states were shown, the questions asked, what the owner said, and what
+changed as a result. Without a record, *"did a human look at this"* is
+unanswerable a week later — and the honest answer to an unanswerable question is
+no.
+
+**When the owner asks for changes**, that is a revision task to design-agent, and
+Gate 1.5 does **not** re-run in full for it: the three lenses already passed on
+the parts that did not change. Re-dispatch a lens only where the change touches
+what that lens found.
 
 ---
 

@@ -91,6 +91,36 @@ assert_file_contains "$ORCH" 'sole writer of `memory/`' \
 assert_file_contains "$ORCH" 'Create the file if it does not exist' \
   "ORCHESTRATION tells the writer to create the file rather than skip"
 
+# --- a return field nobody consumes is the same defect, one shape over ---
+#
+# The memory case above is one instance of a general failure: an agent is told to
+# produce something, and no reader is named. It has now happened three times in
+# this template — memory_entry, agent_memory_entry, and review_guide, which
+# design-agent produces while its own file calls the human "the only real taste
+# gate in this pipeline". Nothing read it.
+#
+# These are the fields where the AGENT produces and the ORCHESTRATOR is the
+# consumer. A field listed here and absent from the playbook is written into a
+# return and dropped on the floor.
+for field in memory_entry agent_memory_entry links_to_record review_guide; do
+  if grep -q "$field" "$ORCH"; then
+    _record_pass "ORCHESTRATION consumes the return field ${field}"
+  else
+    _record_fail "no step reads ${field} — agents produce it and it is dropped"
+  fi
+done
+
+# The taste gate specifically: it must block, and silence must not read as yes.
+assert_file_contains "$ORCH" 'design_signoff' "ORCHESTRATION reads the design sign-off switch"
+assert_file_contains "$ORCH" 'No implementer is dispatched until this returns' \
+  "the owner's design review blocks implementation rather than trailing it"
+# Single-line anchor: the sentence wraps, and 'is not an answer' lands alone on
+# the next line. Three assertions in this session matched nothing for exactly
+# that reason — write them against how the prose wraps, not how it reads.
+assert_file_contains "$ORCH" 'Do not infer approval from silence' \
+  "silence may not be read as the owner approving a design"
+assert_file_contains "$MANIFEST" 'design_signoff' "MANIFEST declares design_signoff"
+
 # --- paths resolve, or agents look in a place MANIFEST never declared ---
 #
 # ANCHORED, and the anchoring is not pedantry: an unanchored `memory_agent:`

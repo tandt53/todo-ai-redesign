@@ -301,6 +301,18 @@ run_case R15 "an unrenderable screen is allowed to read as a match" \
 run_case R15 "design's rubric returns to self-assessment" \
   "sed -i.bak 's/grades it instead/grades it alone/' $A/_review-protocol.md"
 
+# R17 — the taste gate. It dies three ways: the field goes unread again, the
+# gate stops blocking, or silence starts counting as approval — and the third is
+# the one that leaves everything else looking intact.
+run_case R17 "the design review_guide goes unread again" \
+  "sed -i.bak 's/review_guide/review_notes/g' .claude/ORCHESTRATION.md"
+
+run_case R17 "the owner's design review stops blocking implementation" \
+  "sed -i.bak 's/No implementer is dispatched until this returns/Implementers may proceed meanwhile/' .claude/ORCHESTRATION.md"
+
+run_case R17 "silence starts counting as design approval" \
+  "sed -i.bak 's/Do not infer approval from silence/Approval may be inferred from silence/' .claude/ORCHESTRATION.md"
+
 # R16 — design craft. The scenario's claim is that the aesthetic direction is
 # delegated to the vendored skills rather than restated in prose, so the case
 # breaks the delegation and requires the scenario to notice.
