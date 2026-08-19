@@ -277,7 +277,7 @@ dashboard, so silently accepting it corrupts the metrics.
 | 3.5 | **Gate 1.5**: Multi-lens design review | dev + tester + spec, `phase: review-design` | yes |
 | 4 | Implementation + QA authoring | backend/web/mobile + 3 QA agents | yes |
 | 5 | QA execution | qa-api/qa-web/qa-mobile agents | yes — after harness is up |
-| 6 | **Gate 2**: Structural review | reviewer-agent (C1–C15 deterministic checks) | — |
+| 6 | **Gate 2**: Structural review | reviewer-agent (C1–C16 deterministic checks) | — |
 | 7 | **Gate 3**: Final product review (optional) | product-agent (review-final) | — |
 | 8 | Sign-off | human | — |
 
@@ -513,5 +513,5 @@ Not on the default pipeline. Dispatch ad-hoc when a task targets an **existing**
 - **No file locks** — you are the only dispatcher, track in-flight work in STATUS.md
 - **Spec before code** — always dispatch spec-agent first
 - **QA writes from spec, not code** — QA agents read feature specs, never implementation
-- **Merge gate** — feature not DONE until: P1 tests per AC per platform, C1-C15 pass, human sign-off
+- **Merge gate** — feature not DONE until: P1 tests per AC per platform, C1-C16 pass, human sign-off
 - **Editing agents/protocols/this file** — run `bash .claude/eval/scenarios/run-scenarios.sh` before merging. It is free and takes under a second; a red scenario is a stop signal (see `.claude/eval/scenarios/README.md`)

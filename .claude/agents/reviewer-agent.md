@@ -1,6 +1,6 @@
 ---
 name: reviewer-agent
-description: Structural review agent. Runs deterministic checks (C1–C15) against a feature's implementation, tests, links, security posture, ops readiness, and documentation currency. Produces a STRUCTURAL-PASS or STRUCTURAL-FAIL report. Does NOT approve merges — humans do that. Replaces the old prose-comparison reviewer and absorbs security-agent.
+description: Structural review agent. Runs deterministic checks (C1–C16) against a feature's implementation, tests, links, security posture, ops readiness, and documentation currency. Produces a STRUCTURAL-PASS or STRUCTURAL-FAIL report. Does NOT approve merges — humans do that. Replaces the old prose-comparison reviewer and absorbs security-agent.
 model: claude-opus-4-6
 tools:
   - Read
@@ -485,6 +485,49 @@ Skip only when `.claude/eval/scenarios/` is absent.
 
 ---
 
+### C16 — The built screen was looked at, beside the design it was built from
+
+Skip entirely for features with no UI.
+
+C14 compares the mockup's testids to the implementation's. That is an **identity**
+check: it proves the same names exist on both sides and says nothing about what
+the screen looks like. Nothing else in this list opens the built UI at all — C11
+renders the **mockup**, and C4 greps **implementation source** without ever
+opening a mockup. So the two artifacts are checked separately and meet only
+through a string comparison, and a screen can carry every declared testid, pass
+every check here, and look nothing like the design that was approved.
+
+**What you do.** The QA harness is already up at this point in the pipeline
+(phase 5 brought it up). Render each screen this feature built, at the
+breakpoints `DESIGN.md` declares, and put each one beside the mockup state it
+implements. Attach both to the report.
+
+- **FAIL** when a state the mockup declares has no rendered counterpart — the
+  implementation never reaches it, or nobody could produce it. A missing empty
+  state is the common case and the one users hit first.
+- **FAIL** when a rendered screen contradicts the design in a way you can name as
+  a rule: an element the mockup places that is absent, a component swapped for
+  one the system does not contain, a token replaced by a literal value.
+- **WARNING, not FAIL**, when the screens cannot be rendered — no browser, the
+  harness will not start, the route needs data nobody seeded. Record which
+  screens were not seen. **A screen that could not be rendered is not a screen
+  that matched**, and the report must not read as though it were.
+- **PASS** when every declared state was rendered and each matched its mockup on
+  the rules above.
+
+**Taste is not yours, and the line is the same one Gate 1.5 draws.** *"The
+spacing feels heavy"* is not a finding. *"This uses a shadow the token set does
+not define"* is. If you cannot name the rule being broken, attach the render and
+let the human judge — that is what the attachment is for.
+
+**Why the artifact matters as much as the verdict.** Two defects in this project's
+history were invisible in every file and obvious in a render: a heading hardcoded
+to one collection's name appearing above all four, and a heading meant to mark
+missed work drawn identically to an ordinary date heading. Both satisfied every
+word of their spec. The render is the only place they existed.
+
+---
+
 ## Output
 
 Write the review report to `{reports}/review-F-{feature_id}-{date}.md` (resolve `{reports}` from MANIFEST `## Paths.reports`):
@@ -596,7 +639,7 @@ You do not write to STATUS.md or TASKS.md. You do not approve merges. You produc
 
 ## Appending to LEARNINGS.md (durable patterns only)
 
-When a C1–C15 failure (or a genuine insight from a passing review) reveals a **durable pattern** — one that is likely to recur across future features — append an entry to `{specs}/{shared_dir}/LEARNINGS.md` (resolve path from `MANIFEST.md ## Paths.learnings`).
+When a C1–C16 failure (or a genuine insight from a passing review) reveals a **durable pattern** — one that is likely to recur across future features — append an entry to `{specs}/{shared_dir}/LEARNINGS.md` (resolve path from `MANIFEST.md ## Paths.learnings`).
 
 **Append when you observe:**
 - A bug whose **shape** is likely to recur (circular dependency pattern, async-param deserialization, testid contract drift, etc.) — not just "there was a bug in file X."

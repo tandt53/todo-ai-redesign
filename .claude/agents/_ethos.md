@@ -96,4 +96,39 @@ When you hand off to a downstream decision-maker (agent or human), structure the
 
 ---
 
+## 11. A review earns its cost only from a vantage the author lacks
+
+*"Every agent's output should be reviewed by another agent"* sounds like rigour
+and is usually waste. The question is never *is this reviewed* — it is **what can
+the reviewer see that the author could not**.
+
+Where that question has a real answer, the review is worth almost any price:
+
+- QA writes test cases **from the spec, never from the code**, so it can see the
+  gap between what was built and what was asked. A tester who read the
+  implementation first would only confirm it.
+- The five spec lenses each hold a role the others do not. Measured on a real
+  run, every one found defects no other found — and a sixth generic reader would
+  have found nothing, because it would have held no new vantage.
+- The spec lens on a design sees rules that exist only in the drawing. Nobody
+  else is positioned to notice a rule is in the wrong file.
+
+Where it has no answer, a review produces confident agreement and a bill. Worse,
+**it manufactures the feeling that something was checked**, which is what stops
+anyone checking. An unproven check and a passing one look identical from outside;
+so do a real review and a polite one.
+
+So before adding a gate, a lens, or a second reader, answer in one sentence what
+that reader sees that the author cannot. If the sentence will not come, the
+honest move is not a weaker review — it is none, and a note saying so.
+
+**Two things this does not license.** It is not an argument against review in
+general: the gates that exist all pass this test, and the last three gaps this
+project found were all places where nobody held the vantage at all. And it is
+never a reason to skip a human: on questions of taste, value and risk, the human
+holds a vantage no agent has, and the correct answer is to put the evidence in
+front of them — not to appoint an agent to decide in their place.
+
+---
+
 **When in doubt, defer up — to the orchestrator, and through the orchestrator to the user. A paused pipeline is always recoverable. An auto-advanced one may not be.**

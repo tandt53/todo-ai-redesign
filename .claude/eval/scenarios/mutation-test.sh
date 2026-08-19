@@ -287,6 +287,20 @@ run_case R15 "the design's author is allowed to review it" \
 run_case R15 "a rule found only in the design stops routing to the spec" \
   "sed -i.bak 's/Deleting a good rule because/Removing the rule is fine because/' .claude/ORCHESTRATION.md"
 
+# R15 — the built-screen check, the self-graded rubric, and the principle that
+# decides whether any of this is worth its cost. Three more ways the review layer
+# dies while the rest of it reads as healthy.
+run_case R15 "the built screen stops being looked at" \
+  "sed -i.bak 's/### C16/### C16-DISABLED/' $A/reviewer-agent.md"
+
+# The degradation clause is what stops "no browser" reading as "matched".
+run_case R15 "an unrenderable screen is allowed to read as a match" \
+  "sed -i.bak 's/could not be rendered is not a screen/could not be rendered is a screen/' $A/reviewer-agent.md"
+
+# The design rubric goes back to being graded only by its author.
+run_case R15 "design's rubric returns to self-assessment" \
+  "sed -i.bak 's/grades it instead/grades it alone/' $A/_review-protocol.md"
+
 # R16 — design craft. The scenario's claim is that the aesthetic direction is
 # delegated to the vendored skills rather than restated in prose, so the case
 # breaks the delegation and requires the scenario to notice.

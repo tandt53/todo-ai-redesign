@@ -136,6 +136,46 @@ for mode in full skip; do
   fi
 done
 
+# --- the built screen is looked at, and the rubric is not self-graded ---
+#
+# C14 compares testids: an identity check that proves the same names exist on
+# both sides and says nothing about what the screen looks like. Nothing else
+# opened the built UI at all — C11 renders the mockup, C4 greps implementation
+# source. The two artifacts met only through a string comparison, so a screen
+# could carry every declared testid and look nothing like the approved design.
+REVIEWER="$AGENTS/reviewer-agent.md"
+assert_file_exists "$REVIEWER" "reviewer-agent.md present"
+if [ -f "$REVIEWER" ]; then
+  # Anchored to the heading form. `### C16` as a substring also matches
+  # `### C16-DISABLED`, so the unanchored version passed against a reviewer with
+  # the check switched off. Third time a substring assertion has done this here:
+  # a check name is only present if it is present AS the name.
+  if grep -qE '^### C16 ' "$REVIEWER"; then
+    _record_pass "reviewer runs the built-screen check"
+  else
+    _record_fail "reviewer no longer runs C16 — nothing opens the built UI"
+  fi
+  # Single-line anchor. The reflow trap noted above caught me a second time in
+  # the same file — a phrase that reads as one sentence is not one line.
+  assert_file_contains "$REVIEWER" 'could not be rendered is not a screen' \
+    "C16 refuses to read an unrenderable screen as a matching one"
+fi
+
+# design-agent renders its own screens and grades them against its own rubric.
+# Worth doing, and still self-assessment. One lens re-answers and reports only
+# the differences.
+assert_file_contains "$PROTO" 'grades it instead' \
+  "the protocol hands design's self-rubric to another lens"
+assert_file_contains "$PROTO" 'no `visual_review:` block' \
+  "a design nobody looked at — including its author — is itself a finding"
+
+# The principle that stops the next gate being added on vibes.
+ETHOS="$AGENTS/_ethos.md"
+assert_file_contains "$ETHOS" 'vantage the author lacks' \
+  "the ethos states when a review is worth its cost"
+assert_file_contains "$ETHOS" 'never a reason to skip a human' \
+  "the ethos bars using that principle to cut the human out"
+
 # --- the orchestrator half ---
 assert_file_contains "$ORCH" 'Gate 1 — multi-lens spec review' "ORCHESTRATION defines the gate"
 assert_file_contains "$ORCH" 'spec_review' "ORCHESTRATION reads MANIFEST spec_review"

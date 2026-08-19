@@ -100,6 +100,31 @@ have chosen a different colour"* is not a finding. *"This colour already means
 something else in the system"* is — the first is preference, the second is a
 rule the design breaks. If you cannot name the rule, you are reviewing taste.
 
+### The rubric design-agent grades itself on — one lens grades it instead
+
+design-agent renders its own screens and answers seven questions about them
+(`design-agent.md`, `visual_review:`). That is worth doing and it is still
+**self-assessment**: the author scoring its own work against its own reading of
+its own intent.
+
+**The dev lens re-answers them, from the returned screenshots**, and reports only
+where its answer differs from design's. Not a re-review of everything — a
+disagreement list. Two identical answers cost nothing; one difference is the
+entire value of the pass.
+
+Why the dev lens and not a new one: it is already reading this design in order to
+build it, it already has the screenshots in the return, and the questions need no
+design training to answer — they ask what a screen *does to a viewer*, which is
+the one thing every reader is qualified on.
+
+**Answer only where you disagree, and name the rule.** *"Question 4 — two signals
+carry lateness here: the heading colour and the row badge"* is a finding.
+*"Question 3 — I would not have chosen this"* is not; question 3 asks whether the
+audience would wince, not whether you would.
+
+If design's return carries no `visual_review:` block, that is itself a finding:
+the screens were never looked at by anyone, including their author.
+
 ### The two failures this gate is aimed at
 
 Both are drawn from a real run, and neither is visible in a spec:

@@ -17,7 +17,7 @@ Metrics are captured at two layers. **Neither relies on agent self-assessment** 
 ### Layer 2 — External quality signals (downstream judgment)
 **Captured by:** `PostToolUse` hook on `Write|Edit` for `reports/` and `qa/_shared/bugs/` files
 **Contains:**
-- **Reviewer writes `reports/review-F-*.md`** → extract PASS/FAIL, C1-C15 results, failure details
+- **Reviewer writes `reports/review-F-*.md`** → extract PASS/FAIL, C1-C16 results, failure details
 - **Product-agent writes `reports/product-review-F-*.md`** → extract APPROVED/CHANGES REQUESTED, issue counts
 - **QA agent writes `qa/_shared/bugs/BUG-*.md`** → extract severity, root cause layer, feature
 - **QA agent writes `qa/*/runs/*.md`** → extract test pass/fail/skip counts
@@ -170,7 +170,7 @@ custom:
 **reviewer-agent:**
 ```yaml
 custom:
-  checks_run: {n}                      # should be 15 (C1-C15)
+  checks_run: {n}                      # should be 16 (C1-C16)
   checks_passed: {n}
   checks_failed: {n}
   failures_by_check: { C1: {n}, C2: {n}, ... C9: {n} }
@@ -348,7 +348,7 @@ When running against a sample project in `.claude/eval/sample-projects/`, agents
 │   ├── expected/                       ← what correct agent output looks like
 │   │   ├── specs/auth/F-001-login.md   ← expected spec (for diffing)
 │   │   ├── qa/auth/F-001/api/          ← expected TC structure
-│   │   └── checks.json                 ← expected reviewer C1-C15 results
+│   │   └── checks.json                 ← expected reviewer C1-C16 results
 │   └── rubric.md                       ← scoring criteria for human evaluation
 ```
 

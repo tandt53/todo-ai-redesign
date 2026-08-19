@@ -265,7 +265,7 @@ transcript. Open `_completion-protocol.md`.
 2. Walk qa/auth/F-003/{api,web,mobile}/  ← Check every AC has test cases
 3. Check src/auth/api/routes.py  ← Validate no hardcoded secrets
 4. Check design/auth/screens/password-reset.html  ← Validate testid coverage
-5. Run C1-C15 checks (spec quality, coverage, contracts, data, code, docs, security, ops readiness, doc-sync, scope boundary, design render, suite-can-fail, declared elements, testid contract, eval-suite falsifiability)
+5. Run C1-C16 checks (spec quality, coverage, contracts, data, code, docs, security, ops readiness, doc-sync, scope boundary, design render, suite-can-fail, declared elements, testid contract, eval-suite falsifiability, built-screen fidelity)
 6. Return STRUCTURAL-PASS or STRUCTURAL-FAIL with issues
 ```
 
