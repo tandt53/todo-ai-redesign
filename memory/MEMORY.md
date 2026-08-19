@@ -32,3 +32,23 @@ Four homes, and choosing wrong is how a fact gets lost or duplicated:
 
 The test: **who needs to read this?** More than one role → LEARNINGS. One role,
 procedural → the agent file. A choice with alternatives → ADR or owner decision.
+
+## [2026-08-18] A new recovery affordance collides with the ACs that remove its subject — spec-agent (T-153)
+**Type:** pattern
+**Feature:** F-005
+**Tags:** spec, composition, recovery-paths, L-015
+---
+Folding in an owner answer that **adds** a recovery affordance — a retry that
+outlives its surface (F-005 AC-47) — collided with an existing AC that **deletes
+the subject**: AC-4, the task gone underneath, which forbids retry. The notice
+would have been either dead or a resurrection door. Separately, the second owner
+answer of the same day turned out to be **unbuildable without the first**: the
+subject swap could not close a detail the old AC-2 held open.
+
+**Lesson.** When an answer introduces a new recovery affordance, grep the spec for
+every AC that removes the thing being recovered and write the exclusion
+explicitly. And when two answers land together, check whether one is a
+**precondition** of the other, not only whether they conflict. L-015's pairwise
+read finds both — but only if *compose* is read as "does A enable or forbid B",
+not merely "do A and B disagree".
+

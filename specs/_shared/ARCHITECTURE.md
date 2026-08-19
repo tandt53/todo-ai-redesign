@@ -95,5 +95,57 @@ Open Questions routed to T-004 — answers and their locations:
 - ADR-002 — supersedes existing-app ADR-9 for the assistant surface (OQ 5)
 - ADR-003 — new session entity; fate of the 30-turn limit (OQ 3)
 - ADR-004 — idle-close value and owner (OQ 2)
-- ADR-005 — account-scoped session and dedupe (OQ 4)
+- ADR-005 — account-scoped session and dedupe (OQ 4) — **amended by ADR-010**
 - ADR-006 — voice-undo mechanism (OQ 6)
+- ADR-007 — accept the Metro image-size advisory
+- ADR-008 — English-first this phase
+- ADR-009 — Today is a date; `status: 'today'` retired (+ two amendments)
+- ADR-010 — the `account` entity and where the user's timezone lives (F-005)
+- ADR-011 — recurrence is six flat scalars; a set is a canonical string (F-005)
+- ADR-012 — a delete records its own membership; restore replays that set (F-005)
+- ADR-013 — a turn plans the rows it will cause, then captures, then applies (F-005)
+- ADR-014 — the run count is derived from a per-occurrence flag (F-005)
+- ADR-015 — step order is a sparse integer; a move is one write (F-005)
+
+## Feature: F-005 task-detail
+
+**Components touched, not added.** F-005 adds no runnable part: the turn engine,
+the two clients and the shared model all grow. The one genuinely new server
+concept is the **account row** (ADR-010) — the row ADR-005 has scoped sessions
+and dedupe to since 2026-08-16 without one existing.
+
+**Data flow, in one line each.** A hand edit is a field-level `PATCH` that
+returns the row it changed plus **every other row it changed** (`changed`) and
+the **pre-write values of the fields it changed** (`prior`); the client applies
+all of them, which is what makes a generated successor or a cascaded step appear
+without a refresh. A repeat is configured through a **server dry run**
+(`repeat-preview`) and then committed, so the alignment, the month-day clamp and
+the exclusivity rules have exactly one implementation. A soft delete mints a
+**gesture id** written on every row it trashes, and `POST /tasks/{id}/restore`
+replays that set. A turn now **plans** the rows it will cause, captures, then
+applies — so a generated successor lands in `created_ids` and a cascade-ticked
+step in `undo_snapshot`/`post_apply`, like any row the turn wrote directly.
+
+**Two seams grow rather than doubling.** The date seam is `Clock` server-side
+and `ControllerDeps.now` client-side — both already exist, and neither is
+duplicated; the client seam gains a harness door on `window.__assistantSeams`
+(`setClock({at, zone})`) because the e2e tier had none. The zone is **one stored
+account attribute** read by every computing path, written by **one installer**
+called from the auth step of every request, and read from **two** reporting
+channels — `X-Timezone` and the pre-existing turn body field.
+
+**Non-obvious decisions an implementer will question.**
+
+- *Why is `priority` `null` in the store and `"none"` on the wire?* Because
+  `applyCreate` skips null fields when building a diff and `taskEquals` compares
+  `===`: a literal `'none'` would add a diff row to every create and report all
+  783 existing rows modified. ADR-011's neighbour argument; AC-8 states it.
+- *Why is a recurrence set a comma-joined string?* So that four scalar-only
+  mechanisms stay correct and `turn.diff`'s declared `{old|null, new|null}`
+  shape does not change. ADR-011.
+- *Why is `due_all_day: null` on the wire not a bug?* It means **not
+  determined**; a read never refuses, and a client renders such a due as a date
+  with no clock time. ADR-010.
+- *Why is restore a route and not a patchable `deleted_at`?* Because `PATCH`
+  404s on a deleted row, and inverting that weakens the guard for every field.
+  ADR-012.

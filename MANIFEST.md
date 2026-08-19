@@ -169,7 +169,16 @@ writers:
   # recording the sync against an agent that did not do it. The Drift Log already
   # carried two such edits with nowhere to attribute them.
   orchestrator:      ["reports/", ".claude/", ".mobile-app/", "MANIFEST.md", "{specs}/_source/", "{specs}/{shared_dir}/LEARNINGS.md", "{specs}/{shared_dir}/uc-coverage-map.md", "{design}/", "{qa}/"]
-  spec-agent:        ["{specs}/", "{design}/{shared_dir}/components.md"]
+  # `reports/gate1-lenses/` added 2026-08-18, and it is a map change rather than a
+  # third one-off grant. Every Gate 1 revision owes a per-finding log, that log
+  # belongs beside the lens returns it answers (which is where the next round's
+  # lenses look for it), and `reports/` is otherwise the orchestrator's. Three
+  # consecutive dispatches — T-143, T-153, T-154 — put the path in the briefing and
+  # tripped C6 each time, attributing to the agent a crossing the ORCHESTRATOR
+  # caused. The map could not express a standing pattern, so it was expressed as a
+  # repeated mistake instead. Scope is the directory, not `reports/`: the lens
+  # returns and consolidations in it stay the orchestrator's to write.
+  spec-agent:        ["{specs}/", "{design}/{shared_dir}/components.md", "reports/gate1-lenses/"]
   architect-agent:   ["{specs}/"]
   design-agent:      ["{design}/"]
   # implementers also own the root build manifests (platform docs make the
@@ -204,7 +213,16 @@ limits:
                         # readable. Lower it if this file starts accruing prose.
   status_lines:   100   # .claude/state/STATUS.md
   tasks_lines:    300   # .claude/state/TASKS.md — triggers archival to TASKS-archive.md
-  done_rows:       50   # DONE rows in TASKS.md before archival, independent of line count
+  done_rows:       60   # DONE rows in TASKS.md before archival, independent of line count.
+                        # RAISED from 50 on 2026-08-18, and it reverts when T-149
+                        # lands. The cap and C3 are mutually unsatisfiable right
+                        # now: archiving is not deletion, but C3 resolves Depends
+                        # against TASKS.md alone, so moving a row a live row still
+                        # names turns one FAIL into eight (measured, then
+                        # reverted). Of 52 DONE rows exactly two were archivable.
+                        # Raising the number is the honest move only because the
+                        # ARCHIVAL MECHANISM is what is broken, not the queue's
+                        # size — do not raise it again to buy silence.
 ```
 
 ---

@@ -63,3 +63,62 @@ $ npx vitest run src/assistant/web    # jsdom smoke: @vitest-environment jsdom
 
 vitest/4.1.10, jsdom installed as a dev dep; node-env run also verified
 (79ms, 1 passed).
+
+---
+
+## Feature: F-005 task-detail
+
+- **The detail is one application state placed by CSS at both widths**
+  (F-005 AC-45). `ShellSurface` is `'talk' | 'tasks' | 'settings'` and the
+  layout branch is a **container query with no width read in JavaScript**. Do
+  not introduce one — not in a hook, not in a media-query listener, not in a
+  resize observer. Crossing `breakpoints.split` while the detail is open changes
+  nothing about what it holds: same task, same focused field, same dirty value,
+  same uncommitted repeat preview, same outstanding notice.
+- **The closing affordance is unconditionally available** (F-005 AC-2, F-001
+  AC-24 rev 5). Closing is never held over an in-flight or failed write; the
+  value moves into the notice instead.
+- **The message-door predicate is *the task exists and is not deleted*** —
+  `canReveal` (`web/shell.ts`), per **F-001 AC-31 revision 7**. It is **not**
+  gated on the collection currently shown, and this contract must not re-narrow
+  it. The collection switch belongs to the single `revealTask` routine, not to a
+  second gate beside it, and the same predicate binds the phone
+  (`mobile/model/task-link.ts`) — one rule, two sites (**L-005**).
+- **The notice mechanism lives in `_shared/`, which the mobile client
+  compiles** (F-005 AC-47). It has to observe every write to the task's field —
+  the retry, an assistant turn, an undo, a background refresh — and only the
+  shared controller and `state.tasks` see all four. React state owned by the
+  detail cannot see a turn's write. **The retry from the notice and the retry
+  from the field are one write path called from two places.**
+- **The client applies what a write returns** — `task`, every member of
+  `changed`, and it drops every id in `removed` (F-005 AC-2, AC-26). Today the
+  three shared write methods `await` the result and discard it, with no refresh;
+  that is the receiver half, and without it AC-39 is vacuously true on mobile.
+- **`ControllerDeps.timezone` is what this client *reports*; what it *computes
+  with* is `account.timezone` from `GET /account`, cached durably.** Never
+  `Intl.DateTimeFormat().resolvedOptions().timeZone` for a computation — that is
+  the *one row, three answers* source (ADR-010).
+- **One clock seam per side, widened rather than duplicated.**
+  `ControllerDeps.now` already exists, is stored and defaulted, and already
+  feeds `dueAtForCollection` on both clients. The five inline `new Date()` sites
+  and the nine defaulted `now: Date = new Date()` parameters are what make a
+  missed injection silently wall-clock instead of a type error — route them
+  through the existing seam. **Do not build a second one** (L-004).
+- **The harness door is `window.__assistantSeams.setClock({at, zone})**, behind
+  the existing `?testMode=1` / `?qaUser=` guard (api-contracts § Harness doors).
+  Paired with the server's `POST /__qa__/set-clock`, an e2e run holds both sides
+  at one instant and one zone.
+- **Five readers decide behaviour from raw row cardinality and never consult
+  `inCollection`** (F-005 AC-35). On web: `TasksSurface.tsx`'s `nothingAnywhere`
+  / `loading` / `failedBlank` trio. In the account AC-35 names — every parent
+  excluded from the collection on screen — `nothingAnywhere` is **false**, so
+  the surface renders the empty-collection state, not the first-run one.
+- **`pushLocalTasks`'s replay literal is a sixteenth field list and produces no
+  compile error when a field is missed** (every field on `TaskCreateBody` is
+  optional). F-005 widens it on the **create** path by `parent_id`,
+  `step_order` and `due_all_day` (AC-14, AC-13). What was declined at OQ6 is
+  queue-and-replay for **edits**; this widening is required.
+- **Tests:** `npx vitest run src/assistant/web` (unchanged). AC-15's pointer
+  reorder is a **web e2e** case only — jsdom does not exercise a path-based
+  pointer gesture — while **AC-16's move mode is the unit-testable half** and is
+  where the mutation coverage for ordering lives.

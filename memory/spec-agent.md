@@ -40,3 +40,63 @@ and the interpretation type **cannot express them at all**, so no fixture row
 could try, and the AC shipped asserting nothing. If the refusal is type-level,
 say so and name the contract file as the observable; if it is runtime, the
 AI-facing shape has to be able to carry the field.
+
+## A decision restated in five places is narrowed in five places
+**Context:** overruling or narrowing any reviewed clause in a mature spec.
+**Pattern/Lesson:** F-005's *"the surface does not close over an unresolved
+write"* lived in the AC sub-bullet **and** in the User Flow flowchart node, the
+`## Out of Scope` *considered and rejected* list, the `## Open Questions`
+revision-decision summary, and `## Impact` §13. Amending only the AC leaves four
+statements asserting the overruled position — and the flowchart is the one a
+downstream agent reads fastest. **Grep the spec for a distinctive phrase from the
+clause before editing** (`grep -n "does not close\|unresolved write"`), fix every
+hit, and strike through rather than delete in summary lists so the reversal stays
+visible. Re-run `declared-elements.sh` after adding an AC even when no field was
+added — it is free, and it is the only mechanical check on `## Data` drift.
+
+
+## An amend-only revision closes findings at the section that already owns them
+**Context:** a revision constrained to "amend existing ACs, add none" — F-005
+revision 3, after revision 2's eleven new ACs made round 2 into two reviews at once.
+**Pattern/Lesson:** almost every finding that looks like it needs a new AC is a
+**missing clause in an AC that already claims the behaviour**. Four checks, in order:
+does an existing AC already say the words the finding falsifies (AC-36 said "refused
+with a visible outcome" and never named the outcome)? Is the right home a *contract*
+section rather than an AC — `## API Touch Points` is normative and is what architect
+writes contracts from, so promoting prose to it discharges a finding that a
+`## Test strategy` sentence does not? Is the finding a **product decision**, in which
+case it is `## Open Questions` with the cost stated in the AC, never an invented
+bound? Is it a **dependency on another spec**, in which case it is an `## Impact`
+subsection plus a clause? Adding an AC is what a *first* revision does; a closing
+revision that adds one guarantees another round.
+**Also:** run `declared-elements.sh` **before** the rewrite as well as after, so a
+failure afterwards can be attributed rather than assumed to be yours.
+
+## A gate implemented twice is amended once — name both predicates by path in the spec
+**Context:** amending any AC that says when a control is active, where the rule lives in client code.
+**Pattern/Lesson:** F-001 AC-31's gate exists as `canReveal` (`web/shell.ts:115`) and
+`taskLinkState` (`mobile/model/task-link.ts:54`). An amendment naming one leaves the other
+enforcing the retired rule, and neither the AC nor any reviewer check would show it. Write
+the amendment so **both predicates are named in the spec text by path** — that is what makes
+a later grep return every door (L-005's remedy applied to the spec rather than the code).
+Then check the AC's platform tag against the parity table that owns the other client: AC-31
+is `(web)` and `F-003 ## Parity` does not list it, so the mobile half is asserted by no tier.
+A retag is the other spec's amendment — name it and route it rather than doing it.
+
+## Read the implementation of the clause you are narrowing — it often predicts the amendment
+**Context:** any revision that widens or narrows a rule already shipped.
+**Pattern/Lesson:** `mobile/model/task-link.ts:30-32` said outright *"The second is stricter
+than it needs to be — switching collection on arrival would also satisfy the postcondition —
+and it is what AC-31 says, so it is what this does. Widening it is a spec change, not a code
+change."* The implementer had scoped the exact amendment and correctly refused to make it.
+Reading `src/` for the clause being amended tells you whether the rule is enforced where you
+think, how many copies exist, and sometimes hands you the change already argued. Cite it —
+it turns a spec claim into evidence.
+
+## Shipped copy describing an affordance is inside the amendment's blast radius
+**Context:** widening the set of things an affordance applies to.
+**Pattern/Lesson:** widening AC-31's gate made a width-independent meta string (*"tap a task
+to find it in the list"*) false in a state that had been rare and became ordinary, and made
+it render on nearly every message instead of occasionally. The spec must **not** rewrite the
+string — the naming convention reserves shipped copy to design. State the constraint the copy
+must satisfy, name the owning artifact, route it. Silence ships a true-looking label that lies.

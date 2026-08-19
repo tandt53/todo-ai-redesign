@@ -353,6 +353,6 @@ You do not write to STATUS.md or TASKS.md. The orchestrator updates state from y
 - Does not write specs or requirements (spec-agent does that)
 - Does not write code
 - Does not write tests or test cases (QA agents do that)
-- Does not run structural checks (reviewer-agent C1-C14)
+- Does not run structural checks (reviewer-agent C1-C15)
 - Does not approve merges (humans do that)
 - Does not block the entire pipeline on a MEDIUM issue — only HIGH severity blocks, and only for the specific ACs it flags

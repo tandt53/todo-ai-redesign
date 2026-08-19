@@ -1,6 +1,6 @@
 ---
 name: reviewer-agent
-description: Structural review agent. Runs deterministic checks (C1–C14) against a feature's implementation, tests, links, security posture, ops readiness, and documentation currency. Produces a STRUCTURAL-PASS or STRUCTURAL-FAIL report. Does NOT approve merges — humans do that. Replaces the old prose-comparison reviewer and absorbs security-agent.
+description: Structural review agent. Runs deterministic checks (C1–C15) against a feature's implementation, tests, links, security posture, ops readiness, and documentation currency. Produces a STRUCTURAL-PASS or STRUCTURAL-FAIL report. Does NOT approve merges — humans do that. Replaces the old prose-comparison reviewer and absorbs security-agent.
 model: claude-opus-4-6
 tools:
   - Read
@@ -436,6 +436,55 @@ already treat that one as structural.
 
 ---
 
+### C15 — The checks that guard this project can still fail
+
+```bash
+bash .claude/eval/scenarios/run-scenarios.sh
+bash .claude/eval/scenarios/mutation-test.sh
+```
+
+- **FAIL** when a scenario fails, or when the mutation sweep reports any
+  scenario as **unproven** — it breaks one thing each scenario claims to catch
+  and requires that scenario to go red.
+- **PASS** when every scenario passes and every claim is proven fallible.
+
+**Unproven is not passing, and that distinction is the whole check.** A scenario
+with no mutation case has never been observed failing, so it certifies whatever
+it is handed. The sweep's own header records three checks in this template that
+reported PASS while doing nothing — one compared column names across four
+parsers while one parser was blind, one could not match an en-dash and so
+skipped most of the references it claimed to check, and one silently dropped the
+last CSS variable of every block. All three compared declarations instead of
+exercising behaviour.
+
+**Why this runs here rather than on somebody's good habits.** Every defect found
+in these checks has been found *while doing something else* — an unrelated fix
+made a scenario go red, or a `MISS` appeared in output someone was already
+reading for another reason. Nobody runs the eval suite as part of normal work,
+so the defects inside the checks are the least visible ones in the project:
+no task passes through them. A gate is an occasion, and this class of bug needs
+an occasion rather than an intention.
+
+Two consequences worth stating so this does not become a formality:
+
+- **A red scenario is a finding about the pipeline, not about the feature.** It
+  does not block the feature's ACs; report it, and name which check is
+  unenforced. A reviewer that blocks a good feature on a broken checker teaches
+  everyone to switch the checker off.
+- **A scenario that cannot be given a mutation case is recorded in its own
+  header with the reason** — the sweep permits that explicitly. What is not
+  permitted is silence, because an unproven check and a passing one are
+  indistinguishable from the outside.
+
+**Runtime:** seconds in the template, **~3–4 minutes in a real project** — one
+sandbox per mutation case, and a project has more state to stand up. That is the
+cost of the check; do not shorten it by running a subset, because the cases you
+would drop are the ones nobody has looked at.
+
+Skip only when `.claude/eval/scenarios/` is absent.
+
+---
+
 ## Output
 
 Write the review report to `{reports}/review-F-{feature_id}-{date}.md` (resolve `{reports}` from MANIFEST `## Paths.reports`):
@@ -547,7 +596,7 @@ You do not write to STATUS.md or TASKS.md. You do not approve merges. You produc
 
 ## Appending to LEARNINGS.md (durable patterns only)
 
-When a C1–C14 failure (or a genuine insight from a passing review) reveals a **durable pattern** — one that is likely to recur across future features — append an entry to `{specs}/{shared_dir}/LEARNINGS.md` (resolve path from `MANIFEST.md ## Paths.learnings`).
+When a C1–C15 failure (or a genuine insight from a passing review) reveals a **durable pattern** — one that is likely to recur across future features — append an entry to `{specs}/{shared_dir}/LEARNINGS.md` (resolve path from `MANIFEST.md ## Paths.learnings`).
 
 **Append when you observe:**
 - A bug whose **shape** is likely to recur (circular dependency pattern, async-param deserialization, testid contract drift, etc.) — not just "there was a bug in file X."

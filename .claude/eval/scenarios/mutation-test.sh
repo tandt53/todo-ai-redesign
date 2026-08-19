@@ -52,7 +52,44 @@ run_case() {
 
   local T
   T="$(mktemp -d)"
-  cp -R "$TEMPLATE_ROOT/." "$T/" 2>/dev/null
+  # Copy ONLY what the scenarios read. `cp -R "$TEMPLATE_ROOT/."` is fine in the
+  # template (a few MB) and unusable in a real project: measured at 4.9 GB there,
+  # times one copy per case. That is the difference between a check that runs at
+  # Gate 2 and one nobody will ever wait for. Every scenario resolves its paths
+  # from $CLAUDE_ROOT or $PROJECT_ROOT, and the full set of those is `.claude/`
+  # plus the root-level MANIFEST/CLAUDE files — nothing under specs/, src/, qa/,
+  # design/, node_modules/ or .git/ is touched by any of them.
+  cp -R "$TEMPLATE_ROOT/.claude" "$T/" 2>/dev/null
+  for root_file in MANIFEST.md CLAUDE.md BRIEFING.md; do
+    [ -f "$TEMPLATE_ROOT/$root_file" ] && cp "$TEMPLATE_ROOT/$root_file" "$T/"
+  done
+  # The artifact trees are SYMLINKED, not copied. validate-state.sh checks that
+  # every path a TASKS row claims exists on disk, so a sandbox without them fails
+  # for reasons having nothing to do with the mutation — and copying them is not
+  # an option: one real project's claimed artifact is a 4.2 GB native build tree.
+  #
+  # Symlinks are safe here because of an invariant every case must keep:
+  # **a mutation may only write inside `.claude/` or to a root-level file.**
+  # Those are copied and therefore private to the sandbox. Nothing under specs/,
+  # src/, qa/, design/ is ever mutated — the scenarios read those paths, they do
+  # not rewrite them. A case that broke that rule would edit the real project,
+  # so add cases accordingly.
+  #
+  # Everything at the top level that is not already copied gets a link, rather
+  # than an allowlist of directory names: an allowlist silently misses whatever a
+  # project happens to call its own trees, and the missing one shows up as a
+  # scenario "red before mutation" with no hint why.
+  # Dotfiles are included deliberately: the first version globbed `*` only, and a
+  # real project claimed `.mobile-app/` as a task artifact — invisible to that
+  # glob, so validate-state failed inside the sandbox and every R9 case reported
+  # "red before mutation" with nothing pointing at the cause.
+  for entry in "$TEMPLATE_ROOT"/* "$TEMPLATE_ROOT"/.[!.]*; do
+    [ -e "$entry" ] || continue
+    base="$(basename "$entry")"
+    case "$base" in .git) continue ;; esac
+    [ -e "$T/$base" ] && continue
+    ln -s "$entry" "$T/$base"
+  done
 
   local test_script
   test_script="$(ls "$T/.claude/eval/scenarios/tests/${scenario}-"*.sh 2>/dev/null | head -1)"
@@ -116,8 +153,13 @@ run_case R4 "absolute machine path in a prompt" \
 # case that cannot mutate is the same defect this whole file exists to catch,
 # one level up. Keep every case POSIX; there is one en-dash occurrence, so
 # replacing all of them is what replacing the first one meant anyway.
+# The upper bound is matched as a pattern, not pinned to a number. Pinning it to
+# C14 meant that adding C15 silently turned this case into a no-op — the sweep
+# reported R5 unproven, correctly, and the cause was this file rather than R5.
+# A mutation case that names today's value stops mutating the day that value
+# changes, which is precisely when the check matters most.
 run_case R5 "stale C-range quoted with an en-dash" \
-  "sed -i.bak 's/C1–C14/C1–C9/' .claude/ORCHESTRATION.md"
+  "sed -i.bak -E 's/C1–C[0-9]+/C1–C9/' .claude/ORCHESTRATION.md"
 
 # R6 — a protocol no agent names is dead, because dispatch appends nothing.
 run_case R6 "protocol reachable from no agent" \

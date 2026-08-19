@@ -3,7 +3,7 @@
 # PostToolUse hook for Write/Edit on reports/ and qa/_shared/bugs/
 #
 # Captures judgment signals from DOWNSTREAM agents:
-#   - reviewer-agent writes reports/review-F-*.md → extract PASS/FAIL, C1-C14 results, failure count
+#   - reviewer-agent writes reports/review-F-*.md → extract PASS/FAIL, C1-C15 results, failure count
 #   - product-agent writes reports/product-review-F-*.md → extract APPROVED/CHANGES REQUESTED, issue counts
 #   - qa-*-agent writes qa/_shared/bugs/BUG-*.md → extract severity, layer, feature
 #   - qa-*-agent writes qa/*/runs/*.md → extract pass/fail counts

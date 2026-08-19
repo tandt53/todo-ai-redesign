@@ -12,6 +12,13 @@ for real — QA's API suite runs against it.
 - Auth (prototype): every request carries `X-User-Id: <uuid>` identifying the
   account. Missing/empty → `401 UNAUTHENTICATED`. No cross-account access:
   ids owned by another user behave as `404 NOT_FOUND`.
+- **`X-Timezone: <IANA zone>` on every request** (F-005, ADR-010). It is a
+  *report*, never a computation input: the auth step passes it to the single
+  installer `recordClientZone(...)`, which creates the account row if absent and
+  sets `account.timezone` **only when it is currently unset**. Every date
+  computation reads `account.timezone` and never this header. A malformed zone
+  is ignored (recorded as a report, never stored); the header is not a body
+  field, so `rejectUnknownFields` is unaffected. See § The account and the zone.
 - Bodies are JSON (`content-type: application/json`). Validation failures →
   `400 VALIDATION` with `{error: {code, message, field?}}`.
 - **Unknown request fields are rejected**: any field not named in the
@@ -59,7 +66,12 @@ transcript:        string        # required, non-empty; recognized TEXT only —
 source:            "voice" | "typed" | "tap"
 answer_to_turn_id: uuid | null   # tap answers only: explicit binding to the question's turn (AC-10);
                                  # voice/typed answers bind to the newest unresolved question
-timezone:          string | null # IANA tz, optional interpretation context
+timezone:          string | null # IANA tz, optional interpretation context.
+                                 # F-005/ADR-010: this is a SECOND reporting
+                                 # channel into the same installer as
+                                 # `X-Timezone`, kept so existing clients do not
+                                 # break. It is redundant with the header and it
+                                 # is NEVER the source a date computation reads.
 ```
 
 ### Processing rules (contract-level)
@@ -101,9 +113,20 @@ timezone:          string | null # IANA tz, optional interpretation context
    the same transaction scope as the apply. No client-supplied task or draft
    state is accepted or trusted, so a turn issued right after a manual edit
    sees the edited state (UC-09 AC-09.2).
-6. **Atomic apply.** An applying turn's changes land all-or-nothing;
-   `undo_snapshot` is captured immediately **before** apply, inside the apply
-   transaction (AC-1, AC-6). A turn that produces a question applies nothing
+6. **Plan, capture, apply — in that order** (**amended by F-005 AC-46,
+   ADR-013**; before F-005 this rule read *"`undo_snapshot` is captured
+   immediately before apply"* and that sentence was falsified by rows the
+   server creates or changes *as a consequence of* a turn). Inside the apply
+   transaction the turn (a) **plans** every row it will write — targets, the
+   steps a completion cascades to (F-005 AC-19), the successor a repeating
+   completion generates with its id allocated now (F-005 AC-26), the successor
+   an un-complete removes (F-005 AC-28) — performing no writes; (b) **captures**
+   `undo_snapshot` over every planned row that already exists and `created_ids`
+   over every planned row that does not; (c) **applies**; (d) captures
+   `post_apply` over every row written. The plan is the only producer of the
+   caused set — apply consumes it and never re-derives it. An applying turn's
+   changes land all-or-nothing (AC-1, AC-6). A turn that produces a question
+   applies nothing
    (AC-1 carve-out). If the apply transaction itself fails mid-way it aborts
    atomically — zero partial writes — the turn resolves `status: "failed"`
    with its transcript preserved (AC-23), and the endpoint returns
@@ -145,7 +168,8 @@ resolutions:                    # question resolutions caused by this turn (0..1
 
 `turn.outcome.kind` (message anatomy — see data-model.md):
 `applied` · `question` · `resolution` · `unclassifiable` · `no_match` ·
-`unsupported_query`. Cancel is client-local: there is **no cancel endpoint**;
+`unsupported_query` · **`refused`** (F-005 AC-36/AC-40 — a seventh member; see
+§ The refused turn). Cancel is client-local: there is **no cancel endpoint**;
 a sent turn always runs to completion and its late outcome renders from this
 response or from `GET /assistant/session` (AC-3).
 
@@ -236,6 +260,29 @@ Revert an applied turn from its `undo_snapshot` (AC-5..8). The **window check
 and the revert run in one transaction** (AC-6). Revert shapes: edit → prior
 field values restored; create → created tasks removed (and staying removed on
 a fresh task-list read); delete → tasks restored with all fields intact.
+
+**Two more shapes after F-005 (AC-46, ADR-013), and their revert conditions
+differ by class:**
+
+- **A row the turn *created* as a consequence — the generated successor
+  (F-005 AC-26).** It is in `created_ids` like any create, and it is removed
+  **only if it would still be removable under F-005 AC-28's five conditions**
+  (same `series_id`, created no earlier than the completion, never edited, not
+  itself done, **no step of it ticked or changed**); otherwise it stays and is
+  named in `skipped`. The whole-row `taskEquals` comparison is **not**
+  sufficient here — condition five touches the *step's* row, not the
+  successor's.
+- **A row the turn *changed* as a consequence — a step ticked by F-005 AC-19's
+  cascade.** It is in `undo_snapshot` and `post_apply` like any edit, and it is
+  reverted **on its own snapshot comparison under AC-19's `completed_by_parent`
+  guard** — never as a side effect of the parent's row being replaced, because
+  the replacement bypasses the guard.
+
+**`skipped` names top-level tasks only.** A step that could not be reverted is
+reported through its parent (the parent is named, and the message states that
+its steps were not fully reversed) — step titles are never rendered, because a
+step is neither drawn (F-005 AC-35) nor addressable (F-005 AC-36).
+
 Modified-since detection is **snapshot comparison**: a task is skipped iff its
 current state differs from the task's **post-apply state** — the state the
 turn itself left the task in immediately after applying (for an edit/create,
@@ -297,16 +344,18 @@ session-bounded window has no hidden expiry).
 ## Prototype task CRUD (supporting endpoints)
 
 The manual path (AC-18, zero AI calls — proven by the harness AI-call
-counter) and read-back observables (AC-6, AC-14) run against these. Task
-shape is the existing todo-ai model, unchanged (spec, Out of Scope); the
-prototype serves the fields in data-model.md `task`.
+counter) and read-back observables (AC-6, AC-14) run against these. **F-005
+widens all four and adds four routes — the shapes below are the F-001 baseline
+and § Feature F-005 is authoritative where the two differ.** (The sentence
+*"task shape is the existing todo-ai model, unchanged"* was true for F-001 and
+is false after F-005; the field list is `data-model.md § task`.)
 
 | Method + path | Purpose | Success | Errors |
 |---|---|---|---|
 | `GET /tasks` | list the account's tasks (read-back observable) | 200 `{tasks: [Task]}` | 401 |
-| `POST /tasks` | create `{id?, title, due_at?, priority?, status?}` | 201 `{task}` | 400, 401, 409 |
-| `PATCH /tasks/{id}` | edit any mutable field | 200 `{task}` | 400, 401, 404 |
-| `DELETE /tasks/{id}` | delete (soft: `deleted_at`) | 200 `{task}` | 401, 404 |
+| `POST /tasks` | create `{id?, title, due_at?, priority?, status?}` — **widened by F-005** | 201 `{task}` | 400, 401, 409 |
+| `PATCH /tasks/{id}` | edit any mutable field — **widened by F-005** | 200 `{task}` | 400, 401, 404 |
+| `DELETE /tasks/{id}` | delete (soft: `deleted_at`) — **gains `scope` in F-005** | 200 `{task}` | 401, 404 |
 
 None of these touch the Interpreter — the AI-call counter must read zero for
 any pure-CRUD scenario (AC-18, AC-25 offline local path).
@@ -380,3 +429,624 @@ opinion about which day it belongs to; no endpoint takes a collection parameter.
 This is what makes the four-bucket amendment a **zero-endpoint change**: adding
 Upcoming adds no field, no parameter and no status value, because the buckets are
 read from a date the server already stores and serves.
+
+---
+
+# Feature F-005 — task detail
+
+**Added**: 2026-08-19 by architect-agent (T-160). Spec:
+`specs/assistant/F-005-task-detail.md` (revision 4, Gate 1 closed).
+Entities and field semantics: `data-model.md § task` and `§ account`.
+Decisions with alternatives: **ADR-010** (account + zone), **ADR-011**
+(recurrence), **ADR-012** (delete membership + restore), **ADR-013** (turn
+causality), **ADR-014** (run count), **ADR-015** (step order).
+
+F-005 changes the four CRUD endpoints, adds four routes, adds a seventh
+`TurnOutcome` member, and amends `POST /assistant/turn` rule 6 and the undo
+endpoint's revert shapes (both in place, above). It adds **no** new assistant
+conversation endpoint.
+
+## The seven closed field lists — which of them this file governs
+
+`F-005 ## Impact §1` counts sixteen enumerations of the task's fields in
+`src/**`, of which **seven gate behaviour**. This file is authoritative for
+four of them and names the other three so nobody treats the list as complete:
+
+| Site | Governed by |
+|---|---|
+| `api/app.ts` `TASK_PATCH_FIELDS` + the `taskChangesFrom` switch | § `PATCH /tasks/{id}` below |
+| `api/app.ts` `TASK_CREATE_FIELDS` | § `POST /tasks` below |
+| `engine/serialize.ts` `TaskWire` / `serializeTask` | § `Task` on the wire below |
+| `engine/apply.ts` `DIFF_FIELDS` | § The turn path below — **it splits into two constants** |
+| `engine/apply.ts` `NewTaskFields` (turn-path create allowlist) | § The turn path below |
+| `engine/task-equals.ts` `FIELDS` | `data-model.md § task` — the field list plus AC-34's two comparison rules |
+| `_shared/controller.ts` `pushLocalTasks`'s replay literal | `specs/_shared/platform/web.md` / `mobile.md` § F-005 — a **client** projection; no endpoint check can see it |
+
+## The multi-row response rule
+
+**Any write that changes more than one row returns every row it changed**
+(AC-26, AC-2). The rule, not a list of the writes it applies to:
+
+```yaml
+# every 2xx from POST /tasks, PATCH /tasks/{id}, DELETE /tasks/{id},
+# POST /tasks/{id}/restore and POST /tasks/{id}/reminder-ack
+task:    Task          # the row the request addressed
+changed: [Task]        # every OTHER row this write changed; may be []
+                       # the addressed row is never repeated here
+```
+
+Writes that populate `changed` today: completing a repeating task (the
+successor), completing or un-completing a parent (the cascade), un-completing a
+repeating task (the removed successor — reported by id in `removed`, below),
+deleting a parent (its steps), deleting a series (every unfinished occurrence
+and its steps), restoring a cluster or a series, and a step move that exhausts
+its gap (ADR-015). The list illustrates the rule; it does not bound it.
+
+```yaml
+removed: [uuid]        # rows HARD-removed by this write. Today exactly one
+                       # producer: AC-28's successor removal on un-complete,
+                       # which is deliberately not a soft delete (AC-28) because
+                       # a soft-removed successor would be restorable by
+                       # POST /tasks/{id}/restore and would produce the second
+                       # open occurrence the recurrence section rests on not
+                       # having. Omitted when empty.
+```
+
+**The client applies what a write returns** — `task`, every member of
+`changed`, and it drops every id in `removed`, on **both** clients. A blind
+`GET /tasks` after a write is not the mechanism: the rows are already in hand.
+(The blind refresh is not *forbidden* — `controller.ts:442` performs exactly
+one after every mutating turn, and AC-3's "no manual refresh" means no user
+gesture.)
+
+## `Task` on the wire
+
+`serializeTask` emits exactly this. Fields marked **internal** exist on the row
+and are never serialized.
+
+```yaml
+id:                 uuid
+title:              string
+note:               string | null          # AC-6; never "" — whitespace-only stores null
+due_at:             iso8601 | null
+due_all_day:        boolean | null         # AC-13. null = NOT DETERMINED (see below)
+reminder_at:        iso8601 | null
+reminder_shown_at:  iso8601 | null         # AC-38; carried so a client can tell an
+                                           # acknowledged reminder from an unacknowledged one
+priority:           "none" | "low" | "medium" | "high"   # AC-8; never null on the wire
+status:             "inbox" | "today" | "done" | "archived"
+parent_id:          uuid | null            # AC-18; a step has exactly one parent
+step_order:         integer | null         # AC-15, ADR-015; null for a top-level task
+completed_by_parent: boolean               # AC-19; false for a top-level task
+repeat_frequency:   "day" | "week" | "month" | "year" | null   # ADR-011
+repeat_interval:    integer | null         # >= 1
+repeat_weekdays:    string | null          # canonical: subset of "mo,tu,we,th,fr,sa,su" in that order
+repeat_month_days:  string | null          # canonical: ascending ints 1-31, comma-joined
+repeat_until:       iso8601-date | null    # inclusive; exclusive-with repeat_count
+repeat_count:       integer | null         # >= 1; exclusive-with repeat_until
+series_id:          uuid | null            # AC-25; assigned when a repeat is first set, never cleared
+series_live:        boolean                # AC-25 — DERIVED server-side, see below
+created_at:         iso8601
+updated_at:         iso8601
+deleted_at:         iso8601 | null
+# internal, never serialized: user_id, ever_completed (ADR-014),
+# delete_gesture_id (ADR-012), series_ended_at
+```
+
+**`priority` is never `null` on the wire.** `none` is the absence of a stored
+value (AC-8): the row stores `null`, the serializer emits `"none"`. This is
+what keeps `## Data`'s `Required: yes` and the measured migration-free claim
+true at once — the 783 `null` rows already *are* `none`. Reads stay tolerant:
+a stored value outside the set is emitted as `"none"`, never as itself and
+never as an error (ADR-009's precedent for `status: 'today'`).
+
+**`due_all_day: null` means *not determined*, and a client renders such a due
+as a date with no clock time.** It is not a third state of the flag and not a
+fallback; it is the read-side outcome when the row carries no stored flag and
+the account has no zone to resolve it in (ADR-010). Resolution rules, in order:
+
+1. A **stored** `due_all_day` is authoritative wherever present, on every tier.
+2. Absent, and `account.timezone` is set: the server resolves it — **all-day
+   iff the stored instant is the local start of its own day in that zone**,
+   timed otherwise (AC-13) — and emits `true`/`false`. The row is not rewritten
+   by the read; the next write that touches `due_at` stores the resolved value.
+3. Absent, and `account.timezone` is unset: `null`.
+
+**A read never refuses.** AC-18's *"a refused write writes nothing"* governs
+writes; a read withholds a **derived value**, never a row. Refusing the read
+would make `GET /tasks` unrenderable for an account with no zone — measured, on
+day one that is every row of every account, since 0 of 790 rows carry the flag.
+
+**`series_live` is derived, never stored and never keyed off `series_id`**
+(AC-25, AC-39). It is `true` iff the row's repeat is still set **and** none of
+AC-25's four endings has fired:
+
+```
+series_live = repeat_frequency != null
+           && series_ended_at == null            # AC-30's series delete
+           && !(repeat_until  != null && repeat_until  < today_in_account_zone)
+           && !(repeat_count  != null && run_count(series_id) >= repeat_count)
+
+run_count(S) = count(rows where series_id = S and ever_completed)   # ADR-014
+```
+
+Clearing the repeat is the fourth ending and needs no marker: it clears
+`repeat_frequency`, so the first conjunct is false. `series_id` survives
+clearing (AC-25), which is exactly why it must not be the predicate.
+
+## `GET /tasks`
+
+Unchanged in shape: `200 {tasks: [Task]}`, deleted rows filtered out, scoped to
+`X-User-Id`. What changes:
+
+- **Steps are returned as ordinary rows** carrying `parent_id` and
+  `step_order`. There is no nested representation on the wire; the client
+  nests. A step is excluded from every collection and every count by the
+  client's `inCollection` gate — **beside the done gate, never through
+  `isFiled`** (AC-35), because a step is not a container and calling it filed
+  breaks the reading `INV-INBOX-FILING` depends on.
+- Every field in § `Task` on the wire is present on every row.
+- **The server still has no opinion about collections** (ADR-009): it serves an
+  instant and a flag; Today / Upcoming / Inbox / Done stay client-side
+  predicates over `due_at` and filing. F-005 does not move that boundary.
+
+## `POST /tasks`
+
+**`TASK_CREATE_FIELDS`, in full** — enumerated here rather than grown ad hoc,
+because a create that cannot carry a step's parent becomes POST-then-PATCH with
+a window in which the step exists at an undefined position and AC-3 renders it
+to every other client (AC-14):
+
+```yaml
+id:                uuid            # optional, client-generated (F-001 AC-25 offline path)
+title:             string          # required, non-empty after trim
+note:              string | null
+due_at:            iso8601 | null
+due_all_day:       boolean | null  # supplied by the offline replay; see below
+reminder_at:       iso8601 | null  # NEW - POST refused this field before F-005
+priority:          "none"|"low"|"medium"|"high" | null
+status:            "inbox" | "done" | "archived"     # `today` still rejected (ADR-009)
+parent_id:         uuid | null     # NEW - this is what makes a step creatable in one call
+step_order:        integer | null  # NEW - see below
+repeat_frequency:  ... | null      # the six ADR-011 members, same names as the wire
+repeat_interval:   integer | null
+repeat_weekdays:   string | null
+repeat_month_days: string | null
+repeat_until:      date | null
+repeat_count:      integer | null
+```
+
+- **A create supplying `step_order` keeps it; a create supplying none is
+  appended last, positioned by the server** (ADR-015, `## Data`). The
+  unconditional reading — *server always assigns* — silently voids AC-14's
+  offline replay while every AC still reads as satisfied, which is why it is
+  stated in both directions.
+- **A create supplying `due_all_day` keeps it.** This is the offline mobile
+  create's answer (ADR-010): a task created offline while viewing Today is
+  written locally as all-day and the replay carries the flag, so the row never
+  needs re-deriving and the *one row, three answers* case cannot arise for it.
+- **`parent_id` must name a live, non-step row of the caller's** — else `400
+  VALIDATION` (`field: "parent_id"`). A step of a step is refused (AC-18); a
+  step may carry no repeat (AC-18).
+- A create carrying a repeat gets a `series_id` and is aligned under AC-22 /
+  AC-23 before it is written; if that computation needs a zone and there is
+  none, the create is refused (`409 TIMEZONE_UNKNOWN`).
+- **`reminder_shown_at`, `series_live`, `series_id`, `completed_by_parent`,
+  `deleted_at` are not creatable.** Sending one is `400 VALIDATION` naming the
+  field, per the one unknown-field policy.
+- Response `201 {task, changed}`.
+
+*(Contract inversion, deliberate and named so nobody weakens the assertion
+instead: `api/__tests__/tasks.test.ts:74` asserts that `POST /tasks` with
+`reminder_at` returns 400 naming the field. That assertion must now be
+inverted — it pins the gap F-005 closes.)*
+
+## `PATCH /tasks/{id}`
+
+**`TASK_PATCH_FIELDS`, in full:** `title`, `note`, `due_at`, `due_all_day`,
+`reminder_at`, `priority`, `status`, `step_order`, and the six ADR-011 repeat
+members. That is the create list **minus `id` and `parent_id`, plus
+`step_order`** — which is patchable, and is how a move is made (ADR-015).
+
+`parent_id` is deliberately **not** patchable: a step does not change parents
+this phase, and re-parenting is a gesture no AC describes and no control
+offers. `reminder_shown_at`, `series_live`, `series_id`, `completed_by_parent`,
+`ever_completed`, `series_ended_at`, `delete_gesture_id` and `deleted_at` are
+not patchable either — each has exactly one writer, named where it is defined.
+
+- **The write is field-level** (AC-2): the request body carries exactly the
+  fields the user changed. A whole-object write that happens to look correct
+  fails the AC — the falsifiable form is the request body, and a value changed
+  by an assistant turn between load and save must survive.
+- `updated_at` advances on every accepted change.
+- **Every `200` carries `prior`** (ADR-015):
+
+```yaml
+task:    Task
+changed: [Task]
+prior:   { <field>: <previous value> }   # ONLY the fields this write actually
+                                         # changed; {} when the write was a no-op
+```
+
+  `prior` is the **single** source for the reorder undo's prior position
+  (AC-15's *"carried by the move's own response"* and *"a value the client
+  already holds"* are one source, not two). No new record is owed. A drop where
+  the step already was returns `200` with `prior: {}` and writes nothing —
+  which is the observable AC-43's *no undo entry* and AC-16's *announces
+  nothing* are asserted against.
+- **Writing or clearing `reminder_at` clears `reminder_shown_at`** (AC-10),
+  server-side, in the same write. A reminder moved to a new moment is a new
+  reminder and surfaces again.
+- **Clearing `due_at` while a repeat is set is refused** — `400 VALIDATION`,
+  `field: "due_at"`, message naming the action that ends the repeat (AC-22).
+- **Setting or changing a repeat aligns the due forward** (AC-23), creating one
+  first if absent (AC-22, today, all-day) — **create, then align**, one order.
+  The response's `task` carries the resulting `due_at` and `due_all_day`; the
+  surface must have disclosed them first via § `POST /tasks/{id}/repeat-preview`.
+- **`recurrence.until` and `recurrence.count` are mutually exclusive**, and an
+  `until` earlier than the due date is **reported, not corrected** — both
+  `400 VALIDATION` (AC-25).
+- `PATCH` still **404s on a deleted row**, and `deleted_at` is still not
+  patchable. That is why restore is a route (ADR-012).
+
+## `DELETE /tasks/{id}`
+
+```yaml
+# query parameter
+scope: "occurrence" | "series"    # optional, default "occurrence" (AC-30)
+```
+
+- `occurrence` — soft-deletes this row **and its steps** (AC-19).
+- `series` — soft-deletes **every unfinished occurrence of the row's series and
+  their steps**, and **leaves every completed occurrence** (AC-30). It also
+  writes `series_ended_at` on every row of the series, including the surviving
+  completed ones, which is what makes `series_live` false for them (AC-25's
+  fourth ending, AC-39's third negative case). Setting an end marker is not
+  trashing the row.
+- `scope: "series"` on a row with no `series_id` → `400 VALIDATION`.
+- **Every delete mints one `delete_gesture_id` and writes it on every row it
+  trashes** (ADR-012). Response `200 {task, changed}`.
+
+## `POST /tasks/{id}/restore` — new (AC-41)
+
+**Request:** empty body.
+
+**Response 200:** `{task, changed}` — every row restored.
+
+- Clears `deleted_at` on the addressed row and on **every other row carrying
+  the same `delete_gesture_id`**. Ids, `step_order`, `series_id` and
+  `created_at` are kept; only `deleted_at` clears and `updated_at` advances
+  (AC-41). Restoring is not creating.
+- **A row whose `delete_gesture_id` is `null` restores alone** (ADR-012). This
+  is the 53-row case, measured: 53 of 790 rows are already soft-deleted with no
+  membership record, across 18 accounts, all predating the field. Neither
+  `parent_id` nor matching `deleted_at` is used as a key — AC-41 rejects both
+  by name, and a singleton restore is the only answer that is true rather than
+  plausible. **No migration is run**; ADR-009's precedent holds.
+- **Restoring a step whose parent is still deleted restores the parent too**
+  (AC-41) — evaluated *after* the membership set is assembled, as an invariant
+  rather than as a key, and applying to legacy rows as well. A step with no
+  parent is in no collection and therefore unreachable.
+- **Restoring a row that is not deleted is a stated no-op** — `200` with
+  `restored: false`, never `404` and never `409` (AC-41). A double-tap is
+  ordinary on an undo that is one action away wherever the user is.
+- **Scoped to the caller's rows.** Another account's id behaves as `404`, per
+  the standing convention — stated because a brand-new write path is exactly
+  where that gets missed and no AC would otherwise turn red.
+
+| Status | code | Reason |
+|---|---|---|
+| 401 | UNAUTHENTICATED | missing `X-User-Id` |
+| 404 | NOT_FOUND | unknown id, or an id owned by another account |
+
+## `POST /tasks/{id}/reminder-ack` — new (AC-38)
+
+The **server** writes `reminder_shown_at`, on an acknowledgement the client
+sends — not on render, and not by the client. This is the AC's only
+server-persistence observable and the whole reason it carries `(api)`.
+
+**Request:**
+
+```yaml
+reminder_at: iso8601        # required — the instant being acknowledged
+```
+
+**Response 200:** `{task, changed, acknowledged: boolean}`.
+
+- Sets `reminder_shown_at = now` **iff** the row's current `reminder_at` equals
+  the body's. If it does not, `409 REMINDER_MOVED` and nothing is written — the
+  reminder was changed underneath and acknowledging the old instant must not
+  retire the new one.
+- **`reminder_shown_at` is writable through this door and no other.** It is not
+  in `TASK_PATCH_FIELDS` and it is not in `TASK_CREATE_FIELDS`.
+- **A turn may not set it.** AC-36 permits the assistant `note`, `priority`,
+  `due_at` and `reminder_at` — and nothing else; `reminder_shown_at` is not on
+  that list, so a turn attempting it is refused under AC-40 like any other
+  unpermitted field. This is the recorded question answered in the direction it
+  has to be: a turn that could set it would silently retire a reminder the user
+  never saw.
+- **Caller scoping is explicit**: only the caller's own rows; another account's
+  id behaves as `404`. (AC-41's restore got this clause; this door is the other
+  brand-new write path and gets the same care.)
+- **Offline, nothing is recorded** (AC-38): the client sends no ack while
+  offline, nothing is queued, and the reminder is surfaced again at the next
+  open. There is no replay on reconnection — that is the queue-and-replay the
+  owner declined at OQ6, arriving through a side door.
+- Acknowledging a reminder on a done or deleted row is a no-op returning
+  `acknowledged: false`.
+
+## `POST /tasks/{id}/repeat-preview` — new (AC-22, AC-23, AC-25)
+
+AC-22 and AC-23 require the created-or-moved date to be **shown before the
+repeat is committed**, and the picker is the one control with preview-then-
+commit (AC-2). A client-side preview would be a second implementation of the
+alignment, the month-day clamp and the exclusivity rules — L-004's shape on
+arithmetic the spec spends four ACs on. So the preview is a **dry run of the
+same server code**, and the disclosed date is by construction the date that
+will be written.
+
+**Request:** the proposed repeat, in exactly the `PATCH` shape (the six ADR-011
+members, plus `due_at` / `due_all_day` if the user is changing them too).
+
+**Response 200:**
+
+```yaml
+due_at:      iso8601 | null    # the resulting due, after create-then-align
+due_all_day: boolean
+created:     boolean           # AC-22 created a due where there was none
+moved:       boolean           # AC-23 moved the due forward onto the rule
+refusals:    [{ code, field, message }]   # what a commit would refuse; [] if it would succeed
+```
+
+- **Zero AI calls** (AC-20, AC-32) — it never touches the Interpreter.
+- It writes nothing. `refusals` carries what the commit would refuse
+  (`UNTIL_AND_COUNT`, `UNTIL_BEFORE_DUE`, `TIMEZONE_UNKNOWN`, …) so the surface
+  can state the outcome without attempting it.
+- The **collection** the resulting date lands in is *not* returned. The client
+  derives it from `due_at`, because the server has no opinion about collections
+  (ADR-009) and adding one here would make it a second definition of a number
+  four artifacts already agree on.
+
+## The account and the zone (ADR-010)
+
+### `GET /account`
+
+```yaml
+user_id:                 uuid
+timezone:                string | null    # IANA; the ONE source every date computation reads
+timezone_source:         "first-report" | "user" | null
+timezone_set_at:         iso8601 | null
+timezone_last_report:    string | null    # the most recent client report, applied or not
+timezone_last_report_at: iso8601 | null
+```
+
+The account row is created lazily on the first authenticated request. Clients
+read this at boot and on foreground and **cache `timezone` durably**, because
+it is the zone every client-side date computation uses — never
+`Intl.DateTimeFormat().resolvedOptions().timeZone`, which is what
+`ControllerDeps.timezone` resolves to today and is the *one row, three answers*
+source AC-44 was rewritten against. `ControllerDeps.timezone` keeps its meaning
+as **what this client reports**; what it **computes with** is this value.
+
+`timezone_last_report` exists so a client can *offer* a change when the user has
+travelled, rather than take one — see the ADR's stated cost.
+
+### `PATCH /account`
+
+```yaml
+timezone: string     # IANA
+```
+
+Sets the zone explicitly (`timezone_source: "user"`). **This is the only way to
+change an already-set zone**; a differing client report never overwrites one,
+because a same-request upsert makes each device resolve rows in its own zone —
+the three-answers defect returning through the writer. `400 VALIDATION` on an
+unknown IANA zone.
+
+### When the zone is absent
+
+- **Writes that need a date computation refuse** — `409 TIMEZONE_UNKNOWN`,
+  `detail: {header: "X-Timezone"}`. Because `recordClientZone` runs in the auth
+  step before routing, this is reachable **only for a client that has never sent
+  the header on any request**: it is a client contract violation addressed to
+  the client, not a state a user can be in and cannot act on.
+- **Reads never refuse** — see `due_all_day: null` above.
+- **The by-hand user is safe** (AC-32): the zone is established by an ordinary
+  request such as `GET /tasks`, so a user who never sends a turn, and an
+  assistant that is erroring, change nothing about whether dates compute.
+
+## The turn path
+
+### The refused turn (AC-36, AC-40)
+
+`TurnOutcome` gains a seventh member. **The turn's `status` stays `applied`**
+and the existing status machine is untouched:
+
+```yaml
+kind: "refused"
+reason: "empty_title" | "priority_not_in_set" | "note_not_text"
+      | "structural_field_not_settable" | "step_not_addressable"
+      | "nesting_too_deep" | "repeat_on_step" | "until_and_count"
+      | "end_before_due" | "clear_due_while_repeating" | "timezone_unknown"
+      | "length_exceeded"
+field:   string | null      # the field the rule is about
+task_id: uuid | null        # the task the turn was about; unchanged
+```
+
+- **The task is unchanged and the refusal is whole-write** (AC-18): a turn
+  carrying one legal and one illegal field writes **nothing at all**. The task
+  does **not** enter `changed_task_ids`, no diff row is emitted, and no message
+  can name a task and then fail to say what happened to it.
+- `changed_task_ids` is empty and no `undo_snapshot` is captured, so — by the
+  existing mechanical window rule — **a refused turn never occupies or advances
+  the undo window**, exactly like `no_match` and `unsupported_query`. This is
+  why no new turn status is needed.
+- The three improvisations are all worse and are excluded by name: `no_match`
+  is a lie (the task *was* matched), the `500` failure envelope reports a server
+  fault for a healthy turn, and *write nothing and say nothing* passes AC-40's
+  own fixture row.
+- **The wording is F-002's.** `F-002 ## What speaks, and from what` is declared
+  exhaustive and closed and has no refusal frame; this contract owes the
+  **shape** and F-002 owes the row. Routed to the orchestrator by
+  `F-005 ## Impact §3`.
+
+### The write allowlist, and `DIFF_FIELDS` splitting in two
+
+**`DIFF_FIELDS` becomes two constants** (AC-36) — one constant cannot be both,
+and narrowing it silently would make a repeating task's deletion emit a diff
+with no recurrence in it:
+
+```
+TURN_WRITE_FIELDS = [title, note, due_at, reminder_at, priority, status]
+  # what a turn may set. `note`, `priority`, `due_at`, `reminder_at` are AC-36's
+  # four value fields; `title` and `status` are F-001's. It excludes
+  # parent_id, step_order, every repeat_* member, due_all_day,
+  # reminder_shown_at, series_id, deleted_at.
+
+DIFF_FIELDS = [title, note, due_at, due_all_day, reminder_at, priority, status,
+               parent_id, step_order,
+               repeat_frequency, repeat_interval, repeat_weekdays,
+               repeat_month_days, repeat_until, repeat_count]
+  # what a create or a delete must describe COMPLETELY (F-001 AC-2, AC-4).
+  # applyCreate/applyDelete enumerate every non-null member; a recurrence change
+  # is reported as PER-MEMBER rows (ADR-011), so the declared
+  # {task_id, field, old|null, new|null} shape does not change.
+```
+
+**The AI-facing change shape must be able to carry the structural fields**
+(AC-36): a refusal that cannot be attempted is untestable, so `TaskChanges`
+widens to carry `parent_id`, `step_order` and the repeat members **and the
+write path refuses them at runtime**. This is a deliberate choice of a runtime
+refusal over a type-level impossibility.
+
+**`NewTaskFields`** (the turn-path create allowlist) widens to
+`TURN_WRITE_FIELDS` minus `status`-only semantics — a created task may carry
+`title`, `note`, `due_at`, `reminder_at`, `priority`, `status`. `applyCreate`
+must stop hard-coding `reminder_at: null`: *"add a task to call the dentist and
+remind me at nine"* is the most natural sentence for the field the owner's
+decision exists to make reachable.
+
+**`ContextTask`** (what the interpreter can read) gains `note` and
+`reminder_at`. The assistant must be able to read what it may write — *"push
+the reminder an hour later"* has nothing to read today.
+
+**The handle list excludes steps.** `turns.ts`'s context builder filters
+`parent_id == null` (AC-35, AC-36): a task with eight steps contributes **one**
+handle, not nine. A step is therefore never named in a message, which is also
+what stops F-001 AC-31's door leading to a row no list holds.
+
+### Field rules bind the write, not the door (AC-40)
+
+`taskChangesFrom` holds *title must be non-empty*, the null/empty rules and the
+priority set, and it is called **only from the HTTP handlers** — `applyEdit`
+assigns straight onto the row. That is L-005's shape on the door AC-36
+deliberately widens.
+
+**The rule set is extracted into one validator that both doors call.** Same
+rule, same rejected value, **outcome stated per path**: the HTTP path answers
+`400 VALIDATION` with a field name to a client that sent a bad body; the turn
+path answers with the `refused` outcome above to a person who spoke a
+well-formed sentence. A grep for the validator's name must return both doors.
+
+### Validation bounds
+
+Stated here because AC-6 and AC-37 require that any maximum is **refused with
+the value left in the field, never silently truncated**, and that the number is
+recorded. Refusals are `400 VALIDATION` on the HTTP path and
+`reason: "length_exceeded"` on the turn path.
+
+| Field | Bound | Why this number |
+|---|---|---|
+| `title` | 500 characters after trim | a title is a line; well above any real one |
+| `note` | 20 000 characters | UC-44's *"very long"* case with room; the field is assistant-settable (AC-36), so unbounded is not an option |
+| steps per parent | 200 | AC-14's *"any bound is stated and refused"* |
+| `repeat_interval` | 1–999 | an interval above this is a date arithmetic hazard, not a cadence |
+| `repeat_month_days` | 1–31 per member, ≤ 31 members | AC-21; **candidates are de-duplicated after clamping** (AC-24) — `{30,31}` in April both resolve to the 30th |
+
+## New and changed error codes
+
+| Status | code | Reason |
+|---|---|---|
+| 400 | VALIDATION | as today, plus: unknown/illegal field value, `parent_id` not a live non-step row of the caller's, a step given a repeat or a parent, `until` **and** `count`, `until` before the due date, clearing `due_at` while a repeat is set, a bound exceeded, `scope: "series"` on a row with no series |
+| 409 | TIMEZONE_UNKNOWN | a date computation was required and `account.timezone` is unset; `detail: {header: "X-Timezone"}` |
+| 409 | REMINDER_MOVED | `reminder-ack`'s `reminder_at` does not match the row's current value; nothing written |
+
+## Harness doors
+
+Both are **test-only** and neither is served by the production app.
+
+### Server side — the seed path (AC-8, AC-15, AC-34)
+
+Three ACs have no reachable fixture without one, and a `## Test strategy`
+sentence with no mechanism and no owner discharges nothing. The existing
+`__qa__` namespace (`qa/assistant/automation/harness/qa-test-server.ts`, which
+already serves `GET /__qa__/ai-calls` and `POST /__qa__/advance-clock`) is the
+home; it wraps `createApp` and writes through the `Store` port.
+
+```yaml
+POST /__qa__/seed
+  tasks:  [ <raw task row> ]      # written verbatim, BYPASSING every write rule.
+                                  # This is the only producer of:
+                                  #  - an out-of-set stored `priority` (AC-8's
+                                  #    tolerant read, whose own write path
+                                  #    refuses exactly the value it must tolerate)
+                                  #  - a non-canonical repeat_weekdays (ADR-011)
+                                  #  - a soft-deleted row with delete_gesture_id: null
+  turns:  [ <raw turn row> ]      # incl. an undo_snapshot / post_apply record in the
+                                  # PRE-F-005 shape (AC-34) — a test that captures its
+                                  # own snapshot cannot fail that AC
+  accounts: [ <raw account row> ] # incl. one with timezone: null
+
+POST /__qa__/set-clock  { at: iso8601, zone: iana }   # replaces advance-clock's
+                                                      # ms-only interface; advance-clock stays
+POST /__qa__/reopen-store                             # AC-15's "survives a restart":
+                                                      # close and re-open the durable snapshot
+                                                      # in-process. The harness composes a fresh
+                                                      # MemoryStore per process today, so a
+                                                      # restart has nothing to survive.
+```
+
+### Client side — the clock-and-zone seam (AC-44, recorded question R3)
+
+AC-44 requires that *"the test harness can set every seam and hold them at one
+instant and one zone for the length of a run"*. The object it names,
+`ControllerDeps.now`, is an **in-process constructor parameter**:
+`web/main.tsx` constructs the controller with `{api, speech, stores}` and passes
+no `now`, and `window.__assistantSeams` exposes four methods and **no clock**.
+So the requirement is satisfied today only by the unit harness, while the web
+e2e tier AC-44 names as broken has no door at all — the AC's own failure mode
+surviving its own remedy.
+
+**The door is `window.__assistantSeams`**, this project's existing named,
+already-guarded client seam (`?testMode=1` / `?qaUser=` / `localStorage
+assistant.testMode`). It gains one method:
+
+```ts
+setClock(opts: { at: string; zone: string }): Promise<void>
+// sets the controller's `now` and its computation zone for the rest of the run,
+// then re-renders. Held — it does not advance on its own.
+```
+
+Paired with `POST /__qa__/set-clock`, an e2e run holds **both** sides at one
+instant and one zone, which is the half that does not exist today. A second
+client seam is not introduced: `ControllerDeps.now` is the existing injection
+point and this method drives it.
+
+## Where each recorded question is answered
+
+`F-005 ## API Touch Points` recorded twelve findings across eight bullets,
+deliberately unanswered. Index:
+
+| Recorded question | Answered in |
+|---|---|
+| The zone's write path — where it lives, which door writes it, what refreshes it (T34, dev-backend F1) | **ADR-010**; § The account and the zone |
+| The read-side outcome — the refusal is write-shaped, AC-13's use is a read (T36, dev-backend F2) | **ADR-010**; § `Task` on the wire → `due_all_day: null` |
+| The offline mobile create's zone (tester-mobile M14) | **ADR-010**; § `POST /tasks` → a create supplying `due_all_day` keeps it |
+| A refusal the user cannot act on (product P17) | **ADR-010**; § When the zone is absent — it is addressed to the client |
+| The client-side clock-and-zone harness door (tester-web R3) | § Harness doors → the client seam |
+| Rows predating `delete_membership` — 53 of 790 (dev-backend F4) | **ADR-012**; § `POST /tasks/{id}/restore` |
+| Where a reordered step's prior position comes from (architect F5) | **ADR-015**; § `PATCH /tasks/{id}` → `prior` |
+| How a set-valued recurrence member appears in a diff row (architect F3) | **ADR-011**; § The turn path → `DIFF_FIELDS` |
+| How the run count is derived (T35) | **ADR-014**; § `Task` on the wire → `series_live` |
+| Who may write `reminder_shown_at` — caller scoping, may a turn set it (T37) | § `POST /tasks/{id}/reminder-ack` |
+| AC-46's capture-before-apply ordering and the record-to-row mapping | **ADR-013**; `POST /assistant/turn` rule 6 and the undo endpoint's revert shapes, both amended in place above |
