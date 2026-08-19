@@ -23,6 +23,7 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import request from 'supertest';
+import type TestAgent from 'supertest/lib/agent.js';
 import { randomUUID } from 'node:crypto';
 import { createServer, globalAgent, type Server } from 'node:http';
 
@@ -263,6 +264,39 @@ interface Harness {
   ai: QaFixtureInterpreter;
   clock: FakeClock;
   store: QaFaultStore;
+  /**
+   * The suite's default client. Carries `X-Timezone: UTC` on EVERY request.
+   *
+   * Why (T-166): ADR-010 / F-005 AC-44 made the account timezone the one
+   * source every date computation reads, and a date computation with no zone
+   * is `409 TIMEZONE_UNKNOWN`. `recordClientZone` runs in the auth step of
+   * every request, so one header on one request establishes the account's zone
+   * for the process — but this suite creates a fresh store per test, so every
+   * test needs it. TC-14 and TC-17 (both seed a `due_at`) went red on exactly
+   * that: `expected 201, got 409`.
+   *
+   * It is a default header on the agent rather than ~200 per-call `.set()`
+   * edits because the zone is a property of the CLIENT, not of any one
+   * request: supertest's `request(server)` has no such hook and
+   * `request.agent(server)` does (superagent `Agent._setDefaults`). A per-call
+   * fix would also have to be re-applied by every case added afterwards, and
+   * the failure mode of forgetting is a 409 that looks like a product bug.
+   */
+  agent: TestAgent;
+  /**
+   * A deliberately ZONELESS client — no `X-Timezone`, ever.
+   *
+   * It exists because the fix above would otherwise make `409
+   * TIMEZONE_UNKNOWN` unassertable everywhere in this suite: once every
+   * request carries a zone, no request can observe the refusal, and a
+   * regression that dropped the refusal entirely would go unnoticed. Keeping
+   * one zoneless door means the refusal is asserted ON PURPOSE (see the guard
+   * case at the end of the auth/validation block) rather than by accident.
+   *
+   * It must not be used for ordinary seeding: a zoneless request whose
+   * computation needs a zone is refused, which is the whole point.
+   */
+  zoneless: TestAgent;
 }
 
 // Avoid a documented class of Node/supertest flake: passing supertest a bare
@@ -286,7 +320,11 @@ async function makeHarness(): Promise<Harness> {
     server.once('error', reject);
     server.listen(0, '127.0.0.1', () => resolve());
   });
-  return { app: server, ai, clock, store };
+  // See the Harness doc comments: the default agent carries the zone, the
+  // zoneless one deliberately does not.
+  const agent = request.agent(server).set('X-Timezone', 'UTC');
+  const zoneless = request.agent(server);
+  return { app: server, ai, clock, store, agent, zoneless };
 }
 
 // ───────────────────────────── helpers ─────────────────────────────
@@ -309,7 +347,7 @@ afterEach(
 );
 
 const postTurn = (uid: string, body: Record<string, unknown>) =>
-  request(h.app).post('/assistant/turn').set('X-User-Id', uid).send(body);
+  h.agent.post('/assistant/turn').set('X-User-Id', uid).send(body);
 
 const turn = (transcript: string, extra: Record<string, unknown> = {}) => ({
   session_id: null,
@@ -319,19 +357,19 @@ const turn = (transcript: string, extra: Record<string, unknown> = {}) => ({
   ...extra,
 });
 
-const getSession = (uid: string) => request(h.app).get('/assistant/session').set('X-User-Id', uid);
+const getSession = (uid: string) => h.agent.get('/assistant/session').set('X-User-Id', uid);
 const getTasks = async (uid: string) => {
-  const res = await request(h.app).get('/tasks').set('X-User-Id', uid).expect(200);
+  const res = await h.agent.get('/tasks').set('X-User-Id', uid).expect(200);
   return res.body.tasks as any[];
 };
 const seedTask = async (uid: string, fields: Record<string, unknown>) => {
-  const res = await request(h.app).post('/tasks').set('X-User-Id', uid).send(fields).expect(201);
+  const res = await h.agent.post('/tasks').set('X-User-Id', uid).send(fields).expect(201);
   return res.body.task as any;
 };
 const undoTurn = (uid: string, turnId: string, via: 'tap' | 'voice' = 'tap') =>
-  request(h.app).post(`/assistant/turn/${turnId}/undo`).set('X-User-Id', uid).send({ via });
+  h.agent.post(`/assistant/turn/${turnId}/undo`).set('X-User-Id', uid).send({ via });
 const closeSession = (uid: string, sessionId: string) =>
-  request(h.app)
+  h.agent
     .post('/assistant/session/close')
     .set('X-User-Id', uid)
     .send({ session_id: sessionId, reason: 'user_closed' });
@@ -553,8 +591,8 @@ describe('AC-10/AC-12 question resolution (TC-05..TC-11)', () => {
     const tasks = await getTasks(U1);
     const bread = tasks.find((t) => t.title === 'qaapi-shop-bread');
     const cheese = tasks.find((t) => t.title === 'qaapi-shop-cheese');
-    await request(h.app).patch(`/tasks/${bread.id}`).set('X-User-Id', U1).send({ title: 'qaapi-shop-bread-URGENT' }).expect(200);
-    await request(h.app).delete(`/tasks/${cheese.id}`).set('X-User-Id', U1).expect(200);
+    await h.agent.patch(`/tasks/${bread.id}`).set('X-User-Id', U1).send({ title: 'qaapi-shop-bread-URGENT' }).expect(200);
+    await h.agent.delete(`/tasks/${cheese.id}`).set('X-User-Id', U1).expect(200);
     const yes = await postTurn(U1, turn('yes', { session_id: sid })).expect(200);
     expect(yes.body.turn.outcome.result).toBe('executed');
     expect(yes.body.turn.outcome.executed.deleted_titles).toEqual(['qaapi-shop-eggs']); // actual count 1
@@ -669,7 +707,7 @@ describe('AC-6/7/8 undo (TC-15..TC-22)', () => {
     const edit = await postTurn(U1, turn('rename qaapi-buy-milk to qaapi-buy-oat-milk')).expect(200);
     await undoTurn(U1, edit.body.turn.id).expect(200);
     const task = (await getTasks(U1))[0];
-    await request(h.app).patch(`/tasks/${task.id}`).set('X-User-Id', U1).send({ title: 'qaapi-buy-milk-2L' }).expect(200);
+    await h.agent.patch(`/tasks/${task.id}`).set('X-User-Id', U1).send({ title: 'qaapi-buy-milk-2L' }).expect(200);
     const replay = await undoTurn(U1, edit.body.turn.id).expect(200);
     expect(replay.body).toMatchObject({ undone: true, already_undone: true });
     expect((await getTasks(U1))[0].title).toBe('qaapi-buy-milk-2L'); // replay did NOT revert again
@@ -678,7 +716,7 @@ describe('AC-6/7/8 undo (TC-15..TC-22)', () => {
   it('TC-21 later manual mutation is skipped and named; unmodified tasks still revert', async () => {
     const create = await postTurn(U1, turn('add qaapi-pack-bags, qaapi-book-taxi and qaapi-print-tickets')).expect(200);
     const taxi = (await getTasks(U1)).find((t) => t.title === 'qaapi-book-taxi');
-    await request(h.app).patch(`/tasks/${taxi.id}`).set('X-User-Id', U1).send({ title: 'qaapi-book-taxi-7am' }).expect(200);
+    await h.agent.patch(`/tasks/${taxi.id}`).set('X-User-Id', U1).send({ title: 'qaapi-book-taxi-7am' }).expect(200);
     const undo = await undoTurn(U1, create.body.turn.id).expect(200);
     expect(undo.body.skipped).toEqual([{ task_id: taxi.id, title: 'qaapi-book-taxi-7am', reason: 'modified_since_apply' }]);
     expect(undo.body.reverted).toHaveLength(2);
@@ -692,7 +730,7 @@ describe('AC-6/7/8 undo (TC-15..TC-22)', () => {
     await seedTask(U1, { title: 'qaapi-buy-milk' });
     const edit = await postTurn(U1, turn('rename qaapi-buy-milk to qaapi-buy-oat-milk')).expect(200);
     const task = (await getTasks(U1))[0];
-    await request(h.app).patch(`/tasks/${task.id}`).set('X-User-Id', U1).send({ title: 'qaapi-buy-soy-milk' }).expect(200);
+    await h.agent.patch(`/tasks/${task.id}`).set('X-User-Id', U1).send({ title: 'qaapi-buy-soy-milk' }).expect(200);
     const undo = await undoTurn(U1, edit.body.turn.id).expect(200);
     expect(undo.body).toMatchObject({ reverted: [], nothing_reverted: true });
     expect((await getTasks(U1))[0].title).toBe('qaapi-buy-soy-milk');
@@ -1034,10 +1072,10 @@ describe('security + validation matrices (TC-32, TC-33, TC-34)', () => {
       ['delete', `/tasks/${t.id}`],
     ];
     for (const [method, path, body] of probes) {
-      const bare = await (request(h.app) as any)[method](path).send(body);
+      const bare = await (h.agent as any)[method](path).send(body);
       expect(bare.status, `${method} ${path}`).toBe(401);
       expect(bare.body.error.code).toBe('UNAUTHENTICATED');
-      const empty = await (request(h.app) as any)[method](path).set('X-User-Id', '').send(body);
+      const empty = await (h.agent as any)[method](path).set('X-User-Id', '').send(body);
       expect(empty.status, `${method} ${path} (empty header)`).toBe(401);
     }
     const after = await getTasks(U1);
@@ -1057,12 +1095,12 @@ describe('security + validation matrices (TC-32, TC-33, TC-34)', () => {
       ['delete', `/tasks/${taskB.id}`],
     ];
     for (const [method, path, body] of probes) {
-      const res = await (request(h.app) as any)[method](path).set('X-User-Id', U1).send(body);
+      const res = await (h.agent as any)[method](path).set('X-User-Id', U1).send(body);
       expect(res.status, `${method} ${path}`).toBe(404);
       expect(res.body.error.code).toBe('NOT_FOUND');
     }
     // unknown-uuid variants must be indistinguishable (no enumeration oracle)
-    const unknown = await request(h.app).patch(`/tasks/${uuid()}`).set('X-User-Id', U1).send({ title: 'x' });
+    const unknown = await h.agent.patch(`/tasks/${uuid()}`).set('X-User-Id', U1).send({ title: 'x' });
     expect(unknown.status).toBe(404);
     expect(unknown.body.error.code).toBe('NOT_FOUND');
     // victim state intact
@@ -1087,11 +1125,11 @@ describe('security + validation matrices (TC-32, TC-33, TC-34)', () => {
       ['patch', `/tasks/${seeded.id}`, { status: 'bogus' }],
     ];
     for (const [method, path, body] of bad) {
-      const res = await (request(h.app) as any)[method](path).set('X-User-Id', U1).send(body);
+      const res = await (h.agent as any)[method](path).set('X-User-Id', U1).send(body);
       expect(res.status, `${method} ${path} ${JSON.stringify(body)}`).toBe(400);
       expect(res.body.error.code).toBe('VALIDATION');
     }
-    const malformed = await request(h.app)
+    const malformed = await h.agent
       .post('/assistant/turn').set('X-User-Id', U1)
       .set('Content-Type', 'application/json').send('{"transcript": "trunc');
     expect(malformed.status).toBe(400);
@@ -1102,7 +1140,7 @@ describe('security + validation matrices (TC-32, TC-33, TC-34)', () => {
       ['post', '/tasks', { title: 'qaapi-x', color: 'red' }, 'color'],
     ];
     for (const [method, path, body, field] of unknownProbes) {
-      const res = await (request(h.app) as any)[method](path).set('X-User-Id', U1).send(body);
+      const res = await (h.agent as any)[method](path).set('X-User-Id', U1).send(body);
       expect(res.status, `unknown field ${field} on ${path}`).toBe(400);
       expect(res.body.error.code).toBe('VALIDATION');
       expect(res.body.error.field).toBe(field);
@@ -1111,6 +1149,47 @@ describe('security + validation matrices (TC-32, TC-33, TC-34)', () => {
     expect(await getTasks(U1)).toHaveLength(1); // no task side effects
     const sess = await getSession(U1).expect(200);
     expect(sess.body.session).toBeNull(); // no turn row was ever persisted for a 400
+  });
+
+  /**
+   * TC-41 — the guard on this suite's own zone default (added T-166).
+   *
+   * `Harness.agent` sends `X-Timezone: UTC` on every request, which is what
+   * un-broke TC-14 and TC-17 after ADR-010 landed. That default has a cost:
+   * with a zone always present, NOTHING in this suite can observe
+   * `409 TIMEZONE_UNKNOWN` any more, so a regression that dropped the refusal
+   * entirely — or one that silently fell back to the server's own zone, which
+   * `F-005 AC-44` forbids by name — would leave every test in this file green.
+   *
+   * So the refusal keeps a deliberate home. `Harness.zoneless` is a client that
+   * has never sent the header on any request, which
+   * `api-contracts.md § When the zone is absent` says is the only way to reach
+   * this refusal, and the assertion is that a date-computing WRITE from it is
+   * refused, names the header, and writes nothing — while a read from the same
+   * client still succeeds, because "a read never refuses".
+   *
+   * Own-mutation check (§5 "would this notice if the implementation broke?"):
+   * remove the refusal and the first two assertions go red; make the read
+   * refuse too and the third goes red.
+   */
+  it('TC-41 a zoneless client is refused on a date-computing write, and still served on a read', async () => {
+    const ZL = uuid(); // its own account — U1's zone is established by h.agent
+    const refused = await h.zoneless.post('/tasks').set('X-User-Id', ZL).send({
+      title: 'qaapi-zoneless-due',
+      due_at: '2026-08-20T08:00:00.000Z',
+    });
+    expect(refused.status).toBe(409);
+    expect(refused.body.error.code).toBe('TIMEZONE_UNKNOWN');
+    expect(refused.body.error.detail).toMatchObject({ header: 'X-Timezone' });
+    // "a refused write writes nothing" (F-005 AC-18) — asserted, not assumed
+    const afterRefusal = await h.zoneless.get('/tasks').set('X-User-Id', ZL).expect(200);
+    expect(afterRefusal.body.tasks).toHaveLength(0);
+    // a read never refuses, even for an account with no zone at all
+    const dateless = await h.zoneless
+      .post('/tasks').set('X-User-Id', ZL).send({ title: 'qaapi-zoneless-dateless' }).expect(201);
+    expect(dateless.body.task.title).toBe('qaapi-zoneless-dateless');
+    const read = await h.zoneless.get('/tasks').set('X-User-Id', ZL).expect(200);
+    expect(read.body.tasks).toHaveLength(1);
   });
 });
 
@@ -1130,7 +1209,7 @@ describe('contract conformance (TC-35, TC-36, TC-37)', () => {
     expect(Object.keys(sess.body.boundary).sort()).toEqual(
       ['session_id', 'closed_at', 'close_reason', 'declined_questions', 'late_outcomes'].sort(),
     );
-    const err = await request(h.app).get('/assistant/session').expect(401);
+    const err = await h.agent.get('/assistant/session').expect(401);
     expect(Object.keys(err.body)).toEqual(['error']);
     expect(Object.keys(err.body.error)).toEqual(expect.arrayContaining(['code', 'message']));
   });
@@ -1149,7 +1228,7 @@ describe('contract conformance (TC-35, TC-36, TC-37)', () => {
   });
 
   it('TC-37 non-JSON audio body rejected; no audio ever persisted or echoed', async () => {
-    const bin = await request(h.app)
+    const bin = await h.agent
       .post('/assistant/turn').set('X-User-Id', U1)
       .set('Content-Type', 'audio/webm').send(Buffer.from([0x1a, 0x45, 0xdf, 0xa3, 0x42]));
     expect(bin.status).toBe(400);
@@ -1169,18 +1248,18 @@ describe('manual path + cancel race (TC-38, TC-39)', () => {
   it('TC-38 full CRUD through /tasks with the AI-call counter frozen at zero', async () => {
     const before = h.ai.calls;
     const created = await seedTask(U1, { title: 'qaapi-manual-1', priority: 'high' });
-    await request(h.app).patch(`/tasks/${created.id}`).set('X-User-Id', U1).send({ title: 'qaapi-manual-1-edited' }).expect(200);
-    await request(h.app).patch(`/tasks/${created.id}`).set('X-User-Id', U1).send({ status: 'done' }).expect(200);
-    const del = await request(h.app).delete(`/tasks/${created.id}`).set('X-User-Id', U1).expect(200);
+    await h.agent.patch(`/tasks/${created.id}`).set('X-User-Id', U1).send({ title: 'qaapi-manual-1-edited' }).expect(200);
+    await h.agent.patch(`/tasks/${created.id}`).set('X-User-Id', U1).send({ status: 'done' }).expect(200);
+    const del = await h.agent.delete(`/tasks/${created.id}`).set('X-User-Id', U1).expect(200);
     expect(del.body.task.deleted_at).toBeTruthy(); // soft delete
     expect(await getTasks(U1)).toHaveLength(0);
     // pinned: optional client-generated id (offline local path — no temporary-id mapping)
     const clientId = uuid();
-    const own = await request(h.app).post('/tasks').set('X-User-Id', U1).send({ id: clientId, title: 'qaapi-offline-1' }).expect(201);
+    const own = await h.agent.post('/tasks').set('X-User-Id', U1).send({ id: clientId, title: 'qaapi-offline-1' }).expect(201);
     expect(own.body.task.id).toBe(clientId);
-    const replay = await request(h.app).post('/tasks').set('X-User-Id', U1).send({ id: clientId, title: 'qaapi-offline-1' }).expect(409);
+    const replay = await h.agent.post('/tasks').set('X-User-Id', U1).send({ id: clientId, title: 'qaapi-offline-1' }).expect(409);
     expect(replay.body.error.code).toBe('TASK_ID_EXISTS'); // own-replay = already-synced ack
-    const collide = await request(h.app).post('/tasks').set('X-User-Id', U1).send({ id: clientId, title: 'qaapi-different-title' }).expect(409);
+    const collide = await h.agent.post('/tasks').set('X-User-Id', U1).send({ id: clientId, title: 'qaapi-different-title' }).expect(409);
     expect(collide.body.error.code).toBe('TASK_ID_EXISTS');
     const after = await getTasks(U1);
     expect(after.filter((t) => t.id === clientId)).toHaveLength(1);
@@ -1199,7 +1278,7 @@ describe('manual path + cancel race (TC-38, TC-39)', () => {
     expect(late.status).toBe('applied'); // the late outcome a re-opening client renders
     await undoTurn(U1, res.body.turn.id).expect(200); // applied + Undo, never pretending the cancel won
     for (const path of [`/assistant/turn/${res.body.turn.id}/cancel`, '/assistant/cancel']) {
-      const probe = await request(h.app).post(path).set('X-User-Id', U1).send({});
+      const probe = await h.agent.post(path).set('X-User-Id', U1).send({});
       expect(probe.status, path).toBeGreaterThanOrEqual(400); // deliberately-absent endpoint stays absent
     }
   });

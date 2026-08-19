@@ -4,6 +4,8 @@
 **Automation draft:** `qa/assistant/automation/api/F-001-voice-assistant-view.spec.ts` (vitest + supertest in-process, per `specs/_shared/platform/backend.md`).
 **Canonical fixture table:** [`utterance-intent-fixtures.json`](utterance-intent-fixtures.json) — shared by QA and implementers; the stub Interpreter resolves interpretation (incl. answer classification) from these rows. Carries the spec-mandated rows: ambiguous answers (UT-ANS-AMBIG-1/2, zero-deletion assertions), internal-ref (UT-INTREF-1), undo phrases (UT-UNDO-*).
 **Language re-sync 2026-08-17 (T-070a):** ADR-008 makes English the product language and ADR-006's amendment shrinks `UNDO_PHRASES` to `{"undo"}`. QA expectations follow design and the implementers (ADR-008 § Sequencing). Touched here: TC-14 + UT-LISTQ-1 (`alternative` literal, re-synced from api-contracts.md §9), TC-23 + TC-24 + the UT-UNDO-* rows (undo vocabulary). No case was deleted — the retired Vietnamese phrase became `UT-UNDO-RETIRED-VI` and TC-23 step 7, which assert the ordinary-turn path it now takes.
+**Zone re-sync 2026-08-19 (T-166):** ADR-010 / `F-005 AC-44` made `account.timezone` the one source every date computation reads and a zoneless computation `409 TIMEZONE_UNKNOWN`. `seedTask` posts `due_at`, so **TC-14 and TC-17 went red** (`expected 201, got 409`). Fixed at the harness — the supertest client is now `request.agent(server).set('X-Timezone','UTC')`, one default header rather than a per-call edit, because the zone is a property of the client. A second, deliberately **zoneless** agent is kept so the refusal stays assertable; **TC-41** is the case that asserts it. No assertion was weakened and no case was deleted.
+
 **Test data namespace:** task titles `qaapi-*`; reserved user uuids in `qa/_shared/fixtures/api/users.json` (QAAPI-U1/U2/U3). No unscoped destructive operations.
 
 ## Test cases
@@ -50,6 +52,7 @@
 | [TC-38](TC-38-manual-crud-zero-ai-calls.md) | Manual CRUD with zero AI calls | AC-18 | happy | P1 |
 | [TC-39](TC-39-cancel-race-late-outcome.md) | Cancel racing apply: sent turn completes, late outcome + Undo | AC-3, AC-28 | edge | P1 |
 | [TC-40](TC-40-non-mutating-turns-undo-window.md) | Non-mutating turns neither hold nor end the undo window | AC-8, AC-6, AC-5 | edge | P1 |
+| [TC-41](TC-41-zoneless-client-refusal-guard.md) | Zoneless client refused on a date-computing write; read still served (guards this suite's `X-Timezone` default) | F-005 AC-44, AC-13, AC-18 | regression | P1 |
 
 ## AC coverage map (api-tagged ACs of spec rev 3)
 
@@ -101,6 +104,7 @@ Non-api-tagged ACs pinned here because spec Test strategy / briefing mandates th
 | POST /tasks | 409 TASK_ID_EXISTS (client-id collision; own-replay = sync ack) | TC-38 (steps 8–9) |
 | PATCH /tasks/{id} | 400 / 401 / 404 | TC-34 / TC-32 / TC-33 |
 | DELETE /tasks/{id} | 401 / 404 | TC-32 / TC-33 |
+| POST /tasks | 409 TIMEZONE_UNKNOWN (date computation, zone never reported) | TC-41 |
 
 ## Open questions — ALL RESOLVED 2026-08-16 (architect-agent pinned them in the contracts)
 

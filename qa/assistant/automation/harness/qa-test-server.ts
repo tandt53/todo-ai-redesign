@@ -29,14 +29,8 @@ import { createApp } from '../../../../src/assistant/api/app.ts'
 import { FixtureInterpreter } from '../../../../src/assistant/api/ports/fixture-interpreter.ts'
 import type { FixtureRow } from '../../../../src/assistant/api/ports/fixture-interpreter.ts'
 import { FIXTURE_TABLE } from '../../../../src/assistant/api/ports/fixture-table.ts'
-import { FakeClock } from '../../../../src/assistant/api/ports/clock.ts'
-import { MemoryStore } from '../../../../src/assistant/api/store/memory-store.ts'
-import type {
-  Interpretation,
-  Interpreter,
-  InterpreterContext,
-} from '../../../../src/assistant/api/ports/interpreter.ts'
 import { DEFAULT_IDLE_CLOSE_MS } from '../../../../src/assistant/api/engine/sessions.ts'
+import { CountingInterpreter, QaClock, ReopenableStore, createQaDoors } from './qa-doors.ts'
 
 const QA_EXTRA_ROWS: FixtureRow[] = [
   // TC-012 boundary: the canonical table has a 1-target row ("delete the
@@ -132,29 +126,36 @@ const QA_EXTRA_ROWS: FixtureRow[] = [
   },
 ]
 
-/** AC-18/AC-25 seam: a cumulative interpreter-call counter, read over HTTP.
- * Global (not per-account) — safe because playwright.config.ts runs this
- * suite with workers: 1 (see its comment for why). */
-class CountingInterpreter implements Interpreter {
-  count = 0
-  private readonly inner: Interpreter
-  constructor(inner: Interpreter) {
-    this.inner = inner
-  }
-  async interpret(ctx: InterpreterContext): Promise<Interpretation> {
-    this.count += 1
-    return this.inner.interpret(ctx)
-  }
-}
-
-const clock = new FakeClock()
+// AC-18/AC-25 seam: a cumulative interpreter-call counter, read over HTTP.
+// Global (not per-account) — safe because playwright.config.ts runs this
+// suite with workers: 1 (see its comment for why). The class moved to
+// ./qa-doors.ts (T-166) so the api tier and this process share ONE
+// implementation of every __qa__ door rather than two that can drift.
+const clock = new QaClock('2026-08-19T09:00:00.000Z', 'UTC')
 const counting = new CountingInterpreter(new FixtureInterpreter([...FIXTURE_TABLE, ...QA_EXTRA_ROWS]))
 
-// In-memory only (no snapshotPath) — fresh per process start, matching the
-// unit-test harness. Isolation between tests comes from unique qaweb-tc*
-// X-User-Id values (_qa-foundations.md §10), not from process restarts.
+// `QA_SNAPSHOT_PATH` makes the store durable so `POST /__qa__/reopen-store`
+// (F-005 AC-15) has something to re-open; unset, it is in-memory only — fresh
+// per process start, matching the unit-test harness — and the reopen door
+// refuses rather than pretending. Isolation between tests comes from unique
+// qaweb-tc* X-User-Id values (_qa-foundations.md §10), not from restarts.
+const store = new ReopenableStore(
+  process.env['QA_SNAPSHOT_PATH'] !== undefined
+    ? { snapshotPath: process.env['QA_SNAPSHOT_PATH'] }
+    : {},
+)
+
+const doors = createQaDoors({
+  store,
+  clock,
+  interpreter: counting,
+  // Pre-existing behaviour: a body with no `ms` advances past the idle-close
+  // window, which is what seams.ts's resync() doc comment describes.
+  defaultAdvanceMs: DEFAULT_IDLE_CLOSE_MS + 20_000,
+})
+
 const app = createApp({
-  store: new MemoryStore(),
+  store,
   interpreter: counting,
   clock,
   idleCloseMs: DEFAULT_IDLE_CLOSE_MS,
@@ -162,46 +163,11 @@ const app = createApp({
 
 const port = Number(process.env['PORT'] ?? 4460)
 
-function readJsonBody(req: import('node:http').IncomingMessage): Promise<Record<string, unknown>> {
-  return new Promise((resolve) => {
-    const chunks: Buffer[] = []
-    req.on('data', (c: Buffer) => chunks.push(c))
-    req.on('end', () => {
-      const raw = Buffer.concat(chunks).toString('utf8').trim()
-      if (raw === '') return resolve({})
-      try {
-        resolve(JSON.parse(raw) as Record<string, unknown>)
-      } catch {
-        resolve({})
-      }
-    })
-  })
-}
-
 const server = createServer((req, res) => {
-  const url = new URL(req.url ?? '/', 'http://localhost')
-
-  // AC-18/AC-25 seam
-  if (url.pathname === '/__qa__/ai-calls' && req.method === 'GET') {
-    res.writeHead(200, { 'content-type': 'application/json' })
-    res.end(JSON.stringify({ count: counting.count }))
-    return
-  }
-
-  // AC-28 seam: advance the injectable clock. The caller then hits a real
-  // endpoint that runs lazyIdleClose (GET /assistant/session does, on every
-  // call — src/assistant/api/app.ts) to make the close observable, exactly as
-  // seams.ts's resync() doc comment describes.
-  if (url.pathname === '/__qa__/advance-clock' && req.method === 'POST') {
-    void readJsonBody(req).then((body) => {
-      const ms = typeof body['ms'] === 'number' ? body['ms'] : DEFAULT_IDLE_CLOSE_MS + 20_000
-      clock.advance(ms)
-      res.writeHead(200, { 'content-type': 'application/json' })
-      res.end(JSON.stringify({ now: clock.now() }))
-    })
-    return
-  }
-
+  // Every `__qa__` door — ai-calls, advance-clock (both F-001), and F-005's
+  // set-clock / seed / reopen-store. `doors()` returns true when it handled
+  // the request; anything else falls through to the real app.
+  if (doors(req, res)) return
   app(req, res)
 })
 

@@ -1,0 +1,32 @@
+{
+  "_meta": {
+    "owner": "qa-api-agent",
+    "purpose": "Reserved X-User-Id values and the pinned clock for the F-005 API suite. Separate from users.json so the F-001 suite's accounts keep their own zone/first-report history — ADR-010 makes account.timezone first-report-wins, so two suites sharing an account id would make the zone depend on which ran first.",
+    "rule": "All destructive assertions are scoped to tasks whose title starts with 'qaapi5-' and to these user ids only. No unscoped global mutations. Other QA agents must NOT send these ids."
+  },
+  "users": {
+    "QAAPI5-U1": {
+      "x_user_id": "aa11a295-0000-4000-8000-000000000001",
+      "role": "primary account — most TCs"
+    },
+    "QAAPI5-U2": {
+      "x_user_id": "aa11a295-0000-4000-8000-000000000002",
+      "role": "second account — caller-scoping probes on the two brand-new write paths (restore, reminder-ack) and on parent_id validation: owns rows U1's requests must see as 404"
+    },
+    "QAAPI5-U3": {
+      "x_user_id": "aa11a295-0000-4000-8000-000000000003",
+      "role": "zone-experiment account — first-report-wins and PATCH /account cases, kept apart so no other case depends on its zone history"
+    },
+    "QAAPI5-U4": {
+      "x_user_id": "aa11a295-0000-4000-8000-000000000004",
+      "role": "steps-only account (AC-35) — every parent excluded from the collection on screen; kept clean so collectionTasks-vs-state.tasks assertions are not polluted"
+    }
+  },
+  "clock": {
+    "t0": "2026-08-19T12:00:00.000Z",
+    "t0_note": "A Wednesday. AC-23's worked example is 'due Wednesday, rule weekly on Monday and Thursday', so a Wednesday anchor makes the forward-alignment case the ordinary one rather than a contrivance. Chosen once and derived from everywhere: L-023 records a harness that pinned the seam and left the fixtures on the wall clock, and 771 tests were green because the view read the wrong clock.",
+    "zone": "UTC",
+    "dst_zone": "America/New_York",
+    "dst_note": "AC-44's DST outcome — 'a daily 09:00 repeat rolled across a DST boundary is still due at 09:00 wall-clock'. US DST ends 2026-11-01, so a repeat rolled from 2026-10-31 to 2026-11-01 crosses it."
+  }
+}
