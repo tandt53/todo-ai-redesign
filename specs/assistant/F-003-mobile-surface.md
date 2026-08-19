@@ -19,7 +19,7 @@ api_endpoints:     []   # no new endpoints — mobile is a second client against
 tested_by:
   api:    []
   web:    []
-  mobile: [qa/assistant/F-003/mobile/, qa/assistant/automation/mobile/F-003-mobile-surface.spec.ts, src/assistant/mobile/__tests__/touch-keyboard-back.test.ts, qa/assistant/runs/2026-08-17-mobile-execute.md]
+  mobile: [qa/assistant/F-003/mobile/, tests/assistant/mobile/F-003-mobile-surface.spec.ts, src/assistant/mobile/__tests__/touch-keyboard-back.test.ts, qa/assistant/runs/2026-08-17-mobile-execute.md]
 known_bugs: []
 ```
 

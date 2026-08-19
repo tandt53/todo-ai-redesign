@@ -3,7 +3,7 @@
  *
  * Owner: qa-api-agent (T-166). Consumers: this module is mounted by
  * `qa-test-server.ts` (the Playwright/e2e harness process) and by the
- * in-process api suites under `qa/assistant/automation/api/`. It is ONE
+ * in-process api suites under `tests/assistant/api/`. It is ONE
  * implementation deliberately: two copies of a seed door would be L-004's
  * shape inside the instrument built to detect it.
  *
@@ -39,13 +39,13 @@
  * constructor-injected composition seam (Store / Interpreter / Clock — ADR-001).
  */
 
-import { MemoryStore } from '../../../../src/assistant/api/store/memory-store.ts'
-import type { Store, StoreState } from '../../../../src/assistant/api/store/store.ts'
+import { MemoryStore } from '../../src/assistant/api/store/memory-store.ts'
+import type { Store, StoreState } from '../../src/assistant/api/store/store.ts'
 import type {
   Interpretation,
   Interpreter,
   InterpreterContext,
-} from '../../../../src/assistant/api/ports/interpreter.ts'
+} from '../../src/assistant/api/ports/interpreter.ts'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
 // ───────────────────────────── the clock seam ─────────────────────────────

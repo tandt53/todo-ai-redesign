@@ -11,7 +11,7 @@
 | Priority | P1 |
 | Status | active |
 | Automation | automated |
-| Automation file | qa/assistant/automation/mobile/F-003-mobile-surface.spec.ts |
+| Automation file | tests/assistant/mobile/F-003-mobile-surface.spec.ts |
 | Targets | android |
 | Tier | node-headless (request sequencing) + device-lab (real dialog) |
 | Created | 2026-08-16 by qa-mobile-agent |

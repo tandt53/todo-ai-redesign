@@ -6,7 +6,7 @@
 // `?testMode=1`, or localStorage `assistant.testMode` === '1'. Production
 // loads use the real Web Speech source and expose nothing.
 //
-// SHAPE (consumed by qa/assistant/automation/pages/AssistantPage.ts
+// SHAPE (consumed by tests/assistant/pages/AssistantPage.ts
 // `bindSeams` at the execute phase):
 //
 //   window.__assistantSeams = {

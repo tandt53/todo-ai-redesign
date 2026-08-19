@@ -96,7 +96,7 @@ canonical row, and any real backend that answers promptly — that break.
 - Run ID: `qa/assistant/runs/2026-08-17-web-ac30.md`
 - Commit: `d497627` (working tree, AC-30 implementation uncommitted)
 - Stack: TypeScript · React (web) · Playwright · Chromium (Desktop Chrome), 1280×720
-- Harness: `qa/assistant/automation/harness/qa-test-server.ts`, restarted for this run
+- Harness: `tests/harness/qa-test-server.ts`, restarted for this run
 
 ## Suggested next step
 **web-agent.** Both halves need fixing, and either alone leaves a defect:

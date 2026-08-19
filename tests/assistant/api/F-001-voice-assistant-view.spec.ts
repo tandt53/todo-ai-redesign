@@ -18,7 +18,7 @@
  *
  * Runs in-process: an http.Server built from createApp(deps), bound to
  * 127.0.0.1 on an ephemeral port, driven by supertest — no external network.
- * Command: npx vitest run qa/assistant/automation/api
+ * Command: npx vitest run tests/assistant/api
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -29,17 +29,17 @@ import { createServer, globalAgent, type Server } from 'node:http';
 
 // ───────────────────────────── WIRING ─────────────────────────────
 // Real exports, verified 2026-08-16 by reading src/assistant/api/*.ts.
-import { createApp, type AppDeps } from '../../../../src/assistant/api/app.ts';
-import { MemoryStore } from '../../../../src/assistant/api/store/memory-store.ts';
-import type { Store, StoreState } from '../../../../src/assistant/api/store/store.ts';
-import { FakeClock } from '../../../../src/assistant/api/ports/clock.ts';
+import { createApp, type AppDeps } from '../../../src/assistant/api/app.ts';
+import { MemoryStore } from '../../../src/assistant/api/store/memory-store.ts';
+import type { Store, StoreState } from '../../../src/assistant/api/store/store.ts';
+import { FakeClock } from '../../../src/assistant/api/ports/clock.ts';
 import type {
   AnswerClass,
   Interpretation,
   Interpreter,
   InterpreterContext,
-} from '../../../../src/assistant/api/ports/interpreter.ts';
-import usersFixture from '../../../_shared/fixtures/api/users.json';
+} from '../../../src/assistant/api/ports/interpreter.ts';
+import usersFixture from '../../../qa/_shared/fixtures/api/users.json';
 
 const U1 = (usersFixture as any).users['QAAPI-U1'].x_user_id as string;
 const U2 = (usersFixture as any).users['QAAPI-U2'].x_user_id as string;

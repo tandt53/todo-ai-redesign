@@ -7,8 +7,8 @@
 | Agent | qa-api-agent |
 | Phase | execute (T-007b, dispatched by orchestrator after Gate 2 found the authored suite had never run) |
 | Date | 2026-08-16 |
-| Suite | `qa/assistant/automation/api/F-001-voice-assistant-view.spec.ts` |
-| Command | `npx vitest run qa/assistant/automation/api` |
+| Suite | `tests/assistant/api/F-001-voice-assistant-view.spec.ts` |
+| Command | `npx vitest run tests/assistant/api` |
 | Result | **46 / 46 PASS**, stable across 4 consecutive runs |
 | Project gate | `npm run test:all` → **213 / 213 PASS** (10 files) — the 46 failures Gate 2 flagged are gone |
 
@@ -117,7 +117,7 @@ edited.
 ## Evidence
 
 ```
-$ npx vitest run qa/assistant/automation/api
+$ npx vitest run tests/assistant/api
  Test Files  1 passed (1)
       Tests  46 passed (46)
    Duration  443ms

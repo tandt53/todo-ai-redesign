@@ -50,7 +50,7 @@ sentence.
 The fixture table is not only the server's stub. It is the **shared vocabulary
 every test is written against**:
 
-- QA's e2e cases drive the app with these exact strings (`qa/assistant/automation/e2e/F-001-voice-assistant-view.spec.ts` defines them as `U`).
+- QA's e2e cases drive the app with these exact strings (`tests/assistant/e2e/F-001-voice-assistant-view.spec.ts` defines them as `U`).
 - The mobile automation and the simulator scenarios use them too.
 - So the Vietnamese input path has **never been executed end to end**, at any tier, by anything.
 

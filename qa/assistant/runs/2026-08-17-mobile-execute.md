@@ -17,7 +17,7 @@
 Original pass:
 
 ```
-$ npx vitest run qa/assistant/automation/mobile
+$ npx vitest run tests/assistant/mobile
       Tests  1 failed | 105 passed (106)      # the 1 = BUG-002
 $ npm run test:all
       Tests  1 failed | 414 passed (415)
@@ -30,7 +30,7 @@ $ npm run test:e2e
 Final, after the BUG-002 fix, T-023 (BUG-001) and T-026:
 
 ```
-$ npx vitest run qa/assistant/automation/mobile
+$ npx vitest run tests/assistant/mobile
  Test Files  1 passed (1)
       Tests  111 passed (111)
 
@@ -41,7 +41,7 @@ $ npm run test:all
 After the Gate 3 follow-up (M1 + M2 below):
 
 ```
-$ npx vitest run qa/assistant/automation/mobile
+$ npx vitest run tests/assistant/mobile
       Tests  124 passed (124)
 $ npm run test:all
       Tests  469 passed (469)
@@ -148,11 +148,11 @@ rest is regression evidence that the shared extraction did not cost anything:
 
 | Tier | Tests | Result |
 |---|---|---|
-| mobile automation (`qa/assistant/automation/mobile`) | 106 | 105 pass, 1 fail (BUG-002) |
+| mobile automation (`tests/assistant/mobile`) | 106 | 105 pass, 1 fail (BUG-002) |
 | mobile unit (`src/assistant/mobile/__tests__`) | 92 | pass |
 | api unit (`src/assistant/api/__tests__`) | 73 | pass |
 | web unit (`src/assistant/web/__tests__`) | 98 | pass |
-| api automation (`qa/assistant/automation/api`) | 46 | pass |
+| api automation (`tests/assistant/api`) | 46 | pass |
 | web e2e (Playwright, separate runner) | 36 | pass |
 
 The single failure is **attributable to F-003 and is a filed product bug**, which
@@ -420,7 +420,7 @@ anywhere in the suite. The canonical utterance table is read from
 
 | File | Change |
 |---|---|
-| `qa/assistant/automation/mobile/F-003-mobile-surface.spec.ts` | 32 → 111 assertions: TC-039 re-pointed + negative half, per-attribute catalogue parsing, the whole of Part C, the re-pointed tiering rule |
+| `tests/assistant/mobile/F-003-mobile-surface.spec.ts` | 32 → 111 assertions: TC-039 re-pointed + negative half, per-attribute catalogue parsing, the whole of Part C, the re-pointed tiering rule |
 | `qa/assistant/F-003/mobile/*.md` (40 TCs) | 35 flipped to `active` + `automated`; TC-039 rewritten for `resource-id` with the reasoning; TC-030 and TC-021 carry execution results; **TC-040 added** (foreground-as-reconnect) |
 | `qa/assistant/F-003/mobile/index.md` | execute-phase status block, resolved drift items, BUG-002 entry, restated debt, corrected tally |
 | `qa/_shared/bugs/BUG-002-cold-open-accepts-input-before-session-read.md` | new |

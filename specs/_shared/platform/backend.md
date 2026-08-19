@@ -109,7 +109,7 @@ the conventions an implementer would otherwise have to invent.
   and ADR-012's rejection of every inferable membership key.
 - **`__qa__` endpoints are not served by `createApp`.** The seed path, the
   clock setter and the store re-open live in the QA harness
-  (`qa/assistant/automation/harness/qa-test-server.ts`), which wraps the app and
+  (`tests/harness/qa-test-server.ts`), which wraps the app and
   writes through the `Store` port. Adding them to the production app would put
   a validation bypass on the shipped surface.
 

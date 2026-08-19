@@ -2,7 +2,7 @@
 
 **Authored:** 2026-08-16 (T-020, `phase: author`) · **Executed:** 2026-08-17 (T-021, `phase: execute`) — both by qa-mobile-agent · **Spec:** `specs/assistant/F-003-mobile-surface.md` rev 1 · **Parity source:** `specs/assistant/F-001-voice-assistant-view.md` rev 3
 **Mockups:** `design/assistant/screens/voice-assistant-view-ios.html` + `-android.html` (22 ids, 17 states, copy in Vietnamese)
-**Automation:** `qa/assistant/automation/mobile/F-003-mobile-surface.spec.ts` — run with `npx vitest run qa/assistant/automation/mobile`
+**Automation:** `tests/assistant/mobile/F-003-mobile-surface.spec.ts` — run with `npx vitest run tests/assistant/mobile`
 **Last executed:** 2026-08-17 (T-021, `phase: execute`; + Gate 3 follow-up; + T-040/T-041/T-042 re-point) — 124 passed, 0 failed
 **Fixtures:** `qa/_shared/fixtures/mobile/F-003-mobile-fixtures.json` · **Namespace:** `qamob-` (users `qamob-tc{nnn}@qa.example.com`)
 **Test cases:** 40, all P1 — 35 `active` + `automated`, 5 `manual` (device-lab / screen-reader debt)
@@ -14,7 +14,7 @@
 **Run:** 2026-08-17 (T-021, `phase: execute`) · **Record:** `qa/assistant/runs/2026-08-17-mobile-execute.md`
 
 ```
-npx vitest run qa/assistant/automation/mobile
+npx vitest run tests/assistant/mobile
 → Tests  124 passed (124)                 (re-run 2026-08-17 after T-042 closed the CTA floor)
 
 npm run test:all

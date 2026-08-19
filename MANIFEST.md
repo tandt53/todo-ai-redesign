@@ -22,7 +22,8 @@ roots:
   specs: specs/
   design: design/
   src: src/
-  qa: qa/
+  qa: qa/                 # test CASES + run records (authored, traced to ACs)
+  tests: tests/           # executable automation — CODE, where code tooling reaches
   # Inherited requirements from `todo-ai`, the app this project redesigns. Copied
   # verbatim 2026-08-17 and READ-ONLY — see specs/_source/README.md for why editing
   # them here is L-004's shape, and for the ADR-7 vs ADR-007 namespace rule.
@@ -57,9 +58,11 @@ patterns:
   test_cases_api:       "{qa}/{module}/F-{feature_id}/api/"      # owned by qa-api-agent
   test_cases_web:       "{qa}/{module}/F-{feature_id}/web/"      # owned by qa-web-agent
   test_cases_mobile:    "{qa}/{module}/F-{feature_id}/mobile/"   # owned by qa-mobile-agent
-  test_automation_api:    "{qa}/{module}/automation/api/"        # API integration tests (supertest/httpx)
-  test_automation_web:    "{qa}/{module}/automation/e2e/"        # Playwright e2e
-  test_automation_mobile: "{qa}/{module}/automation/mobile/"     # Appium/WDIO
+  test_automation_api:    "{tests}/{module}/api/"                # API integration tests
+  test_automation_web:    "{tests}/{module}/e2e/"                # Playwright e2e
+  test_automation_mobile: "{tests}/{module}/mobile/"             # mobile suites
+  test_page_objects:      "{tests}/{module}/pages/"              # no raw selectors in specs
+  test_harness:           "{tests}/harness/"                     # servers, fixtures, seams
   test_runs:            "{qa}/{module}/runs/"                    # execution records, shared across platforms
   test_cases:           "{qa}/{module}/"                         # legacy generic pointer; prefer the per-platform keys above
   bugs:                 "{qa}/{shared_dir}/bugs/"                # BUG-{nnn}-{slug}.md, filed by any QA agent, tagged with layer:
@@ -81,15 +84,12 @@ patterns:
   qa_knowledge:       "{qa}/{shared_dir}/KNOWLEDGE.md"
   traceability:       "{qa}/{shared_dir}/TRACEABILITY.md"
   learnings:          "{specs}/{shared_dir}/LEARNINGS.md"   # durable cross-cutting lessons; reviewer appends, humans curate
-  memory:             "memory/"                             # _memory-protocol.md read layers 2-5; ORCHESTRATOR is the sole writer
-  memory_log:         "memory/MEMORY.md"                    # project-wide append-only log (layers 2-4)
+  memory:             "memory/"                             # read layers 2-5; ORCHESTRATOR is sole writer
+  memory_log:         "memory/MEMORY.md"                    # project-wide append-only log
   memory_agent:       "memory/{agent}.md"                   # one file per agent — layer 5, procedural knowledge for that role
-
-  # Ephemeral output — regenerable, gitignored, never an input. `reports/` and
-  # `{qa}/{module}/runs/` are AUTHORED records and stay in git.
-  output:             "output/"
-  output_screens:     "output/design-shots/"                # design-check --screenshots; the renders the owner reviews at Gate 1.5
-  output_test:        "output/test-results/"                # Playwright run output, traces, videos
+  output:             "output/"                             # gitignored; see .gitignore for the output-vs-record rule
+  output_screens:     "output/design-shots/"                # design-check + Gate 1.5 renders
+  output_test:        "output/test-results/"                # Playwright output, traces, videos
 ```
 
 <!-- Alternate layouts (not active — switch by changing `layout:` above):
@@ -192,9 +192,9 @@ writers:
   backend-agent:     ["{src}/", "package.json", "tsconfig.json", ".gitignore"]
   web-agent:         ["{src}/", "package.json", "tsconfig.json", ".gitignore"]
   mobile-agent:      ["{src}/", "package.json", "tsconfig.json", ".gitignore"]
-  qa-api-agent:      ["{qa}/"]
-  qa-web-agent:      ["{qa}/", "playwright.config.ts", "vitest.config.ts", "package.json", "tsconfig.json"]
-  qa-mobile-agent:   ["{qa}/"]
+  qa-api-agent:      ["{qa}/", "{tests}/"]
+  qa-web-agent:      ["{qa}/", "{tests}/", "playwright.config.ts", "vitest.config.ts", "package.json", "tsconfig.json"]
+  qa-mobile-agent:   ["{qa}/", "{tests}/"]
   qa-explorer-agent: ["{qa}/"]
   reviewer-agent:    ["reports/", "{specs}/{shared_dir}/LEARNINGS.md"]
   product-agent:     ["reports/"]

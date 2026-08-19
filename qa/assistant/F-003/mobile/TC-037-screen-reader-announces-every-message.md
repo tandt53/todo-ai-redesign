@@ -11,7 +11,7 @@
 | Priority | P1 |
 | Status | draft |
 | Automation | manual |
-| Automation file | qa/assistant/automation/mobile/F-003-mobile-surface.spec.ts (payload half only) |
+| Automation file | tests/assistant/mobile/F-003-mobile-surface.spec.ts (payload half only) |
 | Targets | ios, android |
 | Tier | manual-pass (real screen reader) + node-headless (announcement payload) |
 | Created | 2026-08-16 by qa-mobile-agent |

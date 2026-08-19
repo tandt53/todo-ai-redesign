@@ -7,8 +7,8 @@
 | Agent | qa-api-agent |
 | Phase | execute (T-016b — re-run after the T-015b/T-015g Gate-3 localization pass, not fresh authoring) |
 | Date | 2026-08-16 |
-| Suite | `qa/assistant/automation/api/F-001-voice-assistant-view.spec.ts` |
-| Command | `npx vitest run qa/assistant/automation/api` |
+| Suite | `tests/assistant/api/F-001-voice-assistant-view.spec.ts` |
+| Command | `npx vitest run tests/assistant/api` |
 | Result | **46 / 46 PASS** |
 | Project gate | `npm run test:all` → **217 / 217 PASS** (10 files) |
 | Backend unit suite | `npx vitest run src/assistant/api` → **73 / 73 PASS** (untouched by this task) |
@@ -34,7 +34,7 @@ npm run test:all
 Test Files  1 failed | 9 passed (10)
      Tests  1 failed | 216 passed (217)
 
-FAIL qa/assistant/automation/api/F-001-voice-assistant-view.spec.ts
+FAIL tests/assistant/api/F-001-voice-assistant-view.spec.ts
      > honesty outcomes (TC-13, TC-14) > TC-14 unsupported_query ...
 AssertionError: expected 'danh sách và bộ lọc trên màn hình'
               to be 'the on-screen list and its filters'
@@ -93,7 +93,7 @@ restored tree.
 
 | File | Change |
 |---|---|
-| `qa/assistant/automation/api/F-001-voice-assistant-view.spec.ts:596` | Expected value → `danh sách và bộ lọc trên màn hình`, with a comment citing api-contracts §9 as the source of the literal |
+| `tests/assistant/api/F-001-voice-assistant-view.spec.ts:596` | Expected value → `danh sách và bộ lọc trên màn hình`, with a comment citing api-contracts §9 as the source of the literal |
 | `qa/assistant/F-001/api/TC-14-unsupported-query-names-alternative.md` | Summary + step-1 assertion now quote the Vietnamese literal with the English gloss; Notes record the re-sync and why it is not a weakened assertion |
 | `qa/assistant/F-001/api/utterance-intent-fixtures.json` (UT-LISTQ-1 note) | Note names the contract-fixed literal rather than the gloss alone |
 
@@ -123,7 +123,7 @@ to this suite for them.
 
 ```
 npx vitest run src/assistant/api        → 73 / 73 passed (6 files)
-npx vitest run qa/assistant/automation/api → 46 / 46 passed (1 file)
+npx vitest run tests/assistant/api → 46 / 46 passed (1 file)
 npm run typecheck                       → exit 0
 npm run test:all                        → 217 / 217 passed (10 files)
 ```

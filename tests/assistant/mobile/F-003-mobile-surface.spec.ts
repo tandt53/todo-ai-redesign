@@ -3,7 +3,7 @@
  * qa-mobile-agent · T-020 (author, 2026-08-16) · T-021 (execute, 2026-08-17)
  *
  * RUNNER: vitest, node env, no simulator/emulator/Metro
- *   npx vitest run qa/assistant/automation/mobile
+ *   npx vitest run tests/assistant/mobile
  * per `specs/_shared/platform/mobile.md ## Test Harness`. React Native is never
  * imported here — everything native arrives through a port double.
  *
@@ -62,29 +62,29 @@ import { createServer, globalAgent, type Server } from 'node:http'
 // is stubbed (F-001 ## Test strategy grants exactly that seam); orchestration,
 // the confirmation gate, persistence, dedupe, undo and session lifecycle run
 // real. Same composition root the api suite and the e2e harness use.
-import { createApp } from '../../../../src/assistant/api/app.ts'
-import { MemoryStore } from '../../../../src/assistant/api/store/memory-store.ts'
-import { FakeClock } from '../../../../src/assistant/api/ports/clock.ts'
+import { createApp } from '../../../src/assistant/api/app.ts'
+import { MemoryStore } from '../../../src/assistant/api/store/memory-store.ts'
+import { FakeClock } from '../../../src/assistant/api/ports/clock.ts'
 import type {
   Interpretation,
   Interpreter,
   InterpreterContext,
-} from '../../../../src/assistant/api/ports/interpreter.ts'
+} from '../../../src/assistant/api/ports/interpreter.ts'
 import {
   Surface,
   announcementsFor,
   makeConnectivity,
   makeTranscriptSource,
-} from '../../../../src/assistant/mobile/index.ts'
+} from '../../../src/assistant/mobile/index.ts'
 
-import { A11Y_IDS, ALL_A11Y_IDS, identityAttribute } from '../../../../src/assistant/mobile/model/a11y.ts'
-import { INTERACTIVE_IDS, MIN_TOUCH_TARGET, PAINTED, hitArea, meetsMinimum } from '../../../../src/assistant/mobile/model/touch.ts'
-import { font } from '../../../../src/assistant/mobile/model/theme.ts'
+import { A11Y_IDS, ALL_A11Y_IDS, identityAttribute } from '../../../src/assistant/mobile/model/a11y.ts'
+import { INTERACTIVE_IDS, MIN_TOUCH_TARGET, PAINTED, hitArea, meetsMinimum } from '../../../src/assistant/mobile/model/touch.ts'
+import { font } from '../../../src/assistant/mobile/model/theme.ts'
 import {
   AUDIO_INTERRUPTION_REASONS,
   FOREGROUND_SEQUENCE,
   backAction,
-} from '../../../../src/assistant/mobile/model/lifecycle.ts'
+} from '../../../src/assistant/mobile/model/lifecycle.ts'
 import {
   canRequest,
   ctaTarget,
@@ -92,11 +92,11 @@ import {
   permissionCtaLabel,
   permissionDeniedMessageFor,
   requiredGrants,
-} from '../../../../src/assistant/mobile/model/permissions.ts'
-import { HydratedDurableStore, MemoryAsyncBackend } from '../../../../src/assistant/mobile/ports/durable-store.ts'
+} from '../../../src/assistant/mobile/model/permissions.ts'
+import { HydratedDurableStore, MemoryAsyncBackend } from '../../../src/assistant/mobile/ports/durable-store.ts'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
-const ROOT = resolve(HERE, '../../../..')
+const ROOT = resolve(HERE, '../../..')
 
 const MOCKUPS = {
   ios: join(ROOT, 'design/assistant/screens/voice-assistant-view-ios.html'),

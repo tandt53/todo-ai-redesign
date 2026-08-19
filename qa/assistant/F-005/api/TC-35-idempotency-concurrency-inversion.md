@@ -11,7 +11,7 @@
 | Priority | P1 |
 | Status | active |
 | Automation | automated |
-| Automation file | qa/assistant/automation/api/F-005-task-detail.spec.ts (`describe('TC-35 …')`) |
+| Automation file | tests/assistant/api/F-005-task-detail.spec.ts (`describe('TC-35 …')`) |
 | Created | 2026-08-19 by qa-api-agent |
 | Last updated | 2026-08-19 by qa-api-agent |
 

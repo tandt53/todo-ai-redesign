@@ -53,7 +53,7 @@ Leaving the assistant view is a **background transition**, not a cancel and not 
 
 **This TC previously had no real automated coverage in the QA suite, and the
 coverage story said otherwise.** The only AC-11 assertion in
-`qa/assistant/automation/mobile/F-003-mobile-surface.spec.ts` was
+`tests/assistant/mobile/F-003-mobile-surface.spec.ts` was
 `expect(backIsBackgroundTransition()).toBe(true)` against a function declared
 `(): true` — a constant compared with itself. product-agent proved it at Gate 3
 by mutating `backAction`'s keyboard-first clause: the QA suite returned all-green

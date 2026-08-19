@@ -1,12 +1,12 @@
 // The mobile module's public entry point — and, deliberately, a NODE-SAFE one:
 // nothing reachable from this file imports `react-native`. That is what lets
-// the unit tier and QA's automation (`qa/assistant/automation/mobile/`) drive
+// the unit tier and QA's automation (`tests/assistant/mobile/`) drive
 // the real client under plain node with no simulator, no emulator and no Metro
 // (platform mobile.md ## Test Harness). The device wiring lives in `boot.ts`,
 // which the app shell imports and tests never do.
 //
 // `createSurface` is the seam QA asked for in
-// `qa/assistant/automation/mobile/F-003-mobile-surface.spec.ts`: QA cannot read
+// `tests/assistant/mobile/F-003-mobile-surface.spec.ts`: QA cannot read
 // `src/` to discover the model's API (_qa-foundations §1/§2), so the facade is
 // named and shaped here, once, instead of being guessed twice. It adds no
 // behaviour — every method delegates to the same controller the app runs.

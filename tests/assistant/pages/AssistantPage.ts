@@ -32,7 +32,7 @@
  *     active whenever the page URL carries ?qaUser=.
  *   - AI-call counter + injectable idle-close timer → NOT exposed by the
  *     plain `npm run dev:assistant` entrypoint. qa-test-server.ts
- *     (qa/assistant/automation/harness/) is the QA-owned harness that adds
+ *     (tests/harness/) is the QA-owned harness that adds
  *     both over HTTP at /__qa__/ai-calls and /__qa__/advance-clock; see its
  *     header comment for why a harness was necessary instead of the plain
  *     entrypoint. bindSeams() below talks to that harness.

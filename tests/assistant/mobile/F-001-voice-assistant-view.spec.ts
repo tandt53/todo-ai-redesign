@@ -3,7 +3,7 @@
  * qa-mobile-agent · T-084 (author + execute, 2026-08-17)
  *
  * RUNNER: vitest, node env, no simulator/emulator/Metro
- *   npx vitest run qa/assistant/automation/mobile
+ *   npx vitest run tests/assistant/mobile
  * per `specs/_shared/platform/mobile.md ## Test Harness`. React Native is never
  * imported here — everything native arrives through a port double.
  *
@@ -73,14 +73,14 @@ import { fileURLToPath } from 'node:url'
 import { randomUUID } from 'node:crypto'
 import { createServer, type Server } from 'node:http'
 
-import { createApp } from '../../../../src/assistant/api/app.ts'
-import { MemoryStore } from '../../../../src/assistant/api/store/memory-store.ts'
-import { FakeClock } from '../../../../src/assistant/api/ports/clock.ts'
+import { createApp } from '../../../src/assistant/api/app.ts'
+import { MemoryStore } from '../../../src/assistant/api/store/memory-store.ts'
+import { FakeClock } from '../../../src/assistant/api/ports/clock.ts'
 import type {
   Interpretation,
   Interpreter,
   InterpreterContext,
-} from '../../../../src/assistant/api/ports/interpreter.ts'
+} from '../../../src/assistant/api/ports/interpreter.ts'
 import {
   ALL_A11Y_IDS,
   Surface,
@@ -93,10 +93,10 @@ import {
   onMessagesAppended,
   onScrolled,
   scrollAnimated,
-} from '../../../../src/assistant/mobile/index.ts'
+} from '../../../src/assistant/mobile/index.ts'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
-const ROOT = resolve(HERE, '../../../..')
+const ROOT = resolve(HERE, '../../..')
 
 const SPEC = join(ROOT, 'specs/assistant/F-001-voice-assistant-view.md')
 const COMPONENTS = join(ROOT, 'design/_shared/components.md')

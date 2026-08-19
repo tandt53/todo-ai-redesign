@@ -7,7 +7,7 @@
 | Agent | qa-web-agent |
 | Phase | execute (T-007e, dispatched by orchestrator after Gate 2 found the authored suite had never actually run — `@playwright/test` wasn't installed, no `playwright.config.ts`) |
 | Date | 2026-08-16 |
-| Suite | `qa/assistant/automation/e2e/F-001-voice-assistant-view.spec.ts` (34 tests covering the 32 authored TCs — TC-013/TC-014 split into lettered sub-cases) |
+| Suite | `tests/assistant/e2e/F-001-voice-assistant-view.spec.ts` (34 tests covering the 32 authored TCs — TC-013/TC-014 split into lettered sub-cases) |
 | Command | `npm run test:e2e` (`playwright test`) |
 | Result | **34 / 34 PASS**, stable across 6 consecutive full-suite runs (plus 3 additional isolated re-runs of the two tests that needed script fixes, and 3 more isolated re-runs of TC-029 after its network-simulation rewrite — 9 total clean runs of the previously-flaky tests) |
 | Project gate | `npm run test:all` (vitest) → 213/213 PASS, 10/10 files — unaffected by this suite (see "Harness setup" for why) |
@@ -26,7 +26,7 @@ QA-owned" to this agent, not architect or web-agent.
    text). No browser download was needed in this sandbox.
 2. **`playwright.config.ts`** (root) — `webServer` array starts two
    processes so the orchestrator never manages background processes:
-   - The assistant API, via **`qa/assistant/automation/harness/qa-test-server.ts`**
+   - The assistant API, via **`tests/harness/qa-test-server.ts`**
      — a new QA-owned harness, **not** the plain `npm run dev:assistant`
      entrypoint. Rationale (documented in the file's header comment): the
      plain entrypoint (`src/assistant/api/server.ts`) hardcodes `systemClock`
@@ -60,7 +60,7 @@ QA-owned" to this agent, not architect or web-agent.
 5. **Speech seam** — already built by web-agent as `window.__assistantSeams`
    behind a `?qaUser=`/`testMode` guard (`src/assistant/web/seams.ts`); no
    setup needed beyond loading the page with `?qaUser=`, which
-   `AssistantPage.open()` does. `qa/assistant/automation/pages/AssistantPage.ts`
+   `AssistantPage.open()` does. `tests/assistant/pages/AssistantPage.ts`
    `bindSeams()` was rewritten from its authoring-phase placeholder (which
    threw) to a real binding against that global plus the harness's two
    `/__qa__/*` endpoints.
@@ -190,7 +190,7 @@ cannot be driven through real UI interaction; it would require bypassing the
 UI with a raw API call, which stops being a web e2e test of that path. This
 is arguably good design (the race is impossible by construction) rather than
 a gap — but AC-8's refusal-message text for that specific reason is unverified
-at the web e2e layer. Suggest: the api suite (`qa/assistant/automation/api/`)
+at the web e2e layer. Suggest: the api suite (`tests/assistant/api/`)
 is the correct owner for exercising the raw 409 `not_newest` response shape.
 
 ## Follow-up suggestions

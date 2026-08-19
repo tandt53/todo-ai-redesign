@@ -11,7 +11,7 @@
 | Priority | P1 |
 | Status | active |
 | Automation | automated |
-| Automation file | qa/assistant/automation/e2e/F-001-voice-assistant-view.spec.ts |
+| Automation file | tests/assistant/e2e/F-001-voice-assistant-view.spec.ts |
 | Created | 2026-08-16 by qa-web-agent |
 | Last updated | 2026-08-17 by qa-web-agent (T-070b — ADR-008 English copy sync) |
 
@@ -40,7 +40,7 @@ Cancel is client-local and never pretends to win a race against a sent turn. Can
 |-------|-------|
 | user | qaweb-tc005@qa.example.com |
 | stub scripts | fixture rows `WEB-R1` (applied, delayed), `WEB-R2` (question, delayed), `WEB-R3` (502, delayed) |
-| delayed rows | all three QA_EXTRA at `delay_ms: 150` — `qaweb delayed create`, `qaweb delayed bulk delete`, `qaweb delayed failure` (`qa/assistant/automation/harness/qa-test-server.ts`) |
+| delayed rows | all three QA_EXTRA at `delay_ms: 150` — `qaweb delayed create`, `qaweb delayed bulk delete`, `qaweb delayed failure` (`tests/harness/qa-test-server.ts`) |
 
 ## Notes
 There is no cancel endpoint (api-contracts, "Deliberately absent") — the automation asserts NO cancel-shaped HTTP request is emitted on cancel.

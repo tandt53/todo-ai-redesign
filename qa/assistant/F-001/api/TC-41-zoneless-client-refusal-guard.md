@@ -11,7 +11,7 @@
 | Priority | P1 |
 | Status | active |
 | Automation | automated |
-| Automation file | qa/assistant/automation/api/F-001-voice-assistant-view.spec.ts (`TC-41 a zoneless client is refused…`) |
+| Automation file | tests/assistant/api/F-001-voice-assistant-view.spec.ts (`TC-41 a zoneless client is refused…`) |
 | Created | 2026-08-19 by qa-api-agent |
 | Last updated | 2026-08-19 by qa-api-agent |
 

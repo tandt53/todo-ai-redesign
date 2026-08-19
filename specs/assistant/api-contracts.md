@@ -979,7 +979,7 @@ Both are **test-only** and neither is served by the production app.
 
 Three ACs have no reachable fixture without one, and a `## Test strategy`
 sentence with no mechanism and no owner discharges nothing. The existing
-`__qa__` namespace (`qa/assistant/automation/harness/qa-test-server.ts`, which
+`__qa__` namespace (`tests/harness/qa-test-server.ts`, which
 already serves `GET /__qa__/ai-calls` and `POST /__qa__/advance-clock`) is the
 home; it wraps `createApp` and writes through the `Store` port.
 

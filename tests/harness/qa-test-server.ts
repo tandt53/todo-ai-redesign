@@ -25,11 +25,11 @@
 // per row below.
 
 import { createServer } from 'node:http'
-import { createApp } from '../../../../src/assistant/api/app.ts'
-import { FixtureInterpreter } from '../../../../src/assistant/api/ports/fixture-interpreter.ts'
-import type { FixtureRow } from '../../../../src/assistant/api/ports/fixture-interpreter.ts'
-import { FIXTURE_TABLE } from '../../../../src/assistant/api/ports/fixture-table.ts'
-import { DEFAULT_IDLE_CLOSE_MS } from '../../../../src/assistant/api/engine/sessions.ts'
+import { createApp } from '../../src/assistant/api/app.ts'
+import { FixtureInterpreter } from '../../src/assistant/api/ports/fixture-interpreter.ts'
+import type { FixtureRow } from '../../src/assistant/api/ports/fixture-interpreter.ts'
+import { FIXTURE_TABLE } from '../../src/assistant/api/ports/fixture-table.ts'
+import { DEFAULT_IDLE_CLOSE_MS } from '../../src/assistant/api/engine/sessions.ts'
 import { CountingInterpreter, QaClock, ReopenableStore, createQaDoors } from './qa-doors.ts'
 
 const QA_EXTRA_ROWS: FixtureRow[] = [

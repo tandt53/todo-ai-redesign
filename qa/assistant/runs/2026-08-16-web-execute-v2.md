@@ -24,8 +24,8 @@ Practical consequence: two assertions were deliberately **not** pinned to the im
 
 | File | Change |
 |---|---|
-| `qa/assistant/automation/e2e/F-001-voice-assistant-view.spec.ts` | New `VN` copy block (one place for every user-visible literal, each traced to components.md); ~30 text assertions re-bound; TC-033 + TC-034 added |
-| `qa/assistant/automation/pages/AssistantPage.ts` | State words; row-action accessible names (`Sửa "…"` / `Xóa "…"`); new 4.1.3 helpers `conversationLog()`, `alertRegions()`, `expectInsideLiveRegion()`, `expectAnnounced()` |
+| `tests/assistant/e2e/F-001-voice-assistant-view.spec.ts` | New `VN` copy block (one place for every user-visible literal, each traced to components.md); ~30 text assertions re-bound; TC-033 + TC-034 added |
+| `tests/assistant/pages/AssistantPage.ts` | State words; row-action accessible names (`Sửa "…"` / `Xóa "…"`); new 4.1.3 helpers `conversationLog()`, `alertRegions()`, `expectInsideLiveRegion()`, `expectAnnounced()` |
 | `qa/assistant/F-001/web/*.md` | 19 TC files re-quoted to the shipped copy; 2 new TC files (TC-033, TC-034); `index.md` updated (34 TCs, 36 tests, AC-19 map, copy-language note) |
 
 Task titles (`Buy milk`, `Plan Monday`, …) are **fixture data, not copy** — they come from the canonical fixture table and are unchanged. Only UI copy moved.
@@ -111,5 +111,5 @@ $ npm run test:e2e          # run 3
 36 passed (41.2s)           exit 0
 ```
 
-Harness: `qa/assistant/automation/harness/qa-test-server.ts` (real app + FakeClock + counting interpreter) on :4460 and `npm run dev:web` on :5173, both auto-started by `playwright.config.ts`. Ready signal observed in every run (`qa e2e harness … listening on http://localhost:4460`).
+Harness: `tests/harness/qa-test-server.ts` (real app + FakeClock + counting interpreter) on :4460 and `npm run dev:web` on :5173, both auto-started by `playwright.config.ts`. Ready signal observed in every run (`qa e2e harness … listening on http://localhost:4460`).
 Test-data namespace: `qaweb-tc{nn}-{seq}@qa.example.com`, one account per TC (`_qa-foundations.md` §10). No unscoped destructive operations.

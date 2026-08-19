@@ -12,7 +12,7 @@
 | Priority | P1 |
 | Status | active |
 | Automation | automated |
-| Automation file | qa/assistant/automation/mobile/F-001-voice-assistant-view.spec.ts:514 |
+| Automation file | tests/assistant/mobile/F-001-voice-assistant-view.spec.ts:514 |
 | Created | 2026-08-17 by qa-mobile-agent |
 | Last updated | 2026-08-17 by qa-mobile-agent |
 
@@ -62,6 +62,6 @@ a shared setup, and a third case proves the dismissal is not simply "any scroll 
   is device-tier (TC-009).
 - The affordance's hit area is covered separately: `assistant-new-message-affordance` is
   in `INTERACTIVE_IDS` and is asserted against the 44 pt / 48 dp minimum by the F-003
-  suite (`qa/assistant/automation/mobile/F-003-mobile-surface.spec.ts`, "every
+  suite (`tests/assistant/mobile/F-003-mobile-surface.spec.ts`, "every
   interactive element meets the minimum as HIT AREA on both platforms").
 - Mutation-checked: making the scroll handler never clear the count fails 4 cases.

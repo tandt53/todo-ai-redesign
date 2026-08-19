@@ -7,8 +7,8 @@
 | Agent | qa-api-agent |
 | Phase | execute (T-070a — aligning QA expectations to a finished implementation, not fresh authoring) |
 | Date | 2026-08-17 |
-| Suite | `qa/assistant/automation/api/F-001-voice-assistant-view.spec.ts` |
-| Command | `npx vitest run qa/assistant/automation/api` |
+| Suite | `tests/assistant/api/F-001-voice-assistant-view.spec.ts` |
+| Command | `npx vitest run tests/assistant/api` |
 | Result | **before 43 / 46 (3 failed) → after 47 / 47 PASS** |
 | Backend unit suite | `npx vitest run src/assistant/api` → **73 / 73 PASS** (untouched by this task) |
 | Typecheck | `npx tsc --noEmit` → exit 0 |
@@ -28,7 +28,7 @@ Two owner decisions of 2026-08-17 landed in `src/` before QA followed
 ## Baseline (before any edit)
 
 ```
-npx vitest run qa/assistant/automation/api/F-001-voice-assistant-view.spec.ts
+npx vitest run tests/assistant/api/F-001-voice-assistant-view.spec.ts
 Test Files  1 failed (1)
      Tests  3 failed | 43 passed (46)
 
@@ -146,7 +146,7 @@ AssertionError: expected 'Asking for microphone access' to be 'Xin phép dùng m
 
 Failing files: `src/assistant/mobile/__tests__/permissions.test.ts`,
 `src/assistant/mobile/__tests__/touch-keyboard-back.test.ts`,
-`qa/assistant/automation/mobile/F-003-mobile-surface.spec.ts`. This is L-008's
+`tests/assistant/mobile/F-003-mobile-surface.spec.ts`. This is L-008's
 parse-the-owning-artifact mechanism working as designed — it fails in the direction
 drift actually travels — caught mid-flight between design landing and mobile
 following. **No bug filed:** this is known in-flight sequencing work, not a
@@ -154,14 +154,14 @@ triaged product defect, and filing it would be filing a bug against a task that 
 still running. Routed to the orchestrator in the return summary instead.
 
 The api tier is green in both runs:
-`npx vitest run qa/assistant/automation/api` → 47/47,
+`npx vitest run tests/assistant/api` → 47/47,
 `npx vitest run src/assistant/api` → 73/73.
 
 ## Files changed
 
 | File | Change |
 |---|---|
-| `qa/assistant/automation/api/F-001-voice-assistant-view.spec.ts` | 3 red assertions re-synced; 1 test added (TC-23 step 7); normalization loop strengthened; 2 header comments corrected |
+| `tests/assistant/api/F-001-voice-assistant-view.spec.ts` | 3 red assertions re-synced; 1 test added (TC-23 step 7); normalization loop strengthened; 2 header comments corrected |
 | `qa/assistant/F-001/api/utterance-intent-fixtures.json` | UT-UNDO-VI repurposed → UT-UNDO-RETIRED-VI; NORM-2 re-pointed; NORM-3 added; UT-LISTQ-1 note re-synced |
 | `qa/assistant/F-001/api/TC-23-voice-undo-guard-no-task-no-ai.md` | summary, steps 5 + 7, expected behaviour, notes |
 | `qa/assistant/F-001/api/TC-24-voice-undo-no-applied-turn-refusal.md` | summary, steps 1–2, test data |

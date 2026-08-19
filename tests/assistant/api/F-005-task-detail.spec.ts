@@ -10,12 +10,12 @@
  * No file under src/ was read to decide what to assert (_qa-foundations §2).
  * The import block below is WIRING — public, constructor-injected composition
  * seams (Store / Interpreter / Clock, ADR-001) — and the harness doors it uses
- * live in qa/assistant/automation/harness/qa-doors.ts, which this agent owns.
+ * live in tests/harness/qa-doors.ts, which this agent owns.
  *
  * RUNS IN-PROCESS: an http.Server built from createApp(deps) with the `__qa__`
  * doors mounted in front of it, bound to 127.0.0.1 on an ephemeral port, driven
  * by supertest. No external network, no listening harness process needed.
- *   Command: npx vitest run qa/assistant/automation/api/F-005-task-detail.spec.ts
+ *   Command: npx vitest run tests/assistant/api/F-005-task-detail.spec.ts
  *
  * TWO THINGS THIS FILE DOES DELIBERATELY, both of them lessons paid for here:
  *
@@ -45,19 +45,19 @@ import { join } from 'node:path';
 import { createServer, globalAgent, type Server } from 'node:http';
 
 // ───────────────────────────── WIRING ─────────────────────────────
-import { createApp, type AppDeps } from '../../../../src/assistant/api/app.ts';
+import { createApp, type AppDeps } from '../../../src/assistant/api/app.ts';
 import type {
   Interpretation,
   Interpreter,
   InterpreterContext,
-} from '../../../../src/assistant/api/ports/interpreter.ts';
+} from '../../../src/assistant/api/ports/interpreter.ts';
 import {
   CountingInterpreter,
   QaClock,
   ReopenableStore,
   createQaDoors,
-} from '../harness/qa-doors.ts';
-import usersFixture from '../../../_shared/fixtures/api/f005-users.json';
+} from '../../harness/qa-doors.ts';
+import usersFixture from '../../../qa/_shared/fixtures/api/f005-users.json';
 
 const F = usersFixture as {
   users: Record<string, { x_user_id: string; role: string }>;

@@ -12,7 +12,7 @@
 | Priority | P1 |
 | Status | active |
 | Automation | automated |
-| Automation file | qa/assistant/automation/mobile/F-001-voice-assistant-view.spec.ts:562 |
+| Automation file | tests/assistant/mobile/F-001-voice-assistant-view.spec.ts:562 |
 | Created | 2026-08-17 by qa-mobile-agent |
 | Last updated | 2026-08-17 by qa-mobile-agent |
 

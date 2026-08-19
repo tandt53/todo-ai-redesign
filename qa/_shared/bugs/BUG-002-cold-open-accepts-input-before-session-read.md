@@ -10,7 +10,7 @@
 | Layer | `mobile` (`src/assistant/mobile/controller.ts` — `init()`) |
 | Feature | F-003 (mobile-surface), AC-8; F-001 AC-28 |
 | Failing test case | `qa/assistant/F-003/mobile/TC-030-foreground-reads-session-before-accepting-input.md` |
-| Failing assertion | `qa/assistant/automation/mobile/F-003-mobile-surface.spec.ts` → "cold open behaves identically to resume — the session read comes first (BUG-002)" |
+| Failing assertion | `tests/assistant/mobile/F-003-mobile-surface.spec.ts` → "cold open behaves identically to resume — the session read comes first (BUG-002)" |
 | Status | **FIXED** 2026-08-17 (T-024) |
 
 ## Summary
@@ -89,7 +89,7 @@ held. Only the cold-open path is broken.
 ## Environment
 
 - Run ID: `qa/assistant/runs/2026-08-17-mobile-execute.md`
-- Command: `npx vitest run qa/assistant/automation/mobile`
+- Command: `npx vitest run tests/assistant/mobile`
 - Stack: TypeScript strict + vitest, node env, no simulator (`specs/_shared/platform/mobile.md ## Test Harness`)
 - Reproduced 3/3 in isolation — not a flake.
 

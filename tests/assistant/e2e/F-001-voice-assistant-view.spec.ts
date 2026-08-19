@@ -31,7 +31,7 @@
  * canonical table (src/assistant/api/ports/fixture-table.ts) and returns
  * no_match for anything else. Every scenario below uses either a canonical
  * row or a QA_EXTRA_ROWS row defined in
- * qa/assistant/automation/harness/qa-test-server.ts (the spec's own
+ * tests/harness/qa-test-server.ts (the spec's own
  * sanctioned QA extension mechanism — Test strategy). Mapping table:
  * qa/_shared/fixtures/web/assistant-web-fixtures.json.
  *
@@ -1211,7 +1211,7 @@ function ac30User(tc: string): string {
   return `qaweb-${tc}-${RUN_ID}-${ac30Seq}@qa.example.com`;
 }
 
-/** QA_EXTRA rows added for AC-30 (qa/assistant/automation/harness/qa-test-server.ts).
+/** QA_EXTRA rows added for AC-30 (tests/harness/qa-test-server.ts).
  * Each takes 2500ms server-side, which is the window every clause from (c)
  * onward needs: the test must be able to move the scroll AFTER the submit
  * (which scrolls to the bottom by clause (h)) and BEFORE the outcome lands.

@@ -1,7 +1,7 @@
 # Web execute pass v3 — English copy sync (T-070b)
 
 **Agent:** qa-web-agent · **Phase:** execute · **Date:** 2026-08-17
-**Feature:** F-001 voice-assistant-view (web) · **Suite:** `qa/assistant/automation/e2e/F-001-voice-assistant-view.spec.ts`
+**Feature:** F-001 voice-assistant-view (web) · **Suite:** `tests/assistant/e2e/F-001-voice-assistant-view.spec.ts`
 **Trigger:** ADR-008 / `reports/owner-decision-2026-08-17-english-first.md` — English is the product language. Design led (T-062), implementers followed (T-067/068/069), the Vietnamese voice-undo phrase was retired (T-073); this pass is QA catching up.
 
 ---
@@ -30,9 +30,9 @@ The 26 red were not visible from `npm run test:all`: that command is `vitest run
 
 | File | Change |
 |---|---|
-| `qa/assistant/automation/e2e/F-001-voice-assistant-view.spec.ts` | `VN` constant block → `EN`, repointed at the English catalogue; `U.hoanTac` removed; TC-008 step 3 and TC-032's outcome regex repointed; TC-002 strengthened; TC-005a repointed at a new delayed row |
-| `qa/assistant/automation/pages/AssistantPage.ts` | state words, row-action accessible names, `expectNoUndoNamedTask` |
-| `qa/assistant/automation/harness/qa-test-server.ts` | one new QA_EXTRA row (`qaweb delayed create`, 150ms) — flake fix, see below |
+| `tests/assistant/e2e/F-001-voice-assistant-view.spec.ts` | `VN` constant block → `EN`, repointed at the English catalogue; `U.hoanTac` removed; TC-008 step 3 and TC-032's outcome regex repointed; TC-002 strengthened; TC-005a repointed at a new delayed row |
+| `tests/assistant/pages/AssistantPage.ts` | state words, row-action accessible names, `expectNoUndoNamedTask` |
+| `tests/harness/qa-test-server.ts` | one new QA_EXTRA row (`qaweb delayed create`, 150ms) — flake fix, see below |
 | `qa/_shared/fixtures/web/assistant-web-fixtures.json` | `hoàn tác` row removed; new QA_EXTRA row documented; provenance note added |
 | `qa/assistant/F-001/web/*.md` | 22 test-case documents |
 | `qa/assistant/F-001/web/index.md` | copy-language section, run-record links, header provenance |
@@ -61,7 +61,7 @@ The guarantee itself is untouched and still falsifiable: the canonical table map
 
 TC-008 named two phrases and fed the Vietnamese one at step 3, so the pass doubled as an equivalence check across AC-5's vocabulary. The vocabulary now has one member, so step 3 feeds it. **The case was not deleted and its guarantee was not weakened** — an undo phrase never becomes a task, never reaches the model, and refuses visibly when out of window. The file carries a Vocabulary note saying where a second phrase would get its equivalence check back.
 
-The complementary negative — *the retired phrase is now an ordinary turn: interpreted, `no_match`, reverts nothing* — is already owned by the api tier (`qa/assistant/automation/api/F-001-voice-assistant-view.spec.ts:781`, T-070a). The web tier does not duplicate it.
+The complementary negative — *the retired phrase is now an ordinary turn: interpreted, `no_match`, reverts nothing* — is already owned by the api tier (`tests/assistant/api/F-001-voice-assistant-view.spec.ts:781`, T-070a). The web tier does not duplicate it.
 
 ---
 
@@ -121,7 +121,7 @@ Seven sites, three files. They are the visible tip: `src/assistant/mobile/__test
 | `"không"` (negative) | replaced by `nope` (T-069) |
 | `"hoàn tác"` (undo tripwire) | row removed with ADR-008 |
 
-`qa/assistant/automation/api/F-001-voice-assistant-view.spec.ts:129,132` carries the same stale set in a local classifier stub. qa-api-agent's subtree; flagged, not touched. This is the same file L-004 named, drifting again in the same way, which is itself the argument for generating one copy from the other rather than hand-keeping both.
+`tests/assistant/api/F-001-voice-assistant-view.spec.ts:129,132` carries the same stale set in a local classifier stub. qa-api-agent's subtree; flagged, not touched. This is the same file L-004 named, drifting again in the same way, which is itself the argument for generating one copy from the other rather than hand-keeping both.
 
 ## Finding 5 — which artifact was treated as the source, where two carried the same value
 

@@ -11,7 +11,7 @@
 | Priority | P1 |
 | Status | active |
 | Automation | automated |
-| Automation file | qa/assistant/automation/api/F-005-task-detail.spec.ts (`describe('TC-01 …')`) |
+| Automation file | tests/assistant/api/F-005-task-detail.spec.ts (`describe('TC-01 …')`) |
 | Created | 2026-08-19 by qa-api-agent |
 | Last updated | 2026-08-19 by qa-api-agent |
 
@@ -21,7 +21,7 @@
 ## Preconditions
 - In-process harness: `createApp(deps)` with the `__qa__` doors mounted in front, on an ephemeral port, driven by supertest. Fresh durable store per test.
 - The clock seam and the account zone are both held at `T0 = 2026-08-19T12:00:00.000Z` / `UTC` by `POST /__qa__/set-clock` (AC-44). Every fixture instant is derived from `T0`, never from a wall clock (L-023).
-- `POST /__qa__/seed`, `POST /__qa__/set-clock` and `POST /__qa__/reopen-store` mounted from `qa/assistant/automation/harness/qa-doors.ts` — one implementation, shared with the Playwright harness process.
+- `POST /__qa__/seed`, `POST /__qa__/set-clock` and `POST /__qa__/reopen-store` mounted from `tests/harness/qa-doors.ts` — one implementation, shared with the Playwright harness process.
 
 ## Test steps (API)
 | # | Case (automation `it` name) | Request | Expected |

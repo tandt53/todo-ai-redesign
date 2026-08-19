@@ -255,15 +255,22 @@ echo
 # the per-dispatch scope in BRIEFING.md is overwritten by the next dispatch.
 echo "C6 — artifacts land inside the writing agent's subtree"
 
-# Resolve {specs}/{design}/{src}/{qa}/{shared_dir} in a writers: prefix.
+# Resolve any {token} in a writers: prefix against MANIFEST's own roots: block.
+#
+# This used to name the roots one by one — {specs}, {design}, {src}, {qa} — which
+# meant adding a root to MANIFEST silently did nothing here: every artifact under
+# it read as "outside the agent's subtree", and the fix looked like a writers-map
+# problem rather than a validator one. Adding {tests} is what surfaced it. A list
+# that has to be kept in step with another list by hand is a list that drifts, so
+# this reads the roots instead of restating them.
 expand() {
-  printf '%s\n' "$1" | sed \
-    -e "s|{specs}|$(root_of specs)|g" \
-    -e "s|{design}|$(root_of design)|g" \
-    -e "s|{src}|$(root_of src)|g" \
-    -e "s|{qa}|$(root_of qa)|g" \
-    -e "s|{shared_dir}|$(shared_dir_of)|g" \
-    -e 's|//*|/|g'
+  local out="$1" tok root
+  for tok in $(awk '/^roots:/{r=1;next} r&&/^[a-z_]+:/{r=0} r&&/^  [a-z_]+:/{k=$1;sub(/:$/,"",k);print k}' "$MANIFEST"); do
+    root="$(root_of "$tok")"
+    [ -n "$root" ] || continue
+    out="${out//\{$tok\}/$root}"
+  done
+  printf '%s\n' "$out" | sed -e "s|{shared_dir}|$(shared_dir_of)|g" -e 's|//*|/|g'
 }
 root_of() { awk -v k="$1" '/^roots:/{r=1;next} r&&/^[a-z_]+:/{r=0} r&&$1==k":"{v=$2;gsub(/"/,"",v);sub(/\/$/,"",v);print v;exit}' "$MANIFEST"; }
 shared_dir_of() { awk '$1=="shared_dir:"{print $2;exit}' "$MANIFEST"; }

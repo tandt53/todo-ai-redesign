@@ -236,7 +236,7 @@ export const INTERACTIVE_IDS = [
  * appended to the one above — for the same reason `SHELL_A11Y_IDS` is a second
  * catalogue. `INTERACTIVE_IDS` is asserted against the
  * `voice-assistant-view-ios` mockup by a suite this module does not own
- * (`qa/assistant/automation/mobile/F-003-mobile-surface.spec.ts`: "every
+ * (`tests/assistant/mobile/F-003-mobile-surface.spec.ts`: "every
  * interactive element is drawn from the catalogue"), and that assertion is
  * correct — a conversation control that is not in the conversation mockup is a
  * real defect. Shell controls are drawn in the shell mockups instead.

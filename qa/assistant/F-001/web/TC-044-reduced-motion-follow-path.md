@@ -11,7 +11,7 @@
 | Priority | P1 |
 | Status | active |
 | Automation | automated |
-| Automation file | qa/assistant/automation/e2e/F-001-voice-assistant-view.spec.ts |
+| Automation file | tests/assistant/e2e/F-001-voice-assistant-view.spec.ts |
 | Created | 2026-08-17 by qa-web-agent |
 | Last updated | 2026-08-17 by qa-web-agent |
 

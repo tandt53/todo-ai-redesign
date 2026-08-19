@@ -12,7 +12,7 @@
 | Priority | P1 |
 | Status | active |
 | Automation | automated |
-| Automation file | qa/assistant/automation/mobile/F-001-voice-assistant-view.spec.ts:265 |
+| Automation file | tests/assistant/mobile/F-001-voice-assistant-view.spec.ts:265 |
 | Created | 2026-08-17 by qa-mobile-agent |
 | Last updated | 2026-08-17 by qa-mobile-agent |
 
@@ -25,7 +25,7 @@ are silently satisfiable by a wrong implementation, so both get assertions here.
 
 ## Preconditions
 - No simulator, emulator or Metro required. The follow model is exercised in-process
-  (`npx vitest run qa/assistant/automation/mobile`).
+  (`npx vitest run tests/assistant/mobile`).
 - `specs/assistant/F-001-voice-assistant-view.md` still publishes AC-30 (a)'s
   threshold as `` `distance_from_bottom ≤ N` `` — the test **parses** it and throws
   if it does not (L-007). The number is never retyped into the test (L-004).

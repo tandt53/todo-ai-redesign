@@ -6,12 +6,12 @@
 `specs/assistant/data-model.md § Feature F-005` and ADR-010 … ADR-015 only.
 **No file under `src/` was read to decide what to assert** (`_qa-foundations §2`).
 
-**Automation:** `qa/assistant/automation/api/F-005-task-detail.spec.ts`
+**Automation:** `tests/assistant/api/F-005-task-detail.spec.ts`
 (vitest + supertest, in-process against `createApp(deps)`, per
 `specs/_shared/platform/backend.md ## Test Harness`).
-**Command:** `npx vitest run qa/assistant/automation/api/F-005-task-detail.spec.ts`
+**Command:** `npx vitest run tests/assistant/api/F-005-task-detail.spec.ts`
 
-**Harness doors (new, T-166):** `qa/assistant/automation/harness/qa-doors.ts` —
+**Harness doors (new, T-166):** `tests/harness/qa-doors.ts` —
 `POST /__qa__/seed`, `POST /__qa__/set-clock`, `POST /__qa__/reopen-store`, plus
 the pre-existing `GET /__qa__/ai-calls` and `POST /__qa__/advance-clock`. One
 implementation, mounted both by `qa-test-server.ts` (the Playwright harness

@@ -73,7 +73,7 @@ sequence** — none of them is a presence assertion.
 
 ## Notes
 - Steps 1–7 are the exact set named as "NOT provable here" in the header of
-  `qa/assistant/automation/mobile/F-001-voice-assistant-view.spec.ts`. The model tier
+  `tests/assistant/mobile/F-001-voice-assistant-view.spec.ts`. The model tier
   covers every clause's arithmetic and every published string; this TC covers what
   arithmetic cannot reach.
 - Sibling device-lab debt for F-003 lives in TC-032/034/036/037/038 under

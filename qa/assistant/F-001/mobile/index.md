@@ -8,8 +8,8 @@ clause (h)) · **Design:** `design/_shared/components.md § NewMessageAffordance
 (`nma-new`, `nma-waiting` states) · **Bug this AC resolves:**
 `qa/_shared/bugs/BUG-004-conversation-never-scrolls-to-newest-message.md`
 
-**Automation:** `qa/assistant/automation/mobile/F-001-voice-assistant-view.spec.ts`
-(40 tests) — run with `npx vitest run qa/assistant/automation/mobile`, per
+**Automation:** `tests/assistant/mobile/F-001-voice-assistant-view.spec.ts`
+(40 tests) — run with `npx vitest run tests/assistant/mobile`, per
 `specs/_shared/platform/mobile.md ## Test Harness`. No simulator, emulator or Metro.
 **Namespace:** `qamob-ac30-`, one uuid user per test (foundations §10).
 

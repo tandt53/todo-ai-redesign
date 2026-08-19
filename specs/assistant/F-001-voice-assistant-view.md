@@ -17,8 +17,8 @@ implemented_in:    [src/assistant/api/, src/assistant/web/, package.json]
 designed_in:       [design/_shared/DESIGN.md, design/_shared/tokens.json, design/_shared/components.md, design/assistant/screens/voice-assistant-view.html, design/assistant/screens/voice-assistant-view-ios.html, design/assistant/screens/voice-assistant-view-android.html]
 api_endpoints:     ["POST /assistant/turn", "GET /assistant/session", "POST /assistant/session/close", "POST /assistant/turn/{turn_id}/undo", "GET /tasks", "POST /tasks", "PATCH /tasks/{id}", "DELETE /tasks/{id}"]
 tested_by:
-  api:    [qa/assistant/F-001/api/, qa/assistant/automation/api/F-001-voice-assistant-view.spec.ts, qa/assistant/runs/2026-08-16-api-execute.md]
-  web:    [qa/assistant/F-001/web/, qa/assistant/automation/e2e/F-001-voice-assistant-view.spec.ts, qa/assistant/runs/2026-08-16-web-execute.md]
+  api:    [qa/assistant/F-001/api/, tests/assistant/api/F-001-voice-assistant-view.spec.ts, qa/assistant/runs/2026-08-16-api-execute.md]
+  web:    [qa/assistant/F-001/web/, tests/assistant/e2e/F-001-voice-assistant-view.spec.ts, qa/assistant/runs/2026-08-16-web-execute.md]
   mobile: []
 known_bugs: []   # BUG-001 fixed 2026-08-17 (T-023/T-026); the record stays in qa/_shared/bugs/
 ```
