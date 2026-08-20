@@ -31,6 +31,35 @@ assert_grep_zero 'claude-agents-final' \
 assert_grep_zero 'templates/(qa-starter|qa-agent)' \
   "no references to removed sibling templates" "${TARGETS[@]}"
 
+# --- roots are referenced as tokens, never as bare literals ---
+#
+# MANIFEST ## Paths is the single source of truth for where artifacts live, and
+# that only holds if agents resolve THROUGH it. A bare `specs/` or `qa/` in an
+# agent file is a second source of truth that agrees with the first only while
+# the default layout is untouched — and it fails silently the moment a project
+# moves a root, because the agent looks in a directory that simply is not there.
+#
+# Found by moving three roots under docs/ in a real project: the tokens followed,
+# 170 bare literals did not, and an upgrade quietly restored them.
+assert_grep_zero '(^|[^A-Za-z0-9/{_.-])(specs|design|qa)/' \
+  "no bare root literals in prompts — roots are {tokens}" "${TARGETS[@]}"
+
+# --- executable automation belongs under {tests}, cases under {qa} ---
+#
+# Three QA agent files have to agree about where automation lives, and nothing
+# forces them to. One drifting back to `{qa}/.../automation/` is silent: that
+# agent files source in a tree the code tooling does not reach, the others do
+# not, and the divergence only shows up when someone wonders why one suite is
+# not typechecked.
+#
+# The split is between two things that read alike: a test CASE is authored from
+# the spec and traced to an AC; a test SCRIPT is source that imports from {src}.
+assert_grep_zero '\{qa\}/\{module\}/automation' \
+  "no agent files executable automation under {qa}" "${TARGETS[@]}"
+
+assert_file_contains "$(cd "$CLAUDE_ROOT/.." && pwd)/MANIFEST.md" 'tests: tests/' \
+  "MANIFEST declares the tests root that automation resolves through"
+
 if pass_or_fail "R4"; then
   echo "R4 VERDICT: PASS"
   exit 0

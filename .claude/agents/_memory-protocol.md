@@ -8,7 +8,7 @@
 ## Memory file structure
 
 ```
-memory/                          ← at project root (not under docs/ or docs/qa/)
+memory/                          ← at project root (not under docs/ or {qa}/)
 ├── MEMORY.md                    ← project-wide append-only log
 ├── MEMORY-archive.md            ← entries older than 60 days (auto-archived)
 ├── spec-agent.md
@@ -170,7 +170,7 @@ memory_entry: |
   ---
   Switched from HS256 to RS256 for JWT signing. HS256 uses a shared secret (single
   point of compromise). RS256 uses asymmetric keys (private key signs, public key
-  verifies — services only need the public key). See ADR docs/specs/_shared/adr/005-jwt-rs256.md.
+  verifies — services only need the public key). See ADR {specs}/_shared/adr/005-jwt-rs256.md.
   Supersedes: 2026-04-05 "JWT with HS256" entry.
 ```
 
@@ -263,8 +263,8 @@ If multiple entries say the same thing, merge into one canonical entry and mark 
 ### Promote to docs when repeated 3+ times
 
 If a pattern appears in memory more than 3 times, it belongs in a permanent doc:
-- Coding pattern → `docs/specs/_shared/standards/coding-standards.md`
-- Platform convention → `docs/specs/_shared/platform/{platform}.md`
+- Coding pattern → `{specs}/_shared/standards/coding-standards.md`
+- Platform convention → `{specs}/_shared/platform/{platform}.md`
 - Constraint → feature spec's `## Domain Rules` section (when we add it)
 
 Memory is for accumulated learning, not permanent conventions. If something is always true, it should be in a doc that every agent reads on every dispatch — not in a grep-searched log.

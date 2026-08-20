@@ -48,7 +48,7 @@ remaining protocol files any time before you start producing output.
 Then, before you start work:
 
 ```bash
-ls docs/specs/_shared/LEARNINGS.md 2>/dev/null && echo "found — skim it"
+ls {specs}/_shared/LEARNINGS.md 2>/dev/null && echo "found — skim it"
 ```
 
 If it exists, skim the `L-NNN` titles and each entry's `Scope:` line. Entries

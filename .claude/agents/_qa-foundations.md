@@ -480,7 +480,7 @@ The three QA agents execute in parallel against the same running stack. To preve
 
 This applies to all test data, not just emails: payment method IDs, order IDs, session tokens, API keys used in tests. Every piece of mutable test state must be traceable to the agent that created it.
 
-**Shared read-only seed data is fine.** If all three agents need a product catalogue or a list of countries, seed it once in `docs/qa/_shared/fixtures/users.json` or a shared seed script. The rule is about **mutable** state: user accounts, sessions, transactions, uploads.
+**Shared read-only seed data is fine.** If all three agents need a product catalogue or a list of countries, seed it once in `{qa}/_shared/fixtures/users.json` or a shared seed script. The rule is about **mutable** state: user accounts, sessions, transactions, uploads.
 
 **Global state mutations are forbidden in parallel.** If a test case needs to "delete all users" or "reset the rate limiter" or "clear the cache," it must be scoped to its namespace (`DELETE FROM users WHERE email LIKE 'web-tc%'`). Never run unscoped destructive operations — they will break other agents' in-flight tests.
 
@@ -498,11 +498,11 @@ How this works in practice:
 
 1. The feature spec tags each AC with the platforms it applies to: `**AC-1** (api, web, mobile) — ...`
 2. Each QA agent reads the spec, filters the ACs by its platform, and writes one TC per tagged AC for its platform.
-3. Each TC is its own file in the platform's folder: `docs/qa/{module}/F-{id}/{platform}/TC-{nn}-{slug}.md`.
+3. Each TC is its own file in the platform's folder: `{qa}/{module}/F-{id}/{platform}/TC-{nn}-{slug}.md`.
 4. TC files are never cross-posted. If you find yourself thinking "this TC would work for web and mobile," write two TC files — they will diverge in preconditions and expected results at the layer level even if the high-level intent is the same.
 5. Reviewer-agent C2 walks per-platform folders. For each AC, it verifies the platforms tagged for that AC each have ≥ 1 P1 test case in their folder referencing that AC ID.
 
-**Shared fixtures are OK.** If all three platforms need the same test user account, put it in `docs/qa/_shared/fixtures/users.json`. Fixtures are data, not test logic; cross-platform data is fine.
+**Shared fixtures are OK.** If all three platforms need the same test user account, put it in `{qa}/_shared/fixtures/users.json`. Fixtures are data, not test logic; cross-platform data is fine.
 
 ---
 

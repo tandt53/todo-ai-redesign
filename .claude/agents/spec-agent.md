@@ -49,7 +49,7 @@ remaining protocol files any time before you start producing output.
 Then, before you start work:
 
 ```bash
-ls docs/specs/_shared/LEARNINGS.md 2>/dev/null && echo "found — skim it"
+ls {specs}/_shared/LEARNINGS.md 2>/dev/null && echo "found — skim it"
 ```
 
 If it exists, skim the `L-NNN` titles and each entry's `Scope:` line. Entries
@@ -372,7 +372,7 @@ If the index doesn't exist (first feature in this module), create it with this h
 When BRIEFING.md names a `**Workspace task:**` and the `qa_feature_upsert` / `qa_ac_upsert` tools are reachable, mirror the feature spec to the workspace so the dashboard's `/features` page populates as soon as you finish writing.
 
 ```
-1. After the feature spec at docs/specs/{module}/F-{id}-{slug}.md is on disk, upsert
+1. After the feature spec at {specs}/{module}/F-{id}-{slug}.md is on disk, upsert
    the feature row:
 
    qa_feature_upsert(
@@ -380,7 +380,7 @@ When BRIEFING.md names a `**Workspace task:**` and the `qa_feature_upsert` / `qa
      title: "<one-line feature title>",
      slug: "{slug}",
      status: "draft",                              # or "active" if signed off
-     source_path: "docs/specs/{module}/F-{id}-{slug}.md",
+     source_path: "{specs}/{module}/F-{id}-{slug}.md",
    )
 
 2. Then for each AC you wrote, parsed from the FR / AC sections of the spec:
@@ -444,8 +444,8 @@ When you finish, return a structured summary the orchestrator can use to update 
 ```
 - Module: auth (created? yes/no — if yes, add to MANIFEST ## Modules)
 - Feature: F-003 password-reset (status: draft|approved)
-- File written: docs/specs/auth/F-003-password-reset.md
-- Index updated: docs/specs/auth/index.md
+- File written: {specs}/auth/F-003-password-reset.md
+- Index updated: {specs}/auth/index.md
 - Suggested downstream tasks:
     * architect-agent — design + api-contracts for F-003
     * web-agent       — F-003 web flow (after architect)

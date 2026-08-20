@@ -39,7 +39,7 @@ while [ $# -gt 0 ]; do
 done
 
 [ -z "$FILES" ] && { echo "suite-can-fail: --files is required (from the feature spec's Links.implemented_in)" >&2; exit 2; }
-[ -z "$TEST_CMD" ] && { echo "suite-can-fail: --test-cmd is required (from docs/specs/_shared/platform/{layer}.md ## Test Harness)" >&2; exit 2; }
+[ -z "$TEST_CMD" ] && { echo "suite-can-fail: --test-cmd is required (from specs/_shared/platform/{layer}.md ## Test Harness)" >&2; exit 2; }
 
 if ! command -v git >/dev/null 2>&1 || ! git rev-parse --git-dir >/dev/null 2>&1; then
   echo "suite-can-fail: not a git repository — cannot guarantee the working tree is restored. Skipped."

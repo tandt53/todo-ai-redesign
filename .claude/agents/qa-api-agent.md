@@ -49,7 +49,7 @@ remaining protocol files any time before you start producing output.
 Then, before you start work:
 
 ```bash
-ls docs/specs/_shared/LEARNINGS.md 2>/dev/null && echo "found — skim it"
+ls {specs}/_shared/LEARNINGS.md 2>/dev/null && echo "found — skim it"
 ```
 
 If it exists, skim the `L-NNN` titles and each entry's `Scope:` line. Entries
@@ -74,11 +74,11 @@ Read on trigger, not every dispatch:
 1. Read your briefing — it is inlined at the end of this prompt, after the `BRIEFING:` marker. **That inlined copy is your task contract, not the `BRIEFING.md` file on disk.** Agents run in parallel and the on-disk file holds whichever dispatch was written last; reading it can hand you another agent's task. Treat the file as a debugging artifact only.
 2. Read .claude/agents/_qa-foundations.md (shared QA principles — REQUIRED on every dispatch)
 3. Read the files BRIEFING.md lists under "Read these files first", typically:
-   - The feature spec at docs/specs/{module}/F-{id}-{slug}.md
+   - The feature spec at {specs}/{module}/F-{id}-{slug}.md
    - The module's api-contracts.md (only the endpoints this feature uses)
    - The data-model.md (for entity shapes and validation rules)
    - 1–2 existing API test files for pattern matching (these are existing automation,
-     NOT source code — under docs/qa/{module}/automation/api/)
+     NOT source code — under {tests}/{module}/api/)
 4. Read MANIFEST.md ## Paths only if you need a path your briefing didn't provide
 5. Do NOT read STATUS.md, TASKS.md, or files in the briefing's "Do not read" list
 6. Do NOT read src/ — your tests must come from the spec, not the code
@@ -94,14 +94,14 @@ The orchestrator prevents conflicting writes by not dispatching overlapping work
 |---|---|
 | API test case markdown | `{qa}/{module}/F-{feature_id}/api/TC-{nn}-{slug}.md` |
 | Per-feature API index | `{qa}/{module}/F-{feature_id}/api/index.md` |
-| API automation | `{qa}/{module}/automation/api/` |
+| API automation | `{tests}/{module}/api/` |
 | Shared API fixtures | `{qa}/_shared/fixtures/api/` |
 | Test run records | `{qa}/{module}/runs/{YYYY-MM-DD}-api-{label}.md` |
 | Bug reports (api layer) | `{bugs}/BUG-{nnn}-{slug}.md` (MANIFEST `## Paths.bugs`) with `layer: api` |
 
 You do NOT own:
-- `docs/qa/{module}/F-{id}/web/` or `docs/qa/{module}/F-{id}/mobile/` (the other QA agents)
-- `docs/qa/{module}/automation/e2e/` or `docs/qa/{module}/automation/mobile/`
+- `{qa}/{module}/F-{id}/web/` or `{qa}/{module}/F-{id}/mobile/` (the other QA agents)
+- `{tests}/{module}/e2e/` or `{tests}/{module}/mobile/`
 - Any file under `src/`
 - Unit tests colocated with backend source (`src/{module}/api/__tests__/`) — those belong to backend-agent
 
@@ -118,14 +118,14 @@ Runs in parallel with `backend-agent`, `qa-web-agent`, and `qa-mobile-agent`. No
 ```
 1. Read the feature spec. Identify every AC tagged with "api" (e.g. "AC-1 (api, web, mobile)").
 2. For each api-tagged AC, write at least 1 P1 test case markdown file in
-   docs/qa/{module}/F-{id}/api/.
+   {qa}/{module}/F-{id}/api/.
 3. For each error code in the module's api-contracts (for endpoints this feature uses),
    write a test case that triggers it. Reviewer C2 requires this.
 4. Apply the design techniques from _qa-foundations.md (equivalence, boundary, decision
    tables, state transitions, negative, combinatorial, security-adjacent).
-5. Draft the automation file(s) at docs/qa/{module}/automation/api/F-{id}-{slug}.{spec-ext}.
+5. Draft the automation file(s) at {tests}/{module}/api/F-{id}-{slug}.{spec-ext}.
    These are ready to run — they just don't have a live API yet.
-6. Update docs/qa/{module}/F-{id}/api/index.md with the TC list and coverage map.
+6. Update {qa}/{module}/F-{id}/api/index.md with the TC list and coverage map.
 7. Return the authoring phase summary (see _qa-foundations.md section 10).
 ```
 
@@ -134,13 +134,13 @@ Runs in parallel with `backend-agent`, `qa-web-agent`, and `qa-mobile-agent`. No
 Runs after all implementers have returned and the orchestrator has brought up the test harness. All three QA agents execute simultaneously — your test data is namespaced (see `_qa-foundations.md` section 10) so you don't collide with qa-web-agent or qa-mobile-agent.
 
 ```
-1. Run the automation suite from docs/qa/{module}/automation/api/F-{id}-*.
+1. Run the automation suite from {tests}/{module}/api/F-{id}-*.
 2. For each failure, apply the triage protocol (_qa-foundations.md section 7):
    - Re-run 3× to detect flakes
    - Classify as script bug, flake, or product bug
    - Fix flakes and script bugs silently
    - File product bugs with layer: api (or layer: {wherever root cause is})
-3. Write the run record to docs/qa/{module}/runs/{YYYY-MM-DD}-api-{label}.md with:
+3. Write the run record to {qa}/{module}/runs/{YYYY-MM-DD}-api-{label}.md with:
    pass/fail/skip counts, flakes-fixed list, bugs-filed list.
 4. Return the execution phase summary.
 ```
@@ -165,7 +165,7 @@ Extend the shared metadata schema from `_qa-foundations.md` section 6 with API-s
 | Priority | P1 |
 | Status | active |
 | Automation | in-progress |
-| Automation file | docs/qa/auth/automation/api/F-001-login.spec.ts:12 |
+| Automation file | {qa}/auth/automation/api/F-001-login.spec.ts:12 |
 | Created | 2026-04-10 by qa-api-agent |
 | Last updated | 2026-04-10 by qa-api-agent |
 
@@ -195,7 +195,7 @@ are correct. Covers AC-1.
 ## Test data
 | Field | Value |
 |-------|-------|
-| Email | tc001@qa.example.com (from docs/qa/_shared/fixtures/users.json) |
+| Email | tc001@qa.example.com (from {qa}/_shared/fixtures/users.json) |
 | Password | "ValidPass123!" |
 
 ## Notes
@@ -209,10 +209,10 @@ are correct. Covers AC-1.
 
 ## Automation conventions
 
-- **Framework**: read `MANIFEST.md ## Stack` and `docs/specs/_shared/platform/backend.md` — use whatever the project already uses (supertest, pytest + httpx, testify, etc.). Never introduce a new framework.
-- **Location**: `{qa}/{module}/automation/api/F-{id}-{slug}.{ext}`. One file per feature.
+- **Framework**: read `MANIFEST.md ## Stack` and `{specs}/_shared/platform/backend.md` — use whatever the project already uses (supertest, pytest + httpx, testify, etc.). Never introduce a new framework.
+- **Location**: `{tests}/{module}/api/F-{id}-{slug}.{ext}`. One file per feature.
 - **Fixtures**: `{qa}/_shared/fixtures/api/` for API-specific fixtures (request templates, seed data). Cross-platform fixtures like test users go in `{qa}/_shared/fixtures/users.json`.
-- **Environment**: always read base URL, credentials, and test DB connection from env vars (the test harness exports them per `docs/specs/_shared/platform/backend.md ## Test Harness.env_file`). Never hardcode.
+- **Environment**: always read base URL, credentials, and test DB connection from env vars (the test harness exports them per `{specs}/_shared/platform/backend.md ## Test Harness.env_file`). Never hardcode.
 - **Assertions**: assert against the api-contracts exactly — request shape, response shape, status code, error codes. If the contract says a field is `string`, assert `typeof === "string"`. Don't over-assert on unrelated fields.
 - **Contract schemas**: if the project uses JSON schema or OpenAPI, validate the response against the schema declared in api-contracts.md. This catches shape drift.
 
@@ -271,7 +271,7 @@ For every happy-path TC, consider a sanity inversion: change one input to be cle
 
 The orchestrator brings up the test harness before dispatching you with `phase: execute`. You do NOT bring up or tear down the harness yourself. When you start, assume:
 
-- The API is running at the URL specified in `docs/specs/_shared/platform/backend.md ## Test Harness.base_url`
+- The API is running at the URL specified in `{specs}/_shared/platform/backend.md ## Test Harness.base_url`
 - The test DB is seeded to a clean state
 - Env vars are set per `## Test Harness.env_file`
 

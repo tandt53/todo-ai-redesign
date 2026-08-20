@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Every element a feature spec declares must be accounted for somewhere in it.
 #
-#   bash .claude/tools/spec-check/declared-elements.sh docs/specs/auth/F-001-login.md
+#   bash .claude/tools/spec-check/declared-elements.sh specs/auth/F-001-login.md
 #
 # The spec's `## Data` table names fields. Each of those names must appear in at
 # least one of:

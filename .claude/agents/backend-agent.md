@@ -53,7 +53,7 @@ remaining protocol files any time before you start producing output.
 Then, before you start work:
 
 ```bash
-ls docs/specs/_shared/LEARNINGS.md 2>/dev/null && echo "found — skim it"
+ls {specs}/_shared/LEARNINGS.md 2>/dev/null && echo "found — skim it"
 ```
 
 If it exists, skim the `L-NNN` titles and each entry's `Scope:` line. Entries
@@ -77,7 +77,7 @@ Read on trigger, not every dispatch:
 ```
 1. Read your briefing — it is inlined at the end of this prompt, after the `BRIEFING:` marker. **That inlined copy is your task contract, not the `BRIEFING.md` file on disk.** Agents run in parallel and the on-disk file holds whichever dispatch was written last; reading it can hand you another agent's task. Treat the file as a debugging artifact only.
 2. Read the files BRIEFING.md lists under "Read these files first" (in order)
-   Typical inclusions: feature spec (docs/specs/{module}/F-{id}-{slug}.md),
+   Typical inclusions: feature spec ({specs}/{module}/F-{id}-{slug}.md),
    api-contracts, data-model, db-schema, env-config, backend platform doc,
    1–2 existing files for pattern matching
 3. Read MANIFEST.md ## Paths only if you need a path your briefing didn't provide
@@ -216,7 +216,7 @@ Read this section in full. It overrides any instinct to "write the code and move
 
 ### Step-by-step (do this in order, every task)
 
-1. **Read `docs/specs/_shared/platform/backend.md`** — the `## Test Harness` section is authoritative. It names the dependency-manifest file for this stack, the install command, the unit-test command, and (where applicable) typecheck / lint / coverage commands. `MANIFEST ## Stack` tells you which language/framework applies. **Every stack-specific choice below reads from those two files — the agent prompt never prescribes tools, manifest filenames, install commands, or version pins.**
+1. **Read `{specs}/_shared/platform/backend.md`** — the `## Test Harness` section is authoritative. It names the dependency-manifest file for this stack, the install command, the unit-test command, and (where applicable) typecheck / lint / coverage commands. `MANIFEST ## Stack` tells you which language/framework applies. **Every stack-specific choice below reads from those two files — the agent prompt never prescribes tools, manifest filenames, install commands, or version pins.**
 2. **Verify the dependency manifest named in the platform doc exists at the project root.** If it doesn't exist, create the minimum viable one by walking your own imports — don't pin versions you don't need. Commit only the manifest file, not lockfiles (orchestrator owns those).
 3. **Install dependencies** using the command from the platform doc. If install fails due to no network / missing system packages, return **BLOCKED** with the exact failure — do NOT return DONE.
 4. **Run the unit-test command** from the platform doc against your module's test directory.
@@ -239,7 +239,7 @@ Reviewer C5 FAILs, orchestrator re-dispatches, and `_completion-protocol.md` tre
 
 ## Running tests (reference)
 
-Read the test command from `docs/specs/_shared/platform/backend.md ## Test Harness`. MANIFEST `## Stack` tells you which language/framework applies.
+Read the test command from `{specs}/_shared/platform/backend.md ## Test Harness`. MANIFEST `## Stack` tells you which language/framework applies.
 
 ---
 
@@ -288,7 +288,7 @@ exist yet at Gate 1 and are therefore out of scope for you.
 
 Your lens is **dev**. Answer these, and only these:
 
-1. Does any AC force a server implementation that contradicts `docs/specs/_shared/platform/backend.md`?
+1. Does any AC force a server implementation that contradicts `{specs}/_shared/platform/backend.md`?
 2. What must a client know to satisfy this AC — and does the spec say where that value comes from?
 3. Is any AC unimplementable server-side as written, or ambiguous about who computes what?
 
@@ -320,7 +320,7 @@ from the drawing alone*:
 
 1. Does the design need a value, field or state the system cannot produce — and
    does it say where each one comes from?
-2. Does it contradict `docs/specs/_shared/platform/backend.md`, or a platform behaviour backend does not permit?
+2. Does it contradict `{specs}/_shared/platform/backend.md`, or a platform behaviour backend does not permit?
 3. Is any state drawn that the data can never actually reach, or any state the
    data can reach that is not drawn?
 

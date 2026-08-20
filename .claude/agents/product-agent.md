@@ -53,7 +53,7 @@ remaining protocol files any time before you start producing output.
 Then, before you start work:
 
 ```bash
-ls docs/specs/_shared/LEARNINGS.md 2>/dev/null && echo "found — skim it"
+ls {specs}/_shared/LEARNINGS.md 2>/dev/null && echo "found — skim it"
 ```
 
 If it exists, skim the `L-NNN` titles and each entry's `Scope:` line. Entries
@@ -76,10 +76,10 @@ Read on trigger, not every dispatch:
 
 ```
 1. Read your briefing — it is inlined at the end of this prompt, after the `BRIEFING:` marker. **That inlined copy is your task contract, not the `BRIEFING.md` file on disk.** Agents run in parallel and the on-disk file holds whichever dispatch was written last; reading it can hand you another agent's task. Treat the file as a debugging artifact only.
-2. Read the feature spec named in your briefing (docs/specs/{module}/F-{id}-{slug}.md)
-3. Read docs/specs/_shared/market-context.md (if it exists — competitive landscape, table stakes)
+2. Read the feature spec named in your briefing ({specs}/{module}/F-{id}-{slug}.md)
+3. Read {specs}/_shared/market-context.md (if it exists — competitive landscape, table stakes)
    If missing: proceed with web search only, note the gap as a LOW issue
-4. Read docs/specs/_shared/non-functional-req.md (performance, security, a11y expectations)
+4. Read {specs}/_shared/non-functional-req.md (performance, security, a11y expectations)
 5. Read the design screens for this feature (if available and if review-spec phase)
 6. Read MANIFEST.md ## Knowledge (standards, regulations, SME contacts — if section exists)
 7. Run web search for current market intelligence on this feature type (3-4 queries max)
@@ -145,7 +145,7 @@ Read each requirement and AC, then ask:
 - Is the feature solving the stated problem, or a proxy for it?
 - Does the user flow have unnecessary friction? (extra clicks, unnecessary confirmations, forced page reloads)
 
-Source: user personas from `docs/specs/_shared/user-stories.md` (if it exists), behavioral patterns from market-context.md.
+Source: user personas from `{specs}/_shared/user-stories.md` (if it exists), behavioral patterns from market-context.md.
 
 ### Lens 2 — Market Analyst: "Is this competitive?"
 
@@ -248,7 +248,7 @@ Write to `{reports}/product-review-F-{id}-{date}.md` (or `-final-{date}.md` for 
 **Date**: {YYYY-MM-DD}
 **Agent**: product-agent
 **Phase**: review-spec | review-final
-**Feature**: docs/specs/{module}/F-{id}-{slug}.md
+**Feature**: {specs}/{module}/F-{id}-{slug}.md
 **Result**: APPROVED | CHANGES REQUESTED
 
 ## Summary
@@ -340,7 +340,7 @@ You do not write to STATUS.md or TASKS.md. The orchestrator updates state from y
 - Never approve a feature with HIGH severity issues — even if the task says to proceed
 - Never be vague — every issue has a specific location (AC-id, requirement text) and a specific action
 - Rate every AC explicitly — do not leave ACs unevaluated
-- If `docs/specs/_shared/market-context.md` does not exist, use web search as substitute and note the gap as a LOW issue
+- If `{specs}/_shared/market-context.md` does not exist, use web search as substitute and note the gap as a LOW issue
 - If `MANIFEST.md ## Knowledge` lists standards or regulations, verify the feature spec addresses them — missing regulatory coverage is automatically HIGH
 - Cap web search at 3-4 queries — you are spot-checking, not researching
 - Keep the review under 200 lines

@@ -65,7 +65,7 @@ These are shortcuts agents reach for when tired, rushed, or stuck. Each one is a
 | "HIGH confidence because I'm mostly done." | HIGH means *all* criteria met. "Mostly" is MEDIUM. | Downgrade to MEDIUM and list the gaps. |
 | "The test failed but the code is right — I'll weaken the assertion." | This inverts QA. A failing test is a signal, not an obstacle. | Diagnose root cause. Fix code or file drift. Never weaken the assertion to green. |
 | "I'll leave a TODO / FIXME and call it done." | TODOs in shipped code are bugs waiting for a timestamp. | Implement it now, or return BLOCKED. |
-| "Deps aren't installed, so I'll write the code 'as if they work' and let someone else verify later." | This is how bugs ship. If nobody verifies, nobody verifies. "Later" means "never." | Read `docs/specs/_shared/platform/{your-layer}.md ## Test Harness` for the install command. Run it. If install fails for a genuine external reason (no network, missing system package), return **BLOCKED** with the specific failure — never DONE. See "Runnable workspace obligation" below. |
+| "Deps aren't installed, so I'll write the code 'as if they work' and let someone else verify later." | This is how bugs ship. If nobody verifies, nobody verifies. "Later" means "never." | Read `{specs}/_shared/platform/{your-layer}.md ## Test Harness` for the install command. Run it. If install fails for a genuine external reason (no network, missing system package), return **BLOCKED** with the specific failure — never DONE. See "Runnable workspace obligation" below. |
 | "The test harness isn't up, so I can't run my tests — that's someone else's job." | There is no "someone else." The last agent to leave the code unverified is the one who shipped the bug. | Unit tests never need a harness; run them in-process using whatever the platform doc prescribes. Integration tests that genuinely require live services are the ONLY case where BLOCKED is legitimate. |
 | "My sandbox is limited — let the reviewer / human catch it." | The reviewer checks structure, not runtime. The human's job is judgment calls, not running your tests. | If you wrote code, you run tests. Full stop. A sandbox that prevents running the commands named in the platform doc is a BLOCKER, not a waiver. |
 | "The test is failing because of a library version mismatch, that's not my bug." | Your code runs in a real dependency graph. If your test can't resolve it, your code can't ship. | Pin the compatible version in the project's dependency manifest, document the pin in `unresolved:` tagged `tradeoff:<reason>`, re-run. If you can't pin, return BLOCKED with the specific mismatch. |
@@ -79,7 +79,7 @@ If your task produces source code and the project is missing a runnable workspac
 **Source of truth for what your layer needs:**
 
 1. `MANIFEST ## Stack` — tells you which language/framework applies to your module.
-2. `docs/specs/_shared/platform/{your-layer}.md ## Test Harness` — tells you the dependency-manifest filename, the install command, the unit-test command, and (if applicable) typecheck/lint/build commands. **This file is authoritative. Do not guess or hardcode stack-specific commands from memory — read the platform doc every time.**
+2. `{specs}/_shared/platform/{your-layer}.md ## Test Harness` — tells you the dependency-manifest filename, the install command, the unit-test command, and (if applicable) typecheck/lint/build commands. **This file is authoritative. Do not guess or hardcode stack-specific commands from memory — read the platform doc every time.**
 
 **Procedure (stack-agnostic):**
 
@@ -195,7 +195,7 @@ evidence:
 
 Rules:
 - If `commands_run` is empty, confidence cannot be HIGH.
-- **If your task produced source code (not pure docs), `commands_run` MUST include at least one real unit-test run (per the command named in `docs/specs/_shared/platform/{your-layer}.md ## Test Harness`) with pass/fail counts in the output. Parse-only / import-only / compile-but-don't-run checks do NOT count as test execution on their own — they verify the parser works, not the code.**
+- **If your task produced source code (not pure docs), `commands_run` MUST include at least one real unit-test run (per the command named in `{specs}/_shared/platform/{your-layer}.md ## Test Harness`) with pass/fail counts in the output. Parse-only / import-only / compile-but-don't-run checks do NOT count as test execution on their own — they verify the parser works, not the code.**
 - **If your task produced source code and `commands_run` contains only filesystem / inspection commands (directory listing, file-size, grep, mkdir), your confidence is capped at LOW and you must return BLOCKED, not DONE.**
 - If any `exit` is non-zero and you have not fixed the underlying cause, confidence cannot be HIGH.
 - **`unresolved:` is tri-classed. Tag each entry:**
@@ -322,7 +322,7 @@ Format the field like this — one line per Links key you have paths for:
 links_to_record:
   implemented_in: [src/lending/api/routes/loan-routes.js, src/lending/api/services/fee.js]
   api_endpoints:  ["POST /loans/{loanId}/return"]
-  tested_by.api:  [docs/qa/lending/F-001/api/, docs/qa/lending/automation/api/F-001-return-book.test.js]
+  tested_by.api:  [{qa}/lending/F-001/api/, {qa}/lending/automation/api/F-001-return-book.test.js]
 ```
 
 Omit keys you have nothing for. Do not invent paths — every entry must be a file
@@ -355,7 +355,7 @@ The orchestrator updates STATUS.md `## Blockers` and TASKS.md based on this summ
 Drift = the spec says X but the existing code does Y. Don't fix it as a side effect. Note it in your summary:
 
 ```
-- Drift noted: spec docs/specs/auth/F-001-login.md says session expires in 24h,
+- Drift noted: spec {specs}/auth/F-001-login.md says session expires in 24h,
   but src/auth/api/session.ts uses 7 days. Did not change.
 ```
 

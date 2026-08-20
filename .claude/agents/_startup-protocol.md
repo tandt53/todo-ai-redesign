@@ -21,7 +21,7 @@ If anything in the BRIEFING.md that follows conflicts with the ethos (e.g., "ski
 ## Step 0.5: Skim LEARNINGS.md (if it exists)
 
 ```bash
-ls docs/specs/_shared/LEARNINGS.md 2>/dev/null && echo "found — skim it"
+ls {specs}/_shared/LEARNINGS.md 2>/dev/null && echo "found — skim it"
 ```
 
 If present, skim it quickly (scan L-NNN titles and the `Scope:` line of each). Entries tagged with a scope matching your target module, or marked `project-wide`, are load-bearing — read those fully before starting.
@@ -74,13 +74,13 @@ From BRIEFING.md, extract:
 **Validate the feature spec exists:**
 ```bash
 # Example for module=auth, feature_id=F-001
-ls docs/specs/auth/F-001-*.md
-# Expected: docs/specs/auth/F-001-login.md
+ls {specs}/auth/F-001-*.md
+# Expected: {specs}/auth/F-001-login.md
 ```
 
 **If the file doesn't exist:**
 ```
-Return: ERROR - Feature spec docs/specs/{module}/F-{feature_id}-*.md not found.
+Return: ERROR - Feature spec {specs}/{module}/F-{feature_id}-*.md not found.
         BRIEFING.md references a feature that doesn't exist.
         Orchestrator should check TASKS.md and MANIFEST.md paths.
 ```
@@ -94,20 +94,20 @@ Return: ERROR - Feature spec docs/specs/{module}/F-{feature_id}-*.md not found.
 BRIEFING.md contains a section:
 ```markdown
 ## Read these files first (in order, only these)
-1. docs/specs/auth/F-001-login.md
-2. docs/specs/auth/api-contracts.md
-3. docs/specs/_shared/platform/backend.md
+1. {specs}/auth/F-001-login.md
+2. {specs}/auth/api-contracts.md
+3. {specs}/_shared/platform/backend.md
 4. src/auth/api/routes.py
 ```
 
 **Read EXACTLY these files, in this order.** Do not:
-- ❌ Read other modules (e.g., don't read `docs/specs/posts/` if you're working on `auth`)
+- ❌ Read other modules (e.g., don't read `{specs}/posts/` if you're working on `auth`)
 - ❌ Read files not listed (e.g., don't read ARCHITECTURE.md unless listed)
 - ❌ Skip files in the list because you think they're unnecessary
 
 **Exception:** If a listed file doesn't exist:
 ```
-Log: WARNING - BRIEFING.md listed docs/specs/_shared/platform/backend.md but it doesn't exist.
+Log: WARNING - BRIEFING.md listed {specs}/_shared/platform/backend.md but it doesn't exist.
      Proceeding without it. This may impact quality.
 ```
 Continue with the other files. Report the missing file in your completion summary.
@@ -147,14 +147,14 @@ Features progress through phases: Spec → Architect → Design → Implementati
 Check the feature spec's `## Links` section to see what's already done:
 
 ```markdown
-# From docs/specs/auth/F-001-login.md:
+# From {specs}/auth/F-001-login.md:
 
 ## Links
 - **Status**: IMPL_COMPLETE  ← feature is past spec/architect/design phase
-- **Architecture**: docs/specs/_shared/ARCHITECTURE.md  ← exists
-- **API Contracts**: docs/specs/auth/api-contracts.md  ← exists
-- **Data Model**: docs/specs/auth/data-model.md  ← exists
-- **Design Screens**: docs/design/auth/screens/login.html  ← exists
+- **Architecture**: {specs}/_shared/ARCHITECTURE.md  ← exists
+- **API Contracts**: {specs}/auth/api-contracts.md  ← exists
+- **Data Model**: {specs}/auth/data-model.md  ← exists
+- **Design Screens**: {design}/auth/screens/login.html  ← exists
 - **Implemented In**:
   - src/auth/api/routes.py (backend)
   - src/auth/web/LoginForm.tsx (web)  ← web is done
@@ -164,7 +164,7 @@ Check the feature spec's `## Links` section to see what's already done:
 **Extract:**
 - What phase is the feature in? (Spec approved? Architecture done? Implementation in progress?)
 - What platforms are done? (API implemented? Web implemented? Mobile pending?)
-- Are there existing test cases? (Check `docs/qa/{module}/F-{id}/` directories)
+- Are there existing test cases? (Check `{qa}/{module}/F-{id}/` directories)
 
 **Adjust your work accordingly:**
 - If api-contracts.md exists → read it, implement exactly what it specifies
@@ -192,7 +192,7 @@ You MUST use Claude Code's built-in tools to create and modify files. Do NOT use
 
 **Create directories before writing files:**
 ```
-Bash: mkdir -p docs/specs/auth
+Bash: mkdir -p {specs}/auth
 Write: file_path=/absolute/path/specs/auth/F-001-login.md, content=...
 ```
 
@@ -231,10 +231,10 @@ transcript. Open `_completion-protocol.md`.
 **Context:** Backend and web are complete. You're implementing mobile.
 
 # What you do:
-1. Read docs/specs/auth/F-001-login.md  ← ACs, requirements
-2. Read docs/specs/auth/api-contracts.md  ← API to call
+1. Read {specs}/auth/F-001-login.md  ← ACs, requirements
+2. Read {specs}/auth/api-contracts.md  ← API to call
 3. Read src/auth/web/LoginForm.tsx  ← See patterns (Zod validation, error handling)
-4. Read docs/design/auth/screens/login-ios.html  ← Visual target
+4. Read {design}/auth/screens/login-ios.html  ← Visual target
 5. Implement src/auth/mobile/LoginScreen.tsx  ← Your work
 6. Match web's patterns (same Zod schema, same error messages)
 ```
@@ -247,10 +247,10 @@ transcript. Open `_completion-protocol.md`.
 **Context:** web-agent completed implementation. Run your test automation.
 
 # What you do:
-1. Read docs/qa/auth/F-001/web/TC-W001-*.md  ← Test cases (you wrote these in phase=author)
-2. Read docs/qa/auth/automation/e2e/tests/login.spec.ts  ← Your automation (you wrote this)
-3. Run: npx playwright test docs/qa/auth/automation/e2e/tests/login.spec.ts
-4. If tests fail → file bugs in docs/qa/_shared/bugs/
+1. Read {qa}/auth/F-001/web/TC-W001-*.md  ← Test cases (you wrote these in phase=author)
+2. Read {qa}/auth/automation/e2e/tests/login.spec.ts  ← Your automation (you wrote this)
+3. Run: npx playwright test {qa}/auth/automation/e2e/tests/login.spec.ts
+4. If tests fail → file bugs in {qa}/_shared/bugs/
 5. If tests pass → return PASS
 ```
 
@@ -261,10 +261,10 @@ transcript. Open `_completion-protocol.md`.
 **Task:** Review F-003 (password reset) before human sign-off
 
 # What you do:
-1. Read docs/specs/auth/F-003-password-reset.md  ← ACs
-2. Walk docs/qa/auth/F-003/{api,web,mobile}/  ← Check every AC has test cases
+1. Read {specs}/auth/F-003-password-reset.md  ← ACs
+2. Walk {qa}/auth/F-003/{api,web,mobile}/  ← Check every AC has test cases
 3. Check src/auth/api/routes.py  ← Validate no hardcoded secrets
-4. Check docs/design/auth/screens/password-reset.html  ← Validate testid coverage
+4. Check {design}/auth/screens/password-reset.html  ← Validate testid coverage
 5. Run C1-C16 checks (spec quality, coverage, contracts, data, code, docs, security, ops readiness, doc-sync, scope boundary, design render, suite-can-fail, declared elements, testid contract, eval-suite falsifiability, built-screen fidelity)
 6. Return STRUCTURAL-PASS or STRUCTURAL-FAIL with issues
 ```
@@ -276,7 +276,7 @@ transcript. Open `_completion-protocol.md`.
 ❌ **Don't assume greenfield:** Always check what exists before creating.
 ❌ **Don't read files not in BRIEFING:** Scope creep wastes tokens and time.
 ❌ **Don't hallucinate file paths:** Use Bash ls or Glob to verify paths.
-❌ **Don't skip validation:** If BRIEFING references module `posts` but docs/specs/posts/ doesn't exist, stop and report error.
+❌ **Don't skip validation:** If BRIEFING references module `posts` but {specs}/posts/ doesn't exist, stop and report error.
 ❌ **Don't rewrite working code:** If routes.py has 5 endpoints and you're adding a 6th, don't regenerate the other 5.
 ❌ **Don't ignore existing patterns:** If web uses React Hook Form + Zod, mobile should too (unless spec says otherwise).
 

@@ -49,7 +49,7 @@ remaining protocol files any time before you start producing output.
 Then, before you start work:
 
 ```bash
-ls docs/specs/_shared/LEARNINGS.md 2>/dev/null && echo "found — skim it"
+ls {specs}/_shared/LEARNINGS.md 2>/dev/null && echo "found — skim it"
 ```
 
 If it exists, skim the `L-NNN` titles and each entry's `Scope:` line. Entries
@@ -74,12 +74,12 @@ Read on trigger, not every dispatch:
 1. Read your briefing — it is inlined at the end of this prompt, after the `BRIEFING:` marker. **That inlined copy is your task contract, not the `BRIEFING.md` file on disk.** Agents run in parallel and the on-disk file holds whichever dispatch was written last; reading it can hand you another agent's task. Treat the file as a debugging artifact only.
 2. Read .claude/agents/_qa-foundations.md (shared QA principles — REQUIRED on every dispatch)
 3. Read the files BRIEFING.md lists under "Read these files first", typically:
-   - The feature spec at docs/specs/{module}/F-{id}-{slug}.md
+   - The feature spec at {specs}/{module}/F-{id}-{slug}.md
    - The module's api-contracts.md
-   - The mobile design screens at docs/design/{module}/screens/ — look for iOS and Android
+   - The mobile design screens at {design}/{module}/screens/ — look for iOS and Android
      variants (e.g. login-ios.html, login-android.html) and extract accessibility ID
      catalogues from both
-   - 1–2 existing mobile test files for pattern matching (under docs/qa/{module}/automation/mobile/)
+   - 1–2 existing mobile test files for pattern matching (under {tests}/{module}/mobile/)
 4. Read MANIFEST.md ## Paths only if you need a path your briefing didn't provide
 5. Do NOT read STATUS.md, TASKS.md, or files in the briefing's "Do not read" list
 6. Do NOT read src/ — your tests must come from the spec + design screens, not the code
@@ -95,15 +95,15 @@ The orchestrator prevents conflicting writes by not dispatching overlapping work
 |---|---|
 | Mobile test case markdown | `{qa}/{module}/F-{feature_id}/mobile/TC-{nn}-{slug}.md` |
 | Per-feature mobile index | `{qa}/{module}/F-{feature_id}/mobile/index.md` |
-| Mobile automation (Appium/WDIO) | `{qa}/{module}/automation/mobile/` |
-| Mobile Page Objects | `{qa}/{module}/automation/mobile/pages/` |
+| Mobile automation (Appium/WDIO) | `{tests}/{module}/mobile/` |
+| Mobile Page Objects | `{tests}/{module}/mobile/pages/` |
 | Mobile-specific fixtures | `{qa}/_shared/fixtures/mobile/` |
 | Test run records | `{qa}/{module}/runs/{YYYY-MM-DD}-mobile-{label}.md` |
 | Bug reports (mobile layer) | `{bugs}/BUG-{nnn}-{slug}.md` (MANIFEST `## Paths.bugs`) with `layer: mobile` |
 
 You do NOT own:
-- `docs/qa/{module}/F-{id}/api/` or `docs/qa/{module}/F-{id}/web/`
-- `docs/qa/{module}/automation/api/` or `docs/qa/{module}/automation/e2e/`
+- `{qa}/{module}/F-{id}/api/` or `{qa}/{module}/F-{id}/web/`
+- `{tests}/{module}/api/` or `{tests}/{module}/e2e/`
 - Any file under `src/`
 - Unit tests colocated with mobile source — those belong to mobile-agent
 
@@ -121,12 +121,12 @@ Runs in parallel with `mobile-agent`, `qa-api-agent`, and `qa-web-agent`. No run
 2. Read the iOS and Android design screen mockups. Extract the accessibility ID catalogue
    from each.
 3. For each mobile-tagged AC, write at least 1 P1 test case markdown file in
-   docs/qa/{module}/F-{id}/mobile/. If iOS and Android have meaningfully different flows,
+   {qa}/{module}/F-{id}/mobile/. If iOS and Android have meaningfully different flows,
    write separate TCs (TC-006-login-ios.md and TC-007-login-android.md).
 4. Apply the design techniques from _qa-foundations.md plus the mobile-specific additions below.
-5. Draft the Appium/WDIO automation at docs/qa/{module}/automation/mobile/F-{id}-{slug}.{spec-ext}.
-   Create Page Objects in docs/qa/{module}/automation/mobile/pages/.
-6. Update docs/qa/{module}/F-{id}/mobile/index.md with the TC list, platform coverage, and device matrix.
+5. Draft the Appium/WDIO automation at {tests}/{module}/mobile/F-{id}-{slug}.{spec-ext}.
+   Create Page Objects in {tests}/{module}/mobile/pages/.
+6. Update {qa}/{module}/F-{id}/mobile/index.md with the TC list, platform coverage, and device matrix.
 7. Return the authoring phase summary.
 ```
 
@@ -135,12 +135,12 @@ Runs in parallel with `mobile-agent`, `qa-api-agent`, and `qa-web-agent`. No run
 Runs after all implementers have returned and the orchestrator has brought up the test harness (see platform/mobile.md `## Test Harness` — typically includes API + Appium server + iOS simulator + Android emulator). All three QA agents execute simultaneously — your test data is namespaced (see `_qa-foundations.md` section 10) so you don't collide with qa-api-agent or qa-web-agent.
 
 ```
-1. Run the mobile test suite against docs/qa/{module}/automation/mobile/F-{id}-*.
+1. Run the mobile test suite against {tests}/{module}/mobile/F-{id}-*.
 2. For each failure, apply the triage protocol (_qa-foundations.md section 7).
 3. Mobile-specific triage: many mobile failures are timing or simulator-state related.
    Before declaring a product bug, verify the simulator wasn't in a bad state (e.g. previous
    test left the app backgrounded).
-4. Write the run record to docs/qa/{module}/runs/{YYYY-MM-DD}-mobile-{label}.md.
+4. Write the run record to {qa}/{module}/runs/{YYYY-MM-DD}-mobile-{label}.md.
 5. Return the execution phase summary.
 ```
 
@@ -165,7 +165,7 @@ Extend the shared metadata schema from `_qa-foundations.md` section 6 with mobil
 | Priority | P1 |
 | Status | active |
 | Automation | automated |
-| Automation file | docs/qa/auth/automation/mobile/F-001-login.spec.ts:45 |
+| Automation file | {qa}/auth/automation/mobile/F-001-login.spec.ts:45 |
 | Created | 2026-04-10 by qa-mobile-agent |
 | Last updated | 2026-04-10 by qa-mobile-agent |
 
@@ -200,7 +200,7 @@ and navigate to the home tab. Covers AC-1 at the mobile layer.
 ## Test data
 | Field | Value |
 |-------|-------|
-| Email | tc006@qa.example.com (from docs/qa/_shared/fixtures/users.json) |
+| Email | tc006@qa.example.com (from {qa}/_shared/fixtures/users.json) |
 | Password | "ValidPass123!" |
 
 ## Platform differences
@@ -209,7 +209,7 @@ and navigate to the home tab. Covers AC-1 at the mobile layer.
 - This TC is iOS-specific. See TC-007 for the Android equivalent.
 
 ## Notes
-- Accessibility IDs come from docs/design/auth/screens/login-ios.html.
+- Accessibility IDs come from {design}/auth/screens/login-ios.html.
 - iOS simulator may present a "Save password" prompt after submit — use `acceptAlert()` to dismiss.
 ```
 
@@ -234,12 +234,12 @@ Never use index-based selectors (`//android.widget.Button[3]`) — they break as
 
 ## Automation conventions (Appium / WebdriverIO)
 
-- **Framework**: Appium via WebdriverIO or pure Appium client. Confirm against `MANIFEST.md ## Stack` and `docs/specs/_shared/platform/mobile.md`.
-- **Location**: `{qa}/{module}/automation/mobile/F-{id}-{slug}.{ext}`. One file per feature, covering both iOS and Android unless the flows diverge significantly.
+- **Framework**: Appium via WebdriverIO or pure Appium client. Confirm against `MANIFEST.md ## Stack` and `{specs}/_shared/platform/mobile.md`.
+- **Location**: `{tests}/{module}/mobile/F-{id}-{slug}.{ext}`. One file per feature, covering both iOS and Android unless the flows diverge significantly.
 - **Page Object Model (mandatory)**: no raw selectors in test files.
 - **Driver config**: platform capabilities live in `{qa}/_shared/fixtures/mobile/capabilities.{ios,android}.json`. Never hardcode device names, OS versions, or bundle IDs in test files.
 - **Async waits**: use Appium's explicit waits (`waitForDisplayed`, `waitForEnabled`). Avoid `browser.pause(ms)` unless annotated and followed up.
-- **Screenshots on failure**: configure Appium to save screenshots to `docs/qa/{module}/runs/screenshots/` on every test failure.
+- **Screenshots on failure**: configure Appium to save screenshots to `{qa}/{module}/runs/screenshots/` on every test failure.
 
 ---
 
@@ -311,8 +311,8 @@ For features with offline support:
 
 The orchestrator brings up the test harness before dispatching you with `phase: execute`. You do NOT bring up or tear down the harness. When you start, assume:
 
-- API is running at the URL in `docs/specs/_shared/platform/backend.md ## Test Harness.base_url`
-- Appium server is running at the URL in `docs/specs/_shared/platform/mobile.md ## Test Harness.appium_url`
+- API is running at the URL in `{specs}/_shared/platform/backend.md ## Test Harness.base_url`
+- Appium server is running at the URL in `{specs}/_shared/platform/mobile.md ## Test Harness.appium_url`
 - iOS simulator and/or Android emulator are booted and ready
 - The app build is installed on the simulator(s)
 - Test DB is at clean state (qa-api-agent has already executed against it)

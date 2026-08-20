@@ -15,12 +15,12 @@ Metrics are captured at two layers. **Neither relies on agent self-assessment** 
 **What it proves:** the agent ran, it touched N files, it completed or blocked. These are observable facts from outside the agent — the agent can't fake them.
 
 ### Layer 2 — External quality signals (downstream judgment)
-**Captured by:** `PostToolUse` hook on `Write|Edit` for `reports/` and `docs/qa/_shared/bugs/` files
+**Captured by:** `PostToolUse` hook on `Write|Edit` for `reports/` and `{qa}/_shared/bugs/` files
 **Contains:**
 - **Reviewer writes `reports/review-F-*.md`** → extract PASS/FAIL, C1-C16 results, failure details
 - **Product-agent writes `reports/product-review-F-*.md`** → extract APPROVED/CHANGES REQUESTED, issue counts
-- **QA agent writes `docs/qa/_shared/bugs/BUG-*.md`** → extract severity, root cause layer, feature
-- **QA agent writes `docs/qa/*/runs/*.md`** → extract test pass/fail/skip counts
+- **QA agent writes `{qa}/_shared/bugs/BUG-*.md`** → extract severity, root cause layer, feature
+- **QA agent writes `{qa}/*/runs/*.md`** → extract test pass/fail/skip counts
 **Written to:** `.claude/eval/metrics/layer2/{date}-{signal-type}-{feature}.json`
 **What it proves:** an independent agent assessed the upstream agent's output quality. A reviewer finding 3 C4 violations is a quality signal about web-agent — it's not web-agent grading itself.
 
@@ -346,8 +346,8 @@ When running against a sample project in `.claude/eval/sample-projects/`, agents
 ├── README.md                           ← project description
 ├── .claude/eval/
 │   ├── expected/                       ← what correct agent output looks like
-│   │   ├── docs/specs/auth/F-001-login.md   ← expected spec (for diffing)
-│   │   ├── docs/qa/auth/F-001/api/          ← expected TC structure
+│   │   ├── {specs}/auth/F-001-login.md   ← expected spec (for diffing)
+│   │   ├── {qa}/auth/F-001/api/          ← expected TC structure
 │   │   └── checks.json                 ← expected reviewer C1-C16 results
 │   └── rubric.md                       ← scoring criteria for human evaluation
 ```

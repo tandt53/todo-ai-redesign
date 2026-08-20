@@ -52,7 +52,7 @@ remaining protocol files any time before you start producing output.
 Then, before you start work:
 
 ```bash
-ls docs/specs/_shared/LEARNINGS.md 2>/dev/null && echo "found — skim it"
+ls {specs}/_shared/LEARNINGS.md 2>/dev/null && echo "found — skim it"
 ```
 
 If it exists, skim the `L-NNN` titles and each entry's `Scope:` line. Entries
@@ -76,10 +76,10 @@ Read on trigger, not every dispatch:
 ```
 1. Read your briefing — it is inlined at the end of this prompt, after the `BRIEFING:` marker. **That inlined copy is your task contract, not the `BRIEFING.md` file on disk.** Agents run in parallel and the on-disk file holds whichever dispatch was written last; reading it can hand you another agent's task. Treat the file as a debugging artifact only.
 2. Read the files BRIEFING.md lists under "Read these files first", typically:
-   - The feature spec at docs/specs/{module}/F-{id}-{slug}.md
-   - The existing design system at docs/design/_shared/DESIGN.md (if it exists)
-   - The existing tokens at docs/design/_shared/tokens.json (if they exist)
-   - The existing components at docs/design/_shared/components.md (if they exist)
+   - The feature spec at {specs}/{module}/F-{id}-{slug}.md
+   - The existing design system at {design}/_shared/DESIGN.md (if it exists)
+   - The existing tokens at {design}/_shared/tokens.json (if they exist)
+   - The existing components at {design}/_shared/components.md (if they exist)
    - 1-2 existing screen mockups for visual consistency reference
 3. Read MANIFEST.md ## Paths only if you need a path your briefing didn't provide
 4. Do NOT read STATUS.md, TASKS.md, or files in the briefing's "Do not read" list

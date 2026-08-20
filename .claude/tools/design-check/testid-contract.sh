@@ -2,7 +2,7 @@
 # Does the implementation honour the mockup's testid catalogue?
 #
 #   bash .claude/tools/design-check/testid-contract.sh \
-#     --mockups "docs/design/auth/screens/login.html docs/design/auth/screens/login-ios.html" \
+#     --mockups "design/auth/screens/login.html design/auth/screens/login-ios.html" \
 #     --impl    "src/auth/web/LoginForm.tsx src/auth/mobile/LoginScreen.tsx"
 #
 # The mockup's testids are a contract between three agents: design-agent

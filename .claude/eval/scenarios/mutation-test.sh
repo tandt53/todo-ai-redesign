@@ -57,8 +57,8 @@ run_case() {
   # times one copy per case. That is the difference between a check that runs at
   # Gate 2 and one nobody will ever wait for. Every scenario resolves its paths
   # from $CLAUDE_ROOT or $PROJECT_ROOT, and the full set of those is `.claude/`
-  # plus the root-level MANIFEST/CLAUDE files — nothing under docs/specs/, src/, docs/qa/,
-  # docs/design/, node_modules/ or .git/ is touched by any of them.
+  # plus the root-level MANIFEST/CLAUDE files — nothing under specs/, src/, qa/,
+  # design/, node_modules/ or .git/ is touched by any of them.
   cp -R "$TEMPLATE_ROOT/.claude" "$T/" 2>/dev/null
   for root_file in MANIFEST.md CLAUDE.md BRIEFING.md; do
     [ -f "$TEMPLATE_ROOT/$root_file" ] && cp "$TEMPLATE_ROOT/$root_file" "$T/"
@@ -70,8 +70,8 @@ run_case() {
   #
   # Symlinks are safe here because of an invariant every case must keep:
   # **a mutation may only write inside `.claude/` or to a root-level file.**
-  # Those are copied and therefore private to the sandbox. Nothing under docs/specs/,
-  # src/, docs/qa/, docs/design/ is ever mutated — the scenarios read those paths, they do
+  # Those are copied and therefore private to the sandbox. Nothing under specs/,
+  # src/, qa/, design/ is ever mutated — the scenarios read those paths, they do
   # not rewrite them. A case that broke that rule would edit the real project,
   # so add cases accordingly.
   #
@@ -141,6 +141,20 @@ run_case R3 "referenced protocol file removed" \
 # R4 — a machine-specific absolute path in a prompt.
 run_case R4 "absolute machine path in a prompt" \
   "printf '\nRead /Users/someone/projects/app/specs/thing.md first.\n' >> $A/spec-agent.md"
+
+# R4 — a bare root literal returns. MANIFEST is only the source of truth for
+# where things live if agents resolve THROUGH it; a bare `specs/` agrees with it
+# exactly until a project moves that root, and then fails by looking somewhere
+# that is not there.
+run_case R4 "a bare root literal replaces a token" \
+  "sed -i.bak 's|{specs}/|specs/|' $A/spec-agent.md"
+
+# R4 — one QA agent drifts back to filing executable automation under {qa},
+# where the code tooling does not reach it. Silent: the other two still use
+# {tests}, and the divergence surfaces only when someone wonders why one suite
+# is never typechecked.
+run_case R4 "an agent files automation under {qa} again" \
+  "sed -i.bak 's|{tests}/{module}/e2e/|{qa}/{module}/automation/e2e/|' $A/qa-web-agent.md"
 
 # R5 — a stale C-range quote. En-dash specifically: the ASCII form was the only
 # one the old pattern could see.
