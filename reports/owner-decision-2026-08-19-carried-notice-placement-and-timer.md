@@ -5,7 +5,7 @@ screenshot of `CN-UNDONE` (*"Buy milk" is back on the list.*) docked under the t
 bar, with the question *"sai ở đâu — design hay FE dev?"*
 
 **Answer to that question, recorded because it is the more reusable half:
-neither.** `design/_shared/components.md § CarriedNotice ## Placement` specifies the
+neither.** `docs/design/_shared/components.md § CarriedNotice ## Placement` specifies the
 region docked below the top bar and outside the surface stack, and mobile renders it
 at the frame (`AssistantScreen`, not `ShellHost`) for exactly the reason design
 gives — S3 Lists and S4 Settings slide over the content and under this region, so a

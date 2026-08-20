@@ -46,9 +46,9 @@ the AC text rather than assumed.
 
 ## Write to
 
-- `/Users/tandt/projects/todo-ai-redesign/specs/assistant/F-005-task-detail.md`
+- `/Users/tandt/projects/todo-ai-redesign/docs/specs/assistant/F-005-task-detail.md`
   (amend in place — revision 5)
-- `/Users/tandt/projects/todo-ai-redesign/specs/assistant/index.md`
+- `/Users/tandt/projects/todo-ai-redesign/docs/specs/assistant/index.md`
   (the revision number — revision 4 shipped without this being updated once already,
   and it is the one file a fresh session reads to learn where a feature stands)
 - `/Users/tandt/projects/todo-ai-redesign/reports/gate1-lenses/F-005-revision-5-log.md`

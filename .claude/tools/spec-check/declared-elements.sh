@@ -70,7 +70,15 @@ ORPHANS=0
 ACCOUNTED=0
 while IFS= read -r field; do
   [ -z "$field" ] && continue
-  if printf '%s' "$HAY_NORM" | grep -qF "$(normalise "$field")"; then
+  # Substring test in the shell, NOT `printf | grep -q`. Under `set -o pipefail`
+  # that pipeline reports failure for a field that IS present: `grep -q` exits at
+  # the first match, `printf` then takes SIGPIPE (141), and pipefail promotes it —
+  # so the EARLIER a field appears, the more certainly it is reported missing.
+  # Measured on F-005: 64 KB haystack → 0, 72 KB → 141, with the field present
+  # 11-43 times. See LEARNINGS L-016. Re-applied 2026-08-19 after a template sync
+  # reverted it; T-156 carries the upstream port that stops this recurring.
+  needle="$(normalise "$field")"
+  if [ -n "$needle" ] && case "$HAY_NORM" in *"$needle"*) true ;; *) false ;; esac; then
     ACCOUNTED=$((ACCOUNTED + 1))
   else
     printf '  FAIL  %s: declared in ## Data, then never constrained by an AC, recorded as an Open Question, or excluded in ## Out of Scope\n' "$field"
