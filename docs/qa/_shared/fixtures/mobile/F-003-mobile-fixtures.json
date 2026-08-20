@@ -1,0 +1,188 @@
+{
+  "_meta": {
+    "title": "F-003 mobile-surface QA fixtures",
+    "owner": "qa-mobile-agent (authored T-020, phase: author)",
+    "scope": "Mobile-only test data: the enumerated permission matrix, the lifecycle scenarios, and the test-data namespace. Nothing else.",
+    "not_here": {
+      "utterance_intent_table": "docs/qa/assistant/F-001/api/utterance-intent-fixtures.json — the canonical table is READ, never copied. L-004 records what happens when a spec-declared canonical artifact gets a hand-kept twin: the copies diverge by one row and both sides invent local workarounds that pass. Mobile TCs name canonical row ids; they do not restate rows.",
+      "selector_catalogue": "docs/design/assistant/screens/voice-assistant-view-{ios,android}.html — the 22 ids are PARSED from the mockups at test time by the automation, never hand-listed here. Per L-002, a hand-copied catalogue turns a contract check into a self-agreement check."
+    },
+    "namespace": "qamob-",
+    "users": {
+      "pattern": "qamob-tc{nnn}[{suffix}]@qa.example.com",
+      "note": "One account per TC (per sub-case where a TC drives several). Server state is scoped per X-User-Id, so two TCs may safely reuse the same canonical task title. Seeded task titles carry the qamob- prefix wherever the canonical utterance lets QA choose the title.",
+      "isolation": "_qa-foundations §10 — qa-api-agent uses qaapi-, qa-web-agent uses qaweb-, qa-mobile-agent uses qamob-. No unscoped destructive operation is permitted in any mobile TC."
+    }
+  },
+
+  "permission_matrix": {
+    "_note": "Enumerated, not sampled (F-003 ## Test strategy (mobile)). iOS ×4 + Android ×3 + no-capability + transient ×2. Every row has its own P1 TC — a matrix collapsed into one sampled test cannot distinguish the dimmed/hidden boundary or the denied/permanently-denied split.",
+    "rows": [
+      {
+        "id": "PM-IOS-1",
+        "platform": "ios",
+        "permission_state": { "microphone": "granted", "speech_recognition": "granted" },
+        "capability": true,
+        "expected_mic_mode": "available",
+        "expected_message": null,
+        "expected_cta": false,
+        "tc": "TC-014",
+        "acs": ["AC-2"]
+      },
+      {
+        "id": "PM-IOS-2",
+        "platform": "ios",
+        "permission_state": { "microphone": "denied", "speech_recognition": "granted" },
+        "capability": true,
+        "expected_mic_mode": "dimmed",
+        "expected_message": "names MICROPHONE as the missing capability",
+        "expected_cta": "assistant-permission-cta → app Settings page",
+        "tc": "TC-015",
+        "acs": ["AC-2", "F-001 AC-21"]
+      },
+      {
+        "id": "PM-IOS-3",
+        "platform": "ios",
+        "permission_state": { "microphone": "granted", "speech_recognition": "denied" },
+        "capability": true,
+        "expected_mic_mode": "dimmed",
+        "expected_message": "names SPEECH RECOGNITION as the missing capability",
+        "expected_cta": "assistant-permission-cta → app Settings page",
+        "tc": "TC-016",
+        "acs": ["AC-2", "F-001 AC-21"]
+      },
+      {
+        "id": "PM-IOS-4",
+        "platform": "ios",
+        "permission_state": { "microphone": "denied", "speech_recognition": "denied" },
+        "capability": true,
+        "expected_mic_mode": "dimmed",
+        "expected_message": "names BOTH missing capabilities",
+        "expected_cta": "assistant-permission-cta → app Settings page",
+        "tc": "TC-017",
+        "acs": ["AC-2", "F-001 AC-21", "F-001 AC-20"],
+        "trap": "dimmed, NEVER hidden — hidden is reserved for no-capability (PM-CAP-0)"
+      },
+      {
+        "id": "PM-AND-1",
+        "platform": "android",
+        "permission_state": { "microphone": "granted" },
+        "capability": true,
+        "expected_mic_mode": "available",
+        "expected_message": null,
+        "expected_cta": false,
+        "expected_request_count": 1,
+        "tc": "TC-018",
+        "acs": ["AC-3"],
+        "trap": "speech_recognition must be ABSENT from client.permission_state on Android"
+      },
+      {
+        "id": "PM-AND-2",
+        "platform": "android",
+        "permission_state": { "microphone": "denied" },
+        "capability": true,
+        "expected_mic_mode": "dimmed",
+        "expected_message": "microphone permission is off",
+        "expected_cta": "assistant-permission-cta",
+        "may_rerequest": true,
+        "tc": "TC-019",
+        "acs": ["AC-3", "F-001 AC-21"]
+      },
+      {
+        "id": "PM-AND-3",
+        "platform": "android",
+        "permission_state": { "microphone": "permanently_denied" },
+        "capability": true,
+        "expected_mic_mode": "dimmed",
+        "expected_message": "the grant has to be made in App info → Permissions",
+        "expected_cta": "assistant-permission-cta → App info → Permissions",
+        "may_rerequest": false,
+        "expected_request_count": 0,
+        "tc": "TC-020",
+        "acs": ["AC-3"],
+        "trap": "activating the dimmed mic must NOT re-request — the OS will not show the prompt again"
+      },
+      {
+        "id": "PM-CAP-0",
+        "platform": "both",
+        "permission_state": null,
+        "capability": false,
+        "expected_mic_mode": "hidden",
+        "expected_message": null,
+        "expected_cta": false,
+        "tc": "TC-012",
+        "acs": ["F-001 AC-20"],
+        "trap": "hidden WITHOUT error; detected by capability, never by platform name"
+      },
+      {
+        "id": "PM-TRANS-1",
+        "platform": "both",
+        "permission_state": { "microphone": "granted", "speech_recognition": "granted" },
+        "capability": true,
+        "recognizer_failure": "service_busy",
+        "expected_mic_mode": "dimmed",
+        "expected_message": "states the TRANSIENT cause; distinguishable from permission-denied",
+        "expected_cta": false,
+        "recovers": true,
+        "tc": "TC-022",
+        "acs": ["F-001 AC-22"]
+      },
+      {
+        "id": "PM-TRANS-2",
+        "platform": "both",
+        "permission_state": { "microphone": "granted", "speech_recognition": "granted" },
+        "capability": true,
+        "recognizer_failure": "language_pack_unavailable",
+        "expected_mic_mode": "dimmed",
+        "expected_message": "states the missing language pack as the cause",
+        "expected_cta": false,
+        "recovers": true,
+        "tc": "TC-022",
+        "acs": ["AC-4", "F-001 AC-22"],
+        "trap": "recognizer PRESENT but no pack for the interface language = transient (dimmed), NOT no-capability (hidden)"
+      }
+    ]
+  },
+
+  "lifecycle_scenarios": {
+    "_note": "Kill is simulated at the port boundary: a DurableStore double whose contents survive constructing a fresh model instance. That is the ACs' stated observable (F-003 ## Test strategy (mobile)). A real OS kill is device-lab debt.",
+    "rows": [
+      { "id": "LC-KILL-LISTEN", "at": "listening", "event": "kill", "survives": ["client.pending_input"], "expect": "recognized-so-far text reopens into the composer; zero turns sent", "tc": "TC-024", "acs": ["AC-5", "F-001 AC-26"] },
+      { "id": "LC-BG-LISTEN", "at": "listening", "event": "background", "survives": ["client.pending_input"], "expect": "capture stops, words kept, zero turns sent, foreground lands in idle", "tc": "TC-025", "acs": ["AC-5", "AC-7"] },
+      { "id": "LC-KILL-THINK", "at": "thinking", "event": "kill", "survives": ["client.outgoing_turn"], "expect": "payload with original client_turn_id, sent_at, attempts survives; cleared only on ack", "tc": "TC-026", "acs": ["AC-6", "F-001 AC-27"] },
+      { "id": "LC-REPLAY-APPLIED", "at": "thinking", "event": "kill+replay", "recorded_status": "applied", "expect": "same client_turn_id → replayed:true, outcome re-served, effect appears EXACTLY ONCE", "tc": "TC-027", "acs": ["AC-6", "F-001 AC-16"] },
+      { "id": "LC-REPLAY-ASKED", "at": "thinking", "event": "kill+replay", "recorded_status": "asked", "expect": "re-serve, nothing re-executes", "tc": "TC-027", "acs": ["AC-6", "F-001 AC-16"] },
+      { "id": "LC-REPLAY-UNDONE", "at": "thinking", "event": "kill+replay", "recorded_status": "undone", "expect": "re-serve, nothing re-executes", "tc": "TC-027", "acs": ["AC-6", "F-001 AC-16"] },
+      { "id": "LC-REPLAY-FAILED", "at": "thinking", "event": "kill+replay", "recorded_status": "failed", "expect": "RE-ATTEMPT (failed → pending under the same id)", "tc": "TC-027", "acs": ["AC-6", "F-001 AC-16"] },
+      { "id": "LC-REPLAY-NEVER-SENT", "at": "thinking", "event": "kill before dispatch", "recorded_status": null, "expect": "executed for the first time on replay — exactly once", "tc": "TC-026, TC-027", "acs": ["AC-6"] },
+      { "id": "LC-INT-CALL", "at": "listening", "event": "incoming call", "expect": "cancel-while-listening; audio session released; mic returns without re-prompt", "tc": "TC-029", "acs": ["AC-7", "F-001 AC-3"] },
+      { "id": "LC-INT-ASSISTANT", "at": "listening", "event": "system assistant (Siri / Google Assistant)", "expect": "same as LC-INT-CALL", "tc": "TC-029", "acs": ["AC-7", "F-001 AC-3"] },
+      { "id": "LC-INT-FOCUS", "at": "listening", "event": "audio-focus loss", "expect": "same as LC-INT-CALL", "tc": "TC-029", "acs": ["AC-7", "F-001 AC-3"] },
+      { "id": "LC-INT-ROUTE", "at": "listening", "event": "output-route change", "expect": "same as LC-INT-CALL", "tc": "TC-029", "acs": ["AC-7", "F-001 AC-3"] },
+      { "id": "LC-FG-OPEN", "at": "any", "event": "foreground with open session", "expect": "GET /assistant/session is the FIRST request; session resumes visibly", "tc": "TC-030", "acs": ["AC-8", "F-001 AC-28"] },
+      { "id": "LC-FG-CLOSED", "at": "any", "event": "cold open with closed session", "expect": "exactly ONE boundary message, then clean start; not re-rendered on a second foreground", "tc": "TC-031", "acs": ["AC-8", "F-001 AC-28"] }
+    ]
+  },
+
+  "connectivity_scenarios": {
+    "rows": [
+      { "id": "NET-OFFLINE-MIC", "state": "offline", "expect": "mic stays AVAILABLE — offline alone never dims or hides it", "tc": "TC-021", "acs": ["AC-4"] },
+      { "id": "NET-OFFLINE-LOCAL", "state": "offline", "expect": "recognized text lands in the composer → local no-AI path; zero /assistant/* calls; offline banner renders", "tc": "TC-021", "acs": ["AC-4", "F-001 AC-25"] },
+      { "id": "NET-DROP-INFLIGHT", "state": "drop mid-request", "expect": "queued notice visible; replay under the SAME client_turn_id; effect appears once; store cleared on ack", "tc": "TC-023", "acs": ["AC-4", "AC-6", "F-001 AC-25", "F-001 AC-16"] }
+    ]
+  },
+
+  "device_lab_debt": {
+    "_note": "Mirrors F-003 ## Test strategy (mobile) — what the node tier genuinely cannot claim. Kept here so the automation can assert the debt list has not silently shrunk.",
+    "items": [
+      { "item": "real permission dialogs + Settings deep link", "acs": ["AC-2", "AC-3"], "tc": ["TC-013", "TC-015", "TC-016", "TC-017", "TC-018", "TC-019", "TC-020"] },
+      { "item": "a real incoming call interrupting capture", "acs": ["AC-7"], "tc": ["TC-029"] },
+      { "item": "a real OS memory-pressure kill (incl. storage flush before process death)", "acs": ["AC-5", "AC-6"], "tc": ["TC-024", "TC-026"] },
+      { "item": "VoiceOver and TalkBack announcement", "acs": ["AC-12"], "tc": ["TC-037", "TC-038"] },
+      { "item": "keyboard occlusion and rotation", "acs": ["AC-10"], "tc": ["TC-034"] },
+      { "item": "system back and back-swipe", "acs": ["AC-11"], "tc": ["TC-036"] },
+      { "item": "on-device recognition while offline in the interface language", "acs": ["AC-4"], "tc": ["TC-021"] },
+      { "item": "touch-target measurement on a device", "acs": ["AC-9"], "tc": ["TC-032"] }
+    ]
+  }
+}

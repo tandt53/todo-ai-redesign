@@ -19,22 +19,22 @@
 ```yaml
 layout: domain-modular    # values: domain-modular | flat | custom
 roots:
-  specs: specs/
-  design: design/
+  specs: docs/specs/      # specs, design and qa sit under docs/: read by people AND agents
+  design: docs/design/
   src: src/
-  qa: qa/                 # test CASES + run records (authored, traced to ACs)
+  qa: docs/qa/            # test CASES + run records (authored, traced to ACs)
   tests: tests/           # executable automation — CODE, where code tooling reaches
   # Inherited requirements from `todo-ai`, the app this project redesigns. Copied
-  # verbatim 2026-08-17 and READ-ONLY — see specs/_source/README.md for why editing
+  # verbatim 2026-08-17 and READ-ONLY — see docs/specs/_source/README.md for why editing
   # them here is L-004's shape, and for the ADR-7 vs ADR-007 namespace rule.
   # This repo has cited UC-20 / UC-52 / ADR-7 / ADR-11 since F-001 while the
   # documents lived only in the other repository; this root makes those resolve.
-  source_requirements: specs/_source/
+  source_requirements: docs/specs/_source/
   # Tooling root, not a product artifact root: the Expo shell that builds and
   # installs the mobile client onto a simulator/emulator so its screens can be
   # exercised on a real runtime. Added 2026-08-17 (T-057) — the first device run
   # found two defects (BUG-003, BUG-004) that no other tier could reach.
-  # It imports src/ and design/ and is never imported BY them.
+  # It imports src/ and docs/design/ and is never imported BY them.
   sim_harness: .mobile-app/
 
 shared_dir: _shared       # folder name for cross-cutting artifacts inside each root
@@ -43,7 +43,7 @@ modules: [assistant]               # business domains in this project (e.g. auth
 patterns:
   # Per-module artifact locations. {module} is substituted at read time.
   # For feature_spec, {feature_id} and {feature_slug} are also substituted
-  # (e.g. module=auth, feature_id=003, feature_slug=password-reset → specs/auth/F-003-password-reset.md).
+  # (e.g. module=auth, feature_id=003, feature_slug=password-reset → docs/specs/auth/F-003-password-reset.md).
   feature_index:        "{specs}/{module}/index.md"                        # table of features in this module
   feature_spec:         "{specs}/{module}/F-{feature_id}-{feature_slug}.md"  # one file per feature
   api_contracts:        "{specs}/{module}/api-contracts.md"
@@ -93,7 +93,7 @@ patterns:
 ```
 
 <!-- Alternate layouts (not active — switch by changing `layout:` above):
-     - layout: flat       → no modules; everything at the root of each (e.g. specs/features/, qa/features/). For tiny projects.
+     - layout: flat       → no modules; everything at the root of each (e.g. docs/specs/features/, docs/qa/features/). For tiny projects.
      - layout: custom     → orchestrator detected an existing non-standard structure (e.g. monorepo apps/auth/).
                             Patterns override the defaults; the modules list is filled in from detection. -->
 
@@ -319,7 +319,7 @@ project/
 │   ├── state/
 │   │   ├── STATUS.md        ← live pipeline state
 │   │   └── TASKS.md         ← task queue
-├── specs/
+├── docs/specs/
 │   ├── _shared/          ← ARCHITECTURE, standards, ADRs, glossary
 │   └── {module}/
 │       ├── index.md              ← table of features in this module
@@ -327,13 +327,13 @@ project/
 │       ├── api-contracts.md      ← shared by all features in the module
 │       ├── data-model.md
 │       └── design-notes.md
-├── design/
+├── docs/design/
 │   ├── _shared/          ← DESIGN.md, tokens.json, components.md
 │   └── {module}/screens/
 ├── src/
 │   ├── _shared/          ← cross-cutting code (or `shared/`)
 │   └── {module}/         ← web/ mobile/ api/ __tests__/ colocated
-└── qa/
+└── docs/qa/
     ├── _shared/          ← KNOWLEDGE.md, TRACEABILITY.md, shared fixtures
     └── {module}/         ← test cases, automation/, runs/
 ```

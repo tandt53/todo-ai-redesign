@@ -49,8 +49,8 @@ afterEach(cleanup)
 // outside it (Tasks as a surface, the Lists menu, Settings, the New-list
 // sheet). The catalogue is their union.
 const MOCKUPS = [
-  'design/assistant/screens/voice-assistant-view.html',
-  'design/assistant/screens/app-shell.html',
+  'docs/design/assistant/screens/voice-assistant-view.html',
+  'docs/design/assistant/screens/app-shell.html',
 ].map((p) => resolve(process.cwd(), p))
 
 function idsIn(file: string): Set<string> {
@@ -585,7 +585,7 @@ const STATES: { name: string; state: AppState; drive?: (m: Mounted) => void }[] 
     name: 'mic-hidden',
     state: seed({ tasks: TASKS, capability: 'none' }, [userMsg('add pay the electricity bill'), appliedMsg], 'none'),
   },
-  // --- app-shell.html's states (design/assistant/screens/app-shell.html) ------
+  // --- app-shell.html's states (docs/design/assistant/screens/app-shell.html) ------
   // Three of the shell's states are SITUATIONS rather than model snapshots — a
   // menu that was opened, a row being renamed — so they are driven, exactly as
   // the two new-message states are.
@@ -672,7 +672,7 @@ describe('testid contract (design mockup catalogue)', () => {
     // owes only the drawing"*, so the claim is checked against the catalogue itself.
     // Without this, tier 1 would be a place to park any id at all, which is exactly
     // what `NOT_BUILT`'s own `throw` prevents in the other direction.
-    const md = readFileSync(resolve(process.cwd(), 'design/_shared/components.md'), 'utf8')
+    const md = readFileSync(resolve(process.cwd(), 'docs/design/_shared/components.md'), 'utf8')
     const unpublished = Object.keys(AHEAD_OF_MOCKUPS).filter((id) => !md.includes(`\`${id}\``))
     expect(unpublished).toEqual([])
     // …and no tier-1 id has quietly reached a mockup: once it does, it belongs in

@@ -74,7 +74,7 @@ describe('AC-9 — every interactive element reaches the platform minimum as HIT
     // Parsing that table is what makes PAINTED a consumer of the number rather
     // than a second declaration of it.
     const md = readFileSync(
-      resolve(dirname(fileURLToPath(import.meta.url)), '../../../../design/_shared/components.md'),
+      resolve(dirname(fileURLToPath(import.meta.url)), '../../../../docs/design/_shared/components.md'),
       'utf8',
     )
     const section = md.split('## Touch — minimum content widths')[1]

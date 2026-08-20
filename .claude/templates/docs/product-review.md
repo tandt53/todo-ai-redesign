@@ -5,7 +5,7 @@
 **Date**: {YYYY-MM-DD}
 **Agent**: product-agent
 **Phase**: review-spec | review-final
-**Feature**: specs/{module}/F-{id}-{slug}.md
+**Feature**: docs/specs/{module}/F-{id}-{slug}.md
 **Result**: APPROVED | CHANGES REQUESTED
 
 ## Summary

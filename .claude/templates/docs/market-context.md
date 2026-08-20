@@ -1,14 +1,14 @@
 # Market Context
 <!-- Written by: humans (with product-agent spot-checking via web search) -->
 <!-- Read by: product-agent (evaluates feature specs against this), spec-agent (references for discovery) -->
-<!-- Lives at: specs/_shared/market-context.md -->
+<!-- Lives at: docs/specs/_shared/market-context.md -->
 <!-- Optional: only needed when product-agent is enabled (MANIFEST ## Product.product_review: required) -->
 
 ## Product category
 [What kind of product is this? e.g. "B2B SaaS invoicing platform", "consumer fintech app", "internal operations dashboard"]
 
 ## Target users
-[Who are the real users? Link to specs/_shared/user-stories.md for full personas.]
+[Who are the real users? Link to docs/specs/_shared/user-stories.md for full personas.]
 - [Primary persona: description, technical level, workflow]
 - [Secondary persona: description]
 

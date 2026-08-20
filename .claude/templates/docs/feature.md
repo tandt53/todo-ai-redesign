@@ -1,6 +1,6 @@
 # Feature: [Feature Name]
 <!-- One file per feature. Lives at `{specs}/{module}/F-{id}-{slug}.md` -->
-<!-- (resolved via MANIFEST ## Paths.feature_spec → e.g. specs/auth/F-003-password-reset.md). -->
+<!-- (resolved via MANIFEST ## Paths.feature_spec → e.g. docs/specs/auth/F-003-password-reset.md). -->
 <!-- Target: 80–150 lines. If longer, split into sub-features with their own F-ids. -->
 <!-- Owned by: spec-agent. Read by: all agents working on this feature. -->
 
@@ -51,7 +51,7 @@ known_bugs: []                            # open bug IDs blocking this feature (
 <!-- Each item is a testable statement. The platform QA agents (qa-api, qa-web, qa-mobile) write test cases from these. -->
 <!-- Each AC has a stable ID (AC-1, AC-2…) AND a platform tag listing which platforms must cover it. -->
 <!-- Valid platform tags: api, web, mobile. An AC may apply to one, two, or all three. -->
-<!-- Reviewer-agent C2 walks qa/{module}/F-{id}/{platform}/ folders and verifies every AC-id has ≥ 1 P1 test case in each tagged platform's folder. -->
+<!-- Reviewer-agent C2 walks docs/qa/{module}/F-{id}/{platform}/ folders and verifies every AC-id has ≥ 1 P1 test case in each tagged platform's folder. -->
 
 - [ ] **AC-1** (api, web, mobile) — Given [context], when [action], then [outcome]
 - [ ] **AC-2** (api, web, mobile) — Given [context], when [action], then [outcome]
@@ -138,7 +138,7 @@ stateDiagram-v2
 - **Observability**: [what to monitor — e.g. "login failure rate", "password reset email delivery latency"]
 - **Feature flag**: [flag name, if gated — e.g. "FF_PASSWORD_RESET_V2", rollout strategy]
 - **Rollback criteria**: [when to roll back — e.g. "if login error rate > 5% for 10 minutes"]
-- **SLO reference**: [target — e.g. "p95 login < 300ms, per specs/_shared/non-functional-req.md"]
+- **SLO reference**: [target — e.g. "p95 login < 300ms, per docs/specs/_shared/non-functional-req.md"]
 - **Alerts**: [who gets paged and when — or "N/A" for non-critical features]
 
 ---

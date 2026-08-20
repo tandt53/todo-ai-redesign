@@ -112,7 +112,7 @@ export function TrashIcon() {
   )
 }
 
-// --- app shell (design/assistant/screens/app-shell.html) ---------------------
+// --- app shell (docs/design/assistant/screens/app-shell.html) ---------------------
 
 /** PS-TASKS' list glyph. */
 export function ListIcon() {

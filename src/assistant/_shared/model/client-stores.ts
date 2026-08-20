@@ -1,5 +1,5 @@
 // Typed wrappers over DurableStore for the client contracts in
-// specs/assistant/data-model.md §Client-side stores. Keys are namespaced per
+// docs/specs/assistant/data-model.md §Client-side stores. Keys are namespaced per
 // user so QA's per-TC users never share state (_qa-foundations §10).
 //
 // - client.pending_input  {text, updated_at} — survives tab close/reload;
@@ -21,7 +21,7 @@ import type { TaskView, TurnRequestBody } from '../types.ts'
  * the synthesiser and the recognizer, on both clients. A **build-time constant**
  * this phase — no settings surface is a deliverable of any feature in flight
  * (F-002 product M-1) — set to the language of the shipped copy in
- * `design/_shared/components.md` (English, ADR-008; the value moved from
+ * `docs/design/_shared/components.md` (English, ADR-008; the value moved from
  * `vi-VN`, nothing else about this contract did).
  *
  * Never `navigator.language`, and never a second per-port constant: AC-23's

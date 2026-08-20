@@ -6,7 +6,7 @@
 // Native and this tier is node-only — so what is asserted is that the surface
 // DECLARES them for a state that has rows, and `a11y.test.ts` separately
 // asserts a component references each id by name. The device observable stays
-// QA's (`qa/assistant/F-003/mobile/`).
+// QA's (`docs/qa/assistant/F-003/mobile/`).
 
 import { describe, expect, it } from 'vitest'
 import { initialState } from '../../_shared/model/reducer.ts'

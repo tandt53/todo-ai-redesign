@@ -57,8 +57,8 @@ run_case() {
   # times one copy per case. That is the difference between a check that runs at
   # Gate 2 and one nobody will ever wait for. Every scenario resolves its paths
   # from $CLAUDE_ROOT or $PROJECT_ROOT, and the full set of those is `.claude/`
-  # plus the root-level MANIFEST/CLAUDE files — nothing under specs/, src/, qa/,
-  # design/, node_modules/ or .git/ is touched by any of them.
+  # plus the root-level MANIFEST/CLAUDE files — nothing under docs/specs/, src/, docs/qa/,
+  # docs/design/, node_modules/ or .git/ is touched by any of them.
   cp -R "$TEMPLATE_ROOT/.claude" "$T/" 2>/dev/null
   for root_file in MANIFEST.md CLAUDE.md BRIEFING.md; do
     [ -f "$TEMPLATE_ROOT/$root_file" ] && cp "$TEMPLATE_ROOT/$root_file" "$T/"
@@ -70,8 +70,8 @@ run_case() {
   #
   # Symlinks are safe here because of an invariant every case must keep:
   # **a mutation may only write inside `.claude/` or to a root-level file.**
-  # Those are copied and therefore private to the sandbox. Nothing under specs/,
-  # src/, qa/, design/ is ever mutated — the scenarios read those paths, they do
+  # Those are copied and therefore private to the sandbox. Nothing under docs/specs/,
+  # src/, docs/qa/, docs/design/ is ever mutated — the scenarios read those paths, they do
   # not rewrite them. A case that broke that rule would edit the real project,
   # so add cases accordingly.
   #

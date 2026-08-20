@@ -30,12 +30,12 @@ the AC text rather than assumed.
 1. `reports/owner-decision-2026-08-19-carried-notice-placement-and-timer.md` — the
    decision, all five sections. §2's table and §4's last paragraph are the two that
    change AC text most directly.
-2. `specs/assistant/F-005-task-detail.md` — **AC-43, AC-47, AC-33 and OQ13**. AC-47's
+2. `docs/specs/assistant/F-005-task-detail.md` — **AC-43, AC-47, AC-33 and OQ13**. AC-47's
    lifetime bullet and AC-33's 2.2.1 bullet both carry parenthetical revision history
    explaining why the current wording is as strong as it is; read those before
    weakening either, because both were tightened deliberately in revision 4 and one of
    them was tightened *to remove exactly the reading a timer reintroduces*.
-3. `design/_shared/components.md` **§ CarriedNotice** (from `## Placement` through the
+3. `docs/design/_shared/components.md` **§ CarriedNotice** (from `## Placement` through the
    lifetime rules) — what design published against the current AC, including the
    composer constraint on Talk.
 4. `src/assistant/mobile/model/carried.ts` — `carriedRows()`. The row-type boundary
@@ -99,7 +99,7 @@ is a shortcut to it, not the remedy itself.
 ## Success criteria
 
 - 48 ACs before, 48 after. No id renumbered, added or deleted. Verify by counting.
-- `bash .claude/tools/spec-check/declared-elements.sh specs/assistant/F-005-task-detail.md`
+- `bash .claude/tools/spec-check/declared-elements.sh docs/specs/assistant/F-005-task-detail.md`
   exits 0.
 - AC-47's lifetime rule is stated **by carried content**, and both groups are named.
 - AC-43's ender list has five enders and its closing phrase matches the list.

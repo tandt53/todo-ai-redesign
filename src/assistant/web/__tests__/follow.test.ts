@@ -7,7 +7,7 @@
 // The falsifiable half is the sum, and it lives in `_shared/model/follow.ts`
 // precisely so both clients can be held to the same number.
 //
-// The copy assertions PARSE `design/_shared/components.md` at run time
+// The copy assertions PARSE `docs/design/_shared/components.md` at run time
 // (L-008/L-002). If they retyped design's strings, design and implementation
 // could drift apart while both halves of the test still agreed with each other.
 
@@ -23,7 +23,7 @@ import {
 } from '../../_shared/model/follow.ts'
 import type { Message } from '../../_shared/types.ts'
 
-const CATALOGUE_FILE = resolve(process.cwd(), 'design/_shared/components.md')
+const CATALOGUE_FILE = resolve(process.cwd(), 'docs/design/_shared/components.md')
 const IMPLEMENTATION_FILE = resolve(process.cwd(), 'src/assistant/_shared/model/follow.ts')
 
 // ---------------------------------------------------------------------------

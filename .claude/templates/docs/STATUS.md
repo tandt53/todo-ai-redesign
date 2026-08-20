@@ -26,7 +26,7 @@
 |---------|-------|--------|---------|---------|------------|
 <!-- Example:
 | T-042 | web-agent | auth | F-003 | src/auth/web/ | 2026-04-07T14:22Z |
-| T-043 | qa-web-agent | auth | F-003 | qa/auth/F-003/web/ | 2026-04-07T14:23Z |
+| T-043 | qa-web-agent | auth | F-003 | docs/qa/auth/F-003/web/ | 2026-04-07T14:23Z |
 -->
 | — | — | — | — | — | — |
 

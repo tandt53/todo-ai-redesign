@@ -87,7 +87,7 @@ SHUF="$(mktemp -d)"
 cat > "$SHUF/TASKS.md" <<'SHUF_EOF'
 | ID | Status | Title | Agent | Artifacts | Module | Feature | Depends | Pri | Outcome |
 |----|--------|-------|-------|-----------|--------|---------|---------|-----|---------|
-| T-001 | DONE | Spec | spec-agent | specs/a.md | auth | F-001 | — | P0 | 7 AC |
+| T-001 | DONE | Spec | spec-agent | docs/specs/a.md | auth | F-001 | — | P0 | 7 AC |
 | T-002 | PENDING | Impl | backend-agent | — | auth | F-001 | T-001 | P2 | — |
 | T-003 | PENDING | TCs | qa-web-agent | — | auth | F-001 | T-001 | P1 | — |
 | T-004 | PENDING | Waiting | web-agent | — | auth | F-001 | T-002 | P0 | — |
@@ -107,7 +107,7 @@ if command -v node >/dev/null 2>&1; then
       const fs = require("fs");
       const r = parseTasks(fs.readFileSync(process.argv[2], "utf8"));
       const ok = r.done.length === 1 && r.done[0].agent === "spec-agent"
-              && r.done[0].artifacts[0] === "specs/a.md" && r.pending.length === 3;
+              && r.done[0].artifacts[0] === "docs/specs/a.md" && r.pending.length === 3;
       process.exit(ok ? 0 : 1);
     ' "$LIB_JS" "$SHUF/TASKS.md" 2>/dev/null; then
     _record_pass "node reader parses correctly with columns in a different order"
@@ -277,11 +277,11 @@ cp "$VALIDATOR" "$FIX2/.claude/hooks/"
 cp "$MANIFEST" "$FIX2/MANIFEST.md"
 touch "$FIX2/qa/auth/TC.md"
 
-# web-agent writing into the qa/ tree — the overlap the no-locks design forbids.
+# web-agent writing into the docs/qa/ tree — the overlap the no-locks design forbids.
 cat > "$FIX2/.claude/state/TASKS.md" <<'FIX2_EOF'
 | ID | Title | Module | Feature | Agent | Pri | Depends | Status | Artifacts | Outcome |
 |----|-------|--------|---------|-------|-----|---------|--------|-----------|---------|
-| T-001 | Cross-subtree write | auth | F-001 | web-agent | P0 | — | DONE | qa/auth/TC.md | oops |
+| T-001 | Cross-subtree write | auth | F-001 | web-agent | P0 | — | DONE | docs/qa/auth/TC.md | oops |
 FIX2_EOF
 if bash "$FIX2/.claude/hooks/validate-state.sh" >/dev/null 2>&1; then
   _record_fail "C6 passed an agent writing outside its declared subtree"
@@ -293,7 +293,7 @@ fi
 cat > "$FIX2/.claude/state/TASKS.md" <<'FIX2_EOF'
 | ID | Title | Module | Feature | Agent | Pri | Depends | Status | Artifacts | Outcome |
 |----|-------|--------|---------|-------|-----|---------|--------|-----------|---------|
-| T-001 | Credited anyway | auth | F-001 | qa-web-agent | P0 | — | DONE | qa/auth/TC.md | fine |
+| T-001 | Credited anyway | auth | F-001 | qa-web-agent | P0 | — | DONE | docs/qa/auth/TC.md | fine |
 FIX2_EOF
 printf '%s\n' '{"ts":"2026-01-01T00:00:00Z","event":"agent_return","task":"T-001","agent":"qa-web-agent","status":"DONE","artifacts":[],"evidence_conflict":"done_without_artifacts"}' \
   > "$FIX2/.claude/eval/events.jsonl"

@@ -49,7 +49,7 @@ remaining protocol files any time before you start producing output.
 Then, before you start reviewing:
 
 ```bash
-ls specs/_shared/LEARNINGS.md 2>/dev/null && echo "found — skim it"
+ls docs/specs/_shared/LEARNINGS.md 2>/dev/null && echo "found — skim it"
 ```
 
 You are both the main **writer** and a primary **reader** of this file. Skim the
@@ -76,7 +76,7 @@ Read on trigger, not every dispatch:
 3. Read the module's api-contracts.md
 4. Read MANIFEST.md ## Stack to find the project's test/lint/audit commands
 5. Parse the feature spec's ## Acceptance Criteria section for AC-ids AND platform tags
-6. For each platform tag (api, web, mobile), walk qa/{module}/F-{id}/{platform}/ and parse each TC file's metadata for AC coverage
+6. For each platform tag (api, web, mobile), walk docs/qa/{module}/F-{id}/{platform}/ and parse each TC file's metadata for AC coverage
 7. Do NOT read the implementation code as your starting point — your checks pull it on demand
 ```
 
@@ -112,10 +112,10 @@ Example failures:
 C2 FAIL — AC-1 not covered at platform: mobile
   Feature spec tags AC-1 as (api, web, mobile).
   Coverage found:
-    - api:    qa/auth/F-003/api/TC-001-login-valid.md (P1)    ✓
-    - web:    qa/auth/F-003/web/TC-004-login-valid.md (P1)    ✓
+    - api:    docs/qa/auth/F-003/api/TC-001-login-valid.md (P1)    ✓
+    - web:    docs/qa/auth/F-003/web/TC-004-login-valid.md (P1)    ✓
     - mobile: (none)                                           ✗
-  Required: at least one P1 test case referencing AC-1 in qa/auth/F-003/mobile/
+  Required: at least one P1 test case referencing AC-1 in docs/qa/auth/F-003/mobile/
 ```
 
 An AC covered only at P2 or P3 in a tagged platform also fails C2 — the rule requires P1.
@@ -126,7 +126,7 @@ This is the **merge gate** for QA coverage. A feature cannot pass without it.
 
 For each endpoint in the feature spec's `Links.api_endpoints`:
 - Confirm an entry exists in `{specs}/{module}/api-contracts.md` with matching method + path
-- Confirm a handler exists in source: grep the module's source tree for the path string and the HTTP verb, using the handler-registration pattern named in `specs/_shared/platform/backend.md ## Handler registration` (or the equivalent section the platform doc declares).
+- Confirm a handler exists in source: grep the module's source tree for the path string and the HTTP verb, using the handler-registration pattern named in `docs/specs/_shared/platform/backend.md ## Handler registration` (or the equivalent section the platform doc declares).
 - Confirm API integration test coverage: check `{qa}/{module}/F-{feature_id}/api/` for at least one P1 test case that references the endpoint's method + path. qa-api-agent's test cases are the primary evidence for contract consistency — they assert the real HTTP shape against the contract.
 - For each error code declared in the contract, confirm at least one test case triggers it (grep the `api/` folder for the error code string).
 
@@ -150,7 +150,7 @@ Grep implementation files (paths from `Links.implemented_in`) for:
 - Generated files (matching `*.generated.*`)
 - Comments
 
-Each violation: FAIL with file:line and the offending substring. Recommendation: "use token X from design/_shared/tokens.json".
+Each violation: FAIL with file:line and the offending substring. Recommendation: "use token X from docs/design/_shared/tokens.json".
 
 **Part B — Component library compliance:**
 
@@ -177,7 +177,7 @@ Each violation: FAIL with file:line and recommend the library component.
 
 For each layer in `MANIFEST ## Stack` that has implementation files for this feature:
 
-1. Read `specs/_shared/platform/{layer}.md ## Test Harness`. It declares the dependency-manifest file, the install command, the unit-test command, and (if applicable) typecheck / lint / coverage commands for this stack. **You execute those commands — you do not invent commands from memory or assume what tool the stack uses.**
+1. Read `docs/specs/_shared/platform/{layer}.md ## Test Harness`. It declares the dependency-manifest file, the install command, the unit-test command, and (if applicable) typecheck / lint / coverage commands for this stack. **You execute those commands — you do not invent commands from memory or assume what tool the stack uses.**
 2. If the dependency manifest named in the platform doc is missing or the deps aren't installed, run the platform doc's install command. **This is C5's job, not the implementer's excuse.**
 3. Run the platform doc's unit-test command against the module's test path.
 4. Report:
@@ -345,7 +345,7 @@ Otherwise run the smoke test:
 ```bash
 bash .claude/tools/test-quality/suite-can-fail.sh \
   --files "<paths from the feature spec's Links.implemented_in, implementation only>" \
-  --test-cmd "<the unit-test command from specs/_shared/platform/{layer}.md ## Test Harness>"
+  --test-cmd "<the unit-test command from docs/specs/_shared/platform/{layer}.md ## Test Harness>"
 ```
 
 It breaks the implementation on purpose and requires the suite to notice.

@@ -9,8 +9,8 @@
  * COPY: the product ships English (ADR-008, reports/owner-decision-2026-08-17-
  * english-first.md). F-001 "Naming convention" still holds — the spec's words
  * are concept names only and the user-visible wording is owned by
- * design/_shared/components.md and the mockup it publishes
- * (design/assistant/screens/voice-assistant-view.html) — so the literals in
+ * docs/design/_shared/components.md and the mockup it publishes
+ * (docs/design/assistant/screens/voice-assistant-view.html) — so the literals in
  * `EN` below trace to the design system and that mockup, and each assertion
  * states which AC-mandated CONTENT it is really proving (counts, task titles,
  * the quoted transcript). Task titles are fixture data, not copy, and are
@@ -33,7 +33,7 @@
  * row or a QA_EXTRA_ROWS row defined in
  * tests/harness/qa-test-server.ts (the spec's own
  * sanctioned QA extension mechanism — Test strategy). Mapping table:
- * qa/_shared/fixtures/web/assistant-web-fixtures.json.
+ * docs/qa/_shared/fixtures/web/assistant-web-fixtures.json.
  *
  * Run via: npm run test:e2e (playwright.config.ts starts the QA harness +
  * the Vite dev server automatically).
@@ -49,7 +49,7 @@ import { expect, test, type Page, type Request } from '@playwright/test';
 import { AssistantPage, bindSeams } from '../pages/AssistantPage.ts';
 
 // ---------------------------------------------------------------------------
-// Canonical / QA_EXTRA utterances (qa/_shared/fixtures/web/assistant-web-fixtures.json)
+// Canonical / QA_EXTRA utterances (docs/qa/_shared/fixtures/web/assistant-web-fixtures.json)
 // ---------------------------------------------------------------------------
 const U = {
   buyMilk: 'add a task to buy milk',
@@ -80,8 +80,8 @@ const U = {
 };
 
 // ---------------------------------------------------------------------------
-// English UI copy (design/_shared/components.md + the mockup's rendered copy,
-// design/assistant/screens/voice-assistant-view.html). Grouped so a future
+// English UI copy (docs/design/_shared/components.md + the mockup's rendered copy,
+// docs/design/assistant/screens/voice-assistant-view.html). Grouped so a future
 // copy change has ONE place to land instead of forty. Where a string carries a
 // live count or title, it is a function.
 //
@@ -1245,7 +1245,7 @@ function nmaCatalogue(): {
   a11yNew: (label: string) => string;
   a11yWaiting: (label: string) => string;
 } {
-  const md = readFileSync('design/_shared/components.md', 'utf8');
+  const md = readFileSync('docs/design/_shared/components.md', 'utf8');
   const start = md.indexOf('## NewMessageAffordance');
   if (start < 0) throw new Error('components.md has no §NewMessageAffordance — the owning artifact moved');
   const end = md.indexOf('\n## ', start + 1);
@@ -1298,10 +1298,10 @@ function nmaCatalogue(): {
   };
 }
 
-/** design/_shared/tokens.json — the published `question` accent, both themes.
+/** docs/design/_shared/tokens.json — the published `question` accent, both themes.
  * Read from the token file rather than pinned, for the same reason as the copy. */
 function questionAccents(): string[] {
-  const tokens = JSON.parse(readFileSync('design/_shared/tokens.json', 'utf8')) as {
+  const tokens = JSON.parse(readFileSync('docs/design/_shared/tokens.json', 'utf8')) as {
     color: Record<string, { question: string }>;
   };
   return Object.values(tokens.color).map((t) => t.question.toUpperCase());

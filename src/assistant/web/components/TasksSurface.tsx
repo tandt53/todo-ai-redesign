@@ -7,7 +7,7 @@
 // AC-18's four still run through `controller.addTask / toggleTask / editTask /
 // removeTask` with zero AI calls; what changed is where they happen.
 //
-// Copy is transcribed from design/_shared/components.md and the app-shell
+// Copy is transcribed from docs/design/_shared/components.md and the app-shell
 // mockup it points at — never composed here (L-008). Testids come from the
 // mockup catalogue only.
 //

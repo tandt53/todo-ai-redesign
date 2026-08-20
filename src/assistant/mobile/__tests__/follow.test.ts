@@ -12,7 +12,7 @@
 // name, so a mobile-local re-declaration would show up here as two symbols
 // rather than passing quietly.
 //
-// COPY IS PARSED, NEVER RETYPED. `design/_shared/components.md`
+// COPY IS PARSED, NEVER RETYPED. `docs/design/_shared/components.md`
 // § NewMessageAffordance owns the two label forms and the two accessible-name
 // literals; the assertions read that section at run time and compare per row ID,
 // so they fail when the UPSTREAM artifact moves — the direction drift actually
@@ -47,7 +47,7 @@ import type { ScrollMetrics } from '../model/follow.ts'
 import { mobileHarness } from './_helpers.ts'
 
 const ROOT = resolve(import.meta.dirname, '../../../..')
-const COMPONENTS_MD = resolve(ROOT, 'design/_shared/components.md')
+const COMPONENTS_MD = resolve(ROOT, 'docs/design/_shared/components.md')
 const MOBILE_FOLLOW_SRC = resolve(import.meta.dirname, '../model/follow.ts')
 const SHARED_FOLLOW_SRC = resolve(ROOT, 'src/assistant/_shared/model/follow.ts')
 const HOOK_SRC = resolve(import.meta.dirname, '../components/useNewMessageFollow.ts')

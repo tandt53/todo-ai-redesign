@@ -38,7 +38,7 @@
 // is every open task today. It narrows by itself when lists ship: one function
 // body changes and nothing else moves. It is deliberately NOT written as
 // `inbox(t) = open(t)`, even though that is what it evaluates to — see
-// `isFiled` below and INV-INBOX-FILING in `specs/assistant/data-model.md`.
+// `isFiled` below and INV-INBOX-FILING in `docs/specs/assistant/data-model.md`.
 //
 // **`undated` is a cell of the date axis with no surface of its own.** Inbox
 // serves it by coincidence today, and stops the moment anything can be filed:

@@ -64,10 +64,10 @@ import { accountZone, recordClientZone } from './zone.ts'
  * pass.
  *
  * DRIFT, deliberate and reported (T-069): the contract still fixes the
- * Vietnamese literal — `specs/assistant/api-contracts.md` §9 and
- * `specs/assistant/data-model.md` TurnOutcome both pin
+ * Vietnamese literal — `docs/specs/assistant/api-contracts.md` §9 and
+ * `docs/specs/assistant/data-model.md` TurnOutcome both pin
  * "danh sách và bộ lọc trên màn hình", which glosses as exactly this string.
- * ADR-008 supersedes them; `specs/` is spec-agent's to edit and was explicitly
+ * ADR-008 supersedes them; `docs/specs/` is spec-agent's to edit and was explicitly
  * out of scope for this task, so the code moves first and the two contract
  * lines are a named follow-up.
  */
@@ -84,8 +84,8 @@ export const UNSUPPORTED_QUERY_ALTERNATIVE = 'the on-screen list and its filters
  * English (T-069, ADR-008 — English is the product language this phase). The
  * two labels are TRANSCRIBED, not composed: they are the literal chip text
  * design published on `assistant-chip-affirm` / `assistant-chip-negative` in
- * `design/assistant/screens/voice-assistant-view.html` (and its `-android`
- * twin), and they obey `design/_shared/components.md` §Buttons' one-word-per-
+ * `docs/design/assistant/screens/voice-assistant-view.html` (and its `-android`
+ * twin), and they obey `docs/design/_shared/components.md` §Buttons' one-word-per-
  * concept rule — **delete** (never remove/clear) and **task** (never item /
  * to-do). This is also what fixes product-review M5: the split there was the
  * server and the client spelling the same word two ways inside one bubble, and

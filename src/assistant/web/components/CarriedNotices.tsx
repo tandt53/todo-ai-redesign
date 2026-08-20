@@ -36,7 +36,7 @@
 // long.** Every row ends by the user's own act or by a reload. Because there is no
 // time limit, WCAG 2.2.1 is not engaged at all — there is nothing to adjust.
 //
-// Copy is transcribed from `design/_shared/components.md § CarriedNotice`'s
+// Copy is transcribed from `docs/design/_shared/components.md § CarriedNotice`'s
 // literal-message table, cited by row id, and never composed here (L-008). The
 // two `verbatim` slots are the task's own title and the user's own text.
 

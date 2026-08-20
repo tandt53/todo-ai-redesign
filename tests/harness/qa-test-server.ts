@@ -1,6 +1,6 @@
 // QA-owned e2e harness server (T-007e, phase: execute).
 //
-// specs/_shared/platform/web.md ## Test Harness delegates Playwright e2e to
+// docs/specs/_shared/platform/web.md ## Test Harness delegates Playwright e2e to
 // QA. The spec's Test strategy names three seams an e2e run needs — an
 // injectable transcript source (client-side; already wired by web-agent as
 // window.__assistantSeams behind a test-mode guard, see

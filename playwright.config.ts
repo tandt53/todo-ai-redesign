@@ -1,5 +1,5 @@
 // Playwright e2e config (T-007e, phase: execute). Owned by qa-web-agent per
-// specs/_shared/platform/web.md ## Test Harness ("e2e (Playwright) is
+// docs/specs/_shared/platform/web.md ## Test Harness ("e2e (Playwright) is
 // QA-owned under tests/{module}/e2e/") and MANIFEST writers:.
 //
 // webServer starts BOTH processes the suite needs, so the orchestrator never
@@ -8,7 +8,7 @@
 //      NOT the plain `npm run dev:assistant` entrypoint. That entrypoint hardcodes
 //      systemClock and the static FIXTURE_TABLE, exposing neither the AI-call
 //      counter nor an injectable idle-close timer over HTTP — both named as
-//      required seams in specs/assistant/F-001-voice-assistant-view.md
+//      required seams in docs/specs/assistant/F-001-voice-assistant-view.md
 //      ## Test strategy. qa-test-server.ts reuses the real app factory
 //      (createApp) with a FakeClock + counting Interpreter wrapper and two
 //      `/__qa__/*` control endpoints; see that file's header comment.
@@ -34,10 +34,10 @@ export default defineConfig({
   testDir: 'tests/assistant/e2e',
   testMatch: '**/*.spec.ts',
   // Generated output goes to output/ (MANIFEST ## Paths.output), not into
-  // qa/…/runs/. That directory holds AUTHORED run records — a QA agent's
+  // docs/qa/…/runs/. That directory holds AUTHORED run records — a QA agent's
   // written summary of what happened — and burying regenerable traces and
   // screenshots inside it is how the two stop being distinguishable. The
-  // original reason for putting them there was that qa/ was the only writable
+  // original reason for putting them there was that docs/qa/ was the only writable
   // subtree; output/ is now a declared root and is gitignored.
   outputDir: 'output/test-results',
   fullyParallel: false,

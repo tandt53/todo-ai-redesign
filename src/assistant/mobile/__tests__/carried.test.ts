@@ -1,7 +1,7 @@
 // § CarriedNotice on the phone — F-005 AC-47's `(mobile)` half, AC-2's failed and
 // offline-refused states, and AC-43's undo offer.
 //
-// The copy assertions **parse `design/_shared/components.md`** rather than compare
+// The copy assertions **parse `docs/design/_shared/components.md`** rather than compare
 // against retyped strings. That is L-008 rule 2 and the reason is directional: a
 // hand-transcribed expectation turns a contract check into a self-agreement check,
 // so design and the implementation can drift apart while both halves of the test
@@ -32,7 +32,7 @@ import { carriedRegionOccupied, carriedRowFor, carriedRows } from '../model/carr
 import { T0 } from './_helpers.ts'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..')
-const MD = readFileSync(resolve(ROOT, 'design/_shared/components.md'), 'utf8')
+const MD = readFileSync(resolve(ROOT, 'docs/design/_shared/components.md'), 'utf8')
 const SECTION = MD.split('## CarriedNotice')[1] as string
 const MOBILE_SRC = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 

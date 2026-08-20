@@ -57,7 +57,7 @@ export type ShellSurface = 'talk' | 'tasks' | 'settings' | 'detail'
 
 /**
  * How long the arrival flash lasts: `motion.duration_ms.diffFlashHold` +
- * `diffFlashFade` from `design/_shared/tokens.json`. AC-4's existing treatment,
+ * `diffFlashFade` from `docs/design/_shared/tokens.json`. AC-4's existing treatment,
  * re-attached by AC-31 from "whenever a turn applies" to "on arrival from the
  * message that changed it".
  *

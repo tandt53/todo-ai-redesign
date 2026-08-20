@@ -1,7 +1,7 @@
 // Outcome → message mapping (platform web.md: all conversation logic in plain
 // TS, unit-tested under node). Every server outcome renders as a visible
 // message — nothing resolves silently (AC-11); wording follows the design
-// mockup (design/assistant/screens/voice-assistant-view.html).
+// mockup (docs/design/assistant/screens/voice-assistant-view.html).
 
 import type { AppliedAnatomy, DiffRow, QuestionKind, UndoResultRec } from '../../api/types.ts'
 import type {

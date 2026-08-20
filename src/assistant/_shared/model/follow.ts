@@ -7,7 +7,7 @@
 // layer takes the measurement and hands it in; this file only does the sums and
 // picks the published copy.
 //
-// Copy is transcribed from design/_shared/components.md §NewMessageAffordance
+// Copy is transcribed from docs/design/_shared/components.md §NewMessageAffordance
 // (rows NMA-HIDDEN / NMA-NEW / NMA-WAITING) — never composed here. The two
 // NMA-NEW forms are stored as two literals rather than one interpolated
 // template, because a template quietly serves combinations nobody enumerated

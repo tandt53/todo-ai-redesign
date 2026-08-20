@@ -1,7 +1,7 @@
 // View-model + wire types for the F-001 web client.
 //
 // Wire shapes are IMPORTED (type-only) from the backend module — the single
-// source is specs/assistant/api-contracts.md + data-model.md, which
+// source is docs/specs/assistant/api-contracts.md + data-model.md, which
 // src/assistant/api/{types.ts, engine/serialize.ts} implement. Nothing here
 // invents a contract (ethos §9); this file only adds the client-side view
 // model the reducer renders from.

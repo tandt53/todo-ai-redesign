@@ -15,7 +15,7 @@ const repo = path.resolve(shell, '..')
 const config = getDefaultConfig(shell)
 const mod = (name) => path.join(shell, 'node_modules', name)
 
-// `design/` is watched too: model/theme.ts imports design/_shared/tokens.json
+// `docs/design/` is watched too: model/theme.ts imports docs/design/_shared/tokens.json
 // directly, so the app reads design's real colour tokens rather than a copy.
 config.watchFolders = [path.join(repo, 'src'), path.join(repo, 'design')]
 config.resolver.nodeModulesPaths = [path.join(shell, 'node_modules')]

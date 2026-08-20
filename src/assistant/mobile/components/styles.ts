@@ -1,4 +1,4 @@
-// The one stylesheet, built from `design/_shared/tokens.json` through
+// The one stylesheet, built from `docs/design/_shared/tokens.json` through
 // `model/theme.ts`. Every value here is a token or arithmetic on tokens —
 // reviewer C4 fails hardcoded design values, and there are none to fail.
 //

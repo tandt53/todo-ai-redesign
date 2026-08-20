@@ -103,6 +103,6 @@ If any gate fails, the task stays `IN_PROGRESS` and a follow-up task is dispatch
 <!-- Examples — the parser strips HTML comments, so these never dispatch:
 | T-002 | Implement login endpoint | auth | F-001 | backend-agent | P0 | T-001 | IN_PROGRESS | — | — |
 | T-003 | Build login UI | auth | F-001 | web-agent | P1 | T-002 | BLOCKED | — | needs POST /auth/login first |
-| T-004 | Author web test cases | auth | F-001 | qa-web-agent | P1 | T-001 | DONE | qa/auth/F-001/web/ | 9 TC, 7/7 AC covered |
+| T-004 | Author web test cases | auth | F-001 | qa-web-agent | P1 | T-001 | DONE | docs/qa/auth/F-001/web/ | 9 TC, 7/7 AC covered |
 | T-00X | Crawl existing app for QA knowledge | — | — | qa-explorer-agent | P2 | — | PENDING | — | — |
 -->

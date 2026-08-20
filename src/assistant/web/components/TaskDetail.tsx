@@ -32,7 +32,7 @@
 //
 // ── COPY AND TESTIDS ───────────────────────────────────────────────────────
 //
-// `design/_shared/components.md` carries F-005's `§ CarriedNotice`, `§ TaskRow`
+// `docs/design/_shared/components.md` carries F-005's `§ CarriedNotice`, `§ TaskRow`
 // marks, `§ Skeletons` SK-DETAIL and `§ SurfaceError` SE-DETAIL — all transcribed,
 // never composed (L-008). It does **not** yet carry a `§ TaskDetail`: the detail's
 // own field labels and testids are owed at design's `phase: screens`. The ids

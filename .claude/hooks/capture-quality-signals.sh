@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # Layer 2 — External quality signal capture
-# PostToolUse hook for Write/Edit on reports/ and qa/_shared/bugs/
+# PostToolUse hook for Write/Edit on reports/ and docs/qa/_shared/bugs/
 #
 # Captures judgment signals from DOWNSTREAM agents:
 #   - reviewer-agent writes reports/review-F-*.md → extract PASS/FAIL, C1-C16 results, failure count
 #   - product-agent writes reports/product-review-F-*.md → extract APPROVED/CHANGES REQUESTED, issue counts
-#   - qa-*-agent writes qa/_shared/bugs/BUG-*.md → extract severity, layer, feature
-#   - qa-*-agent writes qa/*/runs/*.md → extract pass/fail counts
+#   - qa-*-agent writes docs/qa/_shared/bugs/BUG-*.md → extract severity, layer, feature
+#   - qa-*-agent writes docs/qa/*/runs/*.md → extract pass/fail counts
 #
 # Writes: .claude/eval/metrics/layer2/{timestamp}-{signal-type}-{feature}.json
-# Triggered: every time a Write/Edit succeeds on a reports/ or qa/ file
+# Triggered: every time a Write/Edit succeeds on a reports/ or docs/qa/ file
 
 set -e
 

@@ -482,7 +482,7 @@ describe('day headers stack above their rows — and only on the collections tha
 // ---------------------------------------------------------------------------
 
 describe('published copy is transcribed from components.md, not composed', () => {
-  const md = readFileSync(resolve(ROOT, 'design/_shared/components.md'), 'utf8')
+  const md = readFileSync(resolve(ROOT, 'docs/design/_shared/components.md'), 'utf8')
 
   function tableRows(heading: string): Map<string, string[]> {
     const section = md.split(`## ${heading}`)[1]

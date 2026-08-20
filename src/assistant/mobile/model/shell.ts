@@ -1,7 +1,7 @@
 // The app shell — S1 Talk and S2 Tasks as two PEER surfaces, one at a time.
 //
 // A phone is always below `tokens.json breakpoints.split`
-// (`design/_shared/components.md § AppFrame`), so there is no two-pane layout
+// (`docs/design/_shared/components.md § AppFrame`), so there is no two-pane layout
 // on mobile at any width and no viewport branch anywhere in this file. What the
 // wide web frame expresses by POSITION (Tasks in the centre, Talk in a right
 // panel) a phone expresses by ORDER, and the reciprocal one-tap control between

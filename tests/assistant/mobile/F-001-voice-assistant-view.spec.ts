@@ -4,7 +4,7 @@
  *
  * RUNNER: vitest, node env, no simulator/emulator/Metro
  *   npx vitest run tests/assistant/mobile
- * per `specs/_shared/platform/mobile.md ## Test Harness`. React Native is never
+ * per `docs/specs/_shared/platform/mobile.md ## Test Harness`. React Native is never
  * imported here — everything native arrives through a port double.
  *
  * ─────────────────────────────────────────────────────────────────────────────
@@ -26,8 +26,8 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * WHAT THIS FILE DOES AND DOES NOT PROVE (L-003)
  * ─────────────────────────────────────────────────────────────────────────────
- *   PART A — the upstream contract. Parses `specs/assistant/F-001-...md` for
- *            AC-30's threshold and `design/_shared/components.md`
+ *   PART A — the upstream contract. Parses `docs/specs/assistant/F-001-...md` for
+ *            AC-30's threshold and `docs/design/_shared/components.md`
  *            § NewMessageAffordance for the published labels, accessible-name
  *            forms and live-region politeness. Every parser THROWS on a miss:
  *            a parser that silently matches nothing yields the same green as
@@ -48,7 +48,7 @@
  *            owed to that append, not to the gesture.
  *
  * NOT provable here, by construction — these need real layout and are named in
- * the return and in `qa/assistant/F-001/mobile/index.md` as device-tier debt:
+ * the return and in `docs/qa/assistant/F-001/mobile/index.md` as device-tier debt:
  *   · that a message is actually ON SCREEN (b),
  *   · that the pill OVERLAYS rather than reflows the pane,
  *   · that the two-line clamp keeps the question legible at 375,
@@ -98,12 +98,12 @@ import {
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '../../..')
 
-const SPEC = join(ROOT, 'specs/assistant/F-001-voice-assistant-view.md')
-const COMPONENTS = join(ROOT, 'design/_shared/components.md')
+const SPEC = join(ROOT, 'docs/specs/assistant/F-001-voice-assistant-view.md')
+const COMPONENTS = join(ROOT, 'docs/design/_shared/components.md')
 const MOCKUPS = {
-  ios: join(ROOT, 'design/assistant/screens/voice-assistant-view-ios.html'),
-  android: join(ROOT, 'design/assistant/screens/voice-assistant-view-android.html'),
-  web: join(ROOT, 'design/assistant/screens/voice-assistant-view.html'),
+  ios: join(ROOT, 'docs/design/assistant/screens/voice-assistant-view-ios.html'),
+  android: join(ROOT, 'docs/design/assistant/screens/voice-assistant-view-android.html'),
+  web: join(ROOT, 'docs/design/assistant/screens/voice-assistant-view.html'),
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

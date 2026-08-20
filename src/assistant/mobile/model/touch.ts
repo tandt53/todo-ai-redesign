@@ -43,12 +43,12 @@ function textControlHeight(fontSize: number, verticalPadding: number, kind: 'bod
 
 /**
  * What each interactive element paints, per the mockup CSS
- * (design/assistant/screens/voice-assistant-view-ios.html). Widths for
+ * (docs/design/assistant/screens/voice-assistant-view-ios.html). Widths for
  * text-sized controls are their minimum content width; a wider label only ever
  * increases the hit area, so the minimum is the case worth asserting.
  *
  * The content-width floors that cannot simply be read off a CSS rule are
- * published in `design/_shared/components.md` § "Touch — minimum content
+ * published in `docs/design/_shared/components.md` § "Touch — minimum content
  * widths": add-task 92, task-row 320, undo 80, retry 68, permission CTA 136.
  * A floor is a multiple of 4 at or below the rendered width — not the tightest
  * such multiple, because these are measured in an HTML mockup while the control
@@ -159,7 +159,7 @@ export const PAINTED: Record<InteractiveId, Size> = {
     height: textControlHeight(font.size.body, spacing.sm),
   },
 
-  // ── App shell (design/assistant/screens/app-shell-ios.html CSS) ───────────
+  // ── App shell (docs/design/assistant/screens/app-shell-ios.html CSS) ───────────
   //
   // WIDTHS. components.md § Testid catalogue — app shell states it plainly:
   // "No content-width floor is published for any control above. § Touch's

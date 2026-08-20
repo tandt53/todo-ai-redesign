@@ -3,10 +3,10 @@
  * Authored 2026-08-19 by qa-api-agent (T-166, phase: author).
  *
  * SOURCES. Every ASSERTION below derives from, and only from:
- *   specs/assistant/F-005-task-detail.md          (revision 4, Gate 1 closed)
- *   specs/assistant/api-contracts.md § Feature F-005
- *   specs/assistant/data-model.md § Feature F-005
- *   specs/_shared/adr/ADR-010 … ADR-015
+ *   docs/specs/assistant/F-005-task-detail.md          (revision 4, Gate 1 closed)
+ *   docs/specs/assistant/api-contracts.md § Feature F-005
+ *   docs/specs/assistant/data-model.md § Feature F-005
+ *   docs/specs/_shared/adr/ADR-010 … ADR-015
  * No file under src/ was read to decide what to assert (_qa-foundations §2).
  * The import block below is WIRING — public, constructor-injected composition
  * seams (Store / Interpreter / Clock, ADR-001) — and the harness doors it uses
@@ -57,7 +57,7 @@ import {
   ReopenableStore,
   createQaDoors,
 } from '../../harness/qa-doors.ts';
-import usersFixture from '../../../qa/_shared/fixtures/api/f005-users.json';
+import usersFixture from '../../../docs/qa/_shared/fixtures/api/f005-users.json';
 
 const F = usersFixture as {
   users: Record<string, { x_user_id: string; role: string }>;

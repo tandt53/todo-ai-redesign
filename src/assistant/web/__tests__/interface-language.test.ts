@@ -18,7 +18,7 @@ import { WebSpeechTranscriptSource } from '../ports/web-speech-source.ts'
 
 const ROOT = process.cwd()
 const PORT_SRC = resolve(ROOT, 'src/assistant/web/ports/web-speech-source.ts')
-const DATA_MODEL = resolve(ROOT, 'specs/assistant/data-model.md')
+const DATA_MODEL = resolve(ROOT, 'docs/specs/assistant/data-model.md')
 
 /** A minimal SpeechRecognition stand-in that records what it was configured with. */
 class FakeRecognition {

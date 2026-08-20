@@ -8,7 +8,7 @@
 //
 // It decides nothing. Which row to show, what it says and what a screen reader
 // hears are all `model/follow.ts`'s answers, transcribed from
-// `design/_shared/components.md` § NewMessageAffordance — this file draws them.
+// `docs/design/_shared/components.md` § NewMessageAffordance — this file draws them.
 //
 // Tapping ONLY scrolls (components.md). It never answers, dismisses or resolves
 // anything: the question's OptionChips remain the only way to answer (F-001

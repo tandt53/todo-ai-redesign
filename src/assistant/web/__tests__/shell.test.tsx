@@ -719,7 +719,7 @@ describe('the shell', () => {
 describe('numbers this code does not own', () => {
   it('the arrival flash lasts exactly diffFlashHold + diffFlashFade', () => {
     const tokens = JSON.parse(
-      readFileSync(resolve(ROOT, 'design/_shared/tokens.json'), 'utf8'),
+      readFileSync(resolve(ROOT, 'docs/design/_shared/tokens.json'), 'utf8'),
     ) as { motion: { duration_ms: Record<string, number> } }
     const hold = tokens.motion.duration_ms['diffFlashHold']
     const fade = tokens.motion.duration_ms['diffFlashFade']
@@ -730,7 +730,7 @@ describe('numbers this code does not own', () => {
 
   it('the one layout branch is at tokens.json breakpoints.split', () => {
     const tokens = JSON.parse(
-      readFileSync(resolve(ROOT, 'design/_shared/tokens.json'), 'utf8'),
+      readFileSync(resolve(ROOT, 'docs/design/_shared/tokens.json'), 'utf8'),
     ) as { breakpoints: Record<string, unknown> }
     const split = tokens.breakpoints['split']
     expect(split, 'tokens.json declares no breakpoints.split').toBeTypeOf('number')

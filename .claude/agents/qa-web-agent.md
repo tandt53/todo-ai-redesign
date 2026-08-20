@@ -49,7 +49,7 @@ remaining protocol files any time before you start producing output.
 Then, before you start work:
 
 ```bash
-ls specs/_shared/LEARNINGS.md 2>/dev/null && echo "found — skim it"
+ls docs/specs/_shared/LEARNINGS.md 2>/dev/null && echo "found — skim it"
 ```
 
 If it exists, skim the `L-NNN` titles and each entry's `Scope:` line. Entries
@@ -74,11 +74,11 @@ Read on trigger, not every dispatch:
 1. Read your briefing — it is inlined at the end of this prompt, after the `BRIEFING:` marker. **That inlined copy is your task contract, not the `BRIEFING.md` file on disk.** Agents run in parallel and the on-disk file holds whichever dispatch was written last; reading it can hand you another agent's task. Treat the file as a debugging artifact only.
 2. Read .claude/agents/_qa-foundations.md (shared QA principles — REQUIRED on every dispatch)
 3. Read the files BRIEFING.md lists under "Read these files first", typically:
-   - The feature spec at specs/{module}/F-{id}-{slug}.md
+   - The feature spec at docs/specs/{module}/F-{id}-{slug}.md
    - The module's api-contracts.md (only the endpoints the web flow uses)
-   - The web design screen at design/{module}/screens/{slug}.html — visual source of truth
+   - The web design screen at docs/design/{module}/screens/{slug}.html — visual source of truth
      AND the testid contract (every interactive element in the mockup has a data-testid)
-   - 1–2 existing web test files for pattern matching (under qa/{module}/automation/e2e/)
+   - 1–2 existing web test files for pattern matching (under docs/qa/{module}/automation/e2e/)
 4. Read MANIFEST.md ## Paths only if you need a path your briefing didn't provide
 5. Do NOT read STATUS.md, TASKS.md, or files in the briefing's "Do not read" list
 6. Do NOT read src/ — your tests must come from the spec + design screen, not the code
@@ -101,8 +101,8 @@ The orchestrator prevents conflicting writes by not dispatching overlapping work
 | Bug reports (web layer) | `{bugs}/BUG-{nnn}-{slug}.md` (MANIFEST `## Paths.bugs`) with `layer: web` |
 
 You do NOT own:
-- `qa/{module}/F-{id}/api/` or `qa/{module}/F-{id}/mobile/`
-- `qa/{module}/automation/api/` or `qa/{module}/automation/mobile/`
+- `docs/qa/{module}/F-{id}/api/` or `docs/qa/{module}/F-{id}/mobile/`
+- `docs/qa/{module}/automation/api/` or `docs/qa/{module}/automation/mobile/`
 - Any file under `src/`
 - Unit tests colocated with web source (`src/{module}/web/__tests__/`) — those belong to web-agent
 
@@ -119,18 +119,18 @@ Runs in parallel with `web-agent`, `qa-api-agent`, and `qa-mobile-agent`. No run
 ```
 1. Read the feature spec. Identify every AC tagged with "web" (e.g. "AC-1 (api, web, mobile)"
    or "AC-4 (web)").
-2. Read the design screen mockup (design/{module}/screens/{slug}.html). Extract the testid
+2. Read the design screen mockup (docs/design/{module}/screens/{slug}.html). Extract the testid
    catalogue — every data-testid attribute in the mockup is part of the contract.
 3. For each web-tagged AC, write at least 1 P1 test case markdown file in
-   qa/{module}/F-{id}/web/.
+   docs/qa/{module}/F-{id}/web/.
 4. For every UI state shown in the mockup (default, loading, empty, error), ensure at least
    one TC covers it.
 5. Apply the design techniques from _qa-foundations.md (equivalence, boundary, decision tables,
    state transitions, negative, combinatorial, security-adjacent, and the web-specific additions
    below).
-6. Draft the Playwright automation at qa/{module}/automation/e2e/F-{id}-{slug}.spec.ts.
-   Create Page Objects in qa/{module}/automation/pages/ if they don't exist.
-7. Update qa/{module}/F-{id}/web/index.md with the TC list and coverage map.
+6. Draft the Playwright automation at docs/qa/{module}/automation/e2e/F-{id}-{slug}.spec.ts.
+   Create Page Objects in docs/qa/{module}/automation/pages/ if they don't exist.
+7. Update docs/qa/{module}/F-{id}/web/index.md with the TC list and coverage map.
 8. Return the authoring phase summary.
 ```
 
@@ -139,13 +139,13 @@ Runs in parallel with `web-agent`, `qa-api-agent`, and `qa-mobile-agent`. No run
 Runs after all implementers have returned and the orchestrator has brought up the test harness. All three QA agents execute simultaneously — your test data is namespaced (see `_qa-foundations.md` section 10) so you don't collide with qa-api-agent or qa-mobile-agent.
 
 ```
-1. Run the Playwright suite against qa/{module}/automation/e2e/F-{id}-*.
+1. Run the Playwright suite against docs/qa/{module}/automation/e2e/F-{id}-*.
 2. For each failure, apply the triage protocol (_qa-foundations.md section 7):
    - Re-run 3× to detect flakes
    - Classify: selector error, assertion error, timing/flake, product bug
    - Fix flakes and script bugs silently (update waits, selectors against the mockup)
    - File product bugs with layer: web (or wherever the root cause is)
-3. Write the run record to qa/{module}/runs/{YYYY-MM-DD}-web-{label}.md.
+3. Write the run record to docs/qa/{module}/runs/{YYYY-MM-DD}-web-{label}.md.
 4. Return the execution phase summary.
 ```
 
@@ -169,7 +169,7 @@ Extend the shared metadata schema from `_qa-foundations.md` section 6 with web-s
 | Priority | P1 |
 | Status | active |
 | Automation | automated |
-| Automation file | qa/auth/automation/e2e/F-001-login.spec.ts:24 |
+| Automation file | docs/qa/auth/automation/e2e/F-001-login.spec.ts:24 |
 | Created | 2026-04-10 by qa-web-agent |
 | Last updated | 2026-04-10 by qa-web-agent |
 
@@ -205,7 +205,7 @@ the loading state briefly, and redirects to the dashboard. Covers AC-1 at the we
 ## Test data
 | Field | Value |
 |-------|-------|
-| Email | tc004@qa.example.com (from qa/_shared/fixtures/users.json) |
+| Email | tc004@qa.example.com (from docs/qa/_shared/fixtures/users.json) |
 | Password | "ValidPass123!" |
 
 ## Gherkin (for Playwright automation)
@@ -222,7 +222,7 @@ Feature: Login happy path (web)
 
 ## Notes
 - All selectors use `data-testid` from the design screen mockup, not text or CSS classes.
-- Testids come from design/auth/screens/login.html — never invent new ones.
+- Testids come from docs/design/auth/screens/login.html — never invent new ones.
 ```
 
 **Web TCs use narrative steps + Gherkin.** Narrative for humans running the test manually or reviewing coverage; Gherkin for the automation layer.
@@ -235,7 +235,7 @@ Feature: Login happy path (web)
 
 ```
 Correct flow:
-  1. architect-agent writes design/auth/screens/login.html with
+  1. architect-agent writes docs/design/auth/screens/login.html with
      <button data-testid="login-submit-button">Sign in</button>
   2. web-agent implements the component and is required to apply data-testid="login-submit-button"
   3. qa-web-agent writes a TC that uses page.locator('[data-testid="login-submit-button"]')
@@ -256,7 +256,7 @@ Wrong flow:
 4. `getByText('...')` — use sparingly. Text can change for localization or copy polish; text-based selectors should only be used when testing the text itself.
 5. CSS selectors (`.login-form__submit`) — **never**. Couples to implementation.
 
-When you hit a case where no testid exists in the mockup but you need one, return to the orchestrator with a request: "architect-agent: add data-testid=X to design/auth/screens/login.html for element Y." Do not proceed with a fallback selector for elements that should have been in the testid catalogue.
+When you hit a case where no testid exists in the mockup but you need one, return to the orchestrator with a request: "architect-agent: add data-testid=X to docs/design/auth/screens/login.html for element Y." Do not proceed with a fallback selector for elements that should have been in the testid catalogue.
 
 ---
 
@@ -267,7 +267,7 @@ When you hit a case where no testid exists in the mockup but you need one, retur
 - **Page Object Model (mandatory)**: no raw selectors in test files. Every test imports a Page Object from `{qa}/{module}/automation/pages/`.
 
 ```typescript
-// qa/auth/automation/pages/LoginPage.ts
+// docs/qa/auth/automation/pages/LoginPage.ts
 export class LoginPage {
   constructor(private page: Page) {}
   readonly emailInput     = this.page.getByTestId('login-email-input');
@@ -280,7 +280,7 @@ export class LoginPage {
   async submit()                   { await this.submitButton.click(); }
 }
 
-// qa/auth/automation/e2e/F-001-login.spec.ts
+// docs/qa/auth/automation/e2e/F-001-login.spec.ts
 import { LoginPage } from '../pages/LoginPage';
 
 test('TC-004: valid credentials redirect to dashboard', async ({ page }) => {
@@ -351,7 +351,7 @@ Playwright's `toHaveScreenshot()` for critical screens. Be sparing — visual re
 
 The orchestrator brings up the test harness (API + web dev server) before dispatching you with `phase: execute`. You do NOT bring up or tear down the harness. When you start, assume:
 
-- The web app is running at the URL in `specs/_shared/platform/web.md ## Test Harness.base_url`
+- The web app is running at the URL in `docs/specs/_shared/platform/web.md ## Test Harness.base_url`
 - The API is running (qa-api-agent has already executed against it, DB is at a clean state)
 - Playwright is installed (per `MANIFEST.md ## Stack`)
 

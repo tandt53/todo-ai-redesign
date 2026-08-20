@@ -420,7 +420,7 @@ describe('AC-9 — urgency is readable from the row, in all four states', () => 
     const { resolve, dirname } = await import('node:path')
     const { fileURLToPath } = await import('node:url')
     const md = readFileSync(
-      resolve(dirname(fileURLToPath(import.meta.url)), '../../../../design/_shared/components.md'),
+      resolve(dirname(fileURLToPath(import.meta.url)), '../../../../docs/design/_shared/components.md'),
       'utf8',
     )
     const section = md.split("### The row's mark budget")[1] as string

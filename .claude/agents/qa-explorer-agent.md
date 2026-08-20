@@ -46,7 +46,7 @@ remaining protocol files any time before you start producing output.
 Then, before you start work:
 
 ```bash
-ls specs/_shared/LEARNINGS.md 2>/dev/null && echo "found — skim it"
+ls docs/specs/_shared/LEARNINGS.md 2>/dev/null && echo "found — skim it"
 ```
 
 If it exists, skim the `L-NNN` titles and each entry's `Scope:` line. Entries
@@ -97,7 +97,7 @@ You do NOT read STATUS.md, TASKS.md, src/, or the target app's source code. Your
 | Pipeline-visible knowledge base | `{specs}/_shared/qa-knowledge/{crawl_project_name}/` (synced from the crawler output) |
 
 You do NOT own:
-- Any test case file under `qa/` — that's qa-api/qa-web/qa-mobile-agent's job
+- Any test case file under `docs/qa/` — that's qa-api/qa-web/qa-mobile-agent's job
 - The crawler's internals (`.claude/tools/qa-crawler/skills/`, CLAUDE.md, scripts) — treat as opaque
 - The target app's source code
 
@@ -152,9 +152,9 @@ Return BLOCKED. Include in the summary:
 3. Sanity check: if pageIndex.json lists 0 pages → PARTIAL with "crawler ran but discovered no pages;
    check auth_credentials or target_url reachability".
 4. Sync the knowledge subtree into the pipeline project:
-   - mkdir -p qa/_shared/knowledge/{crawl_project_name}
+   - mkdir -p docs/qa/_shared/knowledge/{crawl_project_name}
    - cp -r .claude/tools/qa-crawler/projects/{crawl_project_name}/output/knowledge/*
-       qa/_shared/knowledge/{crawl_project_name}/
+       docs/qa/_shared/knowledge/{crawl_project_name}/
 5. Return DONE with the summary format below.
 ```
 
@@ -177,7 +177,7 @@ When BRIEFING.md names a `**Workspace task:**` and `qa_knowledge_page_upsert` is
 
 ```
 After Phase 1 (crawl) writes per-page JSONs to
-qa/_shared/knowledge/{crawl_project_name}/pages/, loop the files and upsert
+docs/qa/_shared/knowledge/{crawl_project_name}/pages/, loop the files and upsert
 each one:
 
   for each page in output/knowledge/pages/*.json:
@@ -185,7 +185,7 @@ each one:
       scope: "{crawl_project_name}",                    # from BRIEFING
       url: page.url,
       title: page.title,
-      source_path: "qa/_shared/knowledge/{scope}/pages/{filename}",
+      source_path: "docs/qa/_shared/knowledge/{scope}/pages/{filename}",
       metadata: <full page JSON blob — elements, forms, modals, links>,
       crawled_at: "<ISO-8601 timestamp from the crawl run>",
     )
@@ -223,9 +223,9 @@ line.
 status: DONE
 confidence: HIGH                 # HIGH if pages > 0 AND qa-intelligence present AND auth succeeded
 files_created:
-  - qa/_shared/knowledge/{name}/pageIndex.json
-  - qa/_shared/knowledge/{name}/qa-intelligence.json
-  - qa/_shared/knowledge/{name}/pages/*.json (page count)
+  - docs/qa/_shared/knowledge/{name}/pageIndex.json
+  - docs/qa/_shared/knowledge/{name}/qa-intelligence.json
+  - docs/qa/_shared/knowledge/{name}/pages/*.json (page count)
 files_modified: []
 tests_passing: 0                 # this agent runs no tests
 tests_total: 0

@@ -14,7 +14,7 @@
  * tasks arrive as opaque handles t1..tn, never uuids), so the fixture
  * interpreter below is a from-scratch implementation of that port, not a
  * port of the old title-keyed shim. See the run record at
- * qa/assistant/runs/ for what changed and why (script bugs vs product bugs).
+ * docs/qa/assistant/runs/ for what changed and why (script bugs vs product bugs).
  *
  * Runs in-process: an http.Server built from createApp(deps), bound to
  * 127.0.0.1 on an ephemeral port, driven by supertest — no external network.
@@ -39,7 +39,7 @@ import type {
   Interpreter,
   InterpreterContext,
 } from '../../../src/assistant/api/ports/interpreter.ts';
-import usersFixture from '../../../qa/_shared/fixtures/api/users.json';
+import usersFixture from '../../../docs/qa/_shared/fixtures/api/users.json';
 
 const U1 = (usersFixture as any).users['QAAPI-U1'].x_user_id as string;
 const U2 = (usersFixture as any).users['QAAPI-U2'].x_user_id as string;
@@ -65,7 +65,7 @@ const normalize = (s: string): string => s.trim().toLowerCase();
  * Interpreter port directly, handle-based per ADR-002. Rule-matched by regex
  * against the transcript patterns this suite's TCs send; every utterance and
  * its expected interpretation is documented in the canonical fixture table
- * qa/assistant/F-001/api/utterance-intent-fixtures.json (unchanged) — this
+ * docs/qa/assistant/F-001/api/utterance-intent-fixtures.json (unchanged) — this
  * class is the runtime realization of those same rows against a real
  * per-turn handle context, which the static JSON can't resolve on its own.
  * The stub replaces MODEL INTERPRETATION ONLY, including answer

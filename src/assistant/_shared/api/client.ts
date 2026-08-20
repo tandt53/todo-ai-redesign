@@ -1,4 +1,4 @@
-// Thin typed client over specs/assistant/api-contracts.md. The client never
+// Thin typed client over docs/specs/assistant/api-contracts.md. The client never
 // invents shapes (platform web.md): request bodies carry exactly the fields
 // the contract names, responses are trusted as the wire types.
 //

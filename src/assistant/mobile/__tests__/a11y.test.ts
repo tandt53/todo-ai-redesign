@@ -56,7 +56,7 @@ const sorted = (s: Iterable<string>) => [...s].sort()
 
 describe('AC-12 — one catalogue, three attribute spellings', () => {
   const ios = catalogueOf(
-    'design/assistant/screens/voice-assistant-view-ios.html',
+    'docs/design/assistant/screens/voice-assistant-view-ios.html',
     'accessibilityIdentifier',
   )
   // The Android mockup carries identity on `resource-id`, NOT on
@@ -66,13 +66,13 @@ describe('AC-12 — one catalogue, three attribute spellings', () => {
   // accessibilityIdentifier on iOS and resource-id on Android, which is how one
   // catalogue reaches both platforms.
   const android = catalogueOf(
-    'design/assistant/screens/voice-assistant-view-android.html',
+    'docs/design/assistant/screens/voice-assistant-view-android.html',
     'resource-id',
   )
-  const web = catalogueOf('design/assistant/screens/voice-assistant-view.html', 'data-testid')
+  const web = catalogueOf('docs/design/assistant/screens/voice-assistant-view.html', 'data-testid')
 
   // 23 since F-001 AC-30 / BUG-004 published `assistant-new-message-affordance`
-  // (design/_shared/components.md § NewMessageAffordance, "one id on the control
+  // (docs/design/_shared/components.md § NewMessageAffordance, "one id on the control
   // in all three mockups"). The literal is here on purpose: it is the tripwire
   // that makes a catalogue change arrive as a decision rather than as a silent
   // widening of every set comparison below.
@@ -337,9 +337,9 @@ describe('the APP SHELL catalogue — one source, three attribute spellings', ()
   // Parsed at run time from all three shell mockups, in both directions, for
   // L-008's reason: a hand-copied list turns a contract check into a
   // self-agreement check, and it fails in the direction drift does not travel.
-  const ios = catalogueOf('design/assistant/screens/app-shell-ios.html', 'accessibilityIdentifier')
-  const android = catalogueOf('design/assistant/screens/app-shell-android.html', 'resource-id')
-  const web = catalogueOf('design/assistant/screens/app-shell.html', 'data-testid')
+  const ios = catalogueOf('docs/design/assistant/screens/app-shell-ios.html', 'accessibilityIdentifier')
+  const android = catalogueOf('docs/design/assistant/screens/app-shell-android.html', 'resource-id')
+  const web = catalogueOf('docs/design/assistant/screens/app-shell.html', 'data-testid')
 
   it('all three shell mockups declare the same ids as each other', () => {
     // The COUNT is deliberately gone. It was 31, and a hardcoded count is a claim
@@ -375,7 +375,7 @@ describe('the APP SHELL catalogue — one source, three attribute spellings', ()
     // Otherwise the map above is a place to hide an invented id. Each entry has to
     // point at a real row of design's own testid table — parsed, not retyped
     // (L-008) — and carry a reason someone can act on.
-    const md = readFileSync(resolve(ROOT, 'design/_shared/components.md'), 'utf8')
+    const md = readFileSync(resolve(ROOT, 'docs/design/_shared/components.md'), 'utf8')
     const section = md.split('## CarriedNotice')[1] as string
     expect(section, '§ CarriedNotice is missing from components.md').toBeDefined()
     for (const [id, reason] of Object.entries(SHELL_IDS_AWAITING_MOCKUP)) {

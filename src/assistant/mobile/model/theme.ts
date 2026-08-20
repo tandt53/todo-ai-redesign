@@ -1,6 +1,6 @@
 // The design tokens, as React Native style values.
 //
-// `design/_shared/tokens.json` is imported DIRECTLY rather than transcribed:
+// `docs/design/_shared/tokens.json` is imported DIRECTLY rather than transcribed:
 // tokens.json says "Every value an implementer uses comes from this file", and
 // a hand-kept second copy is the exact failure LEARNINGS L-004 records — a
 // canonical artifact living in two files drifts, and the drift shows up as a
@@ -11,7 +11,7 @@
 // numbers (px → density-independent units), CSS shadows → RN shadow props.
 // No value is chosen here.
 
-import tokensJson from '../../../../design/_shared/tokens.json' with { type: 'json' }
+import tokensJson from '../../../../docs/design/_shared/tokens.json' with { type: 'json' }
 
 export const tokens = tokensJson
 

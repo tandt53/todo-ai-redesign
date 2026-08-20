@@ -5,7 +5,7 @@
  * qa-web-agent · phase: execute v3 · 2026-08-17 (T-070b) — English copy sync
  *
  * SELECTOR CONTRACT: every locator below comes from the design mockup's
- * 22-testid catalogue (design/assistant/screens/voice-assistant-view.html),
+ * 22-testid catalogue (docs/design/assistant/screens/voice-assistant-view.html),
  * from getByRole with the mockup's accessible names, or (sparingly) from
  * getByText where the copy itself IS the assertion (e.g. the transcript
  * echo). CSS selectors: never. Verified against the real components
@@ -18,7 +18,7 @@
  * wording — F-001 ## Conversation model ("Naming convention"): the spec's
  * English words are concept names, and "the user-visible wording of every
  * label, message and accessible name — and the language it is written in — is
- * the design system's to specify (design/_shared/components.md)". So every
+ * the design system's to specify (docs/design/_shared/components.md)". So every
  * literal string asserted below is traceable to components.md or to the design
  * mockup, NOT to whatever the implementation happens to render; where the two
  * disagree, the disagreement is recorded as drift in the run record rather
@@ -134,7 +134,7 @@ const DRAFT_REF_RE = /#d\d+/;
  * and the app rendered "Đang xử lý…"; no AC fixed either string, so pinning one
  * would have failed the test on a wording difference that violated no
  * requirement. The English catalogue closed that gap: the mockup
- * (design/assistant/screens/voice-assistant-view.html) and the app both render
+ * (docs/design/assistant/screens/voice-assistant-view.html) and the app both render
  * "Listening…" and "Thinking…", and the cancel pill agrees too
  * ("Cancel" / aria-label "Cancel — your words stay in the box"). The T-016
  * drift note is therefore RESOLVED, not carried forward.
@@ -571,7 +571,7 @@ export class AssistantPage {
   // would be better still and is requested in the run record.
   // -------------------------------------------------------------------------
 
-  /** The one AC-30 control. Testid from the mockup catalogue (design/_shared/components.md
+  /** The one AC-30 control. Testid from the mockup catalogue (docs/design/_shared/components.md
    * §NewMessageAffordance: `assistant-new-message-affordance`). */
   get newMessageAffordance(): Locator {
     return this.page.getByTestId('assistant-new-message-affordance');

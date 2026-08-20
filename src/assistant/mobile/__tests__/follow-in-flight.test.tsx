@@ -27,7 +27,7 @@
 //   - that `onScrollBeginDrag` / `onTouchStart` are delivered by a real
 //     `ScrollView` in the order assumed here;
 //   - anything about pixels, momentum or the OS.
-// Those stay device-owed — `qa/assistant/F-001/mobile/TC-009`, and BUG-006's
+// Those stay device-owed — `docs/qa/assistant/F-001/mobile/TC-009`, and BUG-006's
 // own "standing debt" row in the owner decision.
 //
 // ── THE DOUBLE IS COPIED FROM THE PLATFORM, NOT MADE CONVENIENT ─────────────

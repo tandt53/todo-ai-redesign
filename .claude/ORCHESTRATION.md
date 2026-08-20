@@ -15,7 +15,7 @@ For any substantial work (writing code, tests, specs, design files, fixing bugs)
 
 **Quick operational tasks are fine to do directly:** starting Docker, running migrations, installing packages, checking logs, fixing config typos.
 
-**Rule of thumb:** If it creates or modifies files in `src/`, `specs/`, `qa/`, or `design/`, dispatch an agent. If it's infrastructure/ops, do it yourself.
+**Rule of thumb:** If it creates or modifies files in `src/`, `docs/specs/`, `docs/qa/`, or `docs/design/`, dispatch an agent. If it's infrastructure/ops, do it yourself.
 
 ## Dispatching Agents (CRITICAL)
 
@@ -475,7 +475,7 @@ lens cannot check coverage of a set it was never given.
 entries. HIGH blocks only what it names; unaffected screens proceed to
 implementation.
 **MEDIUM / LOW** → route as a revision note, or record against the component
-entry. You are not the writer of `design/`; design-agent owns the body.
+entry. You are not the writer of `docs/design/`; design-agent owns the body.
 
 **One class routes elsewhere entirely.** A finding that the design asserts a rule
 no spec contains is **not** a design defect — the rule may be right. Route it to
@@ -543,8 +543,8 @@ what that lens found.
 
 Not on the default pipeline. Dispatch ad-hoc when a task targets an **existing** web app and the QA knowledge base is missing or stale.
 
-- **What it does:** invokes the embedded crawler at `.claude/tools/qa-crawler/` (via `run-crawl.sh`), produces a structured knowledge base at `qa/_shared/knowledge/{crawl_project_name}/` (pages, locators, flows, risks).
-- **Typical sequence:** qa-explorer-agent runs first → downstream qa-api/qa-web/qa-mobile briefings list `qa/_shared/knowledge/{crawl_project_name}/` under "Read these files first" → those agents author tests informed by the knowledge base.
+- **What it does:** invokes the embedded crawler at `.claude/tools/qa-crawler/` (via `run-crawl.sh`), produces a structured knowledge base at `docs/qa/_shared/knowledge/{crawl_project_name}/` (pages, locators, flows, risks).
+- **Typical sequence:** qa-explorer-agent runs first → downstream qa-api/qa-web/qa-mobile briefings list `docs/qa/_shared/knowledge/{crawl_project_name}/` under "Read these files first" → those agents author tests informed by the knowledge base.
 - **BRIEFING.md inputs:** `crawl_project_name`, `target_url`, `auth_credentials` (if needed), `purpose: knowledge`.
 - **Prerequisites:** `claude` and `playwright-cli` must be on PATH. The crawler checks and fails fast with install instructions if missing.
 

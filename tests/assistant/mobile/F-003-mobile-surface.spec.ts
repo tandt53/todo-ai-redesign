@@ -4,7 +4,7 @@
  *
  * RUNNER: vitest, node env, no simulator/emulator/Metro
  *   npx vitest run tests/assistant/mobile
- * per `specs/_shared/platform/mobile.md ## Test Harness`. React Native is never
+ * per `docs/specs/_shared/platform/mobile.md ## Test Harness`. React Native is never
  * imported here — everything native arrives through a port double.
  *
  * ─────────────────────────────────────────────────────────────────────────────
@@ -99,13 +99,13 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '../../..')
 
 const MOCKUPS = {
-  ios: join(ROOT, 'design/assistant/screens/voice-assistant-view-ios.html'),
-  android: join(ROOT, 'design/assistant/screens/voice-assistant-view-android.html'),
-  web: join(ROOT, 'design/assistant/screens/voice-assistant-view.html'),
+  ios: join(ROOT, 'docs/design/assistant/screens/voice-assistant-view-ios.html'),
+  android: join(ROOT, 'docs/design/assistant/screens/voice-assistant-view-android.html'),
+  web: join(ROOT, 'docs/design/assistant/screens/voice-assistant-view.html'),
 }
-const TC_DIR = join(ROOT, 'qa/assistant/F-003/mobile')
-const FIXTURES = join(ROOT, 'qa/_shared/fixtures/mobile/F-003-mobile-fixtures.json')
-const CANONICAL_UTTERANCES = join(ROOT, 'qa/assistant/F-001/api/utterance-intent-fixtures.json')
+const TC_DIR = join(ROOT, 'docs/qa/assistant/F-003/mobile')
+const FIXTURES = join(ROOT, 'docs/qa/_shared/fixtures/mobile/F-003-mobile-fixtures.json')
+const CANONICAL_UTTERANCES = join(ROOT, 'docs/qa/assistant/F-001/api/utterance-intent-fixtures.json')
 
 /**
  * The catalogue is PARSED from the mockups, never hand-listed (L-002: a
@@ -237,7 +237,7 @@ describe('A. selector contract — the mockup-owned id catalogue (AC-12, AC-1)',
     for (const f of tcFileNames()) {
       const body = readFileSync(join(TC_DIR, f), 'utf8')
       // Only inline-code spans count as selector references; backticked file
-      // paths (which contain / or .) are excluded, so `design/assistant/...`
+      // paths (which contain / or .) are excluded, so `docs/design/assistant/...`
       // never reads as a selector.
       for (const m of body.matchAll(/`([^`\n]+)`/g)) {
         const tok = m[1].trim()
@@ -316,7 +316,7 @@ describe('A. honest tiering — the device-lab debt is visible, not buried', () 
   const fx = JSON.parse(readFileSync(FIXTURES, 'utf8'))
 
   it('mirrors every item the spec says the node tier cannot claim (F-003 ## Test strategy)', () => {
-    const spec = readFileSync(join(ROOT, 'specs/assistant/F-003-mobile-surface.md'), 'utf8')
+    const spec = readFileSync(join(ROOT, 'docs/specs/assistant/F-003-mobile-surface.md'), 'utf8')
     const owed = spec.split('**What a device-lab or manual pass still owes**')[1] ?? ''
     expect(owed, 'the spec section this list mirrors has moved or been renamed').not.toBe('')
 
@@ -387,7 +387,7 @@ describe('A. the canonical utterance table has exactly one home (L-004)', () => 
     const fx = readFileSync(FIXTURES, 'utf8')
     const canonical = JSON.parse(readFileSync(CANONICAL_UTTERANCES, 'utf8'))
     expect(canonical.rows.length).toBeGreaterThan(0)
-    expect(fx).toContain('qa/assistant/F-001/api/utterance-intent-fixtures.json')
+    expect(fx).toContain('docs/qa/assistant/F-001/api/utterance-intent-fixtures.json')
     expect(JSON.parse(fx).rows).toBeUndefined()
     for (const row of canonical.rows.slice(0, 10)) {
       expect(fx, `mobile fixtures duplicate canonical utterance "${row.utterance}"`).not.toContain(row.utterance)
@@ -502,7 +502,7 @@ describe('B. touch targets are measured against the MOCKUP, not against a hand-c
   }
 
   /**
-   * `design/_shared/components.md` § Touch, parsed at test time. Rows look like:
+   * `docs/design/_shared/components.md` § Touch, parsed at test time. Rows look like:
    *   | `assistant-retry-button` | **68** | "Retry" … — mockup renders 72.4 |
    * The rendered figure in the Basis cell is what makes the rounding direction
    * checkable; task-row deliberately has none.
@@ -517,7 +517,7 @@ describe('B. touch targets are measured against the MOCKUP, not against a hand-c
     string,
     { floor: number; renders: number | null; labelWidths: number[] }
   > {
-    const md = readFileSync(join(ROOT, 'design/_shared/components.md'), 'utf8')
+    const md = readFileSync(join(ROOT, 'docs/design/_shared/components.md'), 'utf8')
     const section = md.split('## Touch —')[1]?.split('\n## ')[0] ?? ''
     const rows = new Map<string, { floor: number; renders: number | null; labelWidths: number[] }>()
     for (const m of section.matchAll(/\|\s*`([a-z-]+)`\s*\|\s*\*\*(\d+)\*\*\s*\|([^|]*)\|/g)) {
@@ -610,7 +610,7 @@ describe('B. touch targets are measured against the MOCKUP, not against a hand-c
    */
 
   /**
-   * The four content-width floors, PARSED from `design/_shared/components.md`
+   * The four content-width floors, PARSED from `docs/design/_shared/components.md`
    * § Touch — the single source proposed when this suite last reported that
    * these widths had no artifact that could falsify them. Design published it,
    * so the gap closes here.
@@ -700,7 +700,7 @@ describe('B. touch targets are measured against the MOCKUP, not against a hand-c
    * suite to a control narrower than its own shortest label — the under-sized
    * tap target the floors exist to prevent — instead of merely mis-describing
    * one. The number and the title are gone; every figure below is parsed from
-   * `design/_shared/components.md` § Touch at run time (L-008), so a re-measure
+   * `docs/design/_shared/components.md` § Touch at run time (L-008), so a re-measure
    * lands here by itself and only a real disagreement can go red.
    */
   it('assistant-permission-cta takes its floor from its shortest label, parsed — never re-typed (T-042, closed)', () => {
@@ -806,7 +806,7 @@ describe('B. permissions — the platform split (AC-2, AC-3)', () => {
     // mic-denied one, Android the permanently-denied one — so the button it
     // paints is the CTA for the state asserted beside it.
     //
-    // The other publisher of these strings is `design/_shared/components.md`
+    // The other publisher of these strings is `docs/design/_shared/components.md`
     // § MicControl (the copy-deck CTA column). That side is already parsed one
     // tier down by `src/assistant/mobile/__tests__/permissions.test.ts`, so this
     // reads the mockup rather than making a second reader of the same table:
@@ -964,7 +964,7 @@ const lower = (s: string): string => s.trim().toLowerCase()
  * QA's fixture Interpreter for the mobile suite.
  *
  * The canonical utterance→intent table
- * (`qa/assistant/F-001/api/utterance-intent-fixtures.json`) is READ, never
+ * (`docs/qa/assistant/F-001/api/utterance-intent-fixtures.json`) is READ, never
  * copied (L-004): the grammar below is the runtime realization of those same
  * rows against a real per-turn handle context, which a static JSON cannot
  * resolve on its own (ADR-002: candidates arrive as opaque handles, not uuids).

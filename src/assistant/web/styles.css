@@ -1,7 +1,7 @@
 /* F-001 voice-assistant-view — web styles.
  *
- * Ported from the design mockup (design/assistant/screens/voice-assistant-view.html).
- * The :root block is generated verbatim from design/_shared/tokens.json; every
+ * Ported from the design mockup (docs/design/assistant/screens/voice-assistant-view.html).
+ * The :root block is generated verbatim from docs/design/_shared/tokens.json; every
  * value the components use resolves through a variable here — zero hardcoded
  * colours/spacing in the TSX (DESIGN.md Component Library, reviewer C4).
  *

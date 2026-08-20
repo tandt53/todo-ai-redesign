@@ -1258,7 +1258,7 @@ describe('§ CarriedNotice’s copy is transcribed from components.md, not compo
    * nothing yields the same green as one that worked.
    */
   function literals(): Map<string, { failed: string; offline: string; superseded: string }> {
-    const md = readFileSync(resolve(process.cwd(), 'design/_shared/components.md'), 'utf8')
+    const md = readFileSync(resolve(process.cwd(), 'docs/design/_shared/components.md'), 'utf8')
     const start = md.indexOf('| Field | CN-FAILED | CN-OFFLINE | CN-SUPERSEDED |')
     expect(start, 'the literal-message table moved or was renamed').toBeGreaterThan(-1)
     const end = md.indexOf('**The seven fields are the user-settable set', start)
@@ -1325,7 +1325,7 @@ describe('§ CarriedNotice’s copy is transcribed from components.md, not compo
   })
 
   it('renders design’s exact CN-UNDO literal for a delete', async () => {
-    const md = readFileSync(resolve(process.cwd(), 'design/_shared/components.md'), 'utf8')
+    const md = readFileSync(resolve(process.cwd(), 'docs/design/_shared/components.md'), 'utf8')
     const i = md.indexOf('**CN-UNDO**, four literals')
     expect(i, 'the CN-UNDO literals moved').toBeGreaterThan(-1)
     // The delete-a-task row of the four-literal table.

@@ -1,6 +1,6 @@
 // createApp(deps): http.RequestListener — routing, auth, validation (platform
 // doc app-factory pattern). No framework (ADR-001). Every endpoint shape comes
-// from specs/assistant/api-contracts.md; entity shapes from data-model.md.
+// from docs/specs/assistant/api-contracts.md; entity shapes from data-model.md.
 // Business logic lives in engine/; this file only parses, validates, routes,
 // and writes the error envelope. Stack traces never reach clients.
 //

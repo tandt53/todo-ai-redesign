@@ -228,7 +228,7 @@ function sameStored(a: unknown, b: unknown): boolean {
 // can be cited when design adopts it.
 //
 // **They are placeholders and they are reported as such.** F-005 has no design
-// screens and `design/_shared/components.md` carries no F-005 rows, so there is no
+// screens and `docs/design/_shared/components.md` carries no F-005 rows, so there is no
 // owning catalogue to parse — which means the L-008 discipline (the test reads the
 // owning artifact, never a retyped copy) is not yet available for this feature.
 // The strings live in ONE place so that adopting design's wording is one edit and

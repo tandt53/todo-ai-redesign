@@ -27,7 +27,7 @@
 //    re-worded**. They are the only substitution performed.
 //
 // The companion assertion for rule 1 is in `__tests__`: it **parses
-// `design/_shared/components.md § CarriedNotice`** and checks every cell per row
+// `docs/design/_shared/components.md § CarriedNotice`** and checks every cell per row
 // ID, so this file goes red when the **upstream** artifact moves — the direction
 // drift actually travels, and the direction a check comparing two things the
 // implementation controls is blind to (L-008).

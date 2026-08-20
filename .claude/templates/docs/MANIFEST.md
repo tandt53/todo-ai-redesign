@@ -17,10 +17,10 @@
 ```yaml
 layout: domain-modular    # values: domain-modular | flat | custom
 roots:
-  specs: specs/
-  design: design/
+  specs: docs/specs/
+  design: docs/design/
   src: src/
-  qa: qa/
+  qa: docs/qa/
 
 shared_dir: _shared       # folder name for cross-cutting artifacts inside each root
 modules: []               # business domains in this project (e.g. auth, payments). Grows as features are specced.
@@ -28,7 +28,7 @@ modules: []               # business domains in this project (e.g. auth, payment
 patterns:
   # Per-module artifact locations. {module} is substituted at read time.
   # For feature_spec, {feature_id} and {feature_slug} are also substituted
-  # (e.g. module=auth, feature_id=003, feature_slug=password-reset → specs/auth/F-003-password-reset.md).
+  # (e.g. module=auth, feature_id=003, feature_slug=password-reset → docs/specs/auth/F-003-password-reset.md).
   feature_index:        "{specs}/{module}/index.md"                        # table of features in this module
   feature_spec:         "{specs}/{module}/F-{feature_id}-{feature_slug}.md"  # one file per feature
   api_contracts:        "{specs}/{module}/api-contracts.md"
@@ -68,7 +68,7 @@ patterns:
 ```
 
 <!-- Alternate layouts (not active — switch by changing `layout:` above):
-     - layout: flat       → no modules; everything at the root of each (e.g. specs/features/, qa/features/). For tiny projects.
+     - layout: flat       → no modules; everything at the root of each (e.g. docs/specs/features/, docs/qa/features/). For tiny projects.
      - layout: custom     → orchestrator detected an existing non-standard structure (e.g. monorepo apps/auth/).
                             Patterns override the defaults; the modules list is filled in from detection. -->
 
@@ -80,10 +80,10 @@ patterns:
 
 ```yaml
 standards: []             # Regulatory / compliance standards (e.g. PCI-DSS, WCAG 2.1 AA, GDPR, HIPAA)
-domain_glossary: ""       # Path to a glossary file, URL, or Notion doc (e.g. specs/_shared/glossary.md)
+domain_glossary: ""       # Path to a glossary file, URL, or Notion doc (e.g. docs/specs/_shared/glossary.md)
 sme_contacts: []          # Subject-matter experts (e.g. "Alice — payments domain — @alice in Slack")
 reference_implementations: []  # Links to prior art or competitor references
-market_context: "specs/_shared/market-context.md"  # Competitive landscape, table stakes (optional)
+market_context: "docs/specs/_shared/market-context.md"  # Competitive landscape, table stakes (optional)
 ```
 
 ---
@@ -120,7 +120,7 @@ project/
 │   ├── state/
 │   │   ├── STATUS.md        ← live pipeline state
 │   │   └── TASKS.md         ← task queue
-├── specs/
+├── docs/specs/
 │   ├── _shared/          ← ARCHITECTURE, standards, ADRs, glossary
 │   └── {module}/
 │       ├── index.md              ← table of features in this module
@@ -128,13 +128,13 @@ project/
 │       ├── api-contracts.md      ← shared by all features in the module
 │       ├── data-model.md
 │       └── design-notes.md
-├── design/
+├── docs/design/
 │   ├── _shared/          ← DESIGN.md, tokens.json, components.md
 │   └── {module}/screens/
 ├── src/
 │   ├── _shared/          ← cross-cutting code (or `shared/`)
 │   └── {module}/         ← web/ mobile/ api/ __tests__/ colocated
-└── qa/
+└── docs/qa/
     ├── _shared/          ← KNOWLEDGE.md, TRACEABILITY.md, shared fixtures
     └── {module}/         ← test cases, automation/, runs/
 ```

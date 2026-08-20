@@ -7,7 +7,7 @@
  * implementation deliberately: two copies of a seed door would be L-004's
  * shape inside the instrument built to detect it.
  *
- * Contract: `specs/assistant/api-contracts.md § Harness doors` (F-005).
+ * Contract: `docs/specs/assistant/api-contracts.md § Harness doors` (F-005).
  * That section names three doors and says the existing `__qa__` namespace
  * "wraps createApp and writes through the Store port". It also states WHY
  * each exists — three F-005 ACs have no reachable fixture without them:

@@ -1,5 +1,5 @@
 // Entity + wire types for the assistant module.
-// Shapes come from specs/assistant/data-model.md and specs/assistant/api-contracts.md
+// Shapes come from docs/specs/assistant/data-model.md and docs/specs/assistant/api-contracts.md
 // — never invented (ethos §9). Internal-only fields are marked and stripped by
 // engine/serialize.ts before anything goes on the wire.
 

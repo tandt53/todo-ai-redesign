@@ -30,7 +30,7 @@ import type { MobileHarness } from './_helpers.ts'
 const T = T0
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..')
-const CATALOGUE_FILE = resolve(ROOT, 'design/_shared/components.md')
+const CATALOGUE_FILE = resolve(ROOT, 'docs/design/_shared/components.md')
 
 const IOS_MATRIX: { name: string; perms: PermissionState; names: string[] }[] = [
   {
@@ -94,7 +94,7 @@ function sectionLines(md: string, heading: RegExp): string[] {
 /**
  * The published catalogue, PARSED — never hand-copied (L-002: a hand-copied
  * expectation turns a contract check into a self-agreement check). Design owns
- * these strings in `design/_shared/components.md` § MicControl →
+ * these strings in `docs/design/_shared/components.md` § MicControl →
  * "Permission copy"; if this file retyped them, the two copies could drift and
  * every test would still pass. Only that section is read — see `sectionLines`.
  */
@@ -145,7 +145,7 @@ describe('permission copy is design\'s, cited by row ID — this file owns only 
   })
 
   for (const id of IDS) {
-    it(`${id} is quoted verbatim from design/_shared/components.md`, () => {
+    it(`${id} is quoted verbatim from docs/design/_shared/components.md`, () => {
       const published = PUBLISHED.get(id)
       expect(published, `row ${id} is missing from the catalogue`).toBeDefined()
       const local = permissionCopyRow(id)

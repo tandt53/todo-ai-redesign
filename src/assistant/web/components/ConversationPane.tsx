@@ -15,7 +15,7 @@
 // bubbles carry `role="alert"`: for an added node the nearest live ancestor
 // wins, so an error announces once (assertively) and never twice.
 //
-// Copy is English (ADR-008), transcribed from design/_shared/components.md and
+// Copy is English (ADR-008), transcribed from docs/design/_shared/components.md and
 // the mockup it points at — never composed here.
 
 import type { ReactNode, RefObject } from 'react'

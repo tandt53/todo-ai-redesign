@@ -125,7 +125,7 @@ export function ctaTarget(
 // Copy — NOT owned by this file.
 //
 // Every string below is quoted verbatim from the catalogue at
-// `design/_shared/components.md` § MicControl → "Permission copy — the eight
+// `docs/design/_shared/components.md` § MicControl → "Permission copy — the eight
 // combinations", cited by its row ID. Design owns the strings; this file owns
 // only the SELECTION — which permission tuple maps to which row, combinatorics
 // driven by AC-2 / AC-3 rather than by wording.

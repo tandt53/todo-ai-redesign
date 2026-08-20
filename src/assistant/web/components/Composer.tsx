@@ -15,7 +15,7 @@ import type { AppState } from '../../_shared/model/reducer.ts'
 import { micMode } from '../../_shared/model/reducer.ts'
 import { MicIcon, SendIcon } from './icons.tsx'
 
-// Copy is English (ADR-008). design/_shared/components.md §MicControl names the
+// Copy is English (ADR-008). docs/design/_shared/components.md §MicControl names the
 // mic's accessible names and the composer placeholder verbatim; the mockup's
 // state machine carries the dimmed-transient one.
 const MIC_LABEL: Record<string, string> = {

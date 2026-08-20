@@ -1,7 +1,7 @@
 // The accessibility-id contract — F-003 AC-12's second half.
 //
 // ONE catalogue, three spellings. The 23 values below are the design mockups'
-// catalogue verbatim (`design/assistant/screens/voice-assistant-view-ios.html`
+// catalogue verbatim (`docs/design/assistant/screens/voice-assistant-view-ios.html`
 // and `-android.html`), the same 23 the web client carries as `data-testid`.
 // The 23rd — `assistant-new-message-affordance` — arrived with F-001 AC-30 /
 // BUG-004; the count in this file is derived from the mockups by the unit tier,
@@ -90,7 +90,7 @@ export const ALL_A11Y_IDS: readonly ConversationA11yId[] = Object.values(A11Y_ID
 // ---------------------------------------------------------------------------
 
 /**
- * `design/assistant/screens/app-shell-ios.html` (`accessibilityIdentifier`),
+ * `docs/design/assistant/screens/app-shell-ios.html` (`accessibilityIdentifier`),
  * `-android.html` (`resource-id`) and `app-shell.html` (`data-testid`) declare
  * **31** ids, byte-identical across the three. Seven of them are controls that
  * already existed and simply render on a different surface now — they keep
