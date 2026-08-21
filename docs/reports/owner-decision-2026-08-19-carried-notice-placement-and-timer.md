@@ -146,3 +146,44 @@ nothing with it when it goes.
 Owner answers in this session, in order: *"layout này nên ở phía dưới màn hình… nên
 chỉ hiển thị trong khoảng 10s"* · *"các app todo khác có delete và thùng rác ko?"* ·
 *"ok, vậy giữ delete. 3. undo cũng có timer"* · *"app phải có thùng rác"*.
+
+---
+
+## 6. The trash keeps a deleted task for 30 days, and that promises REACHABILITY
+
+*(Added 2026-08-21, after F-006's spec was written and its OQ1 put the question with
+measurements. Recorded here rather than in a new file because it is the last open
+piece of the same decision — §4's trash is what §2's timer depends on, and a trash
+without a retention rule is not a trash.)*
+
+**Chosen: 30 days, reachability-scoped.** After 30 days a deleted task can no longer
+be recovered. The row is actually removed **when someone opens the trash**, not by a
+clock.
+
+**The distinction the owner was asked to make, because the two are not the same
+promise:**
+
+| | What it promises | What it needs |
+|---|---|---|
+| **reachability** *(chosen)* | after 30 days you cannot get it back | nothing new — the predicate is evaluated at the two doors that already reach a deleted row |
+| storage | after 30 days it is gone from disk | a background job **this app does not have**, and which F-006 puts out of scope |
+
+**The cost, stated rather than buried:** an account nobody opens the trash on keeps
+its deleted rows on disk past 30 days. The promise made to the user is still true —
+they cannot reach them — but "deleted after 30 days" is not literally true of storage.
+**If this ever needs to be a storage guarantee (a data-retention obligation, a
+privacy commitment), it becomes a scheduler and that is a different piece of work.**
+
+**Measured on the live store, 2026-08-21, which is why this was free to decide now:**
+57 soft-deleted rows of 839, across 20 accounts, and **the oldest soft-delete is five
+days old**. At any value from 7 days upward, today's purge removes nothing. Raising
+the number later costs nothing; lowering it destroys rows. So it starts where the
+closest comparable product starts.
+
+**Common practice:** Apple Reminders keeps *Recently Deleted* for 30 days and then
+deletes permanently. TickTick and Things 3 on Mac keep a trash until it is emptied by
+hand. Todoist has no trash and sells daily backups.
+
+**What follows automatically:** F-006's AC-3 (every entry states when it goes) and
+AC-12 (the retention clock) now have their number, **OQ1 closes**, and Gate 1 can read
+a spec with the number in it rather than spending findings on its absence.

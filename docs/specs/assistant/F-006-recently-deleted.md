@@ -2,7 +2,7 @@
 
 **ID**: F-006
 **Slug**: recently-deleted
-**Status**: `draft` (revision 1 — first pass, Gate 1 not yet run)
+**Status**: `draft` (**revision 2 — an amendment, not a review round.** Gate 1 has not run, and this pass does not pre-empt it: it folds in the one owner answer taken after revision 1 was written (`docs/reports/owner-decision-2026-08-19-carried-notice-placement-and-timer.md` §6). **Retention is 30 days, and it binds reachability rather than storage** — AC-12 carries the clock, the doors its predicate is evaluated at and the limit; AC-3 carries the date the user sees; **OQ1 closes**. **Amend-only: 16 ACs before, 16 after, nothing renumbered, added or deleted.** Two ACs are amended: AC-3, AC-12. **Revision 1's record, kept:** revision 1 — first pass, Gate 1 not yet run.)
 **Last Updated**: 2026-08-21
 
 ---
@@ -28,7 +28,7 @@ known_bugs: []
 ## Purpose
 
 **The app can delete a task in one tap and has nothing behind it.** This feature is the
-net: a *Recently deleted* place a deleted task sits in for a stated period, from which
+net: a *Recently deleted* place a deleted task sits in for 30 days, from which
 the user can put it back or destroy it for good.
 
 The owner asked what comparable products do, and the answer is why this is a
@@ -85,7 +85,7 @@ gesture id per gesture (`plan.ts:851`, ADR-012), `GET /tasks` filters deleted ro
 recorded membership (`app.ts:568-628`, ADR-012).
 
 **What is missing is four things and only four:** a read path that returns deleted rows,
-a stated retention, permanent deletion, and the surface. Without the second, this is not
+the 30-day retention, permanent deletion, and the surface. Without the second, this is not
 a trash — it is a leak that happens to be recoverable.
 
 ---
@@ -107,9 +107,9 @@ means concretely is `## Impact` §2 and §3.
 
 | Role | Can do | Cannot do |
 |------|--------|-----------|
-| Authenticated user | Open *Recently deleted*; restore an entry; destroy one entry for good; empty the trash | See or restore another account's deleted rows; recover a row after its retention has passed; undo a permanent deletion |
+| Authenticated user | Open *Recently deleted*; restore an entry; destroy one entry for good; empty the trash | See or restore another account's deleted rows; recover a row more than 30 days after it was deleted; undo a permanent deletion |
 | Assistant (AI) | Nothing here. It cannot see, name, restore or destroy a deleted task | Reach any door this feature adds — a deleted row is in no handle list (`turns.ts:396`) and no turn may write one |
-| The system | Remove a row whose retention has passed, at the doors named in AC-12 | Remove a row on any timer — **there is no scheduler in this app** (`## Ops`) |
+| The system | Remove a row deleted more than 30 days ago, at the doors named in AC-12 | Remove a row on any timer — **there is no scheduler in this app** (`## Ops`) |
 
 ---
 
@@ -129,7 +129,7 @@ flowchart TD
     J -->|Restore| D
     J -->|Delete forever| K[Confirm — this cannot be undone]
     J -->|Empty trash| L[Confirm — names how many entries go]
-    J -->|Nothing| M{Retention passed?}
+    J -->|Nothing| M{30 days passed?}
     K --> N[Rows hard-removed — gone from the store]
     L --> N
     M -->|Yes, at the next door that reaches the row| N
@@ -142,7 +142,7 @@ stateDiagram-v2
     [*] --> Live: created
     Live --> Deleted: delete — deleted_at set, gesture id minted
     Deleted --> Live: restore per F-005 AC-41 — deleted_at cleared, clock reset
-    Deleted --> Purged: delete forever · empty trash · retention passed
+    Deleted --> Purged: delete forever · empty trash · 30 days passed
     Purged --> [*]: row gone from the store
     Live --> Done: status = done
     Done --> Deleted: delete works on a done task too
@@ -167,7 +167,7 @@ the exact configuration the owner chose the trash to avoid.
 - [ ] **AC-1** (web, mobile) — **The Lists menu carries a *Recently deleted* entry, and it is peer to `Done`, not to `Inbox`.** It belongs with the rows that answer *what is this task doing* — the views and the gate — and never in the filing group beneath Inbox, which is where the personal lists will append. Where exactly it renders within that group, and its wording, are design's (`components.md § ListsMenu`); **which kind of row it is, is not.**
   - **It carries no count.** Every number in that menu is `collectionCount(tasks, c, now)` over the live rows, and a deleted row is in no collection by AC-4 — so a number here would be the one number in the column produced by a different mechanism while looking identical. It would also read as an inducement to open a place whose whole value is that you rarely need it. *(Design may still want a "there is something in here" mark; that is a mark, not a count, and it is design's call.)*
 - [ ] **AC-2** (web, mobile) — **Opening it shows the account's deleted entries, newest deletion first, with an empty state when there are none.** The empty state says nothing has been deleted recently — it is the ordinary state of this surface, not a failure, and it must not be drawn as one.
-- [ ] **AC-3** (web, mobile) — **Every entry states when it was deleted and, given a stated retention period, when it will go.** A trash that does not say how long you have is a promise the user cannot act on; this is the observable half of AC-12.
+- [ ] **AC-3** (web, mobile) — **Every entry states when it was deleted and when it goes — 30 days after the deletion.** A trash that does not say how long you have is a promise the user cannot act on; this is the observable half of AC-12. **What the entry states is the date the row stops being recoverable**, which is exactly what AC-12's predicate tests — not a date the bytes leave the disk, and no wording on this surface may promise that.
 
 ### What the surface lists, and what an entry is
 
@@ -185,16 +185,16 @@ the exact configuration the owner chose the trash to avoid.
 ### Destroying a task for good
 
 - [ ] **AC-11** (api, web, mobile) — **An entry can be destroyed permanently, and the trash can be emptied, and both are confirmed.** *Delete forever* hard-removes exactly the rows the entry covers — the same membership AC-9's restore would have put back. *Empty trash* hard-removes every deleted row of the account and says **how many entries** it is about to destroy. **This is the only genuinely irreversible act in the product and the only place a confirmation earns its keep** — the confirmation exists here precisely because it does not exist on the ordinary delete, which has this trash behind it. Hard removal is reported through the existing `removed: [uuid]` channel (`api-contracts.md § The multi-row response rule`); no new response shape is owed.
-- [ ] **AC-12** (api) — **Deleted rows have a stated retention period, the clock starts at `deleted_at`, and a restore resets it.** A restored-then-re-deleted row gets a full fresh period, because `deleted_at` is cleared by the restore and re-set by the next delete — no separate expiry field is stored. **The length is the owner's to set and is Open Question 1**; the ACs below hold at any value.
-  - **What removes an expired row, stated plainly rather than implied: nothing runs on a timer.** **There is no server-side scheduler, cron or background job in this app** — verified 2026-08-21: the only timers in `src/` are client UI ones (a flash dismissal, a retry sleep, the speech port) and none of them touches the store — and this feature does not add one (`## Out of Scope`). The expiry predicate is evaluated at **every door that reaches a deleted row** — the trash read (AC-5) and the restore (AC-9) — and the **removal write** happens on the trash read. So an expired row is never restorable and never listed, and it is removed from disk the next time anyone opens that account's trash.
-  - **The cost of that, stated because it is a real limit and not a detail:** retention is a promise about **what remains reachable**, not about what remains on disk. A row belonging to an account nobody opens the trash on stays stored past its period. Making it a storage promise requires a scheduler, and that is a decision this spec does not take (Open Question 1's second half).
+- [ ] **AC-12** (api) — **A deleted row stays recoverable for 30 days, the clock starts at `deleted_at`, and a restore resets it.** A restored-then-re-deleted row gets a full fresh 30 days, because `deleted_at` is cleared by the restore and re-set by the next delete — **no separate expiry field is stored**, so the expiry is always derived from `deleted_at` and there is no second value that can disagree with it. *(The length was Open Question 1; the owner answered it on 2026-08-21 — `docs/reports/owner-decision-2026-08-19-carried-notice-placement-and-timer.md` §6. Apple Reminders' *Recently Deleted* is the comparable at the same number.)*
+  - **The 30 days binds what stays *reachable*, not what stays on disk, and that is the promise this AC makes and is tested against.** Once 30 days have passed since `deleted_at`, the row is not listed by AC-5's read and `POST /tasks/{id}/restore` does not bring it back (AC-9). That holds without exception and is the whole of what the user is promised. **It is not a promise that the row has left the store**: a row belonging to an account nobody opens the trash on stays on disk past its 30 days, and an implementation that leaves it there is conformant. **That is a trade the owner took with its cost stated, not an oversight to be repaired later** — a storage guarantee needs the background job `## Out of Scope` excludes, so *"deleted after 30 days"* is true of reachability and not literally true of storage. Reading it as a storage claim and filing it as a bug is reading a promise this AC does not make; if it ever has to become one — a data-retention obligation, a privacy commitment — that is a scheduler and a separate piece of work.
+  - **What removes an expired row, stated plainly rather than implied: nothing runs on a timer.** **There is no server-side scheduler, cron or background job in this app** — verified 2026-08-21: the only timers in `src/` are client UI ones (a flash dismissal, a retry sleep, the speech port) and none of them touches the store — and this feature does not add one (`## Out of Scope`). **The expiry predicate — 30 days elapsed since `deleted_at` — is evaluated at every door that reaches a deleted row, and there are exactly two: the trash read (AC-5) and the restore (AC-9).** So an expired row stops being listed and stops being restorable the moment it expires, whether or not anything has run. **The removal *write* happens on the trash read**: the expired rows go from the store the next time anyone opens that account's trash.
 - [ ] **AC-13** (api) — **A permanently removed row is gone, and a turn undo never brings it back — it reports it as skipped.** `undo_snapshot` replays whole task rows verbatim into the store (`undo.ts:173`), and **24 of the store's 420 turns currently name a row that is soft-deleted** — measured 2026-08-21 — so this is an ordinary interleaving rather than a contrived one. The existing comparison already refuses to replay a row whose current state differs from the state the turn left it in, and `deleted_at` is in `task-equals.ts`'s field list, so the guard exists; **this AC makes it an assertion instead of an accident**, at both the soft-deleted and the hard-removed state.
 
 ### The bounds this surface inherits
 
 - [ ] **AC-14** (api) — **The trash is per-account, and the assistant may not write to it.** Every door here is scoped by `X-User-Id` like every other route, and no turn may restore or permanently delete: `F-005 AC-36` permits the assistant `note`, `priority`, `due_at` and `reminder_at` and nothing else, so a turn attempting either is refused under `F-005 AC-40` like any other unpermitted write. Stated rather than assumed because two of the three doors this feature adds are **new write paths**, which is exactly where caller scoping gets missed and no other AC would turn red.
 - [ ] **AC-15** (web, mobile) — **Every operation here is reachable by hand, makes zero AI calls, and works while the assistant is erroring**, asserted through F-001's harness AI-call counter. `MANIFEST ## Knowledge` declares WCAG 2.1 AA with the note that *voice-first requires a non-voice path for every action*, and this feature has **no** voice path at all by AC-14 — so the hand path is not an alternative here, it is the only one.
-- [ ] **AC-16** (web, mobile) — **WCAG 2.1 AA on what this feature adds, by name:** **2.1.1** — every control, including both confirmations, is keyboard-operable on web; **4.1.2** — name, role and value on the entry rows and the confirmation dialogs; **4.1.3** — the outcome of every restore, every permanent deletion and every refusal is announced, per `F-005 AC-33`'s rule that every status message a spec states is announced; **2.5.1** — no path-based gesture is the only way to reach restore or delete-forever, which binds the phone, where a swipe is the obvious drawing. **2.2.1 is not engaged by anything this feature adds** — nothing here is withdrawn by time in front of the user; the retention period is measured in days and its expiry is not an activity the user is racing.
+- [ ] **AC-16** (web, mobile) — **WCAG 2.1 AA on what this feature adds, by name:** **2.1.1** — every control, including both confirmations, is keyboard-operable on web; **4.1.2** — name, role and value on the entry rows and the confirmation dialogs; **4.1.3** — the outcome of every restore, every permanent deletion and every refusal is announced, per `F-005 AC-33`'s rule that every status message a spec states is announced; **2.5.1** — no path-based gesture is the only way to reach restore or delete-forever, which binds the phone, where a swipe is the obvious drawing. **2.2.1 is not engaged by anything this feature adds** — nothing here is withdrawn by time in front of the user; the retention period is 30 days and its expiry is not an activity the user is racing.
 
 ---
 
@@ -208,7 +208,7 @@ rows below already exist and ship. Architecture owns representation.
 | deleted_at | instant \| none | no | already stored; set by the soft delete, cleared by the restore and by nothing else; **it is the retention clock's start** | AC-4, AC-9, AC-12. Existing field (`api/types.ts:44`) |
 | delete_gesture_id | gesture ref \| none | no | already stored, internal, never serialized; **it is the trash entry's unit**; `null` restores and destroys alone | AC-6, AC-8, AC-11. Existing field, ADR-012. **53 of 57 deleted rows carry `null`** |
 | parent_id | task ref \| none | no | unchanged; a lone deleted step is identified through its parent and never drawn as a top-level row | AC-7. Existing field |
-| retention period | duration | yes | **a stated constant, not a column** — one value for the account, read by every door that reaches a deleted row | AC-3, AC-12, Open Question 1 |
+| retention period | duration | yes | **30 days** (owner, 2026-08-21) — **a stated constant, not a column**; one value for every account, read by both doors that reach a deleted row, and it bounds reachability rather than storage | AC-3, AC-12 |
 
 ---
 
@@ -219,7 +219,7 @@ rows below already exist and ship. Architecture owns representation.
 - `POST /tasks/{id}/restore` — **unchanged and reused as-is** (AC-9). Nothing about it moves.
 - **Permanent deletion — new (AC-11), two shapes: one entry, and all.** Hard removal, reported through the existing `removed: [uuid]` field of `§ The multi-row response rule`. Whether *empty trash* is a distinct route or the same route without an id is architecture's.
 - `DELETE /tasks/{id}` — **unchanged.** It already mints one `delete_gesture_id` per gesture, which is the whole mechanism this feature reads.
-- **Recorded, not answered — does the trash read write?** AC-12 puts the retention *removal* on the trash read, which makes a `GET` mutate the store. That is unusual enough to be a deliberate choice rather than an implementation detail: the alternatives are a scheduler (out of scope), sweeping on every task write (a cost paid by every user on every keystroke to serve a surface they rarely open), or never removing anything (which is the leak this feature exists to close). **What breaks if the wrong default is taken:** a sweep on `GET /tasks` makes the retention promise true for storage as well as reachability and costs a scan on the hottest path in the app; no sweep at all makes AC-12's second bullet false rather than merely limited.
+- **Recorded, not answered — does the trash read write?** AC-12 puts the retention *removal* on the trash read, which makes a `GET` mutate the store. That is unusual enough to be a deliberate choice rather than an implementation detail: the alternatives are a scheduler (out of scope), sweeping on every task write (a cost paid by every user on every keystroke to serve a surface they rarely open), or never removing anything (which is the leak this feature exists to close). **The promise itself is settled** — reachability, not storage, by the owner on 2026-08-21 — so what is open here is where the removal write goes, not what the user is owed. **What breaks if the wrong default is taken:** a sweep on `GET /tasks` would make the retention true of storage as well and costs a scan on the hottest path in the app; no sweep at all leaves expired rows on disk indefinitely, which AC-12 permits but nothing then ever reclaims.
 - **Recorded, not answered — what a restore does to `series_ended_at`.** Measured: `plan.ts:696-702` writes `series_ended_at` on **every** row of a series delete, and `app.ts:615-620`'s restore clears **`deleted_at` only**. So restoring a series today returns the occurrences with the repeat permanently inert. See `## Impact` §6 and Open Question 2; **this spec records it and does not fix it**, because the fix is an amendment to `F-005 AC-41` / ADR-012, which are not this feature's to write.
 
 ---
@@ -418,20 +418,36 @@ the trash is a new requirement for `F-001` to take, not a repair. Unchanged by t
 
 ## Open Questions
 
-Plain questions first; the AC each would change is in brackets. **The first two are the
-owner's, and neither is architecture's** — each changes a promise the user sees. The
-third is design's, and is recorded here only so it reaches design rather than being
+Plain questions first; the AC each would change is in brackets. **OQ1 is closed by the
+owner and is kept below rather than deleted** — a closed question that still shows what
+was decided, and what the decision cost, is what stops it being re-asked in three weeks.
+**OQ2 is open and is the owner's**, not architecture's: it changes a promise the user
+sees. OQ3 is design's, and is recorded here only so it reaches design rather than being
 settled by whoever draws the row first.
 
-1. **How long does a deleted task stay recoverable, and is that a promise about
-   reachability or about storage?** [AC-12, AC-3] Apple Reminders is the reference point
-   at **30 days**; TickTick and Things keep a trash until it is emptied by hand. Measured
-   here: nothing on disk is older than **five days**, so **at any value from 7 days
-   upward, today's purge removes nothing** — the choice costs nothing to make now and
-   gets expensive once users have learned it. The second half is AC-12's stated limit: with
-   no scheduler, retention binds what is *reachable*; a storage guarantee needs a
-   background job this spec excludes. **Recommendation: 30 days, reachability-scoped**,
-   matching the closest comparable product and the owner's own reference point.
+1. **CLOSED 2026-08-21 by the owner**
+   (`docs/reports/owner-decision-2026-08-19-carried-notice-placement-and-timer.md` §6).
+   **30 days, reachability-scoped.** After 30 days a deleted task can no longer be
+   recovered, and the row is removed **when someone opens the trash**, not by a clock →
+   **AC-12**; the date each entry states → **AC-3**. **The owner was asked to choose
+   between two different promises and took the cheaper one with its cost on the table:**
+   reachability needs nothing new, because the predicate is evaluated at the two doors
+   that already reach a deleted row; storage needs a background job this app does not
+   have and `## Out of Scope` excludes. **So an account nobody opens the trash on keeps
+   its rows on disk past 30 days — accepted, not overlooked**, and AC-12 says so in the
+   AC text rather than in a note, because that is the one thing about this feature a
+   later reader is most likely to file as a bug. *The question is kept rather than
+   deleted, on `F-005 OQ6`'s precedent, because the second half is the part that would
+   otherwise be re-opened.* It read:
+   > **How long does a deleted task stay recoverable, and is that a promise about
+   > reachability or about storage?** [AC-12, AC-3] Apple Reminders is the reference point
+   > at **30 days**; TickTick and Things keep a trash until it is emptied by hand. Measured
+   > here: nothing on disk is older than **five days**, so **at any value from 7 days
+   > upward, today's purge removes nothing** — the choice costs nothing to make now and
+   > gets expensive once users have learned it. The second half is AC-12's stated limit: with
+   > no scheduler, retention binds what is *reachable*; a storage guarantee needs a
+   > background job this spec excludes. **Recommendation: 30 days, reachability-scoped**,
+   > matching the closest comparable product and the owner's own reference point.
 2. **When a deleted series is restored, does the repeat come back to life?** [AC-8, and an
    amendment to `F-005 AC-41` / ADR-012] Today it does not: the series delete writes
    `series_ended_at` on every row and the restore clears only `deleted_at`, so the
