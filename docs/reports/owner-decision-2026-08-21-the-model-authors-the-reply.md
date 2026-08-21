@@ -48,20 +48,36 @@ current copy verifiable at all. A model-authored reply cannot be asserted by equ
 each becomes either a property assertion (*does the sentence name the task? does it state
 the count?*) or a deleted test. **Deciding which, 518 times, is the work.**
 
-### What I recommend stays fixed, and why — for F-007's spec to state or overturn
+### Nothing stays fixed — but some facts get checked
 
-**Destructive confirmations.** The owner's own decision of 2026-08-17 requires a spoken
-delete confirmation to **name the tasks**: *"Xoá 3 việc: Gọi nha sĩ, Mua sữa, Họp nhóm?"* —
-count-only was rejected by name.
+*(This subsection replaces a recommendation I made and then withdrew when the owner asked
+why anything needed fixing. **The withdrawal is the useful part, so the original claim is
+stated rather than deleted.**)*
 
-**If the model words that sentence, a hallucinated task name deletes the wrong thing.** For a
-confirmation of an irreversible act, *approximately right* is not a lower grade of correct;
-it is a different outcome. **L-008 records the general form:** derived copy passes every test
-and hides the combinations nobody enumerated.
+**What I first wrote:** *"a hallucinated task name there deletes the wrong thing."*
+**That is false.** The deletion is driven by task **ids**, not by the words in the sentence.
+A model that writes the wrong name still deletes the right row.
 
-*Recommended carve-out: the model authors everything except the sentence a user says yes to
-before something is destroyed. That is a handful of frames out of 22.* **Not decided here —
-F-007's spec states it and Gate 1's lenses press on it.**
+**What actually breaks is consent.** The user says yes to a sentence that does not match the
+action. For a confirmation, that is not a side effect — **it is the whole purpose of the
+sentence.** The owner's 2026-08-17 decision rejected the count-only form precisely so the
+user could see *which* tasks.
+
+**And once it is stated correctly, the fix is not a template.** The thing that must hold is
+**not "this sentence is fixed" but "the facts in this sentence are true"** — and there are
+two ways to get that:
+
+| | how | cost |
+|---|---|---|
+| freeze the sentence | compose it in code, as today | safe, and it is the thing the owner just called stupid |
+| **let the model write it and CHECK** | model composes freely; code then verifies that **every task name in the sentence is in the set about to be destroyed, and the count matches.** Mismatch → regenerate or fall back | **the model stays free.** One short verifier |
+
+**The second is right.** It does not constrain the model — it declines to trust the model
+about **the names and the numbers**, in the one place where trusting wrongly is expensive.
+
+**Scope of the check, recommended:** the sentences where a proper noun or a count carries the
+user's decision — the destructive confirmation, and probably the applied-summary that reports
+what was just done. **Everything else the model writes and nobody checks.**
 
 ### Scope
 
