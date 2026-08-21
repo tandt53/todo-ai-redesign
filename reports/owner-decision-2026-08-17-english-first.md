@@ -90,7 +90,7 @@ when they were written, including H1's finding that the app shipped English copy
 Rewriting them would destroy the evidence of how the decision was reached. Only
 forward-looking artifacts change: `design/`, `src/`, `qa/`, `specs/`.
 
-The screenshot deck (`reports/screens-by-flow.html`) is Vietnamese throughout and
+The screenshot deck (`output/screens-by-flow.html`) is Vietnamese throughout and
 must be recaptured after the change lands, not edited.
 
 ## Sequencing

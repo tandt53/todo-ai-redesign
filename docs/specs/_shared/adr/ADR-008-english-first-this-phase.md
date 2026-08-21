@@ -95,7 +95,7 @@ second language should price the recognizer and the interpreter first.
   lines in the owning artifact, 355 in the mockups, 365 in `src/`, 179 across 61
   `docs/qa/` files, 14 in `docs/specs/`. This is a tradeoff the owner priced and took; it
   is not an oversight and must not be reported as one.
-- Neutral: the screenshot deck `reports/screens-by-flow.html` is Vietnamese
+- Neutral: the screenshot deck `output/screens-by-flow.html` is Vietnamese
   throughout and is **recaptured** after the change lands, not edited.
 
 ### Review conditions for the no-i18n half (this expires; it does not rot)
