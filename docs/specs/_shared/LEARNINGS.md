@@ -330,3 +330,15 @@ Entries are **append-only by agents**; humans may edit or delete.
 - **Related** — **L-005** (one door guarded, one not), **L-012** (an assertion green for the wrong reason), **L-021** (a rule landing while its predecessor stands). ADR-012 owns the restore; F-005 AC-43 owns the claim.
 - **Scope** — project-wide; any undo, restore, revert or rollback path.
 - **Stale check** — revisit when ADR-012 is amended.
+
+### L-027 — The enumeration is the contract; the headline count is a liability
+
+- **Date added** — 2026-08-21 by orchestrator, from spec-agent's return on T-184. Proposed as a project memory entry; routed to LEARNINGS because it is about how *any* document gets reviewed, and the people it costs most are the reviewers, not the author.
+- **Trigger** — F-006's `## Impact` §1 opened with *"45 non-test lines across 16 files name `deleted_at`"*, summarising an enumeration of eleven read sites. **Four Gate 1 lenses independently re-counted and produced four different numbers** — 55/16, 56/15, 45/16, 44/14 — and a fifth re-measure during the revision produced a **sixth**, 57/16. Meanwhile **the enumeration the count summarised was short by three entries**, including `mobile/model/task-link.ts:76` — a site the same spec spends a paragraph arguing must not be widened.
+- **What it cost** — four lenses spent finding-budget arguing arithmetic that decides nothing, while the omission that decides everything went unmentioned by three of them. **And a test written to the number asserts over a set that excludes the site that matters.** The count did not merely fail to help; it drew attention away from the thing it was summarising.
+- **Why the numbers diverge and will keep diverging** — every counter chooses a slightly different criterion (comment lines? the built bundle? test fixtures? `.tsx` as well as `.ts`?) and none of them is wrong. A count over a set anyone can re-derive is **an invitation to re-derive it**, and the derivations will not agree.
+- **How to apply** — **state the enumeration, give it an explicit criterion, and drop the number.** Keep a count only where the number *is* the fact and nobody has to re-derive a set to check it: rows in a store, accounts affected, tests passing. If a reader would have to run a command to verify your number, you have written a claim they will dispute instead of a fact they can use.
+- **The general form** — a summary statistic over a checkable set converts reviewers from readers of your list into auditors of your arithmetic.
+- **Related** — **L-013** (impact sections), **L-009** (read the individual lens returns), **L-021** (a rule landing while its predecessor stands).
+- **Scope** — project-wide; any spec, ADR, report or review that enumerates code sites.
+- **Stale check** — permanent.

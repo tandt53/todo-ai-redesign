@@ -187,3 +187,48 @@ hand. Todoist has no trash and sells daily backups.
 **What follows automatically:** F-006's AC-3 (every entry states when it goes) and
 AC-12 (the retention clock) now have their number, **OQ1 closes**, and Gate 1 can read
 a spec with the number in it rather than spending findings on its absence.
+
+---
+
+## 7. When the undo offer elapses, it names the trash
+
+*(Added 2026-08-21, from F-006's Gate 1. The product lens found that the trash has **one**
+inbound path and the spec declines three others in three separate `## Impact` entries —
+each locally defensible, and no AC owning the sum. Recorded here because it closes the last
+gap in §2's timer.)*
+
+**Chosen: option A.** When `CN-UNDO` reaches its ten seconds and goes, **what replaces it
+names the trash as where the task went.**
+
+**Why this and not the cheaper answers.** §2's timer and §4's trash were chosen together,
+and F-005 AC-33 declares the timer WCAG 2.2.1-conformant **because an equivalent untimed
+path to the same outcome exists**. That argument has a hole the product lens named
+precisely: after the offer elapses, the user's only route to that path is a Lists-menu row
+that **carries no count** (AC-1) and — as of this gate — **carries no mark either** (OQ3,
+answered by the design lens: every accent is already assigned, so a mark is a change to the
+design system rather than a pick from it).
+
+**A net the user cannot find at the moment they need it does not discharge the dependency.**
+Option B (leave all four paths as written) was defensible and is being declined
+deliberately rather than by omission — which was the product lens's actual complaint: not
+that B is wrong, but that it had been *accumulated* across three `## Impact` entries rather
+than chosen once.
+
+**What follows automatically, and is not a separate decision:**
+
+- **F-005 AC-43 gains a clause.** The elapse is no longer silent: it is the moment the
+  offer hands off. Wording is design's; that the handoff happens is the AC's.
+- **F-005 AC-33's 2.2.1 argument gets its last leg.** It currently says the timer is
+  conformant because an untimed path exists. It can now say the user is *told about* that
+  path at the moment the timed one ends — which is the difference between a path existing
+  and a path being available.
+- **F-006 records the inbound path as satisfied by F-005 AC-43 and does not settle it
+  inside `## Impact`.** That section answering it three times is what produced the finding.
+- **Design owes the copy**, and it joins `§ CarriedNotice`'s existing revision (T-179)
+  rather than starting its own.
+
+**Common practice, stated because it does not support this choice and the record should say
+so.** Gmail and Apple Reminders both let the undo toast vanish silently and say nothing
+about the trash. Asana's 2026 rework went the other way, toward signposted central
+recovery. **The tie-breaker here is not the market — it is that this product's own
+accessibility claim leans on the path being reachable, and theirs do not.**
