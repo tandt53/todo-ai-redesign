@@ -1,111 +1,132 @@
-# BRIEFING — T-177
+# BRIEFING — T-178
 
-- **Task ID:** T-177
-- **Description:** F-005 amendment — § CarriedNotice moves to the bottom, and the undo rows gain a 10s life
+- **Task ID:** T-178
+- **Description:** F-006 — Recently deleted (the trash)
 - **Module:** assistant
-- **Feature:** F-005
+- **Feature:** F-006 (assigned — do not pick your own)
 - **Agent:** spec-agent
-- **Date:** 2026-08-19
+- **Date:** 2026-08-21
 
 ## Context
 
-F-005's Gate 1 was closed by the owner on 2026-08-19 and revision 4 shipped. This is
-**not** a fifth review round. It is an amendment forced by an owner decision taken
-after the gate closed, while looking at the feature running on an iOS simulator.
+**This is a new feature with its own spec and its own Gate 1.** It is deliberately
+not folded into F-005: the owner closed that gate, and F-005 is under an amend-only
+constraint that adding a trash would break.
 
-The owner saw `CN-UNDONE` (*"Buy milk" is back on the list.*) docked under the top bar
-and asked whether design or the implementers had got it wrong. **Neither had** — both
-built exactly what this spec requires. So the requirement is what changes.
+**There is no user to interview.** Work autonomously from the owner decision and the
+files below. Do not build an HTML prototype.
 
-**The amend-only constraint from revisions 3 and 4 still holds: 48 ACs before, 48
-after. Nothing renumbered, nothing added, nothing deleted.** Four existing ACs are
-amended and one open question closes.
+**Why it exists, and this is the part that must survive into the spec.** The owner
+asked what comparable products do. Every major todo app keeps delete; they differ only
+in the net behind it — Apple Reminders keeps *Recently Deleted* for 30 days, TickTick
+and Things (Mac) have a Trash, Todoist relies on daily backups, and Things on iOS has
+**no net at all** and compensates by making deletion a multi-step process. This app
+currently has a **one-tap delete on every list row** and no net.
 
-There is a companion new feature, **F-006 (the trash)**, queued as T-178 and specced
-separately. **Edit (d) below depends on it**, and that dependency must be visible in
-the AC text rather than assumed.
+**F-005 revision 5 now depends on this feature shipping.** AC-43's ten-second elapse
+on the undo offer does not ship before F-006, and AC-33's WCAG 2.2.1 argument is
+written as *the timer is conformant because an equivalent untimed path exists*. Until
+this feature lands, that path does not exist. **A reader of F-006 must be able to see
+that F-005 is waiting on it.**
 
 ## Read these files first
 
-1. `docs/reports/owner-decision-2026-08-19-carried-notice-placement-and-timer.md` — the
-   decision, all five sections. §2's table and §4's last paragraph are the two that
-   change AC text most directly.
-2. `docs/specs/assistant/F-005-task-detail.md` — **AC-43, AC-47, AC-33 and OQ13**. AC-47's
-   lifetime bullet and AC-33's 2.2.1 bullet both carry parenthetical revision history
-   explaining why the current wording is as strong as it is; read those before
-   weakening either, because both were tightened deliberately in revision 4 and one of
-   them was tightened *to remove exactly the reading a timer reintroduces*.
-3. `docs/design/_shared/components.md` **§ CarriedNotice** (from `## Placement` through the
-   lifetime rules) — what design published against the current AC, including the
-   composer constraint on Talk.
-4. `src/assistant/mobile/model/carried.ts` — `carriedRows()`. The row-type boundary
-   edit (b) needs is already visible here: `CN-UNDONE` is built with `blocks: []` and
-   `action: null`.
-5. `docs/reports/owner-decision-2026-08-19-close-gate-one.md` §2 — the decision this one
-   amends. The undo offer was put in AC-47's family there; that placement stands.
+1. `docs/reports/owner-decision-2026-08-19-carried-notice-placement-and-timer.md` —
+   **§4 and §5**. §4 carries the market comparison, what already exists, what is
+   missing, and the structural rule. §5 carries the scope split and the ordering.
+2. `docs/specs/assistant/F-005-task-detail.md` — **AC-41** (restore), **AC-42** (the
+   row's delete), **AC-43** (the undo offer and its five enders), **AC-47** (the
+   notice family). These are the callers; F-006 must not restate their rules, only
+   reference them.
+3. `docs/specs/assistant/api-contracts.md` — `DELETE /tasks/{id}` and
+   `POST /tasks/{id}/restore`. Read what the restore already guarantees before
+   specifying anything that restores.
+4. `docs/specs/_shared/adr/ADR-012-delete-membership-and-restore.md` — delete
+   membership and why restore is a route rather than a patchable field.
+5. `docs/specs/_shared/adr/ADR-009-today-is-a-date.md` — **§ Amendment 2**, the
+   two-axis model. This is the structural trap below.
+6. `src/assistant/api/app.ts` — the delete, restore and task-read paths. Read what is
+   built before specifying what is missing; the gap is smaller than it looks.
 
 ## Write to
 
-- `/Users/tandt/projects/todo-ai-redesign/docs/specs/assistant/F-005-task-detail.md`
-  (amend in place — revision 5)
-- `/Users/tandt/projects/todo-ai-redesign/docs/specs/assistant/index.md`
-  (the revision number — revision 4 shipped without this being updated once already,
-  and it is the one file a fresh session reads to learn where a feature stands)
-- `/Users/tandt/projects/todo-ai-redesign/docs/reports/gate1-lenses/F-005-revision-5-log.md`
-  (one row per edit, with the AC ids touched)
+- `/Users/tandt/projects/todo-ai-redesign/docs/specs/assistant/F-006-recently-deleted.md`
+- `/Users/tandt/projects/todo-ai-redesign/docs/specs/assistant/index.md` (add the row)
 
-## The four edits
+## What already exists — measured, not assumed
 
-**(a) AC-47 — placement is the frame's bottom edge.** No AC constrained the edge
-before; AC-47 requires *visible wherever the user is*, which the bottom satisfies as
-well as the top. **The constraint that travels with it:** on Talk the composer is at
-the bottom and the keyboard rises over it, so the region docks **above the composer**
-and moves with the keyboard, not against the screen edge. Design owns the exact rule;
-the AC states that the bottom edge may not occlude the app's primary input.
+Verified by the orchestrator on 2026-08-19 by reading the API. **Deletion has been
+soft since F-001**: `deleted_at` and `delete_gesture_id` are stored fields, `DELETE
+/tasks/{id}` sets `deleted_at`, `GET /tasks` filters `deleted_at === null`
+(`app.ts:422`), `POST /tasks/{id}/restore` clears it and replays the whole delete
+gesture, and **the live store already holds 53 soft-deleted rows out of 790**.
 
-**(b) AC-47 — the lifetime rule splits, and the split is by what the row carries.**
+**The data for a trash is already there and has been all along.** Do not spec a
+migration, a new column, or a new restore mechanism. Say what is already true and
+reference it.
 
-| Row | Carries | Lifetime |
-|---|---|---|
-| `CN-FAILED`, `CN-OFFLINE`, `CN-DELETED` | text the user typed that the app could not store | never self-dismisses — unchanged |
-| `CN-UNDO`, `CN-UNDONE` | nothing the user typed | 10s, then gone |
+## What is missing — this is the feature
 
-**State the rule by carried content, not by row id.** A rule written as a list of ids
-is one the next row added to this family joins by default and probably wrongly; a rule
-written as *"a row carrying a value the user typed never self-dismisses"* decides that
-case in advance. AC-2's guarantee is the reason the first group exists at all, and it
-is untouched.
+1. **A read path that returns deleted rows.** Every current read filters them out.
+2. **A retention rule and a purge.** Nothing has ever removed a soft-deleted row, so
+   today they accumulate forever — **that is not a trash, it is a leak that happens to
+   be recoverable.** A stated retention turns one into the other. Apple's 30 days is
+   the reference point, not a mandate.
+3. **Permanent deletion** — one row, and empty-all. This is the only genuinely
+   irreversible act in the product and the only place a confirmation earns its keep.
+4. **The surface** — a lists-menu entry, peer to `Done`.
 
-**(c) AC-43 — a fifth ender.** The list is *used, dismissed, replaced, reloaded* and
-now **elapsed**. Its *"and by nothing else"* must name it. Revision 4 had to make this
-exact edit once already, for the reload, and recorded why leaving the phrase standing
-over an incomplete list is worse than having no phrase at all.
+## The structural trap — the one thing most likely to be got wrong
 
-**(d) AC-33 — 2.2.1, and this is the edit with a trap in it.** A ten-second limit on
-an affordance carrying an action is precisely what **2.2.1 Timing Adjustable**
-governs. Revision 4 specifically removed the reading that *a five-second timer extended
-on focus* would satisfy the rule, so **pause-on-hover is not the answer and citing it
-repeats the error that revision was written to fix.**
+`ADR-009 § Amendment 2` models tasks on **two axes**: a date axis (Today · Upcoming ·
+undated) and a filing axis (Inbox · lists), with `Done` the gate that empties both.
 
-What makes the timer conformant is **F-006's trash**: once an equivalent, untimed path
-to the same outcome exists, nothing is lost by elapse. **Write that dependency into
-the AC.** An AC that says *"the timer is fine"* without saying *"because the trash
-exists"* becomes a false conformance claim the moment F-006 slips — and this feature
-declares WCAG 2.1 AA by name.
+**The trash is on neither axis.** It is a **lifecycle state** like `Done`, not a
+**container** like `Inbox`. A deleted task must appear in **no** collection, **no**
+count, and **no** assistant query while it sits there.
 
-**(e) OQ13 closes:** recovery is the trash, for its retention period; the undo offer
-is a shortcut to it, not the remedy itself.
+Built as a fifth filing destination it repeats exactly the category error the
+four-buckets decision fixed, and `INV-INBOX-FILING` is the standing warning about that
+family of mistake. Say which it is, in the spec, in one sentence.
+
+## Questions the spec must answer rather than leave to whoever builds first
+
+Some of these you can decide and record; some are the owner's. **Mark clearly which
+is which** — a decision you took and a question you are asking must not look alike.
+
+- **How long is the retention, and what starts the clock?**
+- **What purges — a background job, a read-time sweep, or the user only?** There is no
+  scheduler in this app today. If nothing purges automatically, say so plainly rather
+  than implying one.
+- **What happens to a deleted task's steps, and to a step whose parent is live?**
+  ADR-012 already answers part of this for restore; the trash view has to agree with
+  it or state where it differs.
+- **A deleted repeating task** — is the series ended, and what does restoring it do?
+- **Does restoring return the task to where it was, or to Inbox?** The row may have
+  been in a collection that no longer makes sense (a due date now in the past).
+- **Is the trash per-account?** It must be, but say it.
+
+## Also required
+
+- **`## Impact`** — mandatory, this is not the first feature in the module. What
+  changes in F-001, F-003 and F-005 because deleted rows become reachable. **Go
+  looking specifically at every count and every read path that currently assumes
+  `deleted_at IS NULL`** — that assumption is about to have an exception, and the
+  places relying on it are not all in one file.
+- **One thing T-177's return surfaced that belongs here:** AC-41's restore has **no
+  read path that returns a deleted row**, and nothing has ever purged one. Both were
+  left as architecture's problem; they are this feature's.
 
 ## Success criteria
 
-- 48 ACs before, 48 after. No id renumbered, added or deleted. Verify by counting.
-- `bash .claude/tools/spec-check/declared-elements.sh docs/specs/assistant/F-005-task-detail.md`
+- The spec exists at the path above with every section the output contract requires.
+- `bash .claude/tools/spec-check/declared-elements.sh docs/specs/assistant/F-006-recently-deleted.md`
   exits 0.
-- AC-47's lifetime rule is stated **by carried content**, and both groups are named.
-- AC-43's ender list has five enders and its closing phrase matches the list.
-- AC-33's 2.2.1 text states the F-006 dependency explicitly. **If you judge that a
-  timed limit cannot be made conformant this way and needs an owner answer rather than
-  a statement, say so and return BLOCKED on that edit alone** — the other four stand
-  on their own. A false AA claim is not a detail to settle by default.
-- OQ13 is closed with its answer recorded, not deleted.
-- The revision log has one row per edit with the AC ids touched.
+- Every AC has a stable `AC-n` id and a platform tag.
+- The index row is added **and** — read this file before writing it — its prose
+  currently opens with a per-feature "F-00X is at revision N" sentence. **Do not add a
+  stale one.** If a sentence you write will be wrong at the next revision, write it so
+  that it cannot be.
+- `## Impact` names what breaks, not only what is added.
+- The ADR-009 answer (lifecycle state, not container) is stated explicitly.
+- F-005's dependency on this feature is visible from F-006's own text.

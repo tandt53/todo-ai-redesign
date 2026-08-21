@@ -318,3 +318,15 @@ Entries are **append-only by agents**; humans may edit or delete.
 - **Related** — **L-018** (measure the disk before re-dispatching), **L-022** (a baseline moves under you during parallel work). This is the same family: the act of measuring changed the thing measured.
 - **Scope** — project-wide; any watcher-backed runtime (Metro, Vite HMR, `tsc --watch`, nodemon).
 - **Stale check** — permanent.
+
+### L-026 — A reversal is complete per FIELD, not per row — and the field the gesture is named after always comes back
+
+- **Date added** — 2026-08-21 by orchestrator, from spec-agent's return on T-178. The agent proposed this for LEARNINGS rather than its own memory file, and was right: it crosses spec, architect, backend and QA, and it is the shape of a bug rather than a project convention.
+- **Trigger** — a delete gesture in this app writes **two** things: `deleted_at` on every member row, and, when the scope is `series`, `series_ended_at` on the whole series (`engine/plan.ts:653`). The restore (`api/app.ts`) clears **`deleted_at` and `updated_at`, and nothing else**. So a restore that presents itself as reversing the gesture returns the occurrences **with the repeat permanently dead**, and `F-005 AC-43`'s *"it reverses exactly the action it was offered for and nothing else"* is false for that one class.
+- **Why nothing caught it** — three reasons stacked, and the third is the one worth carrying. The AC reads as satisfied. The restore's own tests assert on `deleted_at`, which is the field that does come back. And **the window in which a human could have noticed was seconds wide**: the undo offer expires, so nobody ever restored a series days later. Verified as currently invisible — 0 rows in the live store carry `series_id` and `deleted_at` together.
+- **What changes it from latent to real** — F-006's trash makes that restore a *deliberate act, days later*. The defect does not appear because code changed; it appears because a **new surface changes how long the old code is looked at.**
+- **How to apply** — when a spec says a write is reversed, **enumerate every FIELD that write touched, not every ROW.** Write the reversal's postcondition as a field list and assert it. A gesture whose name describes one field (*delete* → `deleted_at`) is exactly where a second field gets written and forgotten, because the reversal *looks* complete: the field the gesture is named after did come back, and that is the one everybody checks.
+- **The general form** — an inverse operation is only as complete as the enumeration it was written against. "Undo X" is not a specification; "restore these N fields to these values" is.
+- **Related** — **L-005** (one door guarded, one not), **L-012** (an assertion green for the wrong reason), **L-021** (a rule landing while its predecessor stands). ADR-012 owns the restore; F-005 AC-43 owns the claim.
+- **Scope** — project-wide; any undo, restore, revert or rollback path.
+- **Stale check** — revisit when ADR-012 is amended.
