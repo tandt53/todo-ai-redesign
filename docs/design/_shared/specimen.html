@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-platform="web">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visual language v2 — specimen</title>
+<!--
+  todo-ai redesign · visual language v2 · design-agent T-202 · 2026-08-21
+  Rendered specimen for docs/design/_shared/DESIGN.md + tokens.json.
+  Self-contained: no network, no server, no build. Open by double-click.
+  This is NOT a feature screen. Every block below is a system specimen.
+  Product language is English (ADR-008). House vocabulary: components.md § Buttons.
+-->
+<style>
+/* ============================================================
+   :root — generated from tokens.json. Light is the design.
+   ============================================================ */
+:root{
+  /* color.light */
+  --bg-base:#FFFFFF; --bg-sunken:#F2F2F4; --bg-raised:#FFFFFF; --bg-ink:#111318;
+  --bg-hairline:#DCDCE1; --bg-rule:#94949E; --bg-scrim:rgba(17,19,24,.32);
+  --text-primary:#111318; --text-secondary:#54545E; --text-muted:#646470;
+  --text-on-ink:#FFFFFF; --text-on-accent:#FFFFFF;
+  --accent:#002FA7; --accent-tint:#E6EAF6;
+  --danger:#C8102E; --danger-tint:#FBE9EC;
+  --attention:#9A4C00; --attention-tint:#FBEFE2;
+  --focus-ring:#002FA7;
+  --shadow-overlay:0 12px 32px -12px rgba(17,19,24,.28);
+
+  /* font */
+  --font-ui:Inter,-apple-system,BlinkMacSystemFont,'Helvetica Neue','Segoe UI',Roboto,system-ui,sans-serif;
+  --font-num:ui-monospace,'SF Mono','JetBrains Mono','Roboto Mono',Menlo,Consolas,monospace;
+  --fs-label:11px; --fs-meta:13px; --fs-body:16px; --fs-lead:20px;
+  --fs-title:25px; --fs-display:31px; --fs-hero:39px; --fs-mega:49px;
+  --lh-tight:1.15; --lh-title:1.25; --lh-body:1.5; --lh-meta:1.4;
+  --ls-mega:-.035em; --ls-hero:-.03em; --ls-display:-.025em; --ls-title:-.015em; --ls-label:.08em;
+
+  /* space */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px; --s8:64px; --s9:96px;
+
+  /* radius / border / control / field */
+  --r-none:0; --r-bubble:4px; --r-pill:999px;
+  --b-hairline:1px; --b-focus:2px; --b-mark:2px;
+  --h-sm:36px; --h-md:44px; --h-lg:52px;
+  --min-target:40px;                       /* platform floor, overridden below */
+  --field-h:44px; --field-px:12px; --field-label-gap:6px; --field-row-gap:24px;
+
+  /* layout */
+  --rail-compact:72px; --rail-default:96px; --rail-wide:136px;
+  --rail:96px; --gutter:24px;   /* set per frame tier below */
+  --measure-form:640px; --measure-list-max:820px; --panel-max:420px; --lists-rail:240px;
+
+  /* motion */
+  --t-micro:100ms; --t-std:180ms; --t-emph:280ms;
+  --ease:cubic-bezier(.2,0,0,1);
+
+  --stage-w:1440px;
+}
+[data-theme="dark"]{
+  --bg-base:#0E0E11; --bg-sunken:#17171C; --bg-raised:#17171C; --bg-ink:#F4F4F6;
+  --bg-hairline:#2E2E38; --bg-rule:#63636F; --bg-scrim:rgba(0,0,0,.56);
+  --text-primary:#F4F4F6; --text-secondary:#A8A8B4; --text-muted:#9296A3;
+  --text-on-ink:#0E0E11; --text-on-accent:#0E0E11;
+  --accent:#8AA6FF; --accent-tint:#1A2140;
+  --danger:#FF7183; --danger-tint:#2C1519;
+  --attention:#FFB020; --attention-tint:#2B2010;
+  --focus-ring:#8AA6FF;
+  --shadow-overlay:0 12px 32px -12px rgba(0,0,0,.64);
+}
+/* font.size_ios / size_android — the ONLY type divergence, plus the hit floors */
+[data-platform="ios"]{ --fs-body:17px; --fs-title:28px; --fs-display:34px; --fs-hero:40px; --fs-mega:50px; --min-target:44px; }
+[data-platform="android"]{ --fs-meta:14px; --fs-title:24px; --fs-display:32px; --fs-hero:40px; --fs-mega:48px; --min-target:48px; }
+
+/* ============================================================
+   specimen chrome — the page around the specimen, kept quiet
+   ============================================================ */
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg-sunken); color:var(--text-primary);
+  font-family:var(--font-ui); font-size:var(--fs-body); line-height:var(--lh-body);
+  font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased;
+}
+.bar{
+  position:sticky; top:0; z-index:40; background:var(--bg-base);
+  border-bottom:var(--b-hairline) solid var(--bg-rule);
+  display:flex; flex-wrap:wrap; align-items:center; gap:var(--s5);
+  padding:var(--s3) var(--s5);
+}
+.bar-id{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); font-family:var(--font-num)}
+.bar-id b{color:var(--text-primary); font-weight:600}
+.ctl{display:flex; align-items:center; gap:var(--s2)}
+.ctl-cap{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted)}
+.seg{display:flex; border:var(--b-hairline) solid var(--bg-rule)}
+.seg button{
+  appearance:none; border:0; background:transparent; cursor:pointer;
+  font:inherit; font-size:var(--fs-meta); font-weight:500; color:var(--text-secondary);
+  padding:0 var(--s3); height:32px; border-right:var(--b-hairline) solid var(--bg-hairline);
+}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--text-primary); color:var(--bg-base); font-weight:600}
+.seg button:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
+.seg.num button{font-family:var(--font-num); padding:0 10px}
+
+main{max-width:1360px; margin:0 auto; padding:0 var(--s5) var(--s9)}
+
+/* masthead — asymmetric, left-aligned, numerals as composition */
+.masthead{display:grid; grid-template-columns:minmax(0,1fr); gap:var(--s5); padding:var(--s8) 0 var(--s7); border-bottom:var(--b-hairline) solid var(--bg-rule)}
+@media (min-width:900px){ .masthead{grid-template-columns:minmax(0,7fr) minmax(0,4fr); gap:var(--s9)} }
+.masthead h1{
+  margin:0; font-size:var(--fs-mega); line-height:var(--lh-tight); letter-spacing:var(--ls-mega);
+  font-weight:700; max-width:15ch;
+}
+.masthead .kicker{font-family:var(--font-num); font-size:var(--fs-label); line-height:var(--lh-meta); letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--accent); margin:0 0 var(--s4); max-width:none}
+.masthead p{margin:var(--s4) 0 0; font-size:var(--fs-lead); line-height:1.4; color:var(--text-secondary); max-width:38ch}
+.facts{border-top:var(--b-hairline) solid var(--bg-hairline); margin-top:var(--s2)}
+.facts div{display:flex; justify-content:space-between; gap:var(--s4); padding:10px 0; border-bottom:var(--b-hairline) solid var(--bg-hairline); font-size:var(--fs-meta)}
+.facts dt{color:var(--text-muted)} .facts dd{margin:0; font-family:var(--font-num); text-align:right}
+
+/* plates */
+.plate{padding:var(--s8) 0; border-bottom:var(--b-hairline) solid var(--bg-rule)}
+.plate-head{display:flex; align-items:baseline; gap:var(--s4); margin-bottom:var(--s6)}
+.folio{font-family:var(--font-num); font-size:var(--fs-meta); color:var(--text-muted); width:2.5ch; flex:none}
+.plate-head h2{margin:0; font-size:var(--fs-title); letter-spacing:var(--ls-title); font-weight:600; line-height:var(--lh-title)}
+.plate-head .sub{margin:0; color:var(--text-muted); font-size:var(--fs-meta)}
+.note{font-size:var(--fs-meta); color:var(--text-muted); max-width:74ch; margin:var(--s4) 0 0}
+.note b{color:var(--text-secondary); font-weight:600}
+.note code{font-family:var(--font-num); font-size:12px; color:var(--text-secondary)}
+.rulebox{border-left:var(--b-mark) solid var(--accent); padding:var(--s1) 0 var(--s1) var(--s4); margin:var(--s5) 0 0; max-width:78ch}
+.rulebox p{margin:0; font-size:var(--fs-meta); color:var(--text-secondary)}
+.rulebox p+p{margin-top:var(--s3)}
+.grid2{display:grid; gap:var(--s6)} @media (min-width:820px){ .grid2{grid-template-columns:1fr 1fr} }
+.grid3{display:grid; gap:var(--s6)} @media (min-width:820px){ .grid3{grid-template-columns:repeat(3,1fr)} }
+.card{background:var(--bg-base); border:var(--b-hairline) solid var(--bg-hairline); padding:var(--s5)}
+.card > h3{margin:0 0 var(--s4); font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); font-weight:600}
+.eyebrow{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); font-weight:600; margin:0 0 var(--s3)}
+
+/* stage — a fixed-width viewport for the width-sensitive plates */
+.stage-wrap{overflow:hidden; background:var(--bg-sunken); border:var(--b-hairline) solid var(--bg-hairline)}
+.stage{
+  transform-origin:top left;
+  container-type:inline-size; background:var(--bg-base);
+}
+.stage-meta{display:flex; justify-content:space-between; gap:var(--s4); font-family:var(--font-num); font-size:var(--fs-label); color:var(--text-muted); padding:var(--s2) 0; letter-spacing:.04em}
+
+/* ============================================================
+   01 — colour in use
+   ============================================================ */
+.paint{display:grid; gap:0; border:var(--b-hairline) solid var(--bg-hairline)}
+.paint-row{display:grid; grid-template-columns:minmax(0,1fr); border-bottom:var(--b-hairline) solid var(--bg-hairline)}
+.paint-row:last-child{border-bottom:0}
+@media (min-width:720px){ .paint-row{grid-template-columns:230px minmax(0,1fr)} }
+.paint-key{padding:var(--s4); border-bottom:var(--b-hairline) solid var(--bg-hairline); background:var(--bg-sunken)}
+@media (min-width:720px){ .paint-key{border-bottom:0; border-right:var(--b-hairline) solid var(--bg-hairline)} }
+.paint-key .swatch{width:100%; height:6px; margin-bottom:var(--s3)}
+.paint-key strong{display:block; font-size:var(--fs-meta); font-weight:600}
+.paint-key span{display:block; font-size:var(--fs-meta); color:var(--text-muted)}
+.paint-key code{font-family:var(--font-num); font-size:11px; color:var(--text-muted)}
+.paint-use{padding:var(--s4); display:flex; flex-wrap:wrap; align-items:center; gap:var(--s4)}
+
+/* ============================================================
+   02 — type scale
+   ============================================================ */
+.ramp{border-top:var(--b-hairline) solid var(--bg-hairline)}
+.ramp-row{display:grid; grid-template-columns:1fr; gap:var(--s1); padding:var(--s4) 0; border-bottom:var(--b-hairline) solid var(--bg-hairline); align-items:baseline}
+@media (min-width:720px){ .ramp-row{grid-template-columns:132px minmax(0,1fr); gap:var(--s5)} }
+.ramp-key{font-family:var(--font-num); font-size:var(--fs-label); color:var(--text-muted); letter-spacing:.04em}
+.ramp-spec{display:block; color:var(--text-muted)}
+.t-mega{font-size:var(--fs-mega); line-height:var(--lh-tight); letter-spacing:var(--ls-mega); font-weight:700}
+.t-hero{font-size:var(--fs-hero); line-height:var(--lh-tight); letter-spacing:var(--ls-hero); font-weight:700}
+.t-display{font-size:var(--fs-display); line-height:var(--lh-title); letter-spacing:var(--ls-display); font-weight:600}
+.t-title{font-size:var(--fs-title); line-height:var(--lh-title); letter-spacing:var(--ls-title); font-weight:600}
+.t-lead{font-size:var(--fs-lead); line-height:1.4; font-weight:400}
+.t-body{font-size:var(--fs-body); line-height:var(--lh-body)}
+.t-meta{font-size:var(--fs-meta); line-height:var(--lh-meta); color:var(--text-secondary)}
+.t-label{font-size:var(--fs-label); line-height:var(--lh-meta); letter-spacing:var(--ls-label); text-transform:uppercase; font-weight:600; color:var(--text-muted)}
+.t-num{font-family:var(--font-num)}
+
+/* ============================================================
+   03 — task row + the time rail (the differentiator)
+   ============================================================ */
+.list{background:var(--bg-base); max-width:var(--measure-list-max); margin:0 auto; position:relative}
+.list::before{content:""; position:absolute; top:0; bottom:0; width:var(--b-hairline); background:var(--bg-hairline); left:calc(var(--gutter) + var(--rail))}
+.group{padding:var(--s5) var(--gutter) var(--s2); padding-left:calc(var(--gutter) + var(--rail) + var(--gutter))}
+.group h3{margin:0; font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:uppercase; font-weight:600; color:var(--text-muted)}
+.group.overdue h3{color:var(--danger)}
+.row{
+  display:grid; grid-template-columns:var(--rail) minmax(0,1fr) auto;
+  align-items:center; min-height:var(--h-lg); padding:var(--s2) var(--gutter); gap:0;
+}
+.row-time{
+  font-family:var(--font-num); font-size:var(--fs-meta); color:var(--text-muted);
+  text-align:right; padding-right:var(--s4); align-self:stretch; display:flex;
+  align-items:center; justify-content:flex-end; white-space:nowrap; gap:var(--s2);
+}
+.row-time .wd{display:none}
+.row-box{display:flex; align-items:center; flex:none}
+.cbx{
+  appearance:none; margin:0; width:20px; height:20px; flex:none; cursor:pointer;
+  border:var(--b-hairline) solid var(--bg-rule); background:var(--bg-base); border-radius:var(--r-none);
+  display:grid; place-items:center;
+}
+[data-platform="ios"] .cbx{border-radius:50%}
+[data-platform="android"] .cbx{border-radius:2px}
+.cbx:checked{background:var(--text-primary); border-color:var(--text-primary)}
+.cbx:checked::after{content:""; width:10px; height:6px; border-left:2px solid var(--bg-base); border-bottom:2px solid var(--bg-base); transform:rotate(-45deg) translate(1px,-1px)}
+.cbx:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
+.row-main{padding-left:var(--gutter); min-width:0; display:flex; align-items:center; gap:var(--s3)}
+.row-title{min-width:0; font-size:var(--fs-body); line-height:1.35;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+.row-marks{display:inline-flex; align-items:center; gap:var(--s2); margin-left:var(--s2); vertical-align:-3px}
+.row-trail{display:flex; align-items:center; flex:none}
+.mark{font-family:var(--font-num); font-size:var(--fs-meta); font-weight:700; color:var(--text-primary); line-height:1}
+.mark-quiet{color:var(--text-muted); display:flex}
+.tag{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:uppercase; font-weight:600; padding:2px 6px; background:var(--accent-tint); color:var(--accent)}
+.row-del{
+  appearance:none; border:0; background:transparent; cursor:pointer; color:var(--text-muted);
+  width:var(--min-target); height:var(--min-target); display:grid; place-items:center; opacity:0;
+}
+.row:hover .row-del, .row:focus-within .row-del{opacity:1}
+[data-platform="ios"] .row-del, [data-platform="android"] .row-del{opacity:1}
+.row-del:hover{color:var(--danger)}
+.row.done .row-title{color:var(--text-muted); text-decoration:line-through}
+.list-hairline{height:var(--b-hairline); background:var(--bg-hairline); margin-left:calc(var(--gutter) + var(--rail))}
+[data-tier="single"]{--rail:var(--rail-compact); --gutter:16px}
+[data-tier="split"]{--rail:var(--rail-default); --gutter:24px}
+[data-tier="wide"]{--rail:var(--rail-wide); --gutter:24px}
+[data-tier="wide"] .row-time .wd{display:inline; color:var(--text-muted)}
+
+/* ============================================================
+   04 — messages
+   ============================================================ */
+.conv{display:flex; flex-direction:column; gap:var(--s4); padding:var(--s5); background:var(--bg-base)}
+.msg{max-width:88%; display:flex; flex-direction:column; gap:var(--s1)}
+.msg.user{align-self:flex-end; align-items:flex-end}
+.msg.bot{align-self:flex-start}
+.bubble{padding:var(--s3) var(--s4); border-radius:var(--r-bubble); font-size:var(--fs-body)}
+.msg.user .bubble{background:var(--bg-ink); color:var(--text-on-ink)}
+.msg.bot .bubble{background:var(--bg-base); border:var(--b-hairline) solid var(--bg-hairline); color:var(--text-primary)}
+.msg.bot.applied .bubble{border-left:var(--b-mark) solid var(--accent)}
+.msg-time{font-family:var(--font-num); font-size:var(--fs-label); color:var(--text-muted); letter-spacing:.04em}
+.diff{margin:var(--s3) 0 0; border-top:var(--b-hairline) solid var(--bg-hairline); padding-top:var(--s3); display:grid; gap:var(--s2)}
+.diff-row{display:grid; grid-template-columns:80px minmax(0,1fr); gap:var(--s3); font-size:var(--fs-meta); align-items:baseline}
+.diff-row dt{color:var(--text-muted)}
+.diff-row dd{margin:0}
+.old{color:var(--text-muted); text-decoration:line-through}
+.arrow{color:var(--text-muted); padding:0 var(--s2)}
+.new{font-weight:600; color:var(--text-primary)}
+.msg-actions{margin-top:var(--s3); display:flex; gap:var(--s2)}
+
+/* ============================================================
+   05 — buttons
+   ============================================================ */
+.btn{
+  appearance:none; cursor:pointer; font:inherit; font-size:var(--fs-body); font-weight:600;
+  height:var(--h-md); min-height:var(--min-target); padding:0 var(--s5); border-radius:var(--r-none);
+  border:var(--b-hairline) solid transparent; display:inline-flex; align-items:center; justify-content:center; gap:var(--s2);
+  transition:background var(--t-micro) var(--ease), color var(--t-micro) var(--ease);
+}
+.btn:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
+.btn-primary{background:var(--accent); color:var(--text-on-accent)}
+.btn-primary:hover{background:color-mix(in srgb, var(--accent) 86%, var(--text-primary))}
+.btn-accent-quiet{background:transparent; color:var(--accent); border-color:var(--accent)}
+.btn-accent-quiet:hover{background:var(--accent-tint)}
+.btn-secondary{background:transparent; color:var(--text-primary); border-color:var(--bg-rule)}
+.btn-secondary:hover{background:var(--bg-sunken)}
+.btn-ghost{background:transparent; color:var(--text-secondary); padding:0 var(--s3)}
+.btn-ghost:hover{color:var(--text-primary); background:var(--bg-sunken)}
+.btn-danger{background:var(--danger); color:var(--text-on-accent)}
+.btn-danger:hover{background:color-mix(in srgb, var(--danger) 86%, var(--text-primary))}
+.btn-danger-quiet{background:transparent; color:var(--danger); border-color:var(--danger)}
+.btn-danger-quiet:hover{background:var(--danger-tint)}
+.btn-sm{height:var(--h-sm); font-size:var(--fs-meta); padding:0 var(--s3)}
+.btn[disabled]{opacity:.4; cursor:not-allowed; border-color:transparent}
+.btn-loading{color:transparent; position:relative; pointer-events:none}
+.btn-loading::after{
+  content:""; position:absolute; left:50%; top:50%; width:16px; height:2px; margin:-1px 0 0 -8px;
+  background:var(--text-on-accent); animation:barsweep 900ms linear infinite;
+}
+@keyframes barsweep{0%{transform:scaleX(.2)}50%{transform:scaleX(1)}100%{transform:scaleX(.2)}}
+.btn-row{display:flex; flex-wrap:wrap; gap:var(--s3); align-items:center}
+.fab{
+  width:56px; height:56px; border-radius:50%; background:var(--accent); color:var(--text-on-accent);
+  border:0; display:grid; place-items:center; cursor:pointer; box-shadow:var(--shadow-overlay);
+}
+@media (prefers-reduced-motion:reduce){ *{animation-duration:.001ms !important; transition-duration:.001ms !important} }
+
+/* ============================================================
+   06 — field, label, form row
+   ============================================================ */
+.content-col{max-width:var(--measure-list-max); margin:0 auto}
+.form{max-width:var(--measure-form); display:grid; gap:var(--field-row-gap)}
+.field-row{display:block}
+.field-label{display:block; font-size:var(--fs-meta); font-weight:600; color:var(--text-secondary); margin-bottom:var(--field-label-gap)}
+.field{
+  display:block; width:100%; height:var(--field-h); padding:0 var(--field-px);
+  font:inherit; font-size:var(--fs-body); color:var(--text-primary);
+  background:var(--bg-base); border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-none);
+}
+textarea.field{height:auto; min-height:96px; padding:10px var(--field-px); line-height:var(--lh-body); resize:vertical}
+.field::placeholder{color:var(--text-muted)}
+.field:focus{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px; border-color:var(--accent)}
+.field-help{display:block; font-size:var(--fs-meta); color:var(--text-muted); margin-top:var(--field-label-gap)}
+.field-row.error .field{border-color:var(--danger)}
+.field-error{display:block; font-size:var(--fs-meta); color:var(--danger); margin-top:var(--field-label-gap)}
+.bad-demo{border:var(--b-hairline) dashed var(--danger); padding:var(--s4); background:var(--danger-tint)}
+.bad-demo input{width:auto; height:var(--field-h); padding:0 var(--field-px); font:inherit; font-size:var(--fs-body); border:var(--b-hairline) solid var(--bg-rule); background:var(--bg-base); color:var(--text-primary)}
+
+/* ============================================================
+   07 — empty states
+   ============================================================ */
+.empty{padding:var(--s6) var(--s5); background:var(--bg-base)}
+.empty h3{margin:0 0 var(--s2); font-size:var(--fs-lead); font-weight:600; line-height:1.3}
+.empty p{margin:0 0 var(--s5); color:var(--text-secondary); font-size:var(--fs-body); max-width:44ch}
+
+/* ============================================================
+   08 — the wide-frame rule, drawn
+   ============================================================ */
+.frame{display:flex; gap:0; height:170px; max-width:100%; border:var(--b-hairline) solid var(--bg-rule); background:var(--bg-sunken)}
+.col{display:flex; flex-direction:column; justify-content:space-between; padding:var(--s3); border-right:var(--b-hairline) solid var(--bg-rule); min-width:0}
+.col:last-child{border-right:0}
+.col-name{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:uppercase; font-weight:600; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.col-w{font-family:var(--font-num); font-size:var(--fs-label); color:var(--text-muted)}
+.col.tasks{background:var(--accent-tint); flex:1 1 auto}
+.col.panel{background:var(--bg-base); flex:0 0 var(--panel-max)}
+.col.rail{background:var(--bg-base); flex:0 0 var(--lists-rail)}
+.col.margin{background:repeating-linear-gradient(135deg,transparent 0 6px,var(--bg-hairline) 6px 7px); flex:0 0 auto}
+.col.dead{background:repeating-linear-gradient(135deg,var(--danger-tint) 0 7px,var(--danger) 7px 8px); flex:1 1 auto}
+.col.dead .col-name,.col.dead .col-w{background:var(--bg-base); padding:1px 5px; align-self:flex-start}
+.col.margin .col-name,.col.margin .col-w{background:var(--bg-sunken); padding:1px 5px; align-self:flex-start}
+.tiers{display:grid; gap:var(--s5)}
+.tier{display:grid; gap:var(--s2)}
+.tier-cap{display:flex; justify-content:space-between; gap:var(--s4); font-family:var(--font-num); font-size:var(--fs-label); color:var(--text-muted); letter-spacing:.04em}
+
+/* ============================================================
+   09 — platform chrome fragments
+   ============================================================ */
+.chrome{border:var(--b-hairline) solid var(--bg-hairline); background:var(--bg-base)}
+.chrome-cap{font-family:var(--font-num); font-size:var(--fs-label); letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); padding:var(--s2) var(--s3); border-bottom:var(--b-hairline) solid var(--bg-hairline); display:flex; justify-content:space-between; gap:var(--s3)}
+.topbar{display:flex; align-items:center; gap:var(--s3); padding:0 var(--s4); border-bottom:var(--b-hairline) solid var(--bg-hairline)}
+.topbar.web{height:56px}
+.topbar.ios-compact{height:44px; justify-content:center; position:relative}
+.topbar.ios-compact .lead{position:absolute; left:var(--s3); display:flex; align-items:center; gap:2px; color:var(--accent); font-size:var(--fs-body)}
+.topbar.ios-compact .ttl{font-weight:600; font-size:var(--fs-body)}
+.ios-large{padding:var(--s2) var(--s4) var(--s3)}
+.ios-large h4{margin:0; font-size:28px; line-height:var(--lh-tight); letter-spacing:var(--ls-display); font-weight:700}
+.topbar.md3{height:56px}
+.topbar.md3 .ttl{font-size:var(--fs-lead); font-weight:500}
+.iconbtn{appearance:none; border:0; background:transparent; cursor:pointer; color:var(--text-primary); width:var(--min-target); height:var(--min-target); display:grid; place-items:center; flex:none}
+.iconbtn:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
+.spacer{flex:1 1 auto}
+.sheet{border-top:var(--b-hairline) solid var(--bg-rule); background:var(--bg-base); padding:var(--s3) var(--s4) 0}
+.grabber{width:36px; height:4px; border-radius:var(--r-pill); background:var(--bg-rule); margin:0 auto var(--s4)}
+.grabber.md3{width:32px}
+.homebar{height:5px; width:134px; border-radius:var(--r-pill); background:var(--text-primary); margin:var(--s4) auto var(--s2)}
+.gesturebar{height:3px; width:108px; border-radius:var(--r-pill); background:var(--text-primary); margin:var(--s4) auto var(--s2); opacity:.55}
+.sw{width:52px; height:32px; border-radius:var(--r-pill); background:var(--accent); position:relative; flex:none}
+.sw::after{content:""; position:absolute; right:3px; top:3px; width:26px; height:26px; border-radius:50%; background:#fff}
+.sw.md3{border:2px solid var(--accent)}
+.sw.md3::after{width:24px; height:24px; right:4px; top:2px}
+.plist{display:grid; gap:0}
+.prow{display:flex; align-items:center; gap:var(--s3); padding:0 var(--s4); min-height:var(--min-target); height:var(--h-lg); border-bottom:var(--b-hairline) solid var(--bg-hairline); font-size:var(--fs-body)}
+.prow:last-child{border-bottom:0}
+.prow.destructive{color:var(--danger); font-weight:600}
+.ptable{width:100%; border-collapse:collapse; font-size:var(--fs-meta)}
+.ptable th,.ptable td{text-align:left; padding:10px var(--s3); border-bottom:var(--b-hairline) solid var(--bg-hairline); vertical-align:top}
+.ptable thead th{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); border-bottom:var(--b-hairline) solid var(--bg-rule)}
+.ptable td:first-child{color:var(--text-muted); white-space:nowrap}
+.ptable .why{color:var(--text-muted)}
+.tblwrap{overflow-x:auto}
+
+/* composer + listening rule */
+.composer{border-top:var(--b-hairline) solid var(--bg-rule); background:var(--bg-base); position:relative}
+.composer .live{position:absolute; top:-1px; left:0; height:var(--b-mark); background:var(--accent); animation:grow 2600ms var(--ease) infinite alternate}
+@keyframes grow{from{width:8%}to{width:92%}}
+.composer-in{display:flex; align-items:center; gap:var(--s3); padding:var(--s3) var(--s4)}
+.composer-in .field{flex:1 1 auto; border:0; padding-left:0}
+.composer-in .field:focus{outline:0}
+.mic{width:var(--h-md); height:var(--h-md); min-width:var(--min-target); min-height:var(--min-target); border-radius:50%; border:0; background:var(--accent); color:var(--text-on-accent); display:grid; place-items:center; cursor:pointer; flex:none}
+.mic.idle{background:transparent; color:var(--text-secondary); border:var(--b-hairline) solid var(--bg-rule)}
+.transcript{padding:var(--s3) var(--s4) 0; font-size:var(--fs-lead); line-height:1.35; color:var(--text-primary)}
+.transcript .pend{color:var(--text-muted)}
+
+svg{display:block}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-id">todo-ai · <b>visual language v2</b> · T-202</div>
+  <div class="ctl">
+    <span class="ctl-cap">Platform</span>
+    <div class="seg" id="segPlatform">
+      <button data-v="web" aria-pressed="true">Web</button>
+      <button data-v="ios" aria-pressed="false">iOS</button>
+      <button data-v="android" aria-pressed="false">Android</button>
+    </div>
+  </div>
+  <div class="ctl">
+    <span class="ctl-cap">Width</span>
+    <div class="seg num" id="segWidth">
+      <button data-v="390" aria-pressed="false">390</button>
+      <button data-v="768" aria-pressed="false">768</button>
+      <button data-v="1024" aria-pressed="false">1024</button>
+      <button data-v="1280" aria-pressed="false">1280</button>
+      <button data-v="1440" aria-pressed="true">1440</button>
+      <button data-v="1536" aria-pressed="false">1536</button>
+      <button data-v="1920" aria-pressed="false">1920</button>
+    </div>
+  </div>
+  <div class="ctl">
+    <span class="ctl-cap">Theme</span>
+    <div class="seg" id="segTheme">
+      <button data-v="light" aria-pressed="true">Light</button>
+      <button data-v="dark" aria-pressed="false">Dark</button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- ══ masthead ══ -->
+<section class="masthead">
+  <div>
+    <p class="kicker">Visual system · replaces v1 entirely</p>
+    <h1>White, one accent, and a time rail.</h1>
+    <p>Everything you can see is new. Not one name in the code changed — all 52 element ids are kept.</p>
+  </div>
+  <dl class="facts">
+    <div><dt>Direction</dt><dd>Swiss</dd></div>
+    <div><dt>Ground</dt><dd>light-first</dd></div>
+    <div><dt>Accents</dt><dd>3 (v1: 5)</dd></div>
+    <div><dt>Corner radius</dt><dd>0</dd></div>
+    <div><dt>Widths measured</dt><dd>7 (v1: 4)</dd></div>
+    <div><dt>Differentiator</dt><dd>the time rail</dd></div>
+  </dl>
+</section>
+
+<!-- ══ 01 colour ══ -->
+<section class="plate">
+  <div class="plate-head"><span class="folio">01</span><div><h2>Colour, at work</h2><p class="sub">Three accents. One meaning each, and no meaning carried by two colours.</p></div></div>
+
+  <div class="paint">
+    <div class="paint-row">
+      <div class="paint-key">
+        <div class="swatch" style="background:var(--accent)"></div>
+        <strong>accent</strong><span>the assistant — mic listening, an applied change, undo, the primary action, focus</span><code id="hexAccent">#002FA7</code>
+      </div>
+      <div class="paint-use">
+        <button class="btn btn-primary" data-testid="assistant-add-task-button">Add task</button>
+        <span class="tag">NEW</span>
+        <button class="mic" aria-label="Stop listening"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></button>
+        <button class="btn btn-sm btn-accent-quiet" data-testid="assistant-undo-button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Undo</button>
+      </div>
+    </div>
+    <div class="paint-row">
+      <div class="paint-key">
+        <div class="swatch" style="background:var(--danger)"></div>
+        <strong>danger</strong><span>lost, or losing — delete, overdue, a write the server refused</span><code id="hexDanger">#C8102E</code>
+      </div>
+      <div class="paint-use">
+        <button class="btn btn-danger">Delete</button>
+        <button class="btn btn-danger-quiet" data-testid="tasks-delete-button">Delete task</button>
+        <span class="t-label" style="color:var(--danger)">Overdue · 2 tasks</span>
+        <span class="t-meta" style="color:var(--danger)">Couldn't save the new name.</span>
+      </div>
+    </div>
+    <div class="paint-row">
+      <div class="paint-key">
+        <div class="swatch" style="background:var(--attention)"></div>
+        <strong>attention</strong><span>needs your answer — an open question, offline, a value that came back refused</span><code id="hexAttention">#9A4C00</code>
+      </div>
+      <div class="paint-use">
+        <span class="t-meta" style="color:var(--attention);font-weight:600">Delete 3 tasks: Buy milk, Order the cake, Team meeting?</span>
+        <button class="btn btn-sm btn-secondary">Yes</button>
+        <button class="btn btn-sm btn-ghost">No</button>
+      </div>
+    </div>
+    <div class="paint-row">
+      <div class="paint-key">
+        <div class="swatch" style="background:var(--bg-ink)"></div>
+        <strong>bg.ink</strong><span>the strongest ground — your own message, the selected segment</span><code id="hexInk">#111318</code>
+      </div>
+      <div class="paint-use">
+        <span class="bubble" style="background:var(--bg-ink);color:var(--text-on-ink);display:inline-block">team meeting tomorrow at 2</span>
+      </div>
+    </div>
+    <div class="paint-row">
+      <div class="paint-key">
+        <div class="swatch" style="background:var(--bg-rule)"></div>
+        <strong>bg.rule · bg.hairline</strong><span>structure is a 1px rule, never a shadow</span><code>3.00:1</code>
+      </div>
+      <div class="paint-use" style="display:block">
+        <div style="border:1px solid var(--bg-rule);padding:var(--s3);font-size:var(--fs-meta);color:var(--text-secondary)">A boundary that carries meaning: <code class="t-num">bg.rule</code></div>
+        <div style="height:var(--s3)"></div>
+        <div style="border-top:1px solid var(--bg-hairline);padding-top:var(--s3);font-size:var(--fs-meta);color:var(--text-secondary)">A rule that only separates: <code class="t-num">bg.hairline</code></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rulebox">
+    <p><b>Two of v1's five colours are gone.</b> <b>green / success</b> — the label <code>NEW</code> was already doing the work, because state is never allowed to travel on colour alone. The new value now reads bold against the old one struck through and muted, which a colour-blind reader can follow by construction.</p>
+    <p><b>The cyan → violet voice pair</b> — it split <em>you are speaking</em> from <em>the assistant is thinking</em> across two hues plus a gradient handoff. The gradient is not legal in this direction, the handoff never once rendered in the running app, and who is speaking is already carried by side, ground and label. One accent now means <em>the assistant</em>, on both halves of its turn.</p>
+    <p><b>The fill and the outline of a red button are not the same button.</b> <code>danger</code> filled is the action that <em>does</em> the deleting — it appears in a confirmation and nowhere else. <code>danger</code> outlined is the action that <em>asks</em>. That is why <b>Delete task</b> above is quiet and <b>Delete</b> is not.</p>
+  </div>
+</section>
+
+<!-- ══ 02 type ══ -->
+<section class="plate">
+  <div class="plate-head"><span class="folio">02</span><div><h2>Type scale</h2><p class="sub">One family, plus one face for numerals. A 1.25 ratio, used to both ends. Every line below is a string this product would really show.</p></div></div>
+  <div class="ramp">
+    <div class="ramp-row"><div class="ramp-key">mega<span class="ramp-spec" id="specMega">49 / 700</span></div><div class="t-mega">Today</div></div>
+    <div class="ramp-row"><div class="ramp-key">hero<span class="ramp-spec" id="specHero">39 / 700</span></div><div class="t-hero">Nothing in Upcoming</div></div>
+    <div class="ramp-row"><div class="ramp-key">display<span class="ramp-spec" id="specDisplay">31 / 600</span></div><div class="t-display">Call the dentist about a check-up</div></div>
+    <div class="ramp-row"><div class="ramp-key">title<span class="ramp-spec" id="specTitle">25 / 600</span></div><div class="t-title">Send the weekly report to Hanh</div></div>
+    <div class="ramp-row"><div class="ramp-key">lead<span class="ramp-spec" id="specLead">20 / 400</span></div><div class="t-lead">No tasks yet. Add your first one — or say one, on Talk.</div></div>
+    <div class="ramp-row"><div class="ramp-key">body<span class="ramp-spec" id="specBody">16 / 400</span></div><div class="t-body">Added “Team meeting” for tomorrow at 2:00 PM. It repeats every Thursday, and it will remind you 15 minutes before.</div></div>
+    <div class="ramp-row"><div class="ramp-key">meta<span class="ramp-spec" id="specMeta">13 / 400</span></div><div class="t-meta">Edited 9:40 PM · repeats weekly · 2 steps</div></div>
+    <div class="ramp-row"><div class="ramp-key">label<span class="ramp-spec">11 / 600 · +.08em</span></div><div class="t-label">Overdue · Today · Upcoming · Done</div></div>
+    <div class="ramp-row"><div class="ramp-key">numeric<span class="ramp-spec">the utility face</span></div><div class="t-num t-body">6:00 PM · Fri Aug 21 · 3 tasks · 00:15:42</div></div>
+    <div class="ramp-row"><div class="ramp-key">body · user<span class="ramp-spec">a typed title</span></div><div class="t-body">Gọi nha sĩ đặt lịch khám răng</div></div>
+  </div>
+  <p class="note"><b>Why one family.</b> The direction locks a single grotesque for both display and body. Product copy is English, but the last row above is the test that decides it: <b>a task title is whatever the user types</b>, and the live store holds that one today. A display face picked for English headings breaks first on stacked diacritics, at exactly the size the app uses most. So hierarchy is carried by size, weight, case and tracking instead, and the second face is reserved for numerals only.</p>
+  <p class="note"><b>Two floors, neither negotiable.</b> Body never below 16 and line-height never below 1.5 — under 16 iOS zooms the page on focus and tone marks lose their separation from the letter. iOS lifts body to 17; Android sets meta to 14. Nothing else in the ramp diverges.</p>
+</section>
+
+<!-- ══ 03 task row ══ -->
+<section class="plate">
+  <div class="plate-head"><span class="folio">03</span><div><h2>The task row, and the time rail</h2><p class="sub">The one place boldness is spent. Change the width in the bar above to watch the rail widen.</p></div></div>
+  <div class="stage-meta"><span id="lbl03">frame 1440px</span><span>the Tasks pane only — the rest of the frame is plate 08</span></div>
+  <div class="stage-wrap"><div class="stage">
+    <div class="list">
+      <div class="group overdue"><h3>Overdue</h3></div>
+      <div class="row" data-testid="assistant-task-row">
+        <div class="row-time"><span class="wd">Thu</span>5:00 PM</div>
+        <div class="row-main"><div class="row-box"><input class="cbx" type="checkbox" data-testid="assistant-task-checkbox" aria-label="Complete: Send the weekly report to Hanh"></div><div class="row-title">Send the weekly report to Hanh</div></div>
+        <div class="row-trail"><button class="row-del" data-testid="tasks-delete-button" aria-label="Delete task"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+      </div>
+      <div class="list-hairline"></div>
+      <div class="group"><h3>Today · Fri, Aug 21</h3></div>
+      <div class="row" data-testid="assistant-task-row">
+        <div class="row-time"><span class="wd">Fri</span>6:00 PM</div>
+        <div class="row-main"><div class="row-box"><input class="cbx" type="checkbox" aria-label="Complete: Call the dentist about a check-up"></div><div class="row-title">Call the dentist about a check-up<span class="row-marks"><span class="mark" data-testid="tasks-row-priority-mark" title="High priority">!</span></span></div></div>
+        <div class="row-trail"><button class="row-del" data-testid="tasks-delete-button" aria-label="Delete task"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+      </div>
+      <div class="list-hairline"></div>
+      <div class="row" data-testid="assistant-task-row">
+        <div class="row-time">—</div>
+        <div class="row-main"><div class="row-box"><input class="cbx" type="checkbox" aria-label="Complete: Buy milk"></div><div class="row-title">Buy milk</div></div>
+        <div class="row-trail"><button class="row-del" data-testid="tasks-delete-button" aria-label="Delete task"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+      </div>
+      <div class="list-hairline"></div>
+      <div class="group"><h3>Tomorrow · Sat, Aug 22</h3></div>
+      <div class="row" data-testid="assistant-task-row">
+        <div class="row-time"><span class="wd">Sat</span>2:00 PM</div>
+        <div class="row-main"><div class="row-box"><input class="cbx" type="checkbox" aria-label="Complete: Team meeting"></div><div class="row-title">Team meeting<span class="row-marks"><span class="tag">NEW</span>
+          <span class="mark-quiet" data-testid="tasks-row-repeat-mark" title="Repeats weekly"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg></span></span></div></div>
+        <div class="row-trail"><button class="row-del" data-testid="tasks-delete-button" aria-label="Delete task"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+      </div>
+      <div class="list-hairline"></div>
+      <div class="row done" data-testid="assistant-task-row">
+        <div class="row-time"><span class="wd">Fri</span>9:30 AM</div>
+        <div class="row-main"><div class="row-box"><input class="cbx" type="checkbox" checked aria-label="Mark not done: Change the tyres"></div><div class="row-title">Change the tyres</div></div>
+        <div class="row-trail"><button class="row-del" data-testid="tasks-delete-button" aria-label="Delete task"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+      </div>
+      <div class="list-hairline"></div>
+    </div>
+  </div></div>
+  <div class="grid2" style="margin-top:var(--s6)">
+    <div>
+      <p class="note"><b>The time rail is structure, not metadata.</b> The time sits first, right-aligned, set in the numeric face, with a 1px rule running the whole length of the list. A task with no time shows <code>—</code>, so the zero case is drawn rather than left blank. The column steps <code>72 → 96 → 136</code> with width and picks up the weekday at the widest, which is what a wide screen buys instead of a gutter.</p>
+    </div>
+    <div>
+      <p class="note"><b>One signal per meaning.</b> The <span style="color:var(--danger)">Overdue</span> heading carries the red; the times in its rows stay muted. The priority mark is <b>one</b> <code>!</code>, at least <code>space.2</code> clear of the title — v1 computed <code>margin-left: 0</code> and put <code>!!!</code> hard against the last letter of the task's own name.</p>
+      <p class="note" style="margin-top:var(--s4)"><b>A title is never truncated to protect a column.</b> It wraps to two lines and the row grows. Switch to 390 above to see it: the rail keeps its place and the name stays readable. Clipping a task's own name to keep a column tidy is the same mistake the 197px field made in plate 06.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 04 messages ══ -->
+<section class="plate">
+  <div class="plate-head"><span class="folio">04</span><div><h2>Messages</h2><p class="sub">Squared bubbles at 4px. You on the right on the darkest ground, the assistant on the left on white with a rule.</p></div></div>
+  <div class="grid2">
+    <div class="card" style="padding:0">
+      <div class="conv">
+        <div class="msg user"><div class="bubble">team meeting tomorrow at 2</div><span class="msg-time">9:38 PM</span></div>
+        <div class="msg bot applied">
+          <div class="bubble">
+            Added <b>Team meeting</b>.
+            <dl class="diff">
+              <div class="diff-row"><dt>Title</dt><dd><span class="new">Team meeting</span> <span class="tag">NEW</span></dd></div>
+              <div class="diff-row"><dt>Deadline</dt><dd><span class="old">not set</span><span class="arrow">→</span><span class="new">Sat Aug 22, 2:00 PM</span></dd></div>
+            </dl>
+            <div class="msg-actions"><button class="btn btn-sm btn-accent-quiet" data-testid="assistant-undo-button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Undo</button></div>
+          </div>
+          <span class="msg-time">9:38 PM</span>
+        </div>
+        <div class="msg user"><div class="bubble">delete all my shopping tasks</div><span class="msg-time">9:39 PM</span></div>
+        <div class="msg bot">
+          <div class="bubble">
+            <span style="color:var(--attention);font-weight:600">Delete 3 tasks: Buy milk, Buy a birthday present, Order the cake?</span>
+            <div class="msg-actions"><button class="btn btn-sm btn-danger">Delete</button><button class="btn btn-sm btn-ghost">Cancel</button></div>
+          </div>
+          <span class="msg-time">9:39 PM</span>
+        </div>
+      </div>
+      <div class="composer">
+        <span class="live" aria-hidden="true"></span>
+        <div class="transcript">team meeting tomorrow at <span class="pend">two</span></div>
+        <div class="composer-in">
+          <input class="field" placeholder="Say or type what needs doing." aria-label="Message">
+          <button class="mic" aria-label="Stop listening"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></button>
+        </div>
+      </div>
+    </div>
+    <div>
+      <p class="eyebrow">What moves</p>
+      <p class="note"><b>Exactly one thing on screen moves on its own</b>: a 2px accent rule running along the composer while the microphone is live. It replaces v1's 2400ms aurora breath, and it is the entire motion budget of the system.</p>
+      <p class="note" style="margin-top:var(--s5)"><b>A change is stated field by field.</b> The old value is struck through and muted, the new one is bold — no colour needed. <b>Undo</b> always carries its word; it is never an icon on its own.</p>
+      <p class="note" style="margin-top:var(--s5)"><b>Undo is the accent; Put back is not.</b> Undo reverses what the assistant did, so it wears the assistant's colour. Putting back something your own hand deleted is a neutral button, because it was never the assistant's act.</p>
+      <p class="note" style="margin-top:var(--s5)"><b>A confirmation names what it will delete</b> — up to three titles, then “and N more”. A question that states only a count is one a user cannot answer safely.</p>
+      <p class="note" style="margin-top:var(--s5)"><code>prefers-reduced-motion</code>: every animation collapses to one 80ms opacity change, and every end state is kept.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 05 buttons ══ -->
+<section class="plate">
+  <div class="plate-head"><span class="folio">05</span><div><h2>The button set</h2><p class="sub">Square corners, 44 high, one accent for the primary action and one red for destruction.</p></div></div>
+  <div class="grid2">
+    <div class="card">
+      <h3>Variants</h3>
+      <div class="btn-row">
+        <button class="btn btn-primary" data-testid="assistant-add-task-button">Add task</button>
+        <button class="btn btn-accent-quiet" data-testid="assistant-undo-button">Undo</button>
+        <button class="btn btn-secondary" data-testid="shell-carried-notice-undo">Put back</button>
+        <button class="btn btn-ghost">Cancel</button>
+      </div>
+      <div class="btn-row" style="margin-top:var(--s4)">
+        <button class="btn btn-danger-quiet" data-testid="tasks-delete-button">Delete task</button>
+        <button class="btn btn-danger">Delete</button>
+      </div>
+      <div class="btn-row" style="margin-top:var(--s4)">
+        <button class="btn btn-sm btn-secondary" data-testid="tasks-list-retry-button">Retry</button>
+        <button class="btn btn-sm btn-ghost" data-testid="menu-close-button">Close</button>
+      </div>
+      <p class="note"><b>A destructive button says what it deletes.</b> “Delete” alone is a question nobody answered — it is legal only inside the confirmation, where the sentence above it has already named the tasks.</p>
+    </div>
+    <div class="card">
+      <h3>States</h3>
+      <div class="btn-row">
+        <button class="btn btn-primary">Default</button>
+        <button class="btn btn-primary" style="background:color-mix(in srgb,var(--accent) 86%,var(--text-primary))">Hover</button>
+        <button class="btn btn-primary" style="outline:var(--b-focus) solid var(--focus-ring);outline-offset:2px">Focused</button>
+      </div>
+      <div class="btn-row" style="margin-top:var(--s4)">
+        <button class="btn btn-primary" disabled>Disabled</button>
+        <button class="btn btn-primary btn-loading">Saving</button>
+      </div>
+      <div class="btn-row" style="margin-top:var(--s5)">
+        <span class="t-meta" style="max-width:36ch">Android adds one round 56dp floating button for the create action. iOS and web do not have one:</span>
+        <button class="fab" aria-label="Add task"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
+      </div>
+      <p class="note"><b>Disabled loses its border as well as its opacity</b> — state never travels on colour alone.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 06 fields ══ -->
+<section class="plate">
+  <div class="plate-head"><span class="folio">06</span><div><h2>Fields, labels and form rows</h2><p class="sub">Defined before anyone draws a form. v1 never defined them, and the task detail shipped without them.</p></div></div>
+  <div class="stage-meta"><span id="lbl06">frame 1440px</span><span>the Tasks pane only — a form row is min(100%, 640)</span></div>
+  <div class="stage-wrap"><div class="stage">
+    <div class="content-col" style="padding:var(--s6) var(--s5)">
+      <form class="form" onsubmit="return false">
+        <div class="field-row">
+          <label class="field-label" for="f-name">Task name</label>
+          <input class="field" id="f-name" data-testid="tasks-rename-input" value="Call the dentist about a check-up">
+          <span class="field-help">The whole name fits. A field has no width of its own — it is always 100% of its form row.</span>
+        </div>
+        <div class="field-row">
+          <label class="field-label" for="f-note">Note</label>
+          <textarea class="field" id="f-note" rows="3">Ask about Saturday afternoon slots, and the price of a scale and polish.</textarea>
+        </div>
+        <div class="field-row error">
+          <label class="field-label" for="f-list">List name</label>
+          <input class="field" id="f-list" data-testid="list-editor-name-input" value="">
+          <span class="field-error">List name can't be empty.</span>
+        </div>
+        <div class="field-row">
+          <label class="field-label" for="f-step">Add a step</label>
+          <input class="field" id="f-step" placeholder="What is the next step?">
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" data-testid="list-editor-create-button">Create</button>
+          <button class="btn btn-ghost" data-testid="list-editor-cancel-button">Cancel</button>
+          <span class="spacer"></span>
+          <button class="btn btn-danger-quiet" data-testid="tasks-delete-button">Delete task</button>
+        </div>
+      </form>
+    </div>
+  </div></div>
+  <div class="grid2" style="margin-top:var(--s6)">
+    <div>
+      <p class="eyebrow">The defect this rule blocks</p>
+      <div class="bad-demo">
+        <div class="t-label" style="color:var(--danger);margin-bottom:var(--s2)">v1 — not allowed</div>
+        <input value="Call the dentist about a chec" size="20" readonly aria-label="v1 field, 197px">
+        <p class="note" style="margin-top:var(--s3)">A 197px input inside a pane with 823px to spare, clipping the last word of the task's own title. The class was used in JSX and styled nowhere, so the input fell back to the HTML default <code>size=20</code>.</p>
+      </div>
+    </div>
+    <div>
+      <p class="eyebrow">The rule</p>
+      <p class="note"><b>A field has no intrinsic width.</b> Always <code>width:100%</code> of its form row. The <code>size</code> attribute and any fixed px width on an input are forbidden.</p>
+      <p class="note" style="margin-top:var(--s4)"><b>Checkable:</b> inside a form row wider than 320, a field rendering below <code>240px</code> is a failure.</p>
+      <p class="note" style="margin-top:var(--s4)"><b>A label is always present and always above the field.</b> A placeholder is never a label — it disappears exactly when the reader needs it.</p>
+      <p class="note" style="margin-top:var(--s4)"><b>A form row</b> is <code>min(100%, 640px)</code> wide with <code>24px</code> between rows. An error sits directly under its field, at meta size, in <code>danger</code>, with the border turning too — the one place two signals are allowed, because a form error the reader misses costs them the whole form.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 07 empty ══ -->
+<section class="plate">
+  <div class="plate-head"><span class="folio">07</span><div><h2>Empty states</h2><p class="sub">Three, because they are three different facts. One message for all of them tells at least two users something untrue.</p></div></div>
+  <div class="grid3">
+    <div class="card" style="padding:0">
+      <div class="empty">
+        <p class="t-label" style="margin:0 0 var(--s3)">No tasks anywhere</p>
+        <h3>No tasks yet</h3>
+        <p>Add your first one — or say one, on Talk.</p>
+        <div class="btn-row"><button class="btn btn-primary" data-testid="tasks-empty-add-button">Add task</button></div>
+      </div>
+    </div>
+    <div class="card" style="padding:0">
+      <div class="empty">
+        <p class="t-label" style="margin:0 0 var(--s3)">This list is empty, others are not</p>
+        <h3>Nothing in Upcoming</h3>
+        <p>Tasks show up here once they have a deadline in the future.</p>
+        <div class="btn-row"><button class="btn btn-secondary" data-testid="tasks-empty-add-button">Add task</button></div>
+      </div>
+    </div>
+    <div class="card" style="padding:0">
+      <div class="empty">
+        <p class="t-label" style="margin:0 0 var(--s3)">The Done list is empty</p>
+        <h3>Nothing completed yet</h3>
+        <p>Finishing a task moves it here.</p>
+      </div>
+    </div>
+  </div>
+  <p class="note"><b>Empty is the first thing a new user sees</b>, so it is left-aligned like everything else, names the collection it is describing, says the one thing to do, and offers exactly one action. <b>The third has no button on purpose</b> — no action fills the Done list directly, and inventing one would be a shrug dressed as an invitation.</p>
+</section>
+
+<!-- ══ 08 wide frame ══ -->
+<section class="plate">
+  <div class="plate-head"><span class="folio">08</span><div><h2>A wide screen gets another column, never more gutter</h2><p class="sub">The rule v1 did not have, and the reason 52% of its Tasks pane was dead at 1920.</p></div></div>
+  <p class="note" style="margin:0 0 var(--s5)"><b>All four are drawn at the same scale</b> (1920 → 1232), so the frames are comparable by eye. Numbers on each column are the real widths.</p>
+  <div class="tiers">
+    <div class="tier">
+      <div class="tier-cap"><span>768 — below split</span><span>one surface on screen</span></div>
+      <div class="frame" style="width:40%">
+        <div class="col tasks"><span class="col-name">Tasks</span><span class="col-w">768</span></div>
+      </div>
+    </div>
+    <div class="tier">
+      <div class="tier-cap"><span>1280 · 1440 — split</span><span>Tasks in the centre, Talk on the right</span></div>
+      <div class="frame" style="width:66.7%">
+        <div class="col tasks" style="flex:0 0 67.2%"><span class="col-name">Tasks pane</span><span class="col-w">860</span></div>
+        <div class="col panel" style="flex:0 0 32.8%"><span class="col-name">Talk</span><span class="col-w">420</span></div>
+      </div>
+    </div>
+    <div class="tier">
+      <div class="tier-cap"><span>1920 — wide, from 1536 up (the tier that is new in v2)</span><span>a permanent Lists rail joins on the left</span></div>
+      <div class="frame">
+        <div class="col rail" style="flex:0 0 12.5%"><span class="col-name">Lists</span><span class="col-w">240</span></div>
+        <div class="col margin" style="flex:0 0 11.46%"><span class="col-name">even</span><span class="col-w">220</span></div>
+        <div class="col tasks" style="flex:0 0 42.71%"><span class="col-name">Tasks list, centred</span><span class="col-w">820 = measure.list_max</span></div>
+        <div class="col margin" style="flex:0 0 11.46%"><span class="col-name">even</span><span class="col-w">220</span></div>
+        <div class="col panel" style="flex:0 0 21.87%"><span class="col-name">Talk</span><span class="col-w">420</span></div>
+      </div>
+    </div>
+    <div class="tier">
+      <div class="tier-cap"><span style="color:var(--danger)">v1 at 1920 — what the rule prevents</span><span style="color:var(--danger)">780 dead on one side, 0 on the other</span></div>
+      <div class="frame">
+        <div class="col tasks" style="flex:0 0 37.5%;background:var(--bg-base)"><span class="col-name">Tasks list, left-anchored</span><span class="col-w">720</span></div>
+        <div class="col dead" style="flex:0 0 40.62%"><span class="col-name" style="color:var(--danger)">dead</span><span class="col-w" style="color:var(--danger)">780</span></div>
+        <div class="col panel" style="flex:0 0 21.87%"><span class="col-name">Talk</span><span class="col-w">420</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="rulebox">
+    <p><b>One centring, and it is at the content column.</b> Each frame column holds exactly one content column, <code>min(pane − 2×gutter, its measure)</code>, <b>centred in its pane</b>. Everything inside it is left-aligned and nothing centres again. That is the single line v1 was missing: <code>.tasks-col</code> was <code>max-width: 720px</code> with no <code>margin: 0 auto</code>.</p>
+    <p><b>Two checks follow, and together they are the underflow test that has never existed here.</b> First: for every frame column, measure the leftover on each side of its content column — differ by more than 8px, fail. That is what turns the red row above into a reportable defect. Second: a column's content must cover 90% of its inner width <b>unless a declared measure token explains the shortfall</b>. A capped measure with even leftover is correct; a column that stopped growing with nothing behind it is not.</p>
+    <p><code>design-check</code> tests horizontal overflow and nothing else, which is how it reported <b>60 of 60 passing</b> with 780px of nothing on screen.</p>
+    <p><code>breakpoints</code> now declares <b>seven</b> widths, up to 1920. v1 declared four and stopped at 1280 — which is why its worst defect was invisible to every check that ran, and present in its own mockup.</p>
+    <p><b>Why the rail arrives at 1536 and not at 1440.</b> 1536 is the narrowest frame where the rail fits without the Tasks list ending up narrower than it was one breakpoint below — <code>240 rail + 820 list + 2 gutters + 420 Talk</code>. Bring it in at 1440 and a user maximising their window watches the list shrink, which is a regression wearing a feature's clothes.</p>
+    <p><b>The Lists rail also answers a second finding.</b> v1 showed a 320px phone drawer, holding five rows and roughly 700px of nothing, on a 1440px screen — and dimmed the Talk panel behind it while it was open.</p>
+  </div>
+</section>
+
+<!-- ══ 09 platforms ══ -->
+<section class="plate" style="border-bottom:0">
+  <div class="plate-head"><span class="folio">09</span><div><h2>Three platforms, and where they are forced apart</h2><p class="sub">Type, colour, spacing and radius are identical on all three. Eight things differ, and each one has a rule that forces it.</p></div></div>
+
+  <div class="grid3">
+    <!-- WEB -->
+    <div>
+      <p class="eyebrow">Web</p>
+      <div class="chrome">
+        <div class="chrome-cap"><span>top bar · 56</span><span>target ≥ 40</span></div>
+        <div class="topbar web">
+          <button class="iconbtn" data-testid="shell-lists-menu-button" style="width:40px;height:40px" aria-label="Lists"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+          <span style="font-size:var(--fs-lead);font-weight:600">Today</span>
+          <span class="spacer"></span>
+          <button class="btn btn-sm btn-primary" data-testid="assistant-add-task-button">Add task</button>
+        </div>
+        <div class="plist">
+          <div class="prow" style="height:44px">Rename from a per-row control</div>
+          <div class="prow" style="height:44px">Delete appears on hover</div>
+        </div>
+        <div class="sheet" style="border-top:1px solid var(--bg-rule)">
+          <p class="t-label" style="margin:0 0 var(--s2)">Dialog · slides in from the right</p>
+          <div class="prow" style="border-bottom:0;padding-left:0">Delete “Buy milk”?</div>
+          <div class="btn-row" style="padding-bottom:var(--s4)"><button class="btn btn-sm btn-danger">Delete</button><button class="btn btn-sm btn-ghost">Cancel</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- iOS -->
+    <div>
+      <p class="eyebrow">iOS</p>
+      <div class="chrome">
+        <div class="chrome-cap"><span>large title · body 17</span><span>target ≥ 44pt</span></div>
+        <div class="topbar ios-compact">
+          <span class="lead"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m15 18-6-6 6-6"/></svg>Lists</span>
+          <span class="ttl">Talk</span>
+        </div>
+        <div class="ios-large"><h4>Today</h4></div>
+        <div class="plist">
+          <div class="prow">Tap the title to rename</div>
+          <div class="prow">Delete is always visible<span class="spacer"></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="1.5"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+          <div class="prow">Speak replies aloud<span class="spacer"></span><span class="sw" data-testid="settings-talkback-switch"></span></div>
+        </div>
+        <div class="sheet">
+          <div class="grabber"></div>
+          <p class="t-label" style="margin:0 0 var(--s2)">Action sheet · grabber</p>
+          <div class="prow destructive">Delete “Buy milk”</div>
+          <div class="prow" style="border-bottom:0;justify-content:center;font-weight:600">Cancel</div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ANDROID -->
+    <div>
+      <p class="eyebrow">Android</p>
+      <div class="chrome">
+        <div class="chrome-cap"><span>M3 app bar · 56dp</span><span>target ≥ 48dp</span></div>
+        <div class="topbar md3">
+          <button class="iconbtn" data-testid="settings-back-button" aria-label="Back"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></button>
+          <span class="ttl">Today</span>
+          <span class="spacer"></span>
+          <button class="btn btn-sm btn-secondary" data-testid="assistant-add-task-button">Add task</button>
+        </div>
+        <div class="plist">
+          <div class="prow">Tap the title to rename</div>
+          <div class="prow">Delete is always visible<span class="spacer"></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="1.5"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+          <div class="prow">Speak replies aloud<span class="spacer"></span><span class="sw md3"></span></div>
+        </div>
+        <div class="sheet">
+          <div class="grabber md3"></div>
+          <p class="t-label" style="margin:0 0 var(--s2)">Bottom sheet · drag handle</p>
+          <div class="prow" style="padding-left:0">Move to a list</div>
+          <p class="t-label" style="margin:var(--s4) 0 var(--s2)">M3 dialog · no handle</p>
+          <div class="prow" style="border-bottom:0;padding-left:0">Delete “Buy milk”?</div>
+          <div class="btn-row" style="justify-content:flex-end;padding-bottom:var(--s3)"><button class="btn btn-sm btn-ghost">Cancel</button><button class="btn btn-sm btn-ghost" style="color:var(--danger)">Delete</button></div>
+          <div class="gesturebar"></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;padding:var(--s4)"><button class="fab" aria-label="Add task"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tblwrap" style="margin-top:var(--s7)">
+    <table class="ptable">
+      <thead><tr><th></th><th>Web</th><th>iOS</th><th>Android</th><th class="why">The rule that forces it</th></tr></thead>
+      <tbody>
+        <tr><td>Body size</td><td>16</td><td><b>17</b></td><td>16 · meta <b>14</b></td><td class="why">17 is the iOS text baseline and what Dynamic Type scales from; 14 is M3 bodyMedium</td></tr>
+        <tr><td>Hit-area floor</td><td>40</td><td><b>44pt</b></td><td><b>48dp</b></td><td class="why">HIG and Material set different floors; met with padding or hitSlop, never by painting a bigger control</td></tr>
+        <tr><td>Back</td><td>a control in the page</td><td>chevron + label, top left; swipe from the edge</td><td>up arrow in the app bar; the system back gesture</td><td class="why">iOS has no hardware back and Android does — one shared pattern breaks on whichever platform it was not designed for</td></tr>
+        <tr><td>Sheet</td><td>slides in from the right</td><td>bottom sheet + grabber, above the home indicator</td><td>bottom sheet + drag handle, above the gesture bar</td><td class="why">the safe area at the bottom of the screen differs and must never be painted over</td></tr>
+        <tr><td>Create</td><td>button in the top bar</td><td>button in the top bar — iOS has no FAB</td><td><b>round 56dp FAB</b>, bottom right</td><td class="why">the FAB is a Material component; putting one on iOS is wearing another platform's clothes</td></tr>
+        <tr><td>Delete confirm</td><td>dialog in the page</td><td>action sheet, destructive row in <code>danger</code>, Cancel separated</td><td>M3 dialog, text buttons, destructive on the right</td><td class="why">the two platforms order the buttons opposite ways; following the wrong order invites the wrong tap</td></tr>
+        <tr><td>Row delete control</td><td>appears on hover / focus-within</td><td><b>always visible</b></td><td><b>always visible</b></td><td class="why">hover does not exist on touch — hiding it publishes an id no user can reach</td></tr>
+        <tr><td>Checkbox</td><td>square, 1px border</td><td>circle</td><td>square, 2px corner</td><td class="why">each platform's own habit; the radius still comes from the token, not from M3's default shape</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note"><b>Platform paint never wins over the design system.</b> Android takes Material's behaviour and chrome — the 56dp app bar, the FAB, the drag handle, the 48dp floor — and keeps the system's ground, type, colour and <b>0 corner radius</b>. The only three round shapes anywhere are the FAB, the M3 switch and the sheet's drag handle, because in each the shape <em>is</em> the control rather than decoration on it.</p>
+</section>
+
+</main>
+
+<script>
+(function(){
+  var root = document.documentElement;
+
+  function seg(id, apply){
+    var el = document.getElementById(id);
+    el.addEventListener('click', function(e){
+      var b = e.target.closest('button'); if(!b) return;
+      el.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x===b)); });
+      apply(b.dataset.v);
+    });
+  }
+
+  seg('segPlatform', function(v){ root.setAttribute('data-platform', v); readSpecs(); fit(); });
+  seg('segTheme',    function(v){ root.setAttribute('data-theme', v); readHexes(); });
+  seg('segWidth',    function(v){ root.style.setProperty('--stage-w', v + 'px'); fit(); });
+
+  // layout.wide_rule, applied literally: what the Tasks pane measures at a given frame.
+  var SPLIT = 1024, WIDE = 1536, PANEL = 420, RAIL = 240;
+  function tierOf(w){ return w < SPLIT ? 'single' : (w < WIDE ? 'split' : 'wide'); }
+  function paneOf(w){
+    var t = tierOf(w);
+    if (t === 'single') return w;
+    return w - PANEL - (t === 'wide' ? RAIL : 0);
+  }
+
+  // Each stage renders the Tasks pane at its true width, scaled to the room available.
+  function fit(){
+    var w = parseInt(getComputedStyle(root).getPropertyValue('--stage-w'), 10) || 1440;
+    var pane = paneOf(w), tier = tierOf(w), pct = 100;
+    document.querySelectorAll('.stage-wrap').forEach(function(wrap){
+      var stage = wrap.querySelector('.stage');
+      stage.style.width = pane + 'px';
+      stage.setAttribute('data-tier', tier);
+      var avail = wrap.parentElement.clientWidth;
+      var s = Math.min(1, avail / pane);
+      pct = Math.round(s * 100);
+      stage.style.transform = 'scale(' + s + ')';
+      wrap.style.width  = Math.ceil(pane * s) + 'px';
+      wrap.style.height = Math.ceil(stage.getBoundingClientRect().height) + 'px';
+    });
+    var how = tier === 'single' ? 'the frame'
+            : (tier === 'wide' ? w + ' − ' + RAIL + ' rail − ' + PANEL + ' Talk' : w + ' − ' + PANEL + ' Talk');
+    ['lbl03','lbl06'].forEach(function(id){
+      var el = document.getElementById(id); if(!el) return;
+      el.textContent = 'frame ' + w + ' · Tasks pane ' + pane + ' (' + how + ')' + (pct < 100 ? ' · shown at ' + pct + '%' : '');
+    });
+  }
+
+  // The type plate states the size actually in force for the selected platform.
+  function readSpecs(){
+    var cs = getComputedStyle(root);
+    var map = {specMega:['--fs-mega',700], specHero:['--fs-hero',700], specDisplay:['--fs-display',600],
+               specTitle:['--fs-title',600], specLead:['--fs-lead',400], specBody:['--fs-body',400], specMeta:['--fs-meta',400]};
+    Object.keys(map).forEach(function(id){
+      var el = document.getElementById(id); if(!el) return;
+      el.textContent = parseInt(cs.getPropertyValue(map[id][0]),10) + ' / ' + map[id][1];
+    });
+  }
+
+  function toHex(c){
+    var m = c.match(/rgba?\(([^)]+)\)/); if(!m) return c;
+    var p = m[1].split(',').map(function(n){ return parseInt(n,10); });
+    return '#' + p.slice(0,3).map(function(n){ return ('0'+n.toString(16)).slice(-2); }).join('').toUpperCase();
+  }
+  function readHexes(){
+    var cs = getComputedStyle(root);
+    [['hexAccent','--accent'],['hexDanger','--danger'],['hexAttention','--attention'],['hexInk','--bg-ink']].forEach(function(p){
+      var el = document.getElementById(p[0]); if(!el) return;
+      var probe = document.createElement('span');
+      probe.style.color = cs.getPropertyValue(p[1]).trim();
+      document.body.appendChild(probe);
+      el.textContent = toHex(getComputedStyle(probe).color);
+      probe.remove();
+    });
+  }
+
+  window.addEventListener('resize', fit);
+  readSpecs(); readHexes(); fit();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+  setTimeout(fit, 150);
+})();
+</script>
+</body>
+</html>

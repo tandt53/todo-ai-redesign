@@ -1,51 +1,92 @@
-# Design System — todo-ai redesign (voice-first)
+# Design System — todo-ai redesign · visual language v2
 
-Serves F-001 (voice-assistant view): four surface states (idle · listening · thinking · error), everything else a message. Tokens: `tokens.json`. Inventory: `components.md`.
+**Replaces v1 ("Aurora, voice-first") completely** — colour, type, spacing, shape and layout. Scope and reason: `docs/reports/owner-decision-2026-08-21-redesign-the-visual-language.md`. **The 52 published element ids are unchanged**; 1,362 places in code and tests bind to them and nobody ever sees a name. Tokens: `tokens.json`. Inventory: `components.md` (**not yet rewritten to v2** — see ## What this invalidates). **Rendered proof: `specimen.html`** — open it by double-click; it covers web, iOS and Android at seven widths in both themes.
 
 ## Identity
 
-- **Anchor:** Aurora — disciplined to product-UI restraint. The aurora gradient is the *voice signature*, not the page surface: flat deep-indigo ground everywhere, the gradient ignites only where speech lives.
-- **Why over the safe pairing:** the safe answer for "AI assistant" is near-black + one acid accent, or a ChatGPT-grey clone. Both were rejected on this brief's history: the owner already refused muted banking-clean ("not modern or creative enough"). Aurora is the only territory whose token set (saturated gradient, committed glow) can make the mic moment feel like an event while the task list stays quiet.
-- **Rejected directions:** (1) nostalgic/skeuomorphic costume — owner verdict "hideous"; (2) muted banking-clean / the existing v3 "Calm list, ink orb" single-cobalt neutrality — competent but not the "đẹp hơn hẳn" bar.
-- **Differentiator (the one bold place):** the **cyan→violet handoff**. Colour carries the conversation's physics: **cyan = the user's voice** (listening state, live transcript accent), **violet = the assistant** (thinking state, applied changes, Undo). The listening surface blooms a live cyan→violet aurora band behind the waveform; at end-of-speech it contracts and slides violet-ward into the thinking breath — the gradient literally hands the words over. Nowhere else in the app does a gradient exist.
-- **Reference bar (audience's daily apps):** **Momo, Zalo, ChatGPT voice mode.** Messages read like Zalo chat (user right, assistant left, familiar bubbles); the voice moment matches ChatGPT voice-mode's dark, glowing, full-attention feel; colour confidence sits at Momo's saturation level — but semantic, never decorative.
-- **Dark-mode-first**, light theme fully tokened. Justification: the signature is glow, and glow reads on dark; ChatGPT voice mode — the audience's mental model for "talking to AI" — is dark; Momo proves this audience accepts saturated colour on dark chrome. Light theme ships with equal contrast rigor (see components.md §Contrast) because todo lists get read in sunlight.
-- **Interaction stays boring on purpose:** chat bubbles, a labelled Undo button, questions as tappable option chips, an offline banner. New identity, familiar behaviour.
+- **Anchor:** **Swiss.** White ground, one grotesque, one accent, 1px rules, left-aligned, asymmetric, numerals as composition elements.
+- **Why this over the safe pairing:** the safe answer for an AI todo app is what v1 was — near-black with a glowing accent, i.e. a ChatGPT-voice-mode costume. It was drawn, shipped, and the owner asked for a redesign from scratch. Swiss is the opposite move and it is the one territory whose native devices — a rule, a measure, a set numeral — are the *actual content* of a todo list: times, dates, counts, order. The identity and the data are the same material.
+- **Rejected directions:** (1) **Organic** — sage/clay/terracotta with 24px radii: reads wellness-app, and its warm-paper neighbourhood is where AI-generated design currently clusters; (2) **Industrial** — pitch black, mono everywhere: a monospace at body size costs legibility on the one thing a todo list is made of, its titles, and it is v1's dark ground again wearing a different accent.
+- **Differentiator (the one bold place): the time rail.** Every task row opens with its due time set in the numeric face, right-aligned in a fixed column, with a 1px rule running the length of the list as its spine. A task with no time shows `—`, so the zero case is drawn rather than absent. The rail is why a wide screen is worth having: it widens from compact to wide and gains the weekday, instead of the list growing a dead gutter. Nowhere else does the app use a second face.
+- **Reference bar (the audience's daily apps):** **Zalo, Momo, Google Calendar.** Everyday screens sit at home there: white ground, dense legible text, one coloured primary action, chat that looks like chat. Confidence of colour matches Momo; the accent is saturated, and it is always semantic.
+- **Product language is English** (`ADR-008`, owner decision 2026-08-17): every shipped string here and in `specimen.html` is English, and the house vocabulary in `components.md § Buttons` binds — *delete*, *task*, *undo*, *put back*, *deadline*, *step*, *list*, *Talk*, *Tasks*. **Task titles are user content and are not English by construction** (the running store holds Vietnamese ones today), which is why the type floors below are set for arbitrary script rather than for English.
+- **Light-first**, dark fully tokened. v1 was dark-first because its signature was glow; there is no glow now, and a todo list is read in daylight. Dark is the one place the anchor is relaxed: the surface is a neutral near-black, never warm.
+- **Interaction stays boring on purpose:** chat bubbles, a labelled Undo, a destructive button that says what it deletes, standard back and sheet conventions per platform. New identity, familiar behaviour.
 
 ## Colour rules (earned colour)
 
-**Minimum contrast ratio 4.5:1** for normal text (AC-19 / WCAG 1.4.3) — stated here as a number, not only as prose, because `.claude/tools/design-check` reads the threshold from this file and skips the check when it finds none. Verified pairs: components.md §Contrast.
+**Minimum contrast ratio 4.5:1** for normal text (AC-19 / WCAG 1.4.3), and **3:1** for any rule or control boundary that carries meaning (1.4.11). Stated as a number because `.claude/tools/design-check` reads the threshold from this file and skips the check when it finds none. Every pair is computed, not eyeballed — ## Contrast.
 
-1. One signal per meaning: cyan=listening, violet=assistant/thinking, green=added, red=removed/danger, amber=open question. No colour appears without its meaning.
-2. Accent text only on `bg.base`, `bg.raised`, or its own tint token — all pairs verified ≥ 4.5:1 (AC-19 / WCAG 1.4.3); pair list in components.md.
-3. Diff and state are never colour-only: `NEW` / `EDITED` text labels ride every marker (colour-blind safe, carried from v3).
-4. The aurora gradient (`gradient.voice`) is legal **only** on the voice surface (mic orb, listening band, thinking breath). Anywhere else = review failure.
-5. **The accent set is closed at five, and a sixth arrives only with its own meaning** (decided T-152, F-005). Rule 1 lists five accents and every one is spent; "pick an unspent accent" therefore names an empty set, and the instruction that was written three times into F-005 was true as an edit and unexecutable as an outcome (design D14). So a new marked meaning has exactly two legal answers: **carry it without colour** — shape, weight, accessible name — or **add an accent to this file with its meaning first, then use it**. F-005 asked for two (AC-9 urgency, AC-39 repeating series) and **both are carried without colour**, because (a) they land on `§ TaskRow`, which the live store renders under a `danger` Overdue heading on every row of Today and which may also carry a `NEW`/`EDITED` marker in green or red — a sixth hue there is the collision that removing amber was meant to prevent; (b) urgency has **three** levels, so colour would need three tints, which is Todoist's three coloured flags, already compared and rejected; and (c) the novelty ledger below spends boldness on the voice surface only, and rule 3 means colour could never carry either mark alone regardless. Both marks are drawn in `components.md § TaskRow`.
+1. **One signal per meaning.** `accent` = the assistant (mic live, applied change, undo, primary action, focus). `danger` = *this is lost or losing* (delete, overdue, failed write). `attention` = *this needs your answer* (open question, offline, refused value). No colour appears without its meaning, and no meaning is carried by two colours.
+2. **Accent text is legal only on `bg.base`, `bg.sunken`, or its own tint token.** Any new pairing is re-verified before use.
+3. **State is never colour-only.** `NEW` / `EDITED` text labels ride every diff marker; overdue is a named group heading, not a red date; a disabled control loses opacity *and* its border.
+4. **A colour never repeats down a chain.** If the group heading is `danger`, the dates under it stay muted. One alarm per screen region.
+5. **The accent set is closed at three, and v1's five are cut to it.** Retired, each with what replaced it: **green / `success`** — rule 3 already forbids colour carrying a diff alone, so the label `NEW` was doing the work and the hue was decoration; added values now read in `text.primary` at semibold against the old value struck through in `text.muted`, which is legible to a colour-blind user by construction. **The `cyan` → `violet` voice pair** — it encoded *user speaking* versus *assistant thinking* as two hues plus a gradient handoff; the gradient is illegal under this anchor, the handoff was never once rendered in the running app (audit § 5), and speaker is already carried unambiguously by side, ground and label in the message list. One accent now means *the assistant*, on both halves of its turn. A fourth accent arrives only with its own meaning written here first — it is never a pick from spare hues.
+
+## Type
+
+**One UI family** (`font.family.ui`, a neutral grotesque) **plus one utility face for numerals** (`font.family.numeric`). Single-family is the anchor's requirement, not a default, and it survives one test v1's pairing did not: **a task title is user content in whatever script the user types**, so the face that sets titles has to hold at body size across Latin with heavy diacritics and beyond — the live store carries `Gọi nha sĩ đặt lịch khám răng` today. A display face chosen for English headings breaks first on exactly those glyphs, at exactly the size the app uses most. Hierarchy comes instead from the 1.25 scale used to both extremes — `mega 49` down to `label 11` — plus weight, case and tracking. The numeric face is legal **only** on times, dates, counts, durations and ids; it is what makes the time rail read as a column of data rather than a column of words.
+
+**Two floors, and neither is negotiable.** Body is never below 16 on any platform: below it iOS zooms the page on focus, and stacked tone marks lose their separation from the letter. Line-height on body text is never below 1.5, for the same reason.
+
+## Layout — the two rules v1 did not have
+
+**Above `desktop` the app adds a column, never a gutter** (`layout.wide_rule`). Three frame tiers: below `split`, one surface; at `split`, Tasks centre + Talk panel; **at `wide` (1536) and above, a permanent Lists rail joins on the left**. That rail is also the answer to the audit's F5 — a 320px phone drawer holding five rows was being shown on a 1440px screen. **`wide` is 1536 and not 1440 for a measured reason:** 1536 is the narrowest frame where the rail fits without the Tasks list ending up *narrower* than it was one breakpoint below (`rail 240 + list_max 820 + 2×gutter + panel 420`). Set it at 1440 and a user maximising their window watches the list shrink — a regression wearing a feature's clothes. `breakpoints` now declares **eight** widths up to `ultra`; v1 declared four and stopped at `desktop`, which is why 52% of the Tasks pane could be dead at 1920 while every check passed.
+
+**One centring, and it is at the content column** (`layout.content_column_rule`). Each frame column — Lists rail, Tasks pane, Talk panel — holds exactly **one** content column, `min(pane − 2×gutter, its measure token)`, **centred in its pane**. Everything inside a content column is left-aligned and nothing inside it centres again. Leftover width is therefore always symmetric and always at one known level. **This is the single line v1 was missing:** `.tasks-col` was `max-width: 720px` with no `margin: 0 auto`, so at 1920 it left 0 on one side and 780 on the other.
+
+**Two checkable rules follow, and together they are the underflow test `design-check` has never had.** `layout.fill_rule`: for every frame column, measure the leftover on each side of its content column — differ by more than 8px, fail. `layout.coverage_rule`: a column's content must cover at least 90% of its inner width **unless a declared measure token explains the shortfall** (`list_max`, `form_max`, `text_ch`). A capped measure with symmetric leftover is correct and must not be reported; a column that stopped growing with no measure behind it is the defect. Companion (`layout.gap_rule`): two text spans in a row are never adjacent, minimum `space.2` — v1's priority mark computed `margin-left: 0` and touched the last letter of the task title.
+
+## Fields, labels and form rows — defined before anyone draws a form
+
+The task detail shipped 197px input stubs that clipped the task's own title, because `.detail-field-control` was used in JSX and styled nowhere, so the input fell back to the HTML default `size=20`. The system now answers it:
+
+- **Field** — `field.height` 44, `width: 100%` of its form row, 1px `bg.rule` border, `radius.none`, `font.size.body`, `field.padding_x` inset. Focus: 2px `focusRing` inset **and** the border to `accent`. Error: border `danger` plus a `meta` message below it. Multiline starts at `field.height_multiline_min`.
+- **Label** — always present, always above the field, `meta` at semibold in `text.secondary`, `field.label_gap` beneath. A placeholder is never a label.
+- **Form row** — label, field, then optionally help or error, stacked, `field.row_gap` between rows. The row is `min(100%, measure.form_max)`.
+- **The rule:** a field has **no intrinsic width**. `size` attributes and fixed px widths on inputs are forbidden. Checkable: inside a form row wider than 320, a field rendering below `field.min_rendered_width` is a failure.
 
 ## Component Library
 
-- **Web (React):** Radix UI primitives + custom styling from `tokens.json`. Chosen because AC-19 names 4.1.2 (name/role/value) and 2.1.1 (keyboard) — Radix ships correct roles/focus behaviour headless, so the visual layer stays 100% token-driven. No prebuilt theme kit (would fight the identity).
-- **Mobile (React Native):** RN primitives + `react-native-reanimated` + `react-native-gesture-handler` + `expo-haptics` — carried from the existing app's motion stack (06-uiux §6); the motion tokens below are shared JSON so web CSS and RN worklets read one source.
-- **Icons:** Lucide (web + RN) — SVG stroke 1.8, round caps, carries v3's "no emoji as UI icons" law.
-- **Fonts:** **Space Grotesk** (display: large title, state words, big counts) + **Be Vietnam Pro** (body/UI — drawn for Vietnamese stacked diacritics; body line-height 1.5 so ề/ệ/ỗ never clip). Deliberate pair: one characterful techy display voice, one native-Vietnamese workhorse. Numerals tabular via `font-variant-numeric`. No third family.
+- **Web (React):** Radix UI primitives + styling generated from `tokens.json`. Carried from v1 for the same reason — AC-19 names 4.1.2 and 2.1.1, Radix ships correct roles and focus behaviour headless, and the visual layer stays fully token-driven. No prebuilt theme kit.
+- **Mobile (React Native):** RN primitives + `react-native-reanimated`, `react-native-gesture-handler`, `expo-haptics`. **Still declared, not installed** — see ## Motion.
+- **Icons:** Lucide, stroke 1.5, square cap. No emoji, no unicode glyph standing in for an icon.
+- **Fonts:** `font.family.ui` for everything, `font.family.numeric` for numerals. Both resolve through system fallbacks, so nothing on screen depends on a network fetch.
+
+## Platform — where the three diverge, and the rule that forces it
+
+Type, colour, spacing, radius and the accent meanings are **identical on all three**; platform paint never wins over the design system. Five things differ, each because the platform forces it, all drawn side by side in `specimen.html`:
+
+| | Web | iOS | Android |
+|---|---|---|---|
+| Body size | 16 | **17** — the iOS text baseline, and what Dynamic Type scales from | 16 (M3 bodyLarge); meta is **14** (bodyMedium) |
+| Hit-area floor | 40 | **44pt** | **48dp** |
+| Back | in-page control | **chevron + label, top left; swipe-back from the edge** | **up arrow in a 56dp top app bar; system back** |
+| Sheet | slide-over from the right | **bottom sheet with a grabber, above the home indicator** | **bottom sheet with a drag handle, above the gesture bar** |
+| Primary create | button in the header | button in the header — **iOS has no FAB** | **FAB, 56dp, bottom right** |
+| Destructive confirm | inline dialog | **action sheet, destructive row in `danger`, Cancel separated** | **M3 dialog, text buttons, destructive on the right** |
+| Row delete control | appears on hover / focus-within | **always visible** — a hover-revealed control does not exist on touch | **always visible** |
 
 ## Motion
 
-Carried from the existing app (06-uiux §1) and extended for the four states — durations/easings live in `tokens.json > motion`. State transitions crossfade at `standard` (200ms); the aurora breath loops at 2400ms; row diff-flash holds 1.6s then fades 400ms. `prefers-reduced-motion`: every animation collapses to an 80ms opacity change, end states (strikethrough, collapse, markers) fully kept.
+`tokens.json > motion`. Transitions crossfade at `standard` (180ms). **v1's 2400ms aurora breath and its spring curve are retired with the gradient.** The one continuous animation left is the **listening rule** — a 2px accent rule growing linearly along the composer while the microphone is live, and the only thing on screen that moves without the user acting. `prefers-reduced-motion` collapses every animation to an 80ms opacity change and keeps every end state.
 
-**Phase boundary — this section is live on web only.** The mobile motion stack named above (`reanimated`, `gesture-handler`, `expo-haptics`) is *declared, not installed*: none of the three is in `package.json` or `src/`, so mobile currently ships zero animation and zero haptics. That is a safe state, not a gap — with nothing animating, a reduced-motion user is already fully served. It stops being safe the moment the first animated transition lands. **Precondition on that change:** whoever adds the first mobile animation owes the reduced-motion collapse and the haptic behaviour *in the same change*, not as a follow-up — the tokens below describe the target, and until then they describe nothing that runs on mobile.
+**Phase boundary, carried from v1 unchanged:** the mobile motion stack is *declared, not installed* — none of `reanimated`, `gesture-handler` or `expo-haptics` is in `package.json` or `src/`, so mobile ships zero animation and zero haptics today. That is a safe state, not a gap: with nothing animating, a reduced-motion user is already fully served. Whoever adds the first mobile animation owes the reduced-motion collapse and the haptic behaviour **in the same change**.
 
 ## User journey (happy path)
 
-Entry: app opens on the assistant view — idle state, task list visible, mic orb in the composer.
-1. **Tap mic** → listening: aurora band + live transcript as words land (AC-2).
-2. **Speak** ("mai họp team lúc 2 giờ") → end-of-speech auto-sends → thinking breath.
-3. Applied message appears (diff + Undo) and the changed row flashes+marks in the list (AC-1, AC-4). → idle.
-
-**Happy path = 2 user actions** (1 tap + 1 utterance) — matches the existing app's "≤ 2 chạm" law. Undo = 1 more tap (or say "hoàn tác"). Typing path: identical minus the mic (tap composer, type, send = same interpretation path, AC-17).
+Entry: the app opens on Tasks with the Talk panel beside it (at `split` and above) or on Tasks alone (below it). 1. **Tap the mic** → the listening rule grows along the composer, live transcript above it. 2. **Speak** ("team meeting tomorrow at 2") → end-of-speech sends. 3. The assistant's message states the change per field and the row appears in the list carrying `NEW`. **Happy path = 2 user actions.** Undo = 1 more tap, or say "undo" — the single recognised word since `ADR-008` dropped the Vietnamese one.
 
 ## Novelty budget ledger
 
-Spent entirely on **the voice surface**: the cyan→violet aurora (listening band, thinking breath, orb glow). Everything else — task rows, message bubbles, buttons, banners, drawer — is quiet, flat, and instantly recognisable to a Momo/Zalo user. Interaction patterns spend zero novelty.
+Spent entirely on **the time rail** — the numeric face, the fixed column, the spine rule, and the wide-screen behaviour that widens it. Everything else — rows, bubbles, buttons, fields, menus, empty states — is quiet and instantly recognisable to a Zalo/Momo user. Interaction patterns spend **zero**.
 
-**F-005 (T-152) spent nothing from this ledger**, and the entry exists so that is checkable rather than assumed: no new accent, no new gradient, no new radius, shadow or motion token — three row marks carried by glyph, count and weight, one strip family assembled from `bg.raised` + `bg.hairline` + the two accents already assigned to failure (`danger`) and offline (`question`), and one new `§ Buttons` variant built from neutrals. The one place a reader might expect boldness — the hand-action undo, the only reversal of the one irreversible thing in the feature — is deliberately quiet, because `§ UndoAffordance` owns violet as *the assistant's own act* and a hand action is not one.
+## Contrast — verified pairs (computed, WCAG 2.1 relative luminance)
+
+**Light**, on `bg.base` / `bg.sunken`: `text.primary` 18.58 / 16.62 · `text.secondary` 7.48 / 6.69 · `text.muted` 5.84 / 5.22 · `accent` 10.69 / 9.56 · `danger` 5.88 / 5.26 · `attention` 6.16 / 5.51. Reversed: `text.onAccent` on `accent` 10.69, on `danger` 5.88, on `attention` 6.16; `text.onInk` on `bg.ink` 18.58. On own tints: `accent` on `accentTint` 8.89 · `danger` on `dangerTint` 5.03 · `attention` on `attentionTint` 5.44. Non-text: `bg.rule` on `bg.base` **3.00** (clears 1.4.11); `bg.hairline` is decorative separation only and is never the sole carrier of a boundary.
+
+**Dark**, on `bg.base` / `bg.sunken`: `text.primary` 17.55 / 16.26 · `text.secondary` 8.19 / 7.59 · `text.muted` 6.53 / 6.05 · `accent` 8.24 / 7.64 · `danger` 7.29 / 6.75 · `attention` 10.54 / 9.77. Reversed: `text.onAccent` on `accent` 8.24, on `danger` 6.37, on `attention` 10.54. On own tints: `accent` 6.72 · `danger` 6.47 · `attention` 8.72. Non-text: `bg.rule` on `bg.base` **3.25**.
+
+## What this invalidates, and what is not this dispatch's to fix
+
+`components.md` is **untouched** by this dispatch (2,371 lines, most of it behaviour). The sections whose *appearance* v2 falsifies are listed in the T-202 return; the rewrite belongs to the screens dispatch, done once, with the system settled. The six existing mockups under `docs/design/assistant/screens/` are built from v1 `:root` variables and will fail `design-check`'s token-drift check until they are redrawn — that failure is the correct signal, not a regression.
