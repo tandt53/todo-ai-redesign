@@ -42,6 +42,45 @@ assert_file_contains "$TEMPLATE" 'Out of Scope' "feature template has Out of Sco
 FIX="$(mktemp -d)"
 trap 'rm -rf "$FIX"' EXIT
 
+# ── A spec big enough for the pipeline to break on ─────────────────────────
+#
+# The tool once tested presence with `printf '%s' "$HAY" | grep -qF "$needle"`
+# under `set -o pipefail`. That reports FAILURE for a field that is present:
+# grep -q exits at the first match, printf then takes SIGPIPE (141), and pipefail
+# promotes it. So the EARLIER and more often a field appears, the more certainly
+# it is called missing — the inversion that makes it look like anything but a
+# plumbing bug.
+#
+# It survived here because every other fixture in this file is under a kilobyte,
+# and the failure needs a haystack large enough for printf to still be writing
+# when grep exits. Measured on a real spec: 64 KB passed, 72 KB returned 141.
+# A check cannot catch a defect in an environment where the defect cannot occur,
+# so this fixture is sized past the threshold rather than written for reading.
+{
+  printf '## Acceptance Criteria\n'
+  i=1
+  while [ "$i" -le 900 ]; do
+    printf -- '- [ ] **AC-%s** (api) — due_date is validated, compared and rendered; padding to carry this spec past the SIGPIPE threshold with prose that means nothing on its own.\n' "$i"
+    i=$((i + 1))
+  done
+  printf '\n## Data\n| Field | Type | Required | Validation | Notes |\n|---|---|---|---|---|\n'
+  printf '| due_date | datetime | no | future or null | |\n'
+  printf '\n## Open Questions\n- [ ] none\n'
+} > "$FIX/large.md"
+
+large_bytes=$(wc -c < "$FIX/large.md" | tr -d ' ')
+if [ "$large_bytes" -gt 100000 ]; then
+  _record_pass "the large fixture is ${large_bytes} bytes — past the threshold this bug needs"
+else
+  _record_fail "large fixture is only ${large_bytes} bytes — too small to exercise the pipeline bug"
+fi
+
+if bash "$TOOL" "$FIX/large.md" >/dev/null 2>&1; then
+  _record_pass "a field present many times in a large spec is not reported missing"
+else
+  _record_fail "a field present ~900 times was reported as an orphan — the presence test inverts on large specs"
+fi
+
 # ── A spec that finished its own sentences ─────────────────────────────────
 cat > "$FIX/complete.md" <<'MD'
 ## Acceptance Criteria

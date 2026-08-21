@@ -233,6 +233,13 @@ run_case R12 "suite-can-fail always reports detection" \
 run_case R13 "declared-elements counts every field as accounted for" \
   "sed -i.bak 's/ORPHANS + 1/ORPHANS + 0/' .claude/tools/spec-check/declared-elements.sh"
 
+# R13 — the presence test goes back to `printf | grep -qF` under pipefail. That
+# pipeline reports a field MISSING precisely when it is present early and often,
+# because grep exits at the first match and printf takes SIGPIPE. It reached a
+# live project through a template sync and cost a spec ten false orphans.
+run_case R13 "presence test returns to a pipeline that inverts on large specs" \
+  "perl -0777 -pi -e 's/if \\[ -n \"\\\$needle\" \\] && case .*?; then/if printf %s \"\\\$HAY_NORM\" | grep -qF \"\\\$needle\"; then/s' .claude/tools/spec-check/declared-elements.sh"
+
 # R14 — the testid contract check stops noticing dropped ids. Counting every
 # declared id as honoured is how it would die: the tally keeps printing.
 run_case R14 "testid-contract counts every id as honoured" \
