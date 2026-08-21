@@ -1,93 +1,73 @@
-# BRIEFING — T-192
+# BRIEFING — T-194
 
-- **Task ID:** T-192 · **Agent:** product-agent · **Module:** assistant · **Date:** 2026-08-21
-- **Description:** Audit — where does the project still not understand voice-first
+- **Task ID:** T-194 · **Feature:** F-002 · **Agent:** spec-agent · **Date:** 2026-08-21
+- **Description:** F-004 is committed and scheduled, not reserved
 
-## What the owner asked for
+## Tiny and surgical. Two sentences in two files. Change nothing else.
 
-> *"audit lại project để xem những chỗ nào còn chưa hiểu hoặc hiểu sai về tính năng AI voice first"*
+The owner answered a question the voice-first audit raised. **No user to interview, no
+prototype, no restructuring, no AC added or touched.**
 
-**You report. You do not edit specs.** Everything you find becomes a task or an owner
-question. No user to interview.
+## The decision
 
-## The measurement that makes this a real question
+Full record: `docs/reports/owner-decision-2026-08-21-the-app-speaks-on-open.md`.
 
-Words for **voice** (`voice|spoken|nói`) against words for **hand** (`typed|by hand|keyboard`),
-per spec, counted 2026-08-21:
+- **At MVP the app is silent.** It answers when asked and says nothing on its own. **This is
+  now a decision, not an accident** — F-002's shape was correct and nobody had said so on the
+  record. Say it.
+- **After MVP: on open, the app waits about two seconds, then greets and says what is still
+  left to do today.** That is F-004, and **it is committed with content and a position.**
+- **The ~2s pause is part of the decision, not a detail.** The owner said *wait, then speak*.
+  A user who opened the app to look at something gets two seconds to start before a voice
+  begins. **Whatever cancels the greeting inside that window has to exist** — speaking over a
+  user who has already started typing is the failure the pause exists to prevent. That is
+  design's to draw; record that it is owed.
 
-| spec | voice | hand |
-|---|---|---|
-| F-002 talk-back | **39** | 4 |
-| F-001 voice-assistant-view | **21** | 13 |
-| F-006 recently-deleted | 16 | 14 |
-| **F-005 task-detail** | 31 | **36** |
-| **F-003 mobile-surface** | **3** | **8** |
+## Why this matters more than its size
 
-**Those last two rows are the question.** A product that calls itself voice-first has **its
-phone-surface spec mentioning voice three times**, and **its largest feature written
-hand-first**.
+**F-002 currently defers the spoken summary to F-004. F-004 has no spec file, and both F-002
+and the index call it *"reserved, not committed"*. So the requirement is deferred by citing a
+feature that exists only because F-002 deferred it.**
 
-**A word count is not a finding.** It is where to start looking. *(L-027: the enumeration is
-the contract, the number is not — treat these as a pointer, not as evidence.)*
+**`UC-20 AC-20.6` carries a note saying this exact requirement was already lost once to a
+rewrite and restored.** Leaving it as *reserved* is how it gets lost a second time.
 
-## The distinction that decides whether each site is a defect
+## The two edits
 
-**Separate these two, and say which every finding is:**
+1. **`docs/specs/assistant/F-002-talk-back.md:297`** — currently
+   *"The spoken day summary (UC-20 AC-20.6) — **reserved as F-004, not committed**."*
+   Becomes **committed and scheduled after MVP**, with its content stated: a greeting plus
+   what remains today, after a ~2s pause on open. Keep the rest of the bullet — the
+   local-data / no-model / works-offline properties are still true and are why it is cheap.
+2. **`docs/specs/assistant/index.md:31`** — *"**F-004 is reserved, not committed**"*. Same
+   change, same words.
 
-- **Deliberately hand-only.** F-005 decided on purpose that *structure* — steps, ordering,
-  the pickers — is hand-only, and the owner answered a question to that effect: *"the four
-  value fields reachable by voice, structure hand-only."* **That is a decision, not an
-  oversight, and reporting it as a gap wastes the audit.**
-- **Voice was simply not considered.** Nobody asked what this looks like when spoken. **This
-  is what you are hunting.**
+**Also, in F-002:** state that MVP silence is a recorded owner decision of 2026-08-21, not an
+omission. One sentence, wherever it belongs in `## Out of Scope`.
 
-**If you cannot tell which a site is, say so and name what would settle it.** An audit that
-labels every hand-shaped sentence a defect will be ignored, and it should be.
+**Line 346 is a traceability row** describing what revision 2 did. **It is history — do not
+rewrite it.** If it now reads as stale, add a dated note beside it rather than editing the
+record.
 
-## Read these
+## One reading to carry, recorded conservatively
 
-1. **The five specs** — `docs/specs/assistant/F-00{1,2,3,5,6}-*.md`. F-003 and F-005 first;
-   the counts say that is where the answer is.
-2. **`docs/specs/_source/todo-ai/07-ui-research-mobile.md`** and
-   **`11-uc-conversation.md`** — the inherited product's voice-first UI research and its
-   conversation use-cases. **This redesign inherited their premises; whether it kept them is
-   checkable, and nobody has checked.** `03-ui-design.md` and `06-uiux.md` if they bear.
-3. `docs/design/_shared/DESIGN.md` — it uses the phrase; see whether the drawing follows it.
-4. `docs/reports/owner-decision-2026-08-21-the-model-authors-the-reply.md` — **the owner has
-   just decided the AI authors every reply, in an agentic loop.** Read §2 and §3: some of
-   what looks like a voice-first gap today is about to be answered by F-007, and reporting it
-   as open would waste the owner's time.
+The audit's stronger case was the **passed reminder**: set by voice, delivered only as pixels,
+dismissed only by hand. The owner's *"chỉ trả lời khi hỏi"* covers it — **a reminder is not a
+reply to a question, so at MVP it stays silent too.** Record that as the reading, not as a
+separate decision, so it is one word to overturn.
 
-## Aim at these four, and anything else you find
+## Do NOT
 
-1. **F-003 is the mobile surface spec and mentions voice three times.** The phone is where
-   voice-first lives or dies. What is missing?
-2. **F-005 is the biggest feature and is hand-first by count.** How much of that is the
-   owner's deliberate structure-is-hand-only decision, and how much is not?
-3. **What can a user NOT do by voice that they would expect to?** Name the actions. This is
-   the finding shape most likely to change what gets built.
-4. **Does the app tell a voice user what voice can do?** A voice-first product where the
-   voice affordances are undiscoverable is hand-first with a microphone on it.
-
-## What is out of scope
-
-- **Do not re-open the model-authors-the-reply decision.** It is settled and F-007 specs it.
-- **Do not audit code.** This is about what the specs understand, not what is built.
-- **Do not propose a redesign.** Findings and questions; the owner decides.
-
-## Write to
-
-`/Users/tandt/projects/todo-ai-redesign/docs/reports/audit-voice-first-2026-08-21.md`
+- Do not add, renumber or amend any AC.
+- Do not touch F-004 itself — it has no file and this task does not create one.
+- Do not touch the audit report or any other spec.
 
 ## Success criteria
 
-- Every finding says **which of the two kinds it is** — deliberate, or not considered — or
-  says it cannot tell and what would settle it.
-- Findings are **ranked by the cost of ignoring them**, not by the order you found them.
-- **The inherited source docs are read**, and the report says whether this redesign kept
-  their voice-first premises or quietly dropped them. *This half is the one nobody has ever
-  done.*
-- Anything that needs an owner answer is stated as **one question with options and a
-  recommendation**, not as an open musing.
-- If the honest answer to any of the four aims is *"this is fine"*, **say so with what you
-  checked.** An audit that finds problems everywhere is as useless as one that finds none.
+- Both sentences changed, both saying **committed and scheduled after MVP** with the content
+  named.
+- The ~2s pause and the cancel-affordance-is-owed note are in F-002.
+- MVP silence is stated as a decision with its date.
+- AC count unchanged in F-002 — verify by counting.
+- `bash .claude/tools/spec-check/declared-elements.sh docs/specs/assistant/F-002-talk-back.md`
+  exits 0.
