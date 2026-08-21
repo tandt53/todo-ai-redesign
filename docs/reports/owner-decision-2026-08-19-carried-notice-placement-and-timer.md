@@ -232,3 +232,48 @@ so.** Gmail and Apple Reminders both let the undo toast vanish silently and say 
 about the trash. Asana's 2026 rework went the other way, toward signposted central
 recovery. **The tie-breaker here is not the market — it is that this product's own
 accessibility claim leans on the path being reachable, and theirs do not.**
+
+---
+
+## 8. The assistant may READ the trash. It still may not write to it.
+
+*(Added 2026-08-21, answering F-006's OQ4. The product lens found that the assistant was
+excluded from *reading* the trash on a rationale that only justifies excluding it from
+*writing* — AC-14 argued from F-005 AC-36's closed **permission** list, AC-4 from the
+handle list's **addressing** mechanism, and AC-15 then presented the total absence of a
+voice path as an accessibility strength.)*
+
+**Chosen: the assistant can read.** On a product whose stated purpose is *"the user talks
+to an AI assistant to create, edit, and delete todos"*, the safety net behind delete having
+**no voice at all** — including read-only — was a scope decision no source had made, and it
+was being presented as derived.
+
+*"What happened to the dentist task?"* becomes answerable.
+
+**The line, stated so it cannot drift:**
+
+| | |
+|---|---|
+| **Read — permitted** | the assistant can say what is in the trash and that a task went there |
+| **Address — unchanged** | a deleted task stays out of the interpreter's handle list (AC-4). It is not a handle for an edit, and *"delete the dentist task"* must not resolve to a row already deleted |
+| **Write — unchanged** | restore and permanent deletion stay hand-only (AC-14, AC-15). **This half was never in question** and the owner's decision does not touch it |
+
+**The consequence, named once and not re-argued.** The assistant can now tell the user
+where a task went **and cannot act on it** — the user is told *"it is in the trash"* and
+must then go to the trash by hand. That is a real dead end, and it is the deliberate price
+of keeping the only irreversible act in the product away from an interpreted intent.
+**Routed to the round-2 lenses to press on rather than settled here**, because whether the
+dead end is acceptable is exactly the sort of thing a tester and a product lens see
+differently and a spec author sees not at all.
+
+**What follows automatically:**
+
+- **AC-14 splits.** The write refusal is inherited from F-005 AC-36 and stays. The **read**
+  permission is this feature's own decision with its own reason — which is what the finding
+  asked for, in either direction.
+- **AC-4 is unchanged and must be seen to be unchanged.** Its clause is about the
+  **handle list**, not about reading. A revision that widens AC-4 to admit reading would
+  make a deleted task addressable, which is not what was decided.
+- **AC-15's framing changes.** It may no longer present the absence of a voice path as an
+  accessibility strength, because there is now a voice path.
+- **OQ4 closes.**

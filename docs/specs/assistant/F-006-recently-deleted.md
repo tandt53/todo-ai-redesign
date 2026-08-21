@@ -2,7 +2,7 @@
 
 **ID**: F-006
 **Slug**: recently-deleted
-**Status**: `draft` (**revision 3 — the Gate 1 round-1 revision.** Nine lenses returned **REJECT: 21 HIGH · 29 MEDIUM · 6 LOW, 56 findings**, all dispositioned in `docs/reports/gate1-lenses/F-006-revision-3-log.md`. **The round cap is 2**, so what follows this is at most one targeted re-review of the ACs each lens raised findings on. **The central fix is C1 — a trash entry's membership is now a closed set, stated once in AC-6**, and AC-9, AC-11 and AC-12 refer to that statement instead of re-deriving it (AC-17 deliberately acts on a different set and says so); 7 of 9 lenses found the old wording independently. **17 ACs, up from 16 — one added.** `AC-17` splits *empty trash* out of AC-11, which bundled four independently-failing guarantees under one id and hid the fact that the two destructive acts are **keyed differently** (a gesture's membership versus every deleted row of the account) — which is C1's own subject. Nothing was renumbered and nothing was deleted. **Revision 2's record, kept:** revision 2 — an amendment, not a review round; it folded in the owner's 30-day answer, bound retention to reachability rather than storage, and closed OQ1. **Revision 1's record, kept:** revision 1 — first pass, Gate 1 not yet run.)
+**Status**: `draft` (**revision 4 — an amendment, not a review round.** It folds in the owner's answer to OQ4 (`docs/reports/owner-decision-2026-08-19-carried-notice-placement-and-timer.md` §8): **the assistant may read the trash, and still may neither write to it nor address a row in it.** `AC-14` splits — the **write** refusal is inherited from `F-005 AC-36`, the **read** permission is this feature's own decision with its own reason; `AC-4` is unchanged in substance and now says *in its own text* that addressing is not reading; `AC-5` gains one clause (the assistant's read is that read, a caller and not a second door); `AC-15` stops presenting the absence of a voice path as an accessibility strength. **17 ACs, unchanged — nothing added, renumbered or deleted.** OQ4 closes; the dead end the decision deliberately leaves open is named in AC-14 and routed to round 2. **Gate 1 round 2 has not run** — this revision is what its lenses read. **Revision 3's record, kept:** revision 3 — the Gate 1 round-1 revision. Nine lenses returned **REJECT: 21 HIGH · 29 MEDIUM · 6 LOW, 56 findings**, all dispositioned in `docs/reports/gate1-lenses/F-006-revision-3-log.md`. **The round cap is 2**, so what follows this is at most one targeted re-review of the ACs each lens raised findings on. **The central fix is C1 — a trash entry's membership is now a closed set, stated once in AC-6**, and AC-9, AC-11 and AC-12 refer to that statement instead of re-deriving it (AC-17 deliberately acts on a different set and says so); 7 of 9 lenses found the old wording independently. **17 ACs, up from 16 — one added.** `AC-17` splits *empty trash* out of AC-11, which bundled four independently-failing guarantees under one id and hid the fact that the two destructive acts are **keyed differently** (a gesture's membership versus every deleted row of the account) — which is C1's own subject. Nothing was renumbered and nothing was deleted. **Revision 2's record, kept:** revision 2 — an amendment, not a review round; it folded in the owner's 30-day answer, bound retention to reachability rather than storage, and closed OQ1. **Revision 1's record, kept:** revision 1 — first pass, Gate 1 not yet run.)
 **Last Updated**: 2026-08-21
 
 ---
@@ -122,7 +122,7 @@ means concretely is `## Impact` §2 and §3.
 | Role | Can do | Cannot do |
 |------|--------|-----------|
 | Authenticated user | Open *Recently deleted*; restore an entry; destroy one entry for good; empty the trash | See or restore another account's deleted rows; recover a row more than 30 days after it was deleted; undo a permanent deletion |
-| Assistant (AI) | Nothing here. It cannot see, name, restore or destroy a deleted task | Reach any door this feature adds — a deleted row is in no handle list (`turns.ts:396`) and no turn may write one. **The read half of that exclusion is a product question, not a derived consequence — Open Question 4** |
+| Assistant (AI) | **Say what is in the trash, and that a named task went there** — AC-14's read, exercised through AC-5's read and no other door | Restore, destroy, empty — or be handed a deleted task as a **handle**: a deleted row is in no handle list (`turns.ts:396`), so no turn can name one as the target of an action, and no turn may write one (AC-4, AC-14). **It can say where the task went and cannot act on it**; that dead end is the owner's decision §8 and round 2's to press on |
 | The system | Remove a row deleted more than 30 days ago, at the doors named in AC-12 | Remove a row on any timer — **there is no scheduler in this app** (`## Ops`) |
 
 ---
@@ -200,9 +200,10 @@ the exact configuration the owner chose the trash to avoid.
 
 ### What the surface lists, and what an entry is
 
-- [ ] **AC-4** (api, web, mobile) — **A deleted task appears in no collection, no count, and no assistant query while it sits in the trash.** It is not in Today, Upcoming, Inbox or Done; it is in neither expression of `INV-INBOX-FILING`; it is not in the interpreter's handle list, so no turn can name it; and it is not returned by `GET /tasks`. This is what "lifecycle state, not container" means as an assertion, and it is falsifiable at each of those readers separately. **The trash's own read is the single exception and is the only one** (AC-5).
+- [ ] **AC-4** (api, web, mobile) — **A deleted task appears in no collection, in no count, and in no handle a turn can act on, while it sits in the trash.** It is not in Today, Upcoming, Inbox or Done; it is in neither expression of `INV-INBOX-FILING`; it is not in the interpreter's handle list, so **no turn can name it as the target of an action**; and it is not returned by `GET /tasks`. This is what "lifecycle state, not container" means as an assertion, and it is falsifiable at each of those readers separately. **The trash's own read is the single exception and is the only one** (AC-5).
+  - **This AC governs addressing, not reading, and collapsing the two reverses a decision** *(the owner's decision of 2026-08-21, `docs/reports/owner-decision-2026-08-19-carried-notice-placement-and-timer.md` §8 — closing OQ4)*. The assistant **may say** what is in the trash and that a named task went there — that permission is **AC-14's**, it is exercised through **AC-5's** read, and it puts nothing into the handle list. What this AC forbids is the row being a **target**: *"delete the dentist task"* must never resolve to a row already deleted, and no turn may write one. **Widening this AC to admit reading would make a deleted task addressable, which is not what was decided** — a later reader who meets AC-14's read permission and "reconciles" it here has overturned the owner's line, not tidied the spec.
   - **The readers that count raw rows are named too, because the enumeration above is `inCollection`-shaped or server-side and they are neither** *(tester-web F2)*. `web/components/TasksSurface.tsx:413` is `nothingAnywhere = state.tasks.length === 0`, and `:414`'s `loading` and `:420`'s `failedBlank` derive from it — **cardinality of the raw array, never `inCollection`.** **Measured: 4 accounts in the live store already hold ≥1 deleted row and zero live rows**, so an account holding only deleted rows would render the empty-*collection* state instead of first-run and would never render the skeleton. `F-005 AC-35` had to name this exact reader class for the identical negative about steps; this AC repeated the negative and omitted it. **A deleted row is not in `state.tasks` at all** (`## Impact` §3), so the guarantee is that these readers keep counting live rows only — falsifiable directly at that line.
-- [ ] **AC-5** (api) — **One read path returns deleted rows, it is the only one that does, and it is scoped to the caller's own rows.** Every other read that keeps a deleted row out of something a caller can see keeps its `deleted_at` filter unchanged — `## Impact` §1 enumerates all fourteen of them, in one place, **and this AC states no count of its own**: four Gate 1 lenses counted revision 2's headline and got four different numbers, and *"a test written to the number asserts over a set that excludes the site that matters"* (dev-mobile F7). **The enumeration is the contract; the number is not.** Another account's deleted rows are not reachable through this read by any argument, exactly as `POST /tasks/{id}/restore` is scoped today.
+- [ ] **AC-5** (api) — **One read path returns deleted rows, it is the only one that does, and it is scoped to the caller's own rows.** Every other read that keeps a deleted row out of something a caller can see keeps its `deleted_at` filter unchanged — `## Impact` §1 enumerates all fourteen of them, in one place, **and this AC states no count of its own**: four Gate 1 lenses counted revision 2's headline and got four different numbers, and *"a test written to the number asserts over a set that excludes the site that matters"* (dev-mobile F7). **The enumeration is the contract; the number is not.** Another account's deleted rows are not reachable through this read by any argument, exactly as `POST /tasks/{id}/restore` is scoped today. **The assistant's read (AC-14) is *this* read**: the owner's decision §8 permission adds a **caller** to this path and not a second path, so *"it is the only one"* is unchanged by it — and a second reader of deleted rows opened in the turn path would break this AC and AC-4 together.
 - [ ] **AC-6** (api, web, mobile) — **A trash entry is a delete gesture, not a row — and its membership is a closed set, stated here once.**
   - **The closed membership rule.** An entry's membership is **exactly the rows that one delete gesture trashed**: the rows carrying its `delete_gesture_id`, or the single row when that field is `null`. **Nothing is ever added to that set** — not a parent, not a step, not a row from another gesture, not a row that arrived by an invariant. **AC-9, AC-11 and AC-12 all act on *this* set and none of them re-derives it. AC-17 is the one act that deliberately does not — it addresses no entry and takes every deleted row of the account — and it says so in its own text rather than leaving the difference to be inferred.** *(This sentence is the fix for the finding 7 of 9 Gate 1 lenses raised independently. Revision 2 defined *delete forever* as *"the same membership AC-9's restore would have put back"* — and AC-9's restore pulls in a still-deleted **parent** regardless of gesture (`app.ts:605-618`), which AC-6 makes a separate entry with its own `deleted_at` and its own expiry. Read one way, destroying a stale entry hard-removed a **live** task; read the other, the AC contradicted its own wording. Both readings were reachable, because `plan.ts:105` cascades over **live** steps only, so *"delete a step, then delete its parent"* is genuinely two gestures.)*
   - Deleting a task with steps trashed N+1 rows under one `delete_gesture_id` (ADR-012) and restoring puts back exactly that set, so the trash shows **one** entry for it and never N+1. A row whose `delete_gesture_id` is `null` is its own entry — **measured, that is 53 of the 57 rows in the store today**, so on real data almost every entry is currently a singleton and an implementation that only handles clusters is untested by the live store.
@@ -248,9 +249,11 @@ the exact configuration the owner chose the trash to avoid.
 
 ### The bounds this surface inherits
 
-- [ ] **AC-14** (api) — **The trash is per-account, and the assistant may not write to it.** Every door here is scoped by `X-User-Id` like every other route. Stated rather than assumed because two of the three doors this feature adds are **new write paths**, which is exactly where caller scoping gets missed and no other AC would turn red. **That half is fully falsifiable** — a second account's seeded rows.
-  - **The assistant half is a structural guarantee, not a refusal that can be exercised, and revision 2 claimed the wrong thing** *(tester-api F5)*. It said a turn attempting a restore or a permanent delete *"is refused under `F-005 AC-40` like any other unpermitted write"* — but AC-40 and `F-005 AC-36` are **field-scoped**, restore and permanent-delete are not fields, and **no interpreted-action vocabulary contains them, so the fixture Interpreter cannot emit one and the precondition is unconstructible.** What is true and is what this AC asserts: **there is no interpreted action for either act, so no turn can reach either door** — falsifiable by reading the action vocabulary, not by attempting a refusal. **If a later feature adds such an intent, the refusal becomes owed at that moment**, and this sentence is where the next author is told so; nothing here turns red on its own.
-- [ ] **AC-15** (web, mobile) — **Every operation here is reachable by hand, makes zero AI calls, and works while the assistant is erroring**, asserted through F-001's harness AI-call counter. `MANIFEST ## Knowledge` declares WCAG 2.1 AA with the note that *voice-first requires a non-voice path for every action*, and this feature has **no** voice path at all by AC-14 — so the hand path is not an alternative here, it is the only one. **"While the assistant is erroring" is about the AI and says nothing about the network**: what happens when the device is offline is AC-2's fourth state for the read and AC-11 / AC-17's refusal for the two destructive writes.
+- [ ] **AC-14** (api) — **The trash is per-account; the assistant may read it, and may not write to it.** Every door here is scoped by `X-User-Id` like every other route. Stated rather than assumed because two of the three doors this feature adds are **new write paths**, which is exactly where caller scoping gets missed and no other AC would turn red. **That half is fully falsifiable** — a second account's seeded rows.
+  - **The write refusal is inherited, not taken here** — it is `F-005 AC-36`'s rule that the assistant writes only what it was granted, and this feature grants nothing. **What is this feature's own is the *shape* of the guarantee: structural, not a refusal that can be exercised, because revision 2 claimed the wrong thing** *(tester-api F5)*. It said a turn attempting a restore or a permanent delete *"is refused under `F-005 AC-40` like any other unpermitted write"* — but AC-40 and `F-005 AC-36` are **field-scoped**, restore and permanent-delete are not fields, and **no interpreted-action vocabulary contains them, so the fixture Interpreter cannot emit one and the precondition is unconstructible.** What is true and is what this AC asserts: **there is no interpreted action for either act, so no turn can reach either door** — falsifiable by reading the action vocabulary, not by attempting a refusal. **If a later feature adds such an intent, the refusal becomes owed at that moment**, and this sentence is where the next author is told so; nothing here turns red on its own.
+  - **The read is permitted, and that half is this feature's own decision with its own reason** *(owner decision §8, answering product F4 and closing OQ4)*. It is **not** derived from the bullet above: `F-005 AC-36` is a **write** list and cannot settle a read, and AC-4's handle list is an **addressing** mechanism — the derivation, not the outcome, is what the finding objected to. The reason is this product's own: its stated purpose is *"the user talks to an AI assistant to create, edit, and delete todos"*, and a safety net behind delete that the assistant cannot even describe leaves *"what happened to the dentist task?"* unanswerable by the interface this product leads with. **So the assistant may say what is in the trash, and that a named task went there.** It reads through **AC-5's** read — a caller, not a new door — and the row it names still enters no handle list (AC-4) and no `state.tasks` (`## Impact` §3). **Falsifiable in one fixture:** a turn asked after a deleted task names it and says it is in the trash, while that same task is absent from every collection, every count and the handle list in that same fixture.
+  - **The dead end this creates is recorded here and deliberately not settled** *(owner decision §8)*. The assistant can now say where a task went **and still cannot act on it** — the user is told *"it is in the trash"* and must then go there by hand. The owner's decision §8 names that as the deliberate price of keeping the one irreversible act in this product away from an interpreted intent, and **routes it to Gate 1's round-2 lenses to press on rather than settling it**, because a tester and a product lens see it differently and a spec author sees it not at all. **Nothing in this spec answers it and no AC turns red on it.**
+- [ ] **AC-15** (web, mobile) — **Every operation here is reachable by hand, makes zero AI calls, and works while the assistant is erroring**, asserted through F-001's harness AI-call counter. `MANIFEST ## Knowledge` declares WCAG 2.1 AA with the note that *voice-first requires a non-voice path for every action*, and that note is satisfied here **in the direction it is written**: the assistant may now *read* this surface (AC-14), but **no act here is reachable by voice**, so every action has its non-voice path and the hand path is the only one. **The absence of a voice path is no longer offered as an accessibility strength** — revision 3 offered it, and the owner's decision §8 removed the ground for it; a read path is an addition, not a substitute for a hand path. **"While the assistant is erroring" is about the AI and says nothing about the network**: what happens when the device is offline is AC-2's fourth state for the read and AC-11 / AC-17's refusal for the two destructive writes. **The zero-AI-calls claim is about *this* path and stands exactly as it did**: opening the trash, restoring, destroying and emptying **by hand** make no AI call, which is what F-001's harness counter asserts. A question *asked of the assistant* about the trash is a turn and makes one, as every turn does — AC-14's read is not an operation of this surface and this AC does not count it.
 - [ ] **AC-16** (web, mobile) — **WCAG 2.1 AA on what this feature adds, by name:** **2.1.1** — every control, including both confirmations, is keyboard-operable on web; **4.1.2** — name, role and value on the entry rows and the confirmation dialogs; **4.1.3** — the outcome of every restore, every permanent deletion and every refusal is announced, per `F-005 AC-33`'s rule that every status message a spec states is announced; **2.5.1** — no path-based gesture is the only way to reach restore or delete-forever, which binds the phone, where a swipe is the obvious drawing. **2.2.1 is not engaged by anything this feature adds** — nothing here is withdrawn by time in front of the user; the retention period is 30 days and its expiry is not an activity the user is racing.
   - **The refusals 4.1.3 governs now exist and are enumerated**, which revision 2's version of this AC required without any AC producing one *(tester-web F4)*: AC-9's expired refusal, AC-9's orphaned-step refusal, AC-11's and AC-17's failed and offline refusals, and AC-2's failed and offline read. **The expired one is reachable while the user is looking at it** — AC-12 removes expired rows *on the trash read*, so a listed entry is unexpired at list time and can expire while on screen, and AC-3 requires it to display the date it goes, so *"goes today"* is a rendered state.
 
@@ -323,6 +326,10 @@ widening of an existing one. The failure mode to watch for is the opposite of th
 not a site that was missed, but a site "helpfully" widened while someone builds the
 trash — and a widened `turns.ts:396` puts deleted tasks back in the assistant's handle
 list, which AC-4 forbids and which no test of the trash itself would catch.
+**The owner's decision §8 read permission is the new reason someone will reach for that line, and
+it is not a licence to widen it:** the assistant may now *say* a task is in the trash, and
+that is served by AC-5's read with the turn path as a caller (AC-14) — reading is not
+addressing, and this line is the addressing one.
 **`mobile/model/task-link.ts:76` is the most temptingly widenable site in the codebase**
 (a trash makes a deleted task's title look like it should be a link again) and it was the
 one missing from revision 2's list.
@@ -449,6 +456,10 @@ wrong turn.
 that sentence look stale, and it is not: `F-001 AC-31`'s door switches to **a collection
 that holds the row**, and by AC-4 no collection holds a deleted row. Making the door open
 the trash is a new requirement for `F-001` to take, not a repair. Unchanged by this feature.
+**The owner's decision §8 read permission raises the pressure on these two lines and does not move
+them**: the assistant can now name a deleted task in a reply, so a message can reference
+one — and the door beside it stays inert. That is the same dead end AC-14 records, arriving
+at the one site where an implementer will most want to "fix" it without a requirement.
 **Both lines are now in §1's enumeration**, which is where an implementer looking for the
 filter list will find them.
 
@@ -500,6 +511,7 @@ obligation gets believed-recorded.
 | `api-contracts.md § POST /tasks/{id}/restore` | gains **two new outcomes** (AC-9) — a contract change to a shipped route, not a note | architect |
 | `api-contracts.md § Task on the wire` | **stays as it is** — `delete_gesture_id` remains internal (AC-6). Listed because revision 2 omitted it and the client-grouping option would have changed it **unrouted** (architect F3) | architect (no-change confirmation) |
 | `api-contracts.md § Harness doors` | the raw-store **read** half, for AC-12's removal-write observable | architect |
+| `api-contracts.md § POST /assistant/turn` — processing rule 5's interpretation context | **new in revision 4**: the assistant may read the trash (AC-14) while a deleted row stays out of the handle list (AC-4). Rule 5 reads *"the user's current tasks"* — **one set doing both jobs**, so reading and addressing now have to be separated in the contract, and separating them by widening the handle set breaks AC-4 | architect |
 | `api-contracts.md` — the turn-undo `skipped` shape | a reason for a purged row; how a purged **step** is reported (AC-13) | architect |
 | `data-model.md § task` | `deleted_at`'s note gains the retention clock; `delete_gesture_id` gains its second reader | architect |
 | `ADR-009 § Amendment 2` | the two-axis table gains a row that is on **neither** axis, beside `Done` | **architect — a new ADR amendment, not a table edit** |
@@ -564,6 +576,11 @@ obligation gets believed-recorded.
   parent comes back and a second entry leaves — AC-9), *delete forever* the parent's entry
   (the step's entry survives and becomes unrestorable — AC-7), and restore that orphaned
   entry (refused — AC-9).
+- **AC-14 has two halves and only one of them was ever testable** — the write half is read
+  off the action vocabulary (no intent exists), the **read** half is a turn: ask after a
+  deleted task and the reply names it and says it is in the trash. **Its instructive
+  mutation is putting the row in the handle list to serve that answer** — the read passes
+  and AC-4 fails at five readers, which is the failure §1 names.
 - **AC-13 needs a turn whose snapshot names the purged row** — 24 such turns exist on the
   live store, so the fixture is a copy of a real state rather than a construction.
 - **AC-12's expiry is testable only with an injectable clock**; `F-005 AC-44`'s clock seam
@@ -607,12 +624,13 @@ obligation gets believed-recorded.
 
 ## Open Questions
 
-Plain questions first; the AC each would change is in brackets. **OQ1 is closed by the
-owner and is kept below rather than deleted** — a closed question that still shows what
+Plain questions first; the AC each would change is in brackets. **OQ1 and OQ4 are closed by
+the owner and are kept below rather than deleted** — a closed question that still shows what
 was decided, and what the decision cost, is what stops it being re-asked in three weeks.
 **OQ2 is open and is the owner's**, not architecture's: it changes a promise the user
-sees; it is assigned as **T-181**. **OQ3 is answered by Gate 1's design lens.** **OQ4 is
-new in revision 3 and is the owner's.**
+sees; it is assigned as **T-181**. **OQ3 is answered by Gate 1's design lens.** **OQ4 closed
+in revision 4**; what its answer leaves open on purpose is named in AC-14 and belongs to
+round 2, not to this list.
 
 1. **CLOSED 2026-08-21 by the owner**
    (`docs/reports/owner-decision-2026-08-19-carried-notice-placement-and-timer.md` §6).
@@ -662,20 +680,38 @@ new in revision 3 and is the owner's.**
    finding D14 exactly — *"pick an accent from unspent tokens" naming an empty set* —
    which cost that spec three revisions to notice.** The honest options are the count or
    nothing, and AC-1 already chose. **Reversing is cheap.**
-4. **NEW — may the assistant *read* the trash?** [AC-4, AC-14, AC-15] *(product F4.)*
-   AC-14 argues the assistant's exclusion from `F-005 AC-36`'s closed permission list —
-   **which is a write list** — while AC-4 removes deleted rows from the handle list, which
-   is an **addressing** mechanism, and AC-15 then presents the total absence of a voice
-   path as an accessibility strength. **The write half is a sound safety decision. The read
-   half is a separate product decision that no source settles and that this spec presented
-   as derived.** On a product whose stated purpose is *"the user talks to an AI assistant
-   to create, edit, and delete todos"*, the safety net behind delete has no voice at all,
-   including read-only: **"What happened to the dentist task?" is unanswerable.** *Partly
-   mitigated:* a delete made **by voice** is a turn, so `F-001 AC-5`'s turn-shaped voice
-   undo still covers that path — this question is about a delete made by hand and asked
-   about later. **What it would cost to answer yes:** a read-only handle class the
-   interpreter can resolve but not write, which is a new concept in the turn path and not
-   a small one. **What it costs to leave open:** nothing until architecture, and then it
-   is a shape decision made without it. **No recommendation** — this is a scope call about
-   what the assistant is for, and this spec has taken the narrow reading by default and
-   named it rather than continuing to present it as derived.
+4. **CLOSED 2026-08-21 by the owner**
+   (`docs/reports/owner-decision-2026-08-19-carried-notice-placement-and-timer.md` §8).
+   **The assistant may read the trash. It still may not write to it, and a deleted task is
+   still not addressable.** Read → **AC-14**'s second half, which now carries its own reason;
+   address → **AC-4**, unchanged in substance and now saying so in its own text; write →
+   **AC-14**, unchanged and never in question. **The owner was shown that the read exclusion
+   was being presented as *derived* — from `F-005 AC-36`, which is a write list — and chose
+   the wider answer with its cost on the table:** the assistant can say where a task went and
+   cannot act on it, so the user is told *"it is in the trash"* and must then go there by
+   hand. **That dead end is the price, it is named in AC-14, and the owner's decision §8 routes it to Gate 1's
+   round-2 lenses rather than settling it** — a tester and a product lens see it differently
+   and a spec author sees it not at all. **What this spec does not do is resolve it.** *The
+   question is kept rather than deleted, on OQ1's precedent, because the derivation error is
+   the half that would otherwise be re-made.* **One line of it is superseded and is flagged
+   rather than edited:** the quoted cost of answering yes — *"a read-only handle class the
+   interpreter can resolve but not write"* — is **not** what was chosen. AC-4 keeps the
+   handle list closed, and the answer is served by AC-5's read with the turn path as a
+   caller. It read:
+   > **NEW — may the assistant *read* the trash?** [AC-4, AC-14, AC-15] *(product F4.)*
+   > AC-14 argues the assistant's exclusion from `F-005 AC-36`'s closed permission list —
+   > **which is a write list** — while AC-4 removes deleted rows from the handle list, which
+   > is an **addressing** mechanism, and AC-15 then presents the total absence of a voice
+   > path as an accessibility strength. **The write half is a sound safety decision. The read
+   > half is a separate product decision that no source settles and that this spec presented
+   > as derived.** On a product whose stated purpose is *"the user talks to an AI assistant
+   > to create, edit, and delete todos"*, the safety net behind delete has no voice at all,
+   > including read-only: **"What happened to the dentist task?" is unanswerable.** *Partly
+   > mitigated:* a delete made **by voice** is a turn, so `F-001 AC-5`'s turn-shaped voice
+   > undo still covers that path — this question is about a delete made by hand and asked
+   > about later. **What it would cost to answer yes:** a read-only handle class the
+   > interpreter can resolve but not write, which is a new concept in the turn path and not
+   > a small one. **What it costs to leave open:** nothing until architecture, and then it
+   > is a shape decision made without it. **No recommendation** — this is a scope call about
+   > what the assistant is for, and this spec has taken the narrow reading by default and
+   > named it rather than continuing to present it as derived.
