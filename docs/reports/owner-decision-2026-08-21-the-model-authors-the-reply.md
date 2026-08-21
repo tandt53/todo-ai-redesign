@@ -91,3 +91,48 @@ all** — which is the exact mechanism that produced F-006's round-2 findings.
 ## Provenance
 
 *"Câu nhỏ … ok cho short term"* · *"Câu lớn … có, model phải trả lời"*, 2026-08-21.
+
+---
+
+## 3. The shape: an agentic loop, not a pipeline
+
+*(Added 2026-08-21 after the owner corrected me twice — I first drew it as three fixed AI
+calls, which is wrong.)*
+
+```
+user speaks
+  ↓
+AI ⇄ backend      loop — the AI calls tools to search and read; the backend answers;
+                  the AI decides what it needs next. HOW MANY ROUNDS DEPENDS ON THE
+                  QUESTION, and on how well the model does. It is not a fixed count.
+  ↓
+AI returns        actions + targets + THE SPOKEN LINE, together
+  ↓
+client confirms
+  ↓
+backend executes  and tells the AI what it did
+  ↓
+AI ⇄ backend      loops again if it needs to
+  ↓
+final line → client
+```
+
+**Three things this settles that the current architecture does not have:**
+
+1. **The backend exposes tools and the AI drives.** Today the engine resolves the utterance
+   itself in one pass. Here the AI asks, reads the answer, and decides whether to ask again.
+2. **The line is authored in the same response as the actions and the targets.** *This
+   removes the objection §2 was withdrawn over on its own:* the AI is not guessing a task
+   name, **it is naming the very rows it is targeting.** A check that the names in the line
+   are in the target set stays cheap and stays worth having, but it is now a consistency
+   check on one response rather than a guard against invention.
+3. **Reads during the loop, writes only after the confirm.** The owner's own diagram places
+   `client confirm` **before** `backend take action`, so the AI **proposes** and the backend
+   **executes**. *If the AI could write during the loop, the confirm step would be
+   decorative.* Recorded as the reading; F-007's spec states it.
+
+**The one thing an agentic loop needs that a pipeline does not: a bound.** Not to predict the
+round count — the owner is explicit that it varies with the question and with the model — but
+so a bad question cannot spin. **Default taken, both adjustable: a maximum number of rounds
+and a wall-clock limit, and the spec must say what the user sees when either is hit.**
+Silence at the ceiling is the failure mode.
