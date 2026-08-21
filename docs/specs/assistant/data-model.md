@@ -216,7 +216,7 @@ would leave a task dated today at 17:00 in no bucket until 17:00. Both compare
 **Today means "needs attention now", not literally "dated today."** Folding
 overdue in is a deliberate widening of the word, taken on the argument that a
 task which vanishes from view is how it gets forgotten
-(`reports/owner-decision-2026-08-18-four-buckets.md`). It is not a defect to
+(`docs/reports/owner-decision-2026-08-18-four-buckets.md`). It is not a defect to
 narrow later.
 
 **Inbox means "filed nowhere."** Not *"no date"* — that was its meaning for part

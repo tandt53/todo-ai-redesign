@@ -106,7 +106,7 @@ Not web-tagged (owned by other platforms, no web TC by design): AC-6, AC-12, AC-
 ## AC-30 — following new messages (added 2026-08-17, T-085)
 
 AC-30 arrived after Gate 1, from the owner decision resolving BUG-004
-(`reports/owner-decision-2026-08-17-new-message-affordance.md`), and it is the
+(`docs/reports/owner-decision-2026-08-17-new-message-affordance.md`), and it is the
 one AC in this feature whose subject is the **scroll viewport** rather than
 model state or rendered output. That matters for where its coverage can live.
 
@@ -182,7 +182,7 @@ All five criteria AC-19 names by name now have automated coverage. 4.1.3 was the
 
 ## Copy language
 
-The product ships **English** (ADR-008 / `reports/owner-decision-2026-08-17-english-first.md`, superseding the 2026-08-16 decision that put the copy into Vietnamese). Per F-001 ## Conversation model ("Naming convention"), the spec's English words are concept names, and user-visible wording is owned by `docs/design/_shared/components.md`. Every quoted string in these TC files and in the automation is therefore traceable to the design system or the mockup — task titles ("Buy milk") are fixture data, not copy, and stay as they are.
+The product ships **English** (ADR-008 / `docs/reports/owner-decision-2026-08-17-english-first.md`, superseding the 2026-08-16 decision that put the copy into Vietnamese). Per F-001 ## Conversation model ("Naming convention"), the spec's English words are concept names, and user-visible wording is owned by `docs/design/_shared/components.md`. Every quoted string in these TC files and in the automation is therefore traceable to the design system or the mockup — task titles ("Buy milk") are fixture data, not copy, and stay as they are.
 
 **One consequence worth naming, because it is not a copy change.** ADR-008 also retired the Vietnamese voice-undo phrase `hoàn tác`: AC-5's undo vocabulary is now `undo` alone (`UNDO_PHRASES`, `src/assistant/api/engine/normalize.ts:9`). That phrase was recognizer INPUT, not shipped copy, so it is a behaviour change rather than a translation. TC-008 kept its case and its guarantee — an undo phrase never becomes a task, never reaches the model, and refuses visibly when out of window — and now exercises it over a one-member vocabulary; see that file's Vocabulary note. The api tier owns the complementary negative (`tests/assistant/api/…:781`, "the retired phrase is an ordinary turn: interpreted, no_match, reverts nothing"), so the web tier does not duplicate it.
 

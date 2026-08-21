@@ -1,8 +1,8 @@
 # F-005 — revision 2 log: what happened to every round-1 finding
 
 **Date:** 2026-08-18 · **Task:** T-143 · **Agent:** spec-agent
-**Reads against:** `reports/gate1-lenses/F-005-consolidated.md`, the five persisted lens
-returns beside it (L-009), and `reports/owner-decision-2026-08-18-f005-gate1.md`.
+**Reads against:** `docs/reports/gate1-lenses/F-005-consolidated.md`, the five persisted lens
+returns beside it (L-009), and `docs/reports/owner-decision-2026-08-18-f005-gate1.md`.
 
 **This file exists so the round-2 review is not spent re-deriving what changed.**
 Round 1's cap is 2 — the review that reads this is the last one F-005 gets.
@@ -200,7 +200,7 @@ reused.
 
 ## Addendum — T-153, folded in after this log was written, before round 2 reads it
 
-**Written by the orchestrator**, which owns `reports/`. It exists because the log
+**Written by the orchestrator**, which owns `docs/reports/`. It exists because the log
 above describes 46 ACs and the spec now has 48: a round-2 lens reading only the
 log would review a shape that no longer exists.
 
@@ -208,7 +208,7 @@ log would review a shape that no longer exists.
 same change made after round 2 would ship unreviewed. That is why these landed
 here rather than waiting.
 
-**Source:** `reports/owner-decision-2026-08-18-detail-trap-and-message-door.md`.
+**Source:** `docs/reports/owner-decision-2026-08-18-detail-trap-and-message-door.md`.
 Both were **found in composition** — each of the ACs involved had already been
 reviewed and each is correct alone. Neither was a lens finding, and neither could
 have been: review is per-artifact, composition is between artifacts

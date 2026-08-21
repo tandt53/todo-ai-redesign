@@ -706,7 +706,7 @@ html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); 
  * identical). At and above: Tasks is the centre and the primary object; Talk is
  * a panel beside it, and the panel keeps the FULL diff bubble. Nothing about
  * AC-1 branches here; only the frame does.
- * Owner decision 2026-08-17 — reports/owner-decision-2026-08-17-desktop-list-is-primary.md
+ * Owner decision 2026-08-17 — docs/reports/owner-decision-2026-08-17-desktop-list-is-primary.md
  */
 @container app (min-width: 1024px) {
   /* --gutter is redefined on .surfaces, not on html: a container query styles

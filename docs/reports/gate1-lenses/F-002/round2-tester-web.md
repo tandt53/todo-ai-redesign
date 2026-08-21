@@ -159,7 +159,7 @@ evidence:
     - .claude/agents/_spec-review-protocol.md
     - .claude/agents/_qa-foundations.md
     - specs/_shared/LEARNINGS.md
-    - reports/gate1-review-F-002.md
+    - docs/reports/gate1-review-F-002.md
     - specs/assistant/F-002-talk-back.md
     - qa/assistant/F-001/web/index.md
     - specs/assistant/data-model.md      # not in briefing — read to verify H3's deleted_titles claim rather than assert it

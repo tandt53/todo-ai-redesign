@@ -19,11 +19,11 @@ The collection set is no longer one partition with four cells; it is a *date*
 axis and a *filing* axis over the same open tasks. Amendment 1's predicate table
 is annotated in place — it describes the date axis correctly and always did — and
 the structural statement is in **§ Amendment 2 (2026-08-18)** at the end.
-**Source of record:** `reports/owner-decision-2026-08-18-today-is-a-date.md`,
-which sharpens `reports/owner-decision-2026-08-18-landing-and-collections.md` §2.
+**Source of record:** `docs/reports/owner-decision-2026-08-18-today-is-a-date.md`,
+which sharpens `docs/reports/owner-decision-2026-08-18-landing-and-collections.md` §2.
 Amendment 1's source of record is
-`reports/owner-decision-2026-08-18-four-buckets.md`; Amendment 2's is
-`reports/owner-decision-2026-08-18-inbox-is-unfiled.md`.
+`docs/reports/owner-decision-2026-08-18-four-buckets.md`; Amendment 2's is
+`docs/reports/owner-decision-2026-08-18-inbox-is-unfiled.md`.
 
 ## Context
 
@@ -299,7 +299,7 @@ QA expectations last.
 ## Amendment (2026-08-18) — `upcoming` joins; all four collections are date predicates
 
 **Trigger.** The owner decision of 2026-08-18,
-`reports/owner-decision-2026-08-18-four-buckets.md`, taken the same day as this
+`docs/reports/owner-decision-2026-08-18-four-buckets.md`, taken the same day as this
 ADR and on the same subject: *"Tôi tưởng inbox và today chỉ là filter dựa theo
 due date thôi, sao lại phức tạp thế nhỉ?"* — I thought Inbox and Today were just
 due-date filters, why is this so complicated? **They were right, and the reason
@@ -655,7 +655,7 @@ Upcoming member to read.
 
 ## Amendment 2 (2026-08-18) — Inbox is *unfiled*; the model has two axes
 
-**Trigger.** `reports/owner-decision-2026-08-18-inbox-is-unfiled.md`. The owner
+**Trigger.** `docs/reports/owner-decision-2026-08-18-inbox-is-unfiled.md`. The owner
 said *"Inbox nên là các task chưa xong, gồm cả task có ngày hay chưa"* — Inbox
 should be the unfinished tasks, dated or not — and then asked the question that
 actually decided it: *"các app khác giữ inbox như nào?"*, how do other apps keep

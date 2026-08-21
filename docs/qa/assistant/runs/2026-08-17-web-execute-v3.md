@@ -2,7 +2,7 @@
 
 **Agent:** qa-web-agent · **Phase:** execute · **Date:** 2026-08-17
 **Feature:** F-001 voice-assistant-view (web) · **Suite:** `tests/assistant/e2e/F-001-voice-assistant-view.spec.ts`
-**Trigger:** ADR-008 / `reports/owner-decision-2026-08-17-english-first.md` — English is the product language. Design led (T-062), implementers followed (T-067/068/069), the Vietnamese voice-undo phrase was retired (T-073); this pass is QA catching up.
+**Trigger:** ADR-008 / `docs/reports/owner-decision-2026-08-17-english-first.md` — English is the product language. Design led (T-062), implementers followed (T-067/068/069), the Vietnamese voice-undo phrase was retired (T-073); this pass is QA catching up.
 
 ---
 

@@ -1,10 +1,10 @@
 # F-005 — revision 3 log: what happened to every round-2 finding
 
 **Date:** 2026-08-18 · **Task:** T-154 · **Agent:** spec-agent
-**Reads against:** `reports/gate1-lenses/F-005-r2-consolidated.md` and **all nine** persisted
+**Reads against:** `docs/reports/gate1-lenses/F-005-r2-consolidated.md` and **all nine** persisted
 lens returns beside it (L-009 — five of the sharpest findings this round were seen by one
 lens only, and three of those are in the three lenses that did not exist in round 1), plus
-`reports/owner-decision-2026-08-18-round-three-and-offline.md` (two answers, both binding).
+`docs/reports/owner-decision-2026-08-18-round-three-and-offline.md` (two answers, both binding).
 
 **This file determines the targeted re-review's dispatch set.** T-155 re-reads only the ACs
 a lens raised findings on, per lens — so the **exact AC ids** in each row are load-bearing in

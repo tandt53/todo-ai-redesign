@@ -1,6 +1,6 @@
 # Product Review: F-{id} {slug}
 <!-- Written by: product-agent (optional agent — only when MANIFEST ## Product.product_review != skip) -->
-<!-- Lives at: reports/product-review-F-{id}-{date}.md (or -final-{date}.md for Phase 2) -->
+<!-- Lives at: docs/reports/product-review-F-{id}-{date}.md (or -final-{date}.md for Phase 2) -->
 
 **Date**: {YYYY-MM-DD}
 **Agent**: product-agent

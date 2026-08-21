@@ -1,6 +1,6 @@
 # Review — F-{id} {slug}
 <!-- Written by: reviewer-agent after running C1-C8 structural checks. -->
-<!-- Lives at: reports/review-F-{id}-{date}.md -->
+<!-- Lives at: docs/reports/review-F-{id}-{date}.md -->
 
 **Date**: {YYYY-MM-DD}
 **Agent**: reviewer-agent

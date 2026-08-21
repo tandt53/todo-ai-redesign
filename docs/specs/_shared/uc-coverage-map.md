@@ -85,7 +85,7 @@ group and Nhóm I, i.e. the todo app underneath the assistant.
 | UC | Asks for | Class | Answered by / why not |
 |---|---|---|---|
 | UC-01 | One sentence → a task | **CHANGED (D1)** | F-001 AC-1, AC-2, AC-17, AC-23 (raw transcript persisted before interpretation = AC-01.3 ✓). Divergence: there is **no model**. Interpretation is a 23-row fixture table (`api/ports/fixture-table.ts`, `fixture-interpreter.ts`) — an unmatched utterance is `no_match`. Recorded in `ADR-001` and F-001 `## Test strategy`. AC-01.1's 4 s p95 has neither a model nor an instrument. |
-| UC-02 | Vietnamese datetime extraction | **CHANGED (D1, D2)** | Twice diverged: the mechanism (fixture rows carry literal `due_at`; no parser exists) and the language (`ADR-008` makes the product English; `reports/owner-decision-2026-08-17-english-first.md`). AC-01.2 "keep the user's original language" is now moot for one language. |
+| UC-02 | Vietnamese datetime extraction | **CHANGED (D1, D2)** | Twice diverged: the mechanism (fixture rows carry literal `due_at`; no parser exists) and the language (`ADR-008` makes the product English; `docs/reports/owner-decision-2026-08-17-english-first.md`). AC-01.2 "keep the user's original language" is now moot for one language. |
 | UC-03 | Split a paragraph into several tasks | **CHANGED (D1)** | The shape exists — a fixture `create` row may carry several tasks and `applyCreate` writes them atomically (F-001 AC-1) — but only for utterances in the table. AC-03.2's "never silently truncated" is untested at any length. |
 | UC-04 | Sub-task decomposition | MISSING *(unexamined)* | No sub-task concept anywhere. Blocked by UC-36. |
 
@@ -188,7 +188,7 @@ the existing engine and are not re-verified here" — the existing engine is in 
 repository. Read from inside this repo that sentence describes coverage that does not exist here.
 
 **D2 — "No settings surface" was a load-bearing premise, and the owner withdrew it today.**
-`reports/owner-decision-2026-08-17-settings-and-lists.md`. It was cited as a premise by F-002
+`docs/reports/owner-decision-2026-08-17-settings-and-lists.md`. It was cited as a premise by F-002
 AC-23 (interface language is a build-time constant *because* no settings surface is a
 deliverable), by `ADR-008`, and by F-002 `## Out of Scope`. **Five UCs put their surface in
 Settings** — UC-26 AC-26.3, UC-28, UC-29 AC-29.2, UC-30, UC-48 — plus F-002's own on/off control
@@ -261,18 +261,18 @@ second path is one flat pane with three filters. Of the five things ADR-11 names
 intact, two exist in reduced form and three do not exist at all. **F-001 AC-18, AC-24 and AC-25
 all lean on that fallback by name** — "the full todo list remains usable by hand" — and the list
 they lean on is much thinner than the ADR assumed. This is the same thing the owner asked in
-`reports/owner-feedback-2026-08-17-product-gaps.md` §3, arrived at from the requirements side.
+`docs/reports/owner-feedback-2026-08-17-product-gaps.md` §3, arrived at from the requirements side.
 
 **2. The source is bilingual by design; `ADR-008` made the product English.** UC-01 AC-01.2 (keep
 the user's language), UC-02 (Vietnamese time expressions), UC-08 AC-08.1 (ask in the user's
 language) and UC-46's VN+EN grammar table all assume two languages. `ADR-008` and
-`reports/owner-decision-2026-08-17-english-first.md` reverse that for this phase and drop the
+`docs/reports/owner-decision-2026-08-17-english-first.md` reverse that for this phase and drop the
 `hoàn tác` undo phrase. Anyone reading UC-02 or UC-46 as a work order will build the wrong thing
 unless they read ADR-008 first. **The source stays in Vietnamese and must not be edited** — that
 is what this row is for.
 
 **3. The owner's own gap report overstates one gap, and the map should not inherit the error.**
-`reports/owner-feedback-2026-08-17-product-gaps.md` §3 states "there is no `PATCH`/`PUT`" and
+`docs/reports/owner-feedback-2026-08-17-product-gaps.md` §3 states "there is no `PATCH`/`PUT`" and
 "no `DELETE`", and concludes tap-to-edit and swipe-to-delete exist "at no layer — not in the UI,
 not in the API". Measured today: `PATCH /tasks/{id}` and `DELETE /tasks/{id}` both exist
 (`api/app.ts:322-350`), the shared controller wraps both, and **web** ships inline rename and a
@@ -294,7 +294,7 @@ not exist here.
 
 **6. What this repo built that no UC asked for** — recorded so the map reads in both directions.
 F-001 **AC-30** (the conversation follows new messages only when you are already at the bottom)
-comes from BUG-004 and `reports/owner-decision-2026-08-17-new-message-affordance.md`, not from
+comes from BUG-004 and `docs/reports/owner-decision-2026-08-17-new-message-affordance.md`, not from
 any UC; the source has no conversation-scroll requirement at all. F-002's `speech.decision_log`,
 its closed reason vocabulary and its declared spoken frames are likewise this repo's invention,
 answering `LEARNINGS.md` L-008 rather than UC-20. Both are improvements. Neither is traceable to

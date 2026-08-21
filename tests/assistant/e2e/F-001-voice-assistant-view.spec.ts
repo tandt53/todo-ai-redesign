@@ -6,7 +6,7 @@
  * qa-web-agent · phase: execute v3 (T-070b, 2026-08-17) — ENGLISH copy sync
  *                (ADR-008 / owner decision 2026-08-17)
  *
- * COPY: the product ships English (ADR-008, reports/owner-decision-2026-08-17-
+ * COPY: the product ships English (ADR-008, docs/reports/owner-decision-2026-08-17-
  * english-first.md). F-001 "Naming convention" still holds — the spec's words
  * are concept names only and the user-visible wording is owned by
  * docs/design/_shared/components.md and the mockup it publishes

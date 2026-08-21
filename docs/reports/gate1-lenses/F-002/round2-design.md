@@ -159,7 +159,7 @@ findings:
       Two independently hideable siblings now sit in one row — the mic hides on absent
       recognition (F-001 AC-20), the toggle hides on absent synthesis (AC-12) — giving
       four reflow permutations no artifact describes. This finding was raised at round 1
-      and appears in neither `reports/gate1-review-F-002.md` nor the revision's
+      and appears in neither `docs/reports/gate1-review-F-002.md` nor the revision's
       changelog; it was dropped in consolidation, not declined.
     would_not_be_a_finding_if: >
       The spec named the control's surface region and stated whether it is one control

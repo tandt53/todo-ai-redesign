@@ -147,7 +147,7 @@ F-005 asks the row for three new marked meanings at once: **AC-9's urgency**, **
 count** and **AC-39's repeating-series indicator**. `## Impact` §8 asks design to decide the row
 **once** rather than absorb three independent additions, and that is what this subsection is. **AC-43's
 hand-action undo is not on the list** — the owner placed it in AC-47's notice family on 2026-08-19
-(`reports/owner-decision-2026-08-19-close-gate-one.md` §2), so it renders in `§ CarriedNotice` and never
+(`docs/reports/owner-decision-2026-08-19-close-gate-one.md` §2), so it renders in `§ CarriedNotice` and never
 on the row. This is the correction of the count `## Impact` §8 got wrong twice (design D23).
 
 **None of the three carries colour.** `DESIGN.md ## Colour rules 5` records the decision and its
@@ -1022,7 +1022,7 @@ reason AC-47 rejected the Tasks banner stack.
 ## AppFrame — the one layout branch, and where it lands
 
 **Added 2026-08-17 (T-105), additive**, for
-`reports/owner-decision-2026-08-17-desktop-list-is-primary.md`. Nothing above this line moved,
+`docs/reports/owner-decision-2026-08-17-desktop-list-is-primary.md`. Nothing above this line moved,
 was renamed or was reordered. Two cells changed content and are called out at the foot.
 
 Mockups: `app-shell.html` (web, both sides of the branch) · `app-shell-ios.html` ·
@@ -1115,7 +1115,7 @@ Neither is a rename, a reorder, or a new row.
 
 ## LandingSummary — what Talk says when you open it (LSM-*)
 
-**Added 2026-08-18 (T-114), additive**, for `reports/owner-decision-2026-08-18-landing-and-collections.md §1`
+**Added 2026-08-18 (T-114), additive**, for `docs/reports/owner-decision-2026-08-18-landing-and-collections.md §1`
 (a phone lands on Talk, and Talk must not be an empty room). Nothing above this line moved, was
 renamed or was reordered. One cell above changed content and is called out at the foot.
 
@@ -1469,7 +1469,7 @@ Not a rename, a reorder, or a new row.
 
 ## Four buckets — what this pass changed and the one cell it refuses to fill (T-128)
 
-**Added 2026-08-18 (T-128), additive**, for `reports/owner-decision-2026-08-18-four-buckets.md`
+**Added 2026-08-18 (T-128), additive**, for `docs/reports/owner-decision-2026-08-18-four-buckets.md`
 § Confirmed (second pass) and `docs/specs/_shared/adr/ADR-009-today-is-a-date.md` § Amendment. **No row
 ID above was moved, renamed or reordered.** One frame ID, two facts and one day-group heading were
 added, one selection rule row died, and eleven cells changed content — all listed at the foot of
@@ -1738,7 +1738,7 @@ surface they created it from, and nothing else on that surface says so.** Both c
 | **assistant create** | **no** | the second clause — below |
 
 **The assistant path is excluded by the second clause, not for being the assistant.**
-`reports/owner-question-2026-08-18-assistant-created-tasks-are-invisible.md` describes the
+`docs/reports/owner-question-2026-08-18-assistant-created-tasks-are-invisible.md` describes the
 identical disappearance on the voice path, and the orchestrator's reading of it is that *the
 confirmation message is the receipt*: the applied bubble names the task and § MessageTaskLink makes
 that name a door to its row. That receipt is persistent, specific, and already on the surface the
@@ -1843,7 +1843,7 @@ Four, and none of them is a rename or a reorder.
 ## Two axes — where the Inbox row sits, and what its count now means (T-138)
 
 **Added 2026-08-18 (T-138)**, for `docs/specs/_shared/adr/ADR-009-today-is-a-date.md` **§ Amendment 2**
-and `reports/owner-decision-2026-08-18-inbox-is-unfiled.md`. **No component was added, no ID was
+and `docs/reports/owner-decision-2026-08-18-inbox-is-unfiled.md`. **No component was added, no ID was
 renamed, no testid moved, and no new token was needed.** One menu row changed position, one
 collection started grouping, one fact was added, one fact was rebound, and one frame went dormant.
 
@@ -1957,7 +1957,7 @@ mentions Inbox, changed at all.
 
 **Added 2026-08-19 (T-152), additive**, for `F-005 AC-47`, `AC-2`'s failed and offline-refused states,
 and `AC-43`'s hand-action undo offer — which the owner placed in this family on 2026-08-19
-(`reports/owner-decision-2026-08-19-close-gate-one.md` §2) rather than on the task's row. **Nothing above
+(`docs/reports/owner-decision-2026-08-19-close-gate-one.md` §2) rather than on the task's row. **Nothing above
 this line was moved, renamed or reordered.** Five new testids, **zero new colour, radius, shadow or
 motion tokens**; one new § Buttons variant (`neutral`) and one new § Contrast pair, both published in
 their own sections. Four cells above changed content and one table gained five rows; all are listed at the

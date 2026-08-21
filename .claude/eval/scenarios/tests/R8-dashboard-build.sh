@@ -59,7 +59,7 @@ cat > "$TMP/eval/metrics/layer1/2026-01-01-backend-agent-1.json" <<'JSON'
 JSON
 cat > "$TMP/eval/metrics/layer2/2026-01-01-review-F-901.json" <<'JSON'
 {"layer":2,"signal_type":"review","feature":"F-901","timestamp":"2026-01-01T00:00:00Z",
- "source_file":"reports/review-F-901.md","result":"STRUCTURAL-FAIL",
+ "source_file":"docs/reports/review-F-901.md","result":"STRUCTURAL-FAIL",
  "checks_passed":8,"checks_failed":1,"failed_checks":"C2","project":"r8"}
 JSON
 

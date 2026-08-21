@@ -26,7 +26,7 @@ I've read the protocols, the round-1 cluster report, revision 2 of the spec, and
 | **F7** MED — screen-reader activation mid-sentence not a stop trigger | AC-15 rewritten: start gate + subscription + foreground cadence | **Resolved.** The *signal* for the subscription has the same defect as the read → new M3 |
 | **F8** MED — verification status lost F-003's third category | Three categories restored | **Resolved.** But AC-19's placement in bucket 3 contradicts AC-19's own text → H2 |
 | **F9** LOW — AC-14 "never suppressed" collides with `suppressAnnouncements` | AC-14 names `controller.ts:74`, calls it a different subject, tells implementers not to "fix" it | **Resolved.** Line 74 verified: `private suppressAnnouncements = false` |
-| **F5** MED, **F10** LOW | — | **Cannot verify.** Neither appears anywhere in `reports/gate1-review-F-002.md` (dev-mobile is cited as F1, F2, F3, F4, F6, F7, F8, F9 only). Two of my round-1 findings have no recorded landing. Flagging as a process note for the orchestrator, not as a spec defect |
+| **F5** MED, **F10** LOW | — | **Cannot verify.** Neither appears anywhere in `docs/reports/gate1-review-F-002.md` (dev-mobile is cited as F1, F2, F3, F4, F6, F7, F8, F9 only). Two of my round-1 findings have no recorded landing. Flagging as a process note for the orchestrator, not as a spec defect |
 
 ## Findings — new defects in changed material
 
@@ -355,7 +355,7 @@ checked:
 
 ## Notes for the orchestrator (not spec findings)
 
-- **Two round-1 findings have no recorded landing.** `reports/gate1-review-F-002.md` attributes dev-mobile F1, F2, F3, F4, F6, F7, F8, F9. My F5 (MEDIUM) and F10 (LOW) appear nowhere in the report and are not recoverable from any artifact in the repo — no per-lens round-1 return is stored, only the cluster synthesis. I cannot certify closure on them. If the round-1 dispatch transcripts survive, they are the only place to check; otherwise this is a gap in the Gate 1 record worth fixing before the next feature (store per-lens returns, not only clusters).
+- **Two round-1 findings have no recorded landing.** `docs/reports/gate1-review-F-002.md` attributes dev-mobile F1, F2, F3, F4, F6, F7, F8, F9. My F5 (MEDIUM) and F10 (LOW) appear nowhere in the report and are not recoverable from any artifact in the repo — no per-lens round-1 return is stored, only the cluster synthesis. I cannot certify closure on them. If the round-1 dispatch transcripts survive, they are the only place to check; otherwise this is a gap in the Gate 1 record worth fixing before the next feature (store per-lens returns, not only clusters).
 - **Pre-existing F-003 defect, noted not filed:** `tapMic()`'s cancel-while-listening branch (`controller.ts:302-305`) is also deferred behind `foregroundSync`, so F-001 AC-3's cancel waits on a network round trip in exactly the way AC-20 forbids for speech. That is F-003 surface, outside F-002's scope, and I am reporting it rather than folding it into a finding. AC-20's implementer will have to decide whether their hoisted stop branch also covers it; the spec should say it does not.
 - **Round-2 severity discipline:** four HIGHs is more than I would like for a final round. Three of them (H1, H2, M5) are one subject — AC-19 is new, load-bearing, and the least finished AC in the revision. H3 and H4 are the two halves of AC-7 that the platform, not the wording, makes hard. If the gate closes on time rather than on findings, AC-19's observable (H2) is the single highest-value fix: without it, C7's whole resolution is unfalsifiable until a device exists, and ADR-001 says no device exists this phase.
 
@@ -368,7 +368,7 @@ evidence:
     - .claude/agents/_completion-protocol.md
     - .claude/agents/_spec-review-protocol.md
     - specs/_shared/LEARNINGS.md
-    - reports/gate1-review-F-002.md
+    - docs/reports/gate1-review-F-002.md
     - specs/assistant/F-002-talk-back.md
     - src/assistant/mobile/controller.ts
     - src/assistant/mobile/ports/native/rn-transcript-source.ts

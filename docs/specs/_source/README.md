@@ -19,7 +19,7 @@ the redesign, **write that in `docs/specs/assistant/` and cite the UC** — the 
 has a place and a reason instead of being an invisible edit.
 
 **2. They are in Vietnamese, and they stay in Vietnamese.** ADR-008 made the *product*
-English. These are internal requirement documents, in the same category as `reports/`:
+English. These are internal requirement documents, in the same category as `docs/reports/`:
 a record of what was decided and why. Translating them would destroy the reasoning while
 gaining nothing — no user reads them.
 
@@ -51,5 +51,5 @@ the F-doc is this project's answer to it, and the two are allowed to differ — 
 the F-doc says where and why.
 
 **Do not assume a UC is still current.** These were written for the previous app; the
-owner has since changed direction more than once (see `reports/owner-decision-*.md`).
+owner has since changed direction more than once (see `docs/reports/owner-decision-*.md`).
 A UC is evidence of what was wanted, not a standing commitment.

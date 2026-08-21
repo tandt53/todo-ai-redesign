@@ -41,7 +41,7 @@ assert_grep_zero 'templates/(qa-starter|qa-agent)' \
 #
 # Found by moving three roots under docs/ in a real project: the tokens followed,
 # 170 bare literals did not, and an upgrade quietly restored them.
-assert_grep_zero '(^|[^A-Za-z0-9/{_.-])(specs|design|qa)/' \
+assert_grep_zero '(^|[^A-Za-z0-9/{_.-])(specs|design|qa|reports)/' \
   "no bare root literals in prompts — roots are {tokens}" "${TARGETS[@]}"
 
 # --- executable automation belongs under {tests}, cases under {qa} ---

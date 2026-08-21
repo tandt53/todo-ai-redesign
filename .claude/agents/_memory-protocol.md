@@ -8,7 +8,7 @@
 ## Memory file structure
 
 ```
-memory/                          ← at project root (not under docs/ or {qa}/)
+.claude/memory/                          ← at project root (not under docs/ or {qa}/)
 ├── MEMORY.md                    ← project-wide append-only log
 ├── MEMORY-archive.md            ← entries older than 60 days (auto-archived)
 ├── spec-agent.md
@@ -44,7 +44,7 @@ The orchestrator reads MANIFEST + STATUS + TASKS; you don't.
 **When:** every dispatch, after reading BRIEFING.md and _qa-foundations.md (if QA agent)
 
 ```bash
-tail -n 200 memory/MEMORY.md 2>/dev/null || echo "No project memory yet"
+tail -n 200 .claude/memory/MEMORY.md 2>/dev/null || echo "No project memory yet"
 ```
 
 The last ~10 entries. Recent decisions and patterns are almost always relevant — they represent what just happened in the project. No search needed; temporal proximity is a strong signal.
@@ -58,7 +58,7 @@ The last ~10 entries. Recent decisions and patterns are almost always relevant �
 # Extract domain tags from your briefing (what domain does this task touch?)
 # Example: for a password-reset task in the auth module
 for tag in auth password reset session token; do
-  grep -A 8 "Tags:.*$tag" memory/MEMORY.md 2>/dev/null
+  grep -A 8 "Tags:.*$tag" .claude/memory/MEMORY.md 2>/dev/null
 done
 ```
 
@@ -73,10 +73,10 @@ Limit: read the top 5 matching entries. Don't load 20. If tag-search consistentl
 
 Trigger conditions:
 - You encounter a reference to a past decision or ADR → grep for that ID
-- You are about to make an architectural choice → `grep -A 8 "Type: constraint" memory/MEMORY.md`
-- Your task has a specific feature ID → `grep -A 8 "Feature: F-003" memory/MEMORY.md`
-- You are working on auth, payments, or security → always check constraints: `grep -A 8 "Type: constraint" memory/MEMORY.md | grep -i "auth\|payment\|security"`
-- You are about to implement something complex → `grep -A 8 "Type: mistake" memory/[your-agent-name].md` (learn from past mistakes)
+- You are about to make an architectural choice → `grep -A 8 "Type: constraint" .claude/memory/MEMORY.md`
+- Your task has a specific feature ID → `grep -A 8 "Feature: F-003" .claude/memory/MEMORY.md`
+- You are working on auth, payments, or security → always check constraints: `grep -A 8 "Type: constraint" .claude/memory/MEMORY.md | grep -i "auth\|payment\|security"`
+- You are about to implement something complex → `grep -A 8 "Type: mistake" .claude/memory/[your-agent-name].md` (learn from past mistakes)
 
 ### Layer 5 — Agent-specific memory (procedural knowledge)
 **Strategy:** direct file read
@@ -84,7 +84,7 @@ Trigger conditions:
 **When:** every dispatch, after Layer 1
 
 ```bash
-cat memory/[your-agent-name].md 2>/dev/null || echo "No agent memory yet"
+cat .claude/memory/[your-agent-name].md 2>/dev/null || echo "No agent memory yet"
 ```
 
 Your accumulated patterns, mistakes, and conventions for this project. Always small (kept under 100 lines). Always read fully. This is "muscle memory" — how you've learned to work in this codebase.
@@ -97,19 +97,19 @@ After BRIEFING.md and any shared protocol files (like `_qa-foundations.md`), do:
 
 ```
 # Layer 5: Agent-specific memory (always)
-Read memory/[your-agent-name].md
+Read .claude/memory/[your-agent-name].md
 
 # Layer 2: Recent project memory (always)
-Read last 200 lines of memory/MEMORY.md
+Read last 200 lines of .claude/memory/MEMORY.md
 
 # Layer 3: Semantic search (by task domain tags)
-Grep memory/MEMORY.md for tags matching your task's domain
+Grep .claude/memory/MEMORY.md for tags matching your task's domain
 
 # Layer 4: Constraints (always before implementing; skip for read-only tasks like review)
-Grep memory/MEMORY.md for "Type: constraint"
+Grep .claude/memory/MEMORY.md for "Type: constraint"
 
 # Layer 4: Feature-specific (when task has a feature ID)
-Grep memory/MEMORY.md for "Feature: F-[your-feature-id]"
+Grep .claude/memory/MEMORY.md for "Feature: F-[your-feature-id]"
 ```
 
 **Total memory tokens: ~2300.** If your memory reads exceed this, you're loading too much. Trim Layer 3 results to top 5 and Layer 4 to top 3.
@@ -118,7 +118,7 @@ Grep memory/MEMORY.md for "Feature: F-[your-feature-id]"
 
 ## Memory write protocol
 
-Agents write memory **after completing a task**, not during. The write goes through the **orchestrator** — you include a `memory_entry:` field in your return summary, and the orchestrator appends it to `memory/MEMORY.md`. You do NOT write to MEMORY.md directly (single-writer rule: orchestrator owns all state files).
+Agents write memory **after completing a task**, not during. The write goes through the **orchestrator** — you include a `memory_entry:` field in your return summary, and the orchestrator appends it to `.claude/memory/MEMORY.md`. You do NOT write to MEMORY.md directly (single-writer rule: orchestrator owns all state files).
 
 ### Three triggers — write only when one applies
 
@@ -143,7 +143,7 @@ Agents write memory **after completing a task**, not during. The write goes thro
 
 ### Agent-specific memory (separate file)
 
-If a lesson is specific to your agent type and would be useful across multiple future tasks in this project, also include it in your return summary as `agent_memory_entry:`. The orchestrator appends it to `memory/[your-agent-name].md`. Format:
+If a lesson is specific to your agent type and would be useful across multiple future tasks in this project, also include it in your return summary as `agent_memory_entry:`. The orchestrator appends it to `.claude/memory/[your-agent-name].md`. Format:
 
 ```markdown
 ## [short title]
@@ -152,7 +152,7 @@ If a lesson is specific to your agent type and would be useful across multiple f
 **Example:** [optional — concrete example from this task]
 ```
 
-Keep `memory/[agent-name].md` under 100 lines. If it grows beyond that, promote the most universal entries to `memory/MEMORY.md` and trim.
+Keep `.claude/memory/[agent-name].md` under 100 lines. If it grows beyond that, promote the most universal entries to `.claude/memory/MEMORY.md` and trim.
 
 ---
 
@@ -250,10 +250,10 @@ This prevents a single wrong entry from propagating unchecked through the system
 
 ### Monthly: archive old entries
 
-When MEMORY.md exceeds 500 lines, the orchestrator (during its startup archival check) moves entries older than 60 days to `memory/MEMORY-archive.md`. Agents don't load the archive by default. Layer 4 exact search can reach it when a specific old entry is referenced:
+When MEMORY.md exceeds 500 lines, the orchestrator (during its startup archival check) moves entries older than 60 days to `.claude/memory/MEMORY-archive.md`. Agents don't load the archive by default. Layer 4 exact search can reach it when a specific old entry is referenced:
 
 ```bash
-grep -A 8 "Feature: F-001" memory/MEMORY-archive.md
+grep -A 8 "Feature: F-001" .claude/memory/MEMORY-archive.md
 ```
 
 ### Quarterly: consolidate duplicates
@@ -275,7 +275,7 @@ Memory is for accumulated learning, not permanent conventions. If something is a
 
 - **How to structure BRIEFING.md** — see `agents/orchestrator.md ## The briefing (BRIEFING.md)`
 - **sqlite-vec / vector search** — if tag-based grep consistently misses relevant entries at 500+ entries, consider upgrading to vector search. Not needed for most projects. Document the upgrade path separately if you reach that scale.
-- **Cross-project memory** — this protocol is per-project. Agent-specific files (`memory/[agent-name].md`) are project-scoped. Universal cross-project lessons should be added to the agent's definition file (`agents/[agent-name].md`) directly, not to project memory.
+- **Cross-project memory** — this protocol is per-project. Agent-specific files (`.claude/memory/[agent-name].md`) are project-scoped. Universal cross-project lessons should be added to the agent's definition file (`agents/[agent-name].md`) directly, not to project memory.
 
 ---
 

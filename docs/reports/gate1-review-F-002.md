@@ -464,13 +464,13 @@ vocabulary, test matrix). If the subscription is in, add it to OQ3's blocking ch
 **Four lenses independently reported that their round-1 findings had no recorded landing.**
 This is an orchestrator defect, not a spec defect: the round-1 report stored only cluster
 syntheses, so per-lens findings that did not cluster were lost. dev-mobile: *"Neither appears
-anywhere in `reports/gate1-review-F-002.md`. Flagging as a process note for the orchestrator."*
+anywhere in `docs/reports/gate1-review-F-002.md`. Flagging as a process note for the orchestrator."*
 tester-web: *"the two LOWs are in the tally but preserved nowhere by id."* design:
 *"raised at round 1 and appears in neither the report nor the changelog; it was dropped in
 consolidation, not declined."*
 
 **Structural fix applied this round:** every lens return for both rounds is now written
-verbatim to `reports/gate1-lenses/F-002/round{1,2}-{lens}.md` (14 files). Clusters remain the
+verbatim to `docs/reports/gate1-lenses/F-002/round{1,2}-{lens}.md` (14 files). Clusters remain the
 routing instrument; the returns are the record. Future features should persist returns at
 dispatch time, not at synthesis time.
 

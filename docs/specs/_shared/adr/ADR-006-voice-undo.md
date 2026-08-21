@@ -64,7 +64,7 @@ say whether the phrase short-circuits before model interpretation.
 ## Amendment (2026-08-17) — the list shrinks to `"undo"`
 
 **Trigger.** The owner decision of 2026-08-17
-(`reports/owner-decision-2026-08-17-english-first.md`), recorded as **ADR-008**:
+(`docs/reports/owner-decision-2026-08-17-english-first.md`), recorded as **ADR-008**:
 English is the product language for this phase. Alongside it the owner made one
 follow-on call that is explicitly **not** UI copy — the Vietnamese spoken-undo
 phrase `hoàn tác` is dropped, so F-001 AC-5's undo vocabulary becomes `undo`

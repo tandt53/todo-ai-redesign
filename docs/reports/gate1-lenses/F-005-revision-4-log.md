@@ -1,10 +1,10 @@
 # F-005 — revision 4 log: what happened to every round-3 finding
 
 **Date:** 2026-08-19 · **Task:** T-159 · **Agent:** spec-agent
-**Reads against:** `reports/gate1-lenses/F-005-r3-consolidated.md` and **all nine** persisted
+**Reads against:** `docs/reports/gate1-lenses/F-005-r3-consolidated.md` and **all nine** persisted
 lens returns beside it (L-009 — several of this round's sharpest findings came with
 measurements the consolidation compresses: row counts, line numbers, and one account walked
-through three readers), plus `reports/owner-decision-2026-08-19-close-gate-one.md` (three
+through three readers), plus `docs/reports/owner-decision-2026-08-19-close-gate-one.md` (three
 answers, all binding).
 
 **There is no round 4.** The owner closed Gate 1 with this pass. That changes what this log

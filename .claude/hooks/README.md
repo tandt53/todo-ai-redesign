@@ -210,7 +210,7 @@ Edit hook scripts and change `METRICS_DIR`:
 # Default: .claude/eval/metrics/layer1
 METRICS_DIR="${PROJECT_ROOT}/.claude/eval/metrics/layer1"
 
-# Custom: reports/agent-metrics
+# Custom: docs/reports/agent-metrics
 METRICS_DIR="${PROJECT_ROOT}/reports/agent-metrics"
 ```
 

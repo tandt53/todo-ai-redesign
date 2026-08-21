@@ -2,7 +2,7 @@
 
 **Authored + executed:** 2026-08-17 by qa-mobile-agent (T-084) · **Spec:**
 `docs/specs/assistant/F-001-voice-assistant-view.md` rev 3, AC-30 (added post-Gate-1 from
-`reports/owner-decision-2026-08-17-new-message-affordance.md`, amended the same day with
+`docs/reports/owner-decision-2026-08-17-new-message-affordance.md`, amended the same day with
 clause (h)) · **Design:** `docs/design/_shared/components.md § NewMessageAffordance` ·
 **Mockups:** `docs/design/assistant/screens/voice-assistant-view-{ios,android}.html`
 (`nma-new`, `nma-waiting` states) · **Bug this AC resolves:**

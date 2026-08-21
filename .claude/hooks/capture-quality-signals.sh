@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # Layer 2 — External quality signal capture
-# PostToolUse hook for Write/Edit on reports/ and qa/_shared/bugs/
+# PostToolUse hook for Write/Edit on docs/reports/ and qa/_shared/bugs/
 #
 # Captures judgment signals from DOWNSTREAM agents:
-#   - reviewer-agent writes reports/review-F-*.md → extract PASS/FAIL, C1-C16 results, failure count
-#   - product-agent writes reports/product-review-F-*.md → extract APPROVED/CHANGES REQUESTED, issue counts
+#   - reviewer-agent writes docs/reports/review-F-*.md → extract PASS/FAIL, C1-C16 results, failure count
+#   - product-agent writes docs/reports/product-review-F-*.md → extract APPROVED/CHANGES REQUESTED, issue counts
 #   - qa-*-agent writes qa/_shared/bugs/BUG-*.md → extract severity, layer, feature
 #   - qa-*-agent writes qa/*/runs/*.md → extract pass/fail counts
 #
 # Writes: .claude/eval/metrics/layer2/{timestamp}-{signal-type}-{feature}.json
-# Triggered: every time a Write/Edit succeeds on a reports/ or qa/ file
+# Triggered: every time a Write/Edit succeeds on a docs/reports/ or qa/ file
 
 set -e
 
@@ -36,7 +36,7 @@ mkdir -p "$METRICS_DIR"
 BASENAME=$(basename "$FILE_PATH")
 
 # --- Reviewer report ---
-if echo "$FILE_PATH" | grep -q "reports/review-F-"; then
+if echo "$FILE_PATH" | grep -q "docs/reports/review-F-"; then
   # Extract feature ID
   FEATURE=$(echo "$BASENAME" | grep -o 'F-[0-9]\+' | head -1)
 
@@ -68,7 +68,7 @@ EOF
 fi
 
 # --- Product review ---
-if echo "$FILE_PATH" | grep -q "reports/product-review-F-"; then
+if echo "$FILE_PATH" | grep -q "docs/reports/product-review-F-"; then
   FEATURE=$(echo "$BASENAME" | grep -o 'F-[0-9]\+' | head -1)
   RESULT=$(grep -oE 'APPROVED|CHANGES REQUESTED' "$FILE_PATH" | head -1 || echo "UNKNOWN")
   HIGH=$(grep -c '| H-' "$FILE_PATH" 2>/dev/null || echo "0")

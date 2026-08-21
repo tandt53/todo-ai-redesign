@@ -107,7 +107,7 @@ artifact_paths() {
 
 # ─── C1 + C2 ────────────────────────────────────────────────────────────────
 # Allowed path prefixes come from MANIFEST: the roots block, plus any pattern
-# whose value is a literal path (e.g. reports/). State files are always allowed.
+# whose value is a literal path (e.g. docs/reports/). State files are always allowed.
 ALLOWED="$(awk '
   /^roots:/            { inroots = 1; next }
   inroots && /^[a-z_]+:/ { inroots = 0 }

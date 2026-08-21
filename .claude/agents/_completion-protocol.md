@@ -371,7 +371,7 @@ Check if any of these three triggers apply. If none apply, skip — don't write.
 2. **Mistake caught** — you went down the wrong path and found the real cause
 3. **Reusable pattern** — you found something other agents should know
 
-If a trigger applies, include the entry in your return summary's `memory_entry:` field. The orchestrator will append it to `memory/MEMORY.md`. Format:
+If a trigger applies, include the entry in your return summary's `memory_entry:` field. The orchestrator will append it to `.claude/memory/MEMORY.md`. Format:
 
 ```markdown
 ---

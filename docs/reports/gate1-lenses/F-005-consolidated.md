@@ -56,7 +56,7 @@ These are the strongest signals in the gate: no lens saw another's work.
    first-run and empty-collection states.** A user whose only rows are steps is
    told the collection is empty, and the a11y id set expects a row never drawn.
 
-## Owner-decided — see `reports/owner-decision-2026-08-18-f005-gate1.md`
+## Owner-decided — see `docs/reports/owner-decision-2026-08-18-f005-gate1.md`
 
 - **Reminders:** show passed reminders when the app opens (an option the spec did
   not contain). This was the blocking question.

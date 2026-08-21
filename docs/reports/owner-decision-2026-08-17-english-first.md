@@ -1,7 +1,7 @@
 # Owner decision, 2026-08-17 — English is the product language for this phase
 
 **Supersedes the owner decision of 2026-08-16** recorded in
-`reports/product-review-F-001-final-2026-08-16.md` finding **H1**. Both are kept;
+`docs/reports/product-review-F-001-final-2026-08-16.md` finding **H1**. Both are kept;
 neither is edited. This one is current.
 
 ## What was decided
@@ -85,7 +85,7 @@ dates with `'en-US'`; those stop being drift and become consistent.
 
 ## Explicitly NOT rewritten
 
-**`reports/` is historical record.** The earlier reviews describe what was true
+**`docs/reports/` is historical record.** The earlier reviews describe what was true
 when they were written, including H1's finding that the app shipped English copy.
 Rewriting them would destroy the evidence of how the decision was reached. Only
 forward-looking artifacts change: `design/`, `src/`, `qa/`, `specs/`.

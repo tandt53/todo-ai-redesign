@@ -1,7 +1,7 @@
 # BUG-005 — the app replies in Vietnamese but only understands English
 
 > **RESOLVED BY DECISION — 2026-08-17.** The product owner decided English is the
-> product language for this phase (ADR-008 / `reports/owner-decision-2026-08-17-english-first.md`).
+> product language for this phase (ADR-008 / `docs/reports/owner-decision-2026-08-17-english-first.md`).
 > The fixture table being 22-of-24 English is therefore **correct**, and the
 > premise of this report — that the app replies in a language it cannot hear —
 > stops being true once the copy change lands.
@@ -35,7 +35,7 @@
 commands.
 
 All shipped UI copy is Vietnamese — that was an owner decision taken after
-product review H1 (`reports/product-review-F-001-final-2026-08-16.md`), which
+product review H1 (`docs/reports/product-review-F-001-final-2026-08-16.md`), which
 found the build shipping English copy against a design system that specified
 Vietnamese, and described the result as *"the app listens in Vietnamese and
 replies in English."*
@@ -83,6 +83,6 @@ Vietnamese sentence through to an applied outcome, and it must be able to fail.
 
 ## Related
 
-- `reports/product-review-F-001-final-2026-08-16.md` H1 — the original English/Vietnamese inversion
-- `reports/product-review-F-001-final-2026-08-16-v2.md` M5 — `Xoá`/`Xóa` house-spelling split, still unresolved
+- `docs/reports/product-review-F-001-final-2026-08-16.md` H1 — the original English/Vietnamese inversion
+- `docs/reports/product-review-F-001-final-2026-08-16-v2.md` M5 — `Xoá`/`Xóa` house-spelling split, still unresolved
 - F-002 AC-23 — `client.interface_language` is a build-time constant `vi-VN`; this bug is the *input* half of the same subject

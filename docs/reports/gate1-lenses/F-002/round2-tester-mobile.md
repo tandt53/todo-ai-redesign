@@ -178,12 +178,12 @@ evidence:
     - .claude/agents/_qa-foundations.md
     - .claude/agents/qa-mobile-agent.md
     - specs/_shared/LEARNINGS.md
-    - reports/gate1-review-F-002.md
+    - docs/reports/gate1-review-F-002.md
     - specs/assistant/F-002-talk-back.md
     - qa/assistant/F-003/mobile/index.md
   ac_coverage: all 22 live ACs examined; findings cite AC-7, AC-15, AC-18, AC-19, AC-22
   commands_run:
-    - cmd: "ls .claude/agents/ reports/ specs/assistant/ qa/assistant/F-003/mobile/"
+    - cmd: "ls .claude/agents/ docs/reports/ specs/assistant/ qa/assistant/F-003/mobile/"
       exit: 0
       result: "located all briefing inputs"
   artifacts_written: []

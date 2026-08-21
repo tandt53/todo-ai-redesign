@@ -2,7 +2,7 @@
 
 **Date**: 2026-08-16 **Agent**: product-agent **Phase**: review-final
 **Feature**: specs/assistant/F-001-voice-assistant-view.md **Result**: APPROVED
-**Supersedes**: `reports/product-review-F-001-final-2026-08-16.md` (pass 1, CHANGES REQUESTED)
+**Supersedes**: `docs/reports/product-review-F-001-final-2026-08-16.md` (pass 1, CHANGES REQUESTED)
 
 ## Summary
 

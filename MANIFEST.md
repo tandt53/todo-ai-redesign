@@ -24,6 +24,7 @@ roots:
   src: src/
   qa: docs/qa/            # test CASES + run records (authored, traced to ACs)
   tests: tests/           # executable automation — CODE, where code tooling reaches
+  reports: docs/reports/  # authored records: gate verdicts, owner decisions. NOT output/ — nothing regenerates a judgement
   # Inherited requirements from `todo-ai`, the app this project redesigns. Copied
   # verbatim 2026-08-17 and READ-ONLY — see docs/specs/_source/README.md for why editing
   # them here is L-004's shape, and for the ADR-7 vs ADR-007 namespace rule.
@@ -66,7 +67,6 @@ patterns:
   test_runs:            "{qa}/{module}/runs/"                    # execution records, shared across platforms
   test_cases:           "{qa}/{module}/"                         # legacy generic pointer; prefer the per-platform keys above
   bugs:                 "{qa}/{shared_dir}/bugs/"                # BUG-{nnn}-{slug}.md, filed by any QA agent, tagged with layer:
-  reports:              "reports/"                               # reviewer + product-agent output; the Layer-2 metrics hook watches this prefix
 
   # Cross-cutting (use {shared_dir}, not {module})
   architecture:       "{specs}/{shared_dir}/ARCHITECTURE.md"
@@ -84,9 +84,9 @@ patterns:
   qa_knowledge:       "{qa}/{shared_dir}/KNOWLEDGE.md"
   traceability:       "{qa}/{shared_dir}/TRACEABILITY.md"
   learnings:          "{specs}/{shared_dir}/LEARNINGS.md"   # durable cross-cutting lessons; reviewer appends, humans curate
-  memory:             "memory/"                             # read layers 2-5; ORCHESTRATOR is sole writer
-  memory_log:         "memory/MEMORY.md"                    # project-wide append-only log
-  memory_agent:       "memory/{agent}.md"                   # one file per agent — layer 5, procedural knowledge for that role
+  memory:             ".claude/memory/"                             # read layers 2-5; ORCHESTRATOR is sole writer
+  memory_log:         ".claude/memory/MEMORY.md"                    # project-wide append-only log
+  memory_agent:       ".claude/memory/{agent}.md"                   # one file per agent — layer 5, procedural knowledge for that role
   output:             "output/"                             # gitignored; see .gitignore for the output-vs-record rule
   output_screens:     "output/design-shots/"                # design-check + Gate 1.5 renders
   output_test:        "output/test-results/"                # Playwright output, traces, videos
@@ -174,17 +174,17 @@ writers:
   # C6 cannot express "synced, not written", and because the alternative was
   # recording the sync against an agent that did not do it. The Drift Log already
   # carried two such edits with nowhere to attribute them.
-  orchestrator:      ["reports/", ".claude/", ".mobile-app/", "MANIFEST.md", "{specs}/_source/", "{specs}/{shared_dir}/LEARNINGS.md", "{specs}/{shared_dir}/uc-coverage-map.md", "{design}/", "{qa}/"]
-  # `reports/gate1-lenses/` added 2026-08-18, and it is a map change rather than a
+  orchestrator:      ["{reports}/", ".claude/", ".mobile-app/", "MANIFEST.md", "{specs}/_source/", "{specs}/{shared_dir}/LEARNINGS.md", "{specs}/{shared_dir}/uc-coverage-map.md", "{design}/", "{qa}/"]
+  # `docs/reports/gate1-lenses/` added 2026-08-18, and it is a map change rather than a
   # third one-off grant. Every Gate 1 revision owes a per-finding log, that log
   # belongs beside the lens returns it answers (which is where the next round's
-  # lenses look for it), and `reports/` is otherwise the orchestrator's. Three
+  # lenses look for it), and `docs/reports/` is otherwise the orchestrator's. Three
   # consecutive dispatches — T-143, T-153, T-154 — put the path in the briefing and
   # tripped C6 each time, attributing to the agent a crossing the ORCHESTRATOR
   # caused. The map could not express a standing pattern, so it was expressed as a
-  # repeated mistake instead. Scope is the directory, not `reports/`: the lens
+  # repeated mistake instead. Scope is the directory, not `docs/reports/`: the lens
   # returns and consolidations in it stay the orchestrator's to write.
-  spec-agent:        ["{specs}/", "{design}/{shared_dir}/components.md", "reports/gate1-lenses/"]
+  spec-agent:        ["{specs}/", "{design}/{shared_dir}/components.md", "docs/reports/gate1-lenses/"]
   architect-agent:   ["{specs}/"]
   design-agent:      ["{design}/"]
   # implementers also own the root build manifests (platform docs make the
@@ -196,8 +196,8 @@ writers:
   qa-web-agent:      ["{qa}/", "{tests}/", "playwright.config.ts", "vitest.config.ts", "package.json", "tsconfig.json"]
   qa-mobile-agent:   ["{qa}/", "{tests}/"]
   qa-explorer-agent: ["{qa}/"]
-  reviewer-agent:    ["reports/", "{specs}/{shared_dir}/LEARNINGS.md"]
-  product-agent:     ["reports/"]
+  reviewer-agent:    ["{reports}/", "{specs}/{shared_dir}/LEARNINGS.md"]
+  product-agent:     ["{reports}/"]
 ```
 
 ---

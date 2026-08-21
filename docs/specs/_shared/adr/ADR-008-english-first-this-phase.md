@@ -3,10 +3,10 @@
 **Status:** accepted · 2026-08-17 · product owner (decision), architect-agent
 (write-up) · **the i18n half expires — see Review conditions**
 **Supersedes:** the owner decision of **2026-08-16** recorded in
-`reports/product-review-F-001-final-2026-08-16.md` finding **H1** — **for the
+`docs/reports/product-review-F-001-final-2026-08-16.md` finding **H1** — **for the
 product's declared language only.** Both decisions stand as record; neither
 report is edited. This one is current.
-**Source of record:** `reports/owner-decision-2026-08-17-english-first.md`.
+**Source of record:** `docs/reports/owner-decision-2026-08-17-english-first.md`.
 
 ## Context
 
@@ -50,7 +50,7 @@ the copy that follows from it. It does not change AC-23's contract, which is
 language-neutral — one declared source (`client.interface_language`), read by
 both the synthesiser and the recognizer, never `navigator.language`, never a
 per-port constant. Only the **value** the constant names moves, `vi-VN` →
-`en-US`. It likewise does not license editing `reports/`, which are the
+`en-US`. It likewise does not license editing `docs/reports/`, which are the
 historical record of what was decided when.
 
 **Direct replacement, no i18n layer** (the owner's second call, made at the same
@@ -91,7 +91,7 @@ second language should price the recognizer and the interpreter first.
 - Good: three open items dissolve rather than needing work (below).
 - Bad, and **accepted deliberately**: with no i18n layer, **a third language
   change is a third full pass** over the same surfaces. The cost is measured,
-  not guessed — `reports/owner-decision-2026-08-17-english-first.md` counts 27
+  not guessed — `docs/reports/owner-decision-2026-08-17-english-first.md` counts 27
   lines in the owning artifact, 355 in the mockups, 365 in `src/`, 179 across 61
   `docs/qa/` files, 14 in `docs/specs/`. This is a tradeoff the owner priced and took; it
   is not an oversight and must not be reported as one.
@@ -129,7 +129,7 @@ at once, which is the only thing direct replacement is cheap at.
   vocabulary drops `hoàn tác` per the same owner decision (recognizer input, a
   different category from UI copy — see ADR-006, which this ADR does **not**
   amend; that edit is a separately-scoped task).
-- **product-review M5** (`reports/product-review-F-001-final-2026-08-16-v2.md`)
+- **product-review M5** (`docs/reports/product-review-F-001-final-2026-08-16-v2.md`)
   — the `Xoá`/`Xóa` house-spelling split disappears with the Vietnamese copy.
   M6, its structural root cause (user-visible copy generated in two layers), is
   **not** dissolved: it is the condition the review clause above depends on.
@@ -140,5 +140,5 @@ at once, which is the only thing direct replacement is cheap at.
 
 `docs/design/_shared/components.md` is the owning artifact and several tests parse it
 at run time, so **design leads; implementers follow; QA expectations last**
-(`reports/owner-decision-2026-08-17-english-first.md` § Sequencing). This ADR
+(`docs/reports/owner-decision-2026-08-17-english-first.md` § Sequencing). This ADR
 and the spec edits that accompany it change only `docs/specs/`.

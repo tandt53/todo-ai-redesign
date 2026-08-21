@@ -25,7 +25,7 @@ Four homes, and choosing wrong is how a fact gets lost or duplicated:
 - `docs/specs/_shared/adr/` — a decision about the system's shape, with its
   alternatives. architect-agent has twice declined to write a memory entry on the
   grounds that the ADR *is* the home, and was right both times.
-- `reports/owner-decision-*.md` — what the owner chose, what it beat, what it
+- `docs/reports/owner-decision-*.md` — what the owner chose, what it beat, what it
   cost. Written so nobody re-argues a settled trade.
 - `memory/` (here) — everything else, and `memory/{agent}.md` for knowledge only
   one role needs.

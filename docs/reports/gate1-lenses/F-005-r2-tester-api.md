@@ -1,6 +1,6 @@
 # Gate 1 round 2 — F-005 — tester lens (api)
 
-Persisted by the orchestrator at return time per **L-009**. `reports/` is
+Persisted by the orchestrator at return time per **L-009**. `docs/reports/` is
 orchestrator-owned; the lens wrote nothing, which is its contract.
 
 **Verdict: REJECT — 8 HIGH · 5 MEDIUM · 2 LOW.** Confidence HIGH. All 48 ACs

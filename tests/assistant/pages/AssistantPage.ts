@@ -13,7 +13,7 @@
  * testid used here exists in the running app.
  *
  * COPY CONTRACT (T-070b): the product's user-visible wording is ENGLISH
- * (ADR-008 / reports/owner-decision-2026-08-17-english-first.md, superseding
+ * (ADR-008 / docs/reports/owner-decision-2026-08-17-english-first.md, superseding
  * T-016's Vietnamese sync). The spec is explicit that it does not own the
  * wording — F-001 ## Conversation model ("Naming convention"): the spec's
  * English words are concept names, and "the user-visible wording of every

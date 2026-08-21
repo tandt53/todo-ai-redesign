@@ -217,30 +217,30 @@ dashboard, so silently accepting it corrupts the metrics.
    parallel, so recording centrally is what removes the write race.
 7. For `PARTIAL`, create a follow-up task from the agent's `unresolved:` entries
    with `Depends` pointing at this task, so it cannot be dispatched out of order.
-8. **Record the return's memory entries. You are the sole writer of `memory/`**
+8. **Record the return's memory entries. You are the sole writer of `.claude/memory/`**
    (MANIFEST `## Paths.memory`), exactly as you are of the `## Links` block —
    `_memory-protocol.md` says the write goes *through the orchestrator* and
    agents may not write there themselves.
 
    | Return field | Append to | What it is |
    |---|---|---|
-   | `memory_entry:` | `memory/MEMORY.md` | project-wide: a non-obvious decision, a mistake found, a reusable pattern |
-   | `agent_memory_entry:` | `memory/{agent-name}.md` | that role's procedural knowledge — read at every one of its dispatches (layer 5) |
+   | `memory_entry:` | `.claude/memory/MEMORY.md` | project-wide: a non-obvious decision, a mistake found, a reusable pattern |
+   | `agent_memory_entry:` | `.claude/memory/{agent-name}.md` | that role's procedural knowledge — read at every one of its dispatches (layer 5) |
 
-   Create the file if it does not exist. An absent `memory/` is not "no memory
+   Create the file if it does not exist. An absent `.claude/memory/` is not "no memory
    yet" — it is **every read layer returning empty forever**, which is what
    teaches an agent to stop reading. Layers 2–5 of `_memory-protocol.md` all read
    from this directory and **nothing else writes it.**
 
    `memory_entry: none` is a legitimate answer and needs no action — the
    protocol's three triggers are deliberately narrow. What is not legitimate is
-   never looking: if several consecutive returns carry entries and `memory/` is
+   never looking: if several consecutive returns carry entries and `.claude/memory/` is
    still empty, the entries are being dropped on the floor here.
 
    **Two judgement calls that are yours, not the agent's.** An entry whose real
    home is an ADR, a spec or `LEARNINGS.md` goes *there* instead — agents
    sometimes say so themselves, and they are usually right, because those files
-   are read by everyone while `memory/{agent}.md` is read by one. And an entry
+   are read by everyone while `.claude/memory/{agent}.md` is read by one. And an entry
    that contradicts one already stored is a supersede, not an append
    (`_memory-protocol.md ## Superseding stale entries`).
 9. Update STATUS.md ## Agent Results with completion entry
@@ -526,7 +526,7 @@ each, and the questions as written.**
   something else.** Same rule as the anti-theatre rule one level up: no answer is
   not an answer.
 
-**Recording it.** Write the verdict to `reports/design-signoff-{feature}.md`:
+**Recording it.** Write the verdict to `{reports}/design-signoff-{feature}.md`:
 which states were shown, the questions asked, what the owner said, and what
 changed as a result. Without a record, *"did a human look at this"* is
 unanswerable a week later — and the honest answer to an unanswerable question is

@@ -15,10 +15,10 @@ Metrics are captured at two layers. **Neither relies on agent self-assessment** 
 **What it proves:** the agent ran, it touched N files, it completed or blocked. These are observable facts from outside the agent — the agent can't fake them.
 
 ### Layer 2 — External quality signals (downstream judgment)
-**Captured by:** `PostToolUse` hook on `Write|Edit` for `reports/` and `{qa}/_shared/bugs/` files
+**Captured by:** `PostToolUse` hook on `Write|Edit` for `{reports}/` and `{qa}/_shared/bugs/` files
 **Contains:**
-- **Reviewer writes `reports/review-F-*.md`** → extract PASS/FAIL, C1-C16 results, failure details
-- **Product-agent writes `reports/product-review-F-*.md`** → extract APPROVED/CHANGES REQUESTED, issue counts
+- **Reviewer writes `{reports}/review-F-*.md`** → extract PASS/FAIL, C1-C16 results, failure details
+- **Product-agent writes `{reports}/product-review-F-*.md`** → extract APPROVED/CHANGES REQUESTED, issue counts
 - **QA agent writes `{qa}/_shared/bugs/BUG-*.md`** → extract severity, root cause layer, feature
 - **QA agent writes `{qa}/*/runs/*.md`** → extract test pass/fail/skip counts
 **Written to:** `.claude/eval/metrics/layer2/{date}-{signal-type}-{feature}.json`

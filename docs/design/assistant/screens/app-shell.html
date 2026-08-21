@@ -13,13 +13,13 @@
   boundary, new-message affordance all live in voice-assistant-view.html and keep living there.
   Two files, no overlap, one source of truth per state.
 
-  REVISED 2026-08-17 (T-105) for reports/owner-decision-2026-08-17-desktop-list-is-primary.md.
+  REVISED 2026-08-17 (T-105) for docs/reports/owner-decision-2026-08-17-desktop-list-is-primary.md.
 
   THE EXISTING F-001 MOCKUPS ARE UNTOUCHED. src/assistant/web/__tests__/app.test.tsx and
   src/assistant/mobile/__tests__/a11y.test.ts parse their testid catalogues at run time; this is
   a proposal the spec pass (T-103) has not yet accepted, so it is additive and nothing is renamed.
 
-  REVISED 2026-08-18 (T-114) for reports/owner-decision-2026-08-18-landing-and-collections.md §1
+  REVISED 2026-08-18 (T-114) for docs/reports/owner-decision-2026-08-18-landing-and-collections.md §1
   — the landing summary. Four Talk states added, NO new testid: the summary is a message, and the
   only interactive things in it are MessageTaskLinks, whose exemplar id `talk-task-link` already
   exists (components.md § LandingSummary, "Which tasks get named"). Nothing was renamed.
@@ -677,7 +677,7 @@ svg.ic-sm { width: var(--icon-sm); height: var(--icon-sm); }
 /* ================= THE ONE LAYOUT BRANCH — tokens.json breakpoints.split = 1024 =================
    Below: one surface at a time, PathSwitch moves between them (375 and 768 are identical).
    At and above: Tasks is the centre and the primary object; Talk is a panel beside it.
-   Owner decision 2026-08-17 — reports/owner-decision-2026-08-17-desktop-list-is-primary.md.
+   Owner decision 2026-08-17 — docs/reports/owner-decision-2026-08-17-desktop-list-is-primary.md.
    The panel keeps the FULL diff bubble. Nothing about AC-1 branches here; only the frame does. */
 @container app (min-width: 1024px) {
   /* --gutter is redefined on .app, not on html: a container query styles the container's

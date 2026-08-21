@@ -6,10 +6,10 @@
 #
 # `_memory-protocol.md` specifies five read layers in detail, every agent file
 # names it, and every agent runs its startup reads. Four of those five layers read
-# from `memory/`. The write half is one sentence — "the write goes through the
+# from `.claude/memory/`. The write half is one sentence — "the write goes through the
 # orchestrator" — and ORCHESTRATION.md mentioned memory nowhere. So the sole
 # writer was never told it was the writer: agents kept returning `memory_entry:`
-# fields, the orchestrator had no step that read them, and `memory/` did not exist
+# fields, the orchestrator had no step that read them, and `.claude/memory/` did not exist
 # after ~140 dispatches in a real project. Every read returned empty, forever,
 # which is what teaches an agent to stop reading.
 #
@@ -83,8 +83,8 @@ assert_file_contains "$ORCH" 'memory_entry' \
   "ORCHESTRATION names the project-wide return field it must record"
 assert_file_contains "$ORCH" 'agent_memory_entry' \
   "ORCHESTRATION names the per-agent return field it must record"
-assert_file_contains "$ORCH" 'sole writer of `memory/`' \
-  "ORCHESTRATION states the orchestrator owns memory/, as it owns the Links block"
+assert_file_contains "$ORCH" 'sole writer of `.claude/memory/`' \
+  "ORCHESTRATION states the orchestrator owns .claude/memory/, as it owns the Links block"
 
 # An absent directory must not read as "young project". This is the sentence that
 # stops the failure recurring, so it is asserted rather than assumed.

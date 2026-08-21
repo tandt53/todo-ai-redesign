@@ -3,8 +3,8 @@
 **Date** 2026-08-17 · **Author** design-agent (T-101, revised T-105/T-106) · **Status** proposal,
 not yet specced. **§ 12 is a question for the owner, not a decision.**
 
-**Trigger.** `reports/owner-decision-2026-08-17-conversation-is-not-a-list.md` (the conversation
-stops rendering the task list) and `reports/owner-decision-2026-08-17-settings-and-lists.md`
+**Trigger.** `docs/reports/owner-decision-2026-08-17-conversation-is-not-a-list.md` (the conversation
+stops rendering the task list) and `docs/reports/owner-decision-2026-08-17-settings-and-lists.md`
 (the app needs Settings; the todo needs personal lists).
 
 **Revised 2026-08-19 (T-152)** for `F-005 AC-45` — the map gains a **sixth surface, S6 Task detail**,
@@ -16,7 +16,7 @@ contained), **§6** (S6's empty, loading and seven failing states — the sectio
 had). Nothing else moved. **S6 is web-only this phase**; the phone reaches no detail.
 
 **Revised 2026-08-17 (T-105/T-106)** for
-`reports/owner-decision-2026-08-17-desktop-list-is-primary.md` — on a wide screen the task list
+`docs/reports/owner-decision-2026-08-17-desktop-list-is-primary.md` — on a wide screen the task list
 takes the centre and the assistant becomes a right panel. That decision **supersedes the
 confirmation this document was written against** ("no list beside the conversation at any
 width") for wide screens only; on a phone the peer-path design below stands untouched. Every

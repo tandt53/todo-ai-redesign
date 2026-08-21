@@ -22,7 +22,7 @@ Two owner decisions of 2026-08-17 landed in `src/` before QA followed
 
 | Decision | Where it is written | What moved |
 |---|---|---|
-| **ADR-008** — English is the product language | `reports/owner-decision-2026-08-17-english-first.md` | `UNSUPPORTED_QUERY_ALTERNATIVE`: `danh sách và bộ lọc trên màn hình` → `the on-screen list and its filters` |
+| **ADR-008** — English is the product language | `docs/reports/owner-decision-2026-08-17-english-first.md` | `UNSUPPORTED_QUERY_ALTERNATIVE`: `danh sách và bộ lọc trên màn hình` → `the on-screen list and its filters` |
 | **ADR-006 § Amendment** — the closed undo list shrinks | ADR-006, contract processing rule 3 | `UNDO_PHRASES`: `{"undo", "hoàn tác"}` → `{"undo"}` |
 
 ## Baseline (before any edit)
