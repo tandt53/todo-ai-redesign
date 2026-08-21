@@ -24,6 +24,7 @@
 
 | Task ID | Agent | Module | Feature | Subtree | Dispatched |
 |---------|-------|--------|---------|---------|------------|
+| T-188 | spec-agent | assistant | F-006 | docs/specs/assistant/ | 2026-08-21 |
 <!-- Example:
 -->
 | — | — | — | — | — | — |
