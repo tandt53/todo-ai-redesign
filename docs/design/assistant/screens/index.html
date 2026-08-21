@@ -3,38 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Talk — the conversation · ANDROID · v2</title>
+<title>The core, redrawn — v2 screens</title>
 <!--
-  TALK — the conversation's own states · ANDROID mockup · design-agent T-204 · 2026-08-21
-
-  REDRAWN TO VISUAL LANGUAGE v2 (Swiss). Exactly the 23 conversation ids, the
-  same 23 as before, in this platform's spelling — src/assistant/mobile/model/a11y.ts
-  parses all three files and compares them with each other in both directions.
-
-  THE ONE CONTINUOUS ANIMATION IN THE WHOLE SYSTEM is the listening rule: a 2px
-  accent rule growing along the composer while the microphone is live. v1's
-  2400ms aurora breath and the cyan→violet handoff are retired with the gradient
-  — the handoff never once rendered in the running app, and who is speaking is
-  already carried by side, ground and label.
-
-  BOTTOM-ANCHORED, and this is the rule the shipped app dropped: a short thread
-  sits ON the composer. `margin-top:auto` on the first message, never
-  `align-items:flex-end`.
-
-  Self-contained: no network, no server, no build. Open by double-click.
-  Design system: docs/design/_shared/DESIGN.md · tokens: tokens.json ·
-  rendered proof of the system: docs/design/_shared/specimen.html
-  Product language is English (ADR-008). Task titles are user content and are
-  not English by construction — the running store holds Vietnamese ones today,
-  which is why one of the rows below is one.
+  THE CORE, REDRAWN — one page over the nine mockups · design-agent T-204 · 2026-08-21
+  Tranche 1 of 3: the app shell, Talk, Tasks and the task detail, on web / iOS /
+  Android. The Lists menu, Settings and New list are tranche 2; the trash is
+  tranche 3. Self-contained: no server, no network, no build. Open by double-click.
 -->
 <style>
-/* ══════════════════════════════════════════════════════════════════════════
-   :root — GENERATED FROM tokens.json, every leaf, verbatim. Nothing in this
-   block is typed by hand; design-check's token-drift half reads it back
-   against the same file. Semantic aliases below are var()-derived from it, so
-   a number appears exactly once in this document.
-   ══════════════════════════════════════════════════════════════════════════ */
 :root{
   --color-light-bg-base: #FFFFFF;
   --color-light-bg-sunken: #F2F2F4;
@@ -229,14 +205,14 @@ html{
 
   /* type */
   --font-ui:var(--font-family-ui); --font-num:var(--font-family-numeric);
-  --fs-label:calc(var(--font-size_android-label) * 1px);
-  --fs-meta:calc(var(--font-size_android-meta) * 1px);
-  --fs-body:calc(var(--font-size_android-body) * 1px);
-  --fs-lead:calc(var(--font-size_android-lead) * 1px);
-  --fs-title:calc(var(--font-size_android-title) * 1px);
-  --fs-display:calc(var(--font-size_android-display) * 1px);
-  --fs-hero:calc(var(--font-size_android-hero) * 1px);
-  --fs-mega:calc(var(--font-size_android-mega) * 1px);
+  --fs-label:calc(var(--font-size-label) * 1px);
+  --fs-meta:calc(var(--font-size-meta) * 1px);
+  --fs-body:calc(var(--font-size-body) * 1px);
+  --fs-lead:calc(var(--font-size-lead) * 1px);
+  --fs-title:calc(var(--font-size-title) * 1px);
+  --fs-display:calc(var(--font-size-display) * 1px);
+  --fs-hero:calc(var(--font-size-hero) * 1px);
+  --fs-mega:calc(var(--font-size-mega) * 1px);
   --lh-tight:var(--font-lineHeight-tight); --lh-title:var(--font-lineHeight-title);
   --lh-body:var(--font-lineHeight-body); --lh-meta:var(--font-lineHeight-meta);
   --ls-mega:var(--font-letterSpacing-mega); --ls-hero:var(--font-letterSpacing-hero);
@@ -266,7 +242,7 @@ html{
   --h-sm:calc(var(--control-height-sm) * 1px);
   --h-md:calc(var(--control-height-md) * 1px);
   --h-lg:calc(var(--control-height-lg) * 1px);
-  --min-target:calc(var(--control-minTarget-android) * 1px);
+  --min-target:calc(var(--control-minTarget-web) * 1px);
   --px-sm:calc(var(--control-padding_x-sm) * 1px);
   --px-md:calc(var(--control-padding_x-md) * 1px);
   --field-h:calc(var(--field-height) * 1px);
@@ -836,460 +812,162 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 
 .ic{stroke-width:var(--icon-stroke)}
 
-/* ── view switching: one rule per state attribute a state actually sets ── */
-.app[data-mic="denied"] .v-mic-denied{display:block}
-.app[data-mic="denied"] .v-mic-denied.v-flex{display:flex}
-.app[data-mic="hidden"] .v-mic-hidden{display:block}
-.app[data-mic="hidden"] .v-mic-hidden.v-flex{display:flex}
-.app[data-mic="idle"] .v-mic-idle{display:block}
-.app[data-mic="idle"] .v-mic-idle.v-flex{display:flex}
-.app[data-mic="live"] .v-mic-live{display:block}
-.app[data-mic="live"] .v-mic-live.v-flex{display:flex}
-.app[data-mic="thinking"] .v-mic-thinking{display:block}
-.app[data-mic="thinking"] .v-mic-thinking.v-flex{display:flex}
-.app[data-mic="transient"] .v-mic-transient{display:block}
-.app[data-mic="transient"] .v-mic-transient.v-flex{display:flex}
-.app[data-nma="new"] .v-nma-new{display:block}
-.app[data-nma="new"] .v-nma-new.v-flex{display:flex}
-.app[data-nma="waiting"] .v-nma-waiting{display:block}
-.app[data-nma="waiting"] .v-nma-waiting.v-flex{display:flex}
-.app[data-notice="offline"] .v-notice-offline{display:block}
-.app[data-notice="offline"] .v-notice-offline.v-flex{display:flex}
-.app[data-notice="queued"] .v-notice-queued{display:block}
-.app[data-notice="queued"] .v-notice-queued.v-flex{display:flex}
-.app[data-surface="talk"] .v-surface-talk{display:block}
-.app[data-surface="talk"] .v-surface-talk.v-flex{display:flex}
-.app[data-surface="tasks"] .v-surface-tasks{display:block}
-.app[data-surface="tasks"] .v-surface-tasks.v-flex{display:flex}
-.app[data-talk="applied"] .v-talk-applied{display:block}
-.app[data-talk="applied"] .v-talk-applied.v-flex{display:flex}
-.app[data-talk="boundary"] .v-talk-boundary{display:block}
-.app[data-talk="boundary"] .v-talk-boundary.v-flex{display:flex}
-.app[data-talk="clarify"] .v-talk-clarify{display:block}
-.app[data-talk="clarify"] .v-talk-clarify.v-flex{display:flex}
-.app[data-talk="confirm"] .v-talk-confirm{display:block}
-.app[data-talk="confirm"] .v-talk-confirm.v-flex{display:flex}
-.app[data-talk="empty"] .v-talk-empty{display:block}
-.app[data-talk="empty"] .v-talk-empty.v-flex{display:flex}
-.app[data-talk="error"] .v-talk-error{display:block}
-.app[data-talk="error"] .v-talk-error.v-flex{display:flex}
-.app[data-talk="listening"] .v-talk-listening{display:block}
-.app[data-talk="listening"] .v-talk-listening.v-flex{display:flex}
-.app[data-talk="no-match"] .v-talk-no-match{display:block}
-.app[data-talk="no-match"] .v-talk-no-match.v-flex{display:flex}
-.app[data-talk="nothing-reverted"] .v-talk-nothing-reverted{display:block}
-.app[data-talk="nothing-reverted"] .v-talk-nothing-reverted.v-flex{display:flex}
-.app[data-talk="offline"] .v-talk-offline{display:block}
-.app[data-talk="offline"] .v-talk-offline.v-flex{display:flex}
-.app[data-talk="reverted"] .v-talk-reverted{display:block}
-.app[data-talk="reverted"] .v-talk-reverted.v-flex{display:flex}
-.app[data-talk="superseded"] .v-talk-superseded{display:block}
-.app[data-talk="superseded"] .v-talk-superseded.v-flex{display:flex}
-.app[data-talk="thinking"] .v-talk-thinking{display:block}
-.app[data-talk="thinking"] .v-talk-thinking.v-flex{display:flex}
-.rename{display:none}
-.app[data-row="rename"] .rename{display:flex}
-.app[data-row="rename"] .row-editable .row-open{display:none}
-.app[data-row="arrived"] .row-editable{box-shadow:inset var(--b-mark) 0 0 var(--accent)}
+.page{max-width:calc(var(--frame-max)); margin:0 auto; padding:0 var(--s5) var(--s8)}
+.mast{padding:var(--s8) 0 var(--s6); border-bottom:var(--b-rule) solid var(--bg-rule); display:grid; gap:var(--s5)}
+@media (min-width:900px){ .mast{grid-template-columns:minmax(0,7fr) minmax(0,4fr); gap:var(--s9)} }
+.mast .kick{font-family:var(--font-num); font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:var(--font-case-label); color:var(--accent); margin:0 0 var(--s4)}
+.mast h1{margin:0; font-size:var(--fs-mega); line-height:var(--lh-tight); letter-spacing:var(--ls-mega); font-weight:var(--w-bold); max-width:16ch}
+.mast p{margin:var(--s4) 0 0; font-size:var(--fs-lead); line-height:1.4; color:var(--text-secondary); max-width:40ch}
+.facts{border-top:var(--b-hairline) solid var(--bg-hairline); margin-top:var(--s2)}
+.facts div{display:flex; justify-content:space-between; gap:var(--s4); padding:10px 0; border-bottom:var(--b-hairline) solid var(--bg-hairline); font-size:var(--fs-meta)}
+.facts dt{color:var(--text-muted)} .facts dd{margin:0; font-family:var(--font-num); text-align:right}
 
-/* This file draws the CONVERSATION's own states, one surface at a time. The
-   frame that puts Tasks beside Talk is app-shell.html's subject, and drawing it
-   twice would give two files an opinion about one layout. */
-.app[data-surface="talk"] .col-main{display:none}
-.app[data-surface="talk"] .col-panel{display:flex; flex:1 1 auto; border-left:0}
-.app[data-surface="tasks"] .col-main{display:flex}
-.app[data-surface="tasks"] .col-panel{display:none}
-/* mic modes — one control, four appearances, and one of them is absence.
-   A hover-revealed or silently-dead microphone is worse than no microphone. */
-.app[data-mic="idle"] .mic{background:transparent; color:var(--text-secondary); border:var(--b-hairline) solid var(--bg-rule)}
-.app[data-mic="hidden"] .mic{display:none}
-.app[data-mic="denied"] .mic,.app[data-mic="transient"] .mic{opacity:.4; background:transparent; color:var(--text-muted); border:var(--b-hairline) solid var(--bg-hairline)}
-.app[data-mic="denied"] .v-mic-denied{display:flex}
-.app[data-mic="transient"] .v-mic-transient{display:flex}
-.app[data-notice="offline"] .v-notice-offline{display:flex}
-.app[data-notice="queued"] .v-notice-queued{display:flex}
-.app[data-nma="new"] .v-nma-new,.app[data-nma="waiting"] .v-nma-waiting{display:inline-flex}
+.controls{
+  position:sticky; top:0; z-index:20; background:var(--bg-base);
+  border-bottom:var(--b-rule) solid var(--bg-rule);
+  display:flex; flex-wrap:wrap; gap:var(--s5); align-items:center; padding:var(--s3) 0;
+}
+.ctl{display:flex; align-items:center; gap:var(--s2); min-width:0}
+.ctl-cap{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:var(--font-case-label); color:var(--text-muted); font-weight:var(--w-semibold)}
+.pick{display:flex; border:var(--b-hairline) solid var(--bg-rule); flex-wrap:wrap}
+.pick button{
+  appearance:none; border:0; background:transparent; cursor:pointer; font:inherit;
+  font-size:var(--fs-meta); font-weight:var(--w-medium); color:var(--text-secondary);
+  padding:0 var(--s3); height:var(--h-sm); border-right:var(--b-hairline) solid var(--bg-hairline);
+}
+.pick button:last-child{border-right:0}
+.pick button[aria-pressed="true"]{background:var(--text-primary); color:var(--bg-base); font-weight:var(--w-semibold)}
+.pick button:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
+.pick.num button{font-family:var(--font-num); padding:0 10px}
 
+.viewmeta{display:flex; justify-content:space-between; gap:var(--s4); font-family:var(--font-num); font-size:var(--fs-label); color:var(--text-muted); padding:var(--s4) 0 var(--s2); letter-spacing:.04em}
+.viewwrap{overflow:hidden; border:var(--b-hairline) solid var(--bg-rule); background:var(--bg-sunken)}
+#frame{border:0; display:block; transform-origin:top left; background:var(--bg-base)}
+.why{padding:var(--s7) 0 0; display:grid; gap:var(--s6)}
+@media (min-width:900px){ .why{grid-template-columns:repeat(3,1fr)} }
+.why h2{margin:0 0 var(--s3); font-size:var(--fs-lead); font-weight:var(--w-semibold); line-height:1.3}
+.why p{margin:0 0 var(--s3); font-size:var(--fs-meta); line-height:var(--lh-body); color:var(--text-secondary)}
+.why b{color:var(--text-primary); font-weight:var(--w-semibold)}
+.why code{font-family:var(--font-num); font-size:12px; color:var(--text-secondary)}
+.openlink{font-size:var(--fs-meta); color:var(--accent); font-weight:var(--w-semibold)}
 </style>
 </head>
-<body class="plat-android">
+<body>
+<div class="page">
 
-<!-- Mockup chrome. Not the design, and not part of the testid contract. -->
-<div class="dev" aria-label="Mockup state switcher">
-  <span class="dev-tag">talk · ANDROID · v2</span>
-  <button data-s="idle-empty" onclick="showState('idle-empty')">idle-empty</button>
-  <button data-s="idle-tasks" onclick="showState('idle-tasks')">idle-tasks</button>
-  <button data-s="listening" onclick="showState('listening')">listening</button>
-  <button data-s="thinking" onclick="showState('thinking')">thinking</button>
-  <button data-s="applied-diff" onclick="showState('applied-diff')">applied-diff</button>
-  <button data-s="question-confirm" onclick="showState('question-confirm')">question-confirm</button>
-  <button data-s="question-clarify" onclick="showState('question-clarify')">question-clarify</button>
-  <button data-s="no-match" onclick="showState('no-match')">no-match</button>
-  <button data-s="error" onclick="showState('error')">error</button>
-  <button data-s="offline" onclick="showState('offline')">offline</button>
-  <button data-s="queued" onclick="showState('queued')">queued</button>
-  <button data-s="boundary" onclick="showState('boundary')">boundary</button>
-  <button data-s="nma-new" onclick="showState('nma-new')">nma-new</button>
-  <button data-s="nma-waiting" onclick="showState('nma-waiting')">nma-waiting</button>
-  <button data-s="mic-permission" onclick="showState('mic-permission')">mic-permission</button>
-  <button data-s="mic-hidden" onclick="showState('mic-hidden')">mic-hidden</button>
-  <button data-s="mic-transient" onclick="showState('mic-transient')">mic-transient</button>
-  <button data-s="reverted" onclick="showState('reverted')">reverted</button>
-  <button data-s="nothing-reverted" onclick="showState('nothing-reverted')">nothing-reverted</button>
-  <button data-s="declined-superseded" onclick="showState('declined-superseded')">declined-superseded</button>
-  <button onclick="toggleTheme()">light / dark</button>
-  <button onclick="setFrame('')">frame: real width</button>
-  <button onclick="setFrame('phone')">frame: phone</button>
-  <button onclick="setFrame('wide')">frame: wide</button>
-  <p class="dev-note">The conversation states. Above 1024px the task list is on screen beside the panel — that is the app, not a mockup convenience. “frame: phone” forces the one-surface frame.</p>
-</div>
-
-<div class="stagewrap"><div class="stage" id="stage">
-
-<div class="app" id="app" data-surface="talk" data-talk="applied" data-mic="idle" data-notice="none">
-  <div class="frame">
-    <div class="col-main">
-      <header class="topbar"><div class="bar-in">
-        <span class="bar-title">Today</span>
-        <span class="spacer"></span>
-        <button class="btn btn-sm btn-primary" data-testid="assistant-add-task-button" resource-id="assistant-add-task-button"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Add task</button>
-      </div></header>
-      <div class="pos">
-
-      <main class="pane">
-        <div class="content-col">
-          <div class="head">
-            <h1>Today</h1>
-            <p class="count"><b>3</b> open</p>
-          </div>
-          <div class="list">
-            <div class="group"><h3>Today · Fri, Aug 21</h3></div>
-            <div class="row" data-testid="assistant-task-row" resource-id="assistant-task-row">
-              <div class="row-time">4:00 PM</div>
-              <div class="row-main">
-                <input class="cbx" type="checkbox" data-testid="assistant-task-checkbox" resource-id="assistant-task-checkbox" aria-label="Complete: Review the Q3 budget draft">
-                <span class="row-title">Review the Q3 budget draft<span class="row-marks"><span class="tag edited" data-testid="assistant-row-badge" resource-id="assistant-row-badge">EDITED</span></span></span>
-              </div>
-            </div>
-            <div class="row-rule"></div>
-            <div class="row">
-              <div class="row-time">6:00 PM</div>
-              <div class="row-main">
-                <input class="cbx" type="checkbox" aria-label="Complete: Pay the electricity bill">
-                <span class="row-title">Pay the electricity bill<span class="row-marks"><span class="tag">NEW</span></span></span>
-              </div>
-            </div>
-            <div class="row-rule"></div>
-            <div class="row">
-              <div class="row-time">—</div>
-              <div class="row-main">
-                <input class="cbx" type="checkbox" aria-label="Complete: Gọi nha sĩ đặt lịch khám răng">
-                <span class="row-title">Gọi nha sĩ đặt lịch khám răng<span class="row-marks"><span class="mark" title="High priority">!</span></span></span>
-              </div>
-            </div>
-            <div class="row-rule"></div>
-          </div>
-        </div>
-      </main>
-      </div>
-    </div>
-    <aside class="col-panel" aria-label="Talk">
-      <header class="talk-head">
-        <button class="iconbtn" data-testid="assistant-drawer-button" resource-id="assistant-drawer-button" aria-label="Lists"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
-        <span class="talk-title">Talk</span>
-        <span class="spacer"></span>
-      </header>
-      <div class="talk-scroll">
-        <div class="conv">
-
-          <div class="v v-talk-empty">
-            <div class="empty" style="padding-left:0">
-              <h2>Say it. I’ll write it down.</h2>
-              <p>Tap the microphone and talk the way you would to a person — “move the budget review to 4 and add pay the electricity bill”.</p>
-            </div>
-          </div>
-
-          <div class="v v-talk-applied">
-            <div class="msg user"><div class="bubble">Move the budget review to 4 and add pay the electricity bill</div><span class="msg-time">2:04 PM</span></div>
-            <div class="msg bot applied"><div class="bubble" data-testid="assistant-message-bubble" resource-id="assistant-message-bubble"><div class="bubble-head">Edited <b>1 task</b>, added 1.</div>
-              <dl class="diff">
-                <div class="diff-row"><dt>Budget review</dt><dd><span class="old num" data-testid="assistant-diff-old" resource-id="assistant-diff-old">2:00 PM</span><span class="arrow">→</span><span class="new num" data-testid="assistant-diff-new" resource-id="assistant-diff-new">4:00 PM</span></dd></div>
-                <div class="diff-row"><dt>Added</dt><dd><span class="new">Pay the electricity bill</span> <span class="tag">NEW</span></dd></div>
-              </dl>
-              <div class="msg-acts"><button class="btn btn-sm btn-accent-quiet" data-testid="assistant-undo-button" resource-id="assistant-undo-button"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Undo</button></div></div><span class="msg-time">2:04 PM</span></div>
-          </div>
-
-          <div class="v v-talk-listening">
-            <div class="msg user"><div class="bubble">Move the budget review to 4 and add pay the electricity bill</div><span class="msg-time">2:04 PM</span></div>
-          </div>
-
-          <div class="v v-talk-thinking">
-            <div class="msg user"><div class="bubble">Delete everything I finished last week</div><span class="msg-time">2:06 PM</span></div>
-          </div>
-
-          <div class="v v-talk-confirm">
-            <div class="msg user"><div class="bubble">delete all my shopping tasks</div><span class="msg-time">2:07 PM</span></div>
-            <div class="msg bot question"><div class="bubble"><span class="qtext">Delete 3 tasks: Buy milk, Buy a birthday present, Order the cake?</span>
-              <div class="msg-acts">
-                <button class="btn btn-sm btn-danger" data-testid="assistant-chip-affirm" resource-id="assistant-chip-affirm">Delete</button>
-                <button class="btn btn-sm btn-ghost" data-testid="assistant-chip-negative" resource-id="assistant-chip-negative">Cancel</button>
-              </div></div><span class="msg-time">2:07 PM</span></div>
-          </div>
-
-          <div class="v v-talk-clarify">
-            <div class="msg user"><div class="bubble">move the meeting</div><span class="msg-time">2:08 PM</span></div>
-            <div class="msg bot question"><div class="bubble"><span class="qtext">Which meeting?</span>
-              <div class="msg-acts">
-                <button class="chip" data-testid="assistant-option-chip" resource-id="assistant-option-chip">Team meeting · Sat 2:00 PM</button>
-                <button class="chip">Budget review · Fri 4:00 PM</button>
-              </div></div><span class="msg-time">2:08 PM</span></div>
-          </div>
-
-          <div class="v v-talk-no-match">
-            <div class="msg user"><div class="bubble">finish the tax return</div><span class="msg-time">2:10 PM</span></div>
-            <div class="msg bot "><div class="bubble">Nothing in your list matches “tax return”. It is on <b>Tasks</b> if you want to look, and you can add it there by hand.</div><span class="msg-time">2:10 PM</span></div>
-          </div>
-
-          <div class="v v-talk-error">
-            <div class="msg user"><div class="bubble">add call the plumber tomorrow</div><span class="msg-time">2:12 PM</span></div>
-            <div class="msg bot error"><div class="bubble"><div class="bubble-head">That didn’t go through.</div>
-              <p style="margin:var(--s2) 0 0">The assistant didn’t answer. Nothing was changed.</p>
-              <div class="msg-acts"><button class="btn btn-sm btn-secondary" data-testid="assistant-retry-button" resource-id="assistant-retry-button"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>Retry</button></div></div><span class="msg-time">2:12 PM</span></div>
-          </div>
-
-          <div class="v v-talk-offline">
-            <div class="msg user"><div class="bubble">add buy milk</div><span class="msg-time">2:14 PM</span></div>
-            <div class="msg bot "><div class="bubble">Saved on this device. It will go up when you’re back online.</div><span class="msg-time">2:14 PM</span></div>
-          </div>
-
-          <div class="v v-talk-boundary">
-            <div class="msg bot "><div class="bubble">Added <b>Team meeting</b> for Saturday at 2:00 PM.</div><span class="msg-time">Yesterday, 9:38 PM</span></div>
-            <div class="boundary" data-testid="assistant-boundary-marker" resource-id="assistant-boundary-marker">Today</div>
-            <div class="msg user"><div class="bubble">what’s left today</div><span class="msg-time">8:02 AM</span></div>
-          </div>
-
-          <div class="v v-talk-reverted">
-            <div class="msg user"><div class="bubble">undo</div><span class="msg-time">2:05 PM</span></div>
-            <div class="msg bot applied"><div class="bubble"><div class="bubble-head">Put back.</div><p style="margin:var(--s2) 0 0">Budget review is at 2:00 PM again, and “Pay the electricity bill” is gone.</p></div><span class="msg-time">2:05 PM</span></div>
-          </div>
-
-          <div class="v v-talk-nothing-reverted">
-            <div class="msg user"><div class="bubble">undo</div><span class="msg-time">2:20 PM</span></div>
-            <div class="msg bot "><div class="bubble">There is nothing to undo — the last thing I did was answer a question.</div><span class="msg-time">2:20 PM</span></div>
-          </div>
-
-          <div class="v v-talk-superseded">
-            <div class="msg user"><div class="bubble">undo</div><span class="msg-time">2:22 PM</span></div>
-            <div class="msg bot question"><div class="bubble"><span class="qtext">That change has been overtaken.</span>
-              <p style="margin:var(--s2) 0 0">You edited “Budget review” by hand after I moved it, so undoing would throw your edit away. It is on <b>Tasks</b> if you want to change it there.</p></div><span class="msg-time">2:22 PM</span></div>
-          </div>
-        
-        </div>
-      </div>
-      <div class="pos" style="flex:none; position:relative">
-        <button class="v v-nma-new nma" data-testid="assistant-new-message-affordance" resource-id="assistant-new-message-affordance"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>1 new message</button>
-        <button class="v v-nma-waiting nma"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>Still working…</button>
-
-        <div class="composer">
-          <span class="live" aria-hidden="true"></span>
-          <div class="v v-mic-live transcript">move the budget review to <span class="pend">four</span></div>
-
-          <div class="v v-flex v-notice-offline banner attention" style="margin:0; border-width:0 0 var(--b-hairline) 0" data-testid="assistant-offline-banner" resource-id="assistant-offline-banner">
-            <span class="ico"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m2 2 20 20"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M2 8.8a15.9 15.9 0 0 1 4.6-2.9"/><path d="M10.7 5c4 -.4 8.1 .9 11.3 3.8"/><path d="M5 12.9a10 10 0 0 1 3-1.8"/><path d="M12 20h.01"/></svg></span>
-            <span class="btxt"><b>You’re offline</b>Your list still works by hand.</span>
-          </div>
-          <div class="v v-flex v-notice-queued banner quiet" style="margin:0; border-width:0 0 var(--b-hairline) 0" data-testid="assistant-queued-notice" resource-id="assistant-queued-notice">
-            <span class="ico"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
-            <span class="btxt"><b>1 waiting to send</b>It goes up as soon as you’re back.</span>
-          </div>
-          <div class="v v-flex v-mic-denied banner attention" style="margin:0; border-width:0 0 var(--b-hairline) 0">
-            <span class="ico"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m2 2 20 20"/><path d="M9 9v3a3 3 0 0 0 5.1 2.1"/><path d="M15 9.3V5a3 3 0 0 0-5.9-.7"/><path d="M19 10v2a7 7 0 0 1-.9 3.4"/><path d="M5 10v2a7 7 0 0 0 11 5.7"/><path d="M12 19v3"/></svg></span>
-            <span class="btxt"><b>Microphone is off</b>Turn Microphone on in Settings to talk. Typing works either way.</span>
-            <button class="btn btn-sm btn-secondary" data-testid="assistant-permission-cta" resource-id="assistant-permission-cta">Open Settings</button>
-          </div>
-          <div class="v v-flex v-mic-transient banner quiet" style="margin:0; border-width:0 0 var(--b-hairline) 0">
-            <span class="ico"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m2 2 20 20"/><path d="M9 9v3a3 3 0 0 0 5.1 2.1"/><path d="M15 9.3V5a3 3 0 0 0-5.9-.7"/><path d="M19 10v2a7 7 0 0 1-.9 3.4"/><path d="M5 10v2a7 7 0 0 0 11 5.7"/><path d="M12 19v3"/></svg></span>
-            <span class="btxt"><b>Speech recognition is busy</b>The recognition service isn’t answering. Typing still works as usual.</span>
-          </div>
-
-          <div class="composer-in">
-            <input class="cinput" data-testid="assistant-composer-input" resource-id="assistant-composer-input" placeholder="Say or type what needs doing." aria-label="Message">
-            <span class="v v-flex v-mic-live v-mic-thinking state-ind" id="stateInd" data-testid="assistant-state-indicator" resource-id="assistant-state-indicator">Listening</span>
-            <button class="v v-flex v-mic-live v-mic-thinking btn btn-sm btn-ghost" data-testid="assistant-cancel-button" resource-id="assistant-cancel-button">Cancel</button>
-            <button class="btn btn-sm btn-ghost composer-send" data-testid="assistant-composer-send" resource-id="assistant-composer-send" aria-label="Send"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button>
-            <button class="mic" data-testid="assistant-mic-button" resource-id="assistant-mic-button" aria-label="Start listening"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></button>
-          </div>
-          <div class="gesturebar"></div>
-        </div>
-      </div>
-    </aside>
+<section class="mast">
+  <div>
+    <p class="kick">Tranche 1 of 3 · T-204</p>
+    <h1>The core, redrawn.</h1>
+    <p>The app shell, Talk, Tasks and the task detail — on web, iOS and Android, against the visual language you signed off. Nothing you can see is the same. Not one element id changed.</p>
   </div>
+  <dl class="facts">
+    <div><dt>Screens</dt><dd>4 × 3 platforms</dd></div>
+    <div><dt>States drawn</dt><dd>41 · 20 · 15</dd></div>
+    <div><dt>Element ids</dt><dd>52, unchanged</dd></div>
+    <div><dt>design-check</dt><dd>0 failed (was 510)</dd></div>
+    <div><dt>Not in here</dt><dd>menu · settings · trash</dd></div>
+  </dl>
+</section>
+
+<div class="controls">
+  <div class="ctl">
+    <span class="ctl-cap">Screen</span>
+    <div class="pick" id="pScreen">
+      <button data-v="app-shell" aria-pressed="true">App shell · Tasks · Talk</button>
+      <button data-v="task-detail" aria-pressed="false">Task detail</button>
+      <button data-v="voice-assistant-view" aria-pressed="false">Talk, on its own</button>
+    </div>
+  </div>
+  <div class="ctl">
+    <span class="ctl-cap">Platform</span>
+    <div class="pick" id="pPlat">
+      <button data-v="" aria-pressed="true">Web</button>
+      <button data-v="-ios" aria-pressed="false">iOS</button>
+      <button data-v="-android" aria-pressed="false">Android</button>
+    </div>
+  </div>
+  <div class="ctl">
+    <span class="ctl-cap">Width</span>
+    <div class="pick num" id="pWidth">
+      <button data-v="390" aria-pressed="false">390</button>
+      <button data-v="768" aria-pressed="false">768</button>
+      <button data-v="1024" aria-pressed="false">1024</button>
+      <button data-v="1280" aria-pressed="false">1280</button>
+      <button data-v="1440" aria-pressed="true">1440</button>
+      <button data-v="1536" aria-pressed="false">1536</button>
+      <button data-v="1920" aria-pressed="false">1920</button>
+    </div>
+  </div>
+  <span class="spacer"></span>
+  <a class="openlink" id="openIt" href="app-shell.html" target="_blank" rel="noopener">Open this one on its own ↗</a>
 </div>
-</div></div>
 
+<div class="viewmeta"><span id="metaLeft">app-shell.html · 1440px</span><span id="metaRight">the state switcher is inside the frame, along the top</span></div>
+<div class="viewwrap" id="wrap"><iframe id="frame" src="app-shell.html" title="Screen mockup"></iframe></div>
+
+<section class="why">
+  <div>
+    <h2>Above the desktop width the app adds a column, never a gutter</h2>
+    <p>Set the width to <b>1920</b>. A permanent Lists rail joins on the left and the task list stays at its measure, centred. The old build left <b>780px of nothing</b> beside a 720px list at that width, and its own mockup did the same.</p>
+    <p>The rail arrives at <code>1536</code> and not at 1440 for a measured reason: 1536 is the narrowest frame where it fits without the list getting <em>narrower</em> than it was one step below.</p>
+  </div>
+  <div>
+    <h2>A short conversation sits on the composer</h2>
+    <p>Pick <b>Talk</b> and a narrow width. The thread is anchored to the bottom, the way Zalo and Momo anchor one. The shipped app floats two bubbles at the ceiling with <b>618px</b> of nothing under them at 1440.</p>
+  </div>
+  <div>
+    <h2>A field has no width of its own</h2>
+    <p>Open <b>Task detail</b>. Every field is the full width of its form row. The shipped screen rendered all three at <b>197px</b> inside a 1020px pane, and the Name field clipped the task’s own title.</p>
+    <p>Seven controls on that form were painted in the accent — two Clears, three date shortcuts, Set a repeat, Add step. The accent means <em>the assistant</em>; every one of those is your own hand, so none of them wears it now.</p>
+  </div>
+</section>
+
+</div>
 <script>
-var STATES = {
-  "idle-empty": {
-    "surface": "talk",
-    "talk": "empty",
-    "mic": "idle"
-  },
-  "idle-tasks": {
-    "surface": "tasks",
-    "talk": "applied",
-    "mic": "idle"
-  },
-  "listening": {
-    "surface": "talk",
-    "talk": "listening",
-    "mic": "live",
-    "ind": "Listening"
-  },
-  "thinking": {
-    "surface": "talk",
-    "talk": "thinking",
-    "mic": "thinking",
-    "ind": "Thinking…"
-  },
-  "applied-diff": {
-    "surface": "talk",
-    "talk": "applied",
-    "mic": "idle"
-  },
-  "question-confirm": {
-    "surface": "talk",
-    "talk": "confirm",
-    "mic": "idle"
-  },
-  "question-clarify": {
-    "surface": "talk",
-    "talk": "clarify",
-    "mic": "idle"
-  },
-  "no-match": {
-    "surface": "talk",
-    "talk": "no-match",
-    "mic": "idle"
-  },
-  "error": {
-    "surface": "talk",
-    "talk": "error",
-    "mic": "idle"
-  },
-  "offline": {
-    "surface": "talk",
-    "talk": "offline",
-    "mic": "idle",
-    "notice": "offline"
-  },
-  "queued": {
-    "surface": "talk",
-    "talk": "offline",
-    "mic": "idle",
-    "notice": "queued"
-  },
-  "boundary": {
-    "surface": "talk",
-    "talk": "boundary",
-    "mic": "idle"
-  },
-  "nma-new": {
-    "surface": "talk",
-    "talk": "applied",
-    "mic": "idle",
-    "nma": "new"
-  },
-  "nma-waiting": {
-    "surface": "talk",
-    "talk": "applied",
-    "mic": "idle",
-    "nma": "waiting"
-  },
-  "mic-permission": {
-    "surface": "talk",
-    "talk": "applied",
-    "mic": "denied"
-  },
-  "mic-hidden": {
-    "surface": "talk",
-    "talk": "applied",
-    "mic": "hidden"
-  },
-  "mic-transient": {
-    "surface": "talk",
-    "talk": "applied",
-    "mic": "transient"
-  },
-  "reverted": {
-    "surface": "talk",
-    "talk": "reverted",
-    "mic": "idle"
-  },
-  "nothing-reverted": {
-    "surface": "talk",
-    "talk": "nothing-reverted",
-    "mic": "idle"
-  },
-  "declined-superseded": {
-    "surface": "talk",
-    "talk": "superseded",
-    "mic": "idle"
-  }
-};
-var KEYS = ["surface","talk","mic","notice","nma"];
+(function(){
+  var screenName = 'app-shell', plat = '', width = 1440;
+  var frame = document.getElementById('frame');
+  var wrap  = document.getElementById('wrap');
 
-function showState(name){
-  var cfg = STATES[name]; if(!cfg) return;
-  var app = document.getElementById('app');
-  for (var i=0;i<KEYS.length;i++){
-    var k = KEYS[i];
-    if (cfg[k] !== undefined && cfg[k] !== null) app.setAttribute('data-'+k, cfg[k]);
-    else app.removeAttribute('data-'+k);
+  function pick(id, apply){
+    var el = document.getElementById(id);
+    el.addEventListener('click', function(e){
+      var b = e.target.closest('button'); if(!b) return;
+      var all = el.querySelectorAll('button');
+      for (var i=0;i<all.length;i++) all[i].setAttribute('aria-pressed', String(all[i]===b));
+      apply(b.getAttribute('data-v'));
+    });
   }
-  app.setAttribute('data-state', name);
-  var stage = document.getElementById('stage');
-  if (cfg.frame) stage.setAttribute('data-frame', cfg.frame); else stage.removeAttribute('data-frame');
-  var b = document.querySelectorAll('.dev button[data-s]');
-  for (var j=0;j<b.length;j++) b[j].classList.toggle('on', b[j].getAttribute('data-s')===name);
-  paint(cfg);
-}
+  pick('pScreen', function(v){ screenName = v; load(); });
+  pick('pPlat',   function(v){ plat = v; load(); });
+  pick('pWidth',  function(v){ width = parseInt(v,10); fit(); });
 
-/* One number, one place. The head's count and the PathSwitch badge are the same
-   open-today figure; a state cannot show a summary that disagrees with the bar. */
-function paint(cfg){
-  var TITLE = {today:'Today', upcoming:'Upcoming', inbox:'Inbox', done:'Done'};
-  var COUNT = {
-    today:'<b>4</b> open · <span class="late">2 overdue</span>',
-    upcoming:'<b>3</b> coming up',
-    inbox:'<b>16</b> filed here',
-    done:'<b>4</b> completed'
-  };
-  var t = document.getElementById('colTitle');
-  var c = document.getElementById('colCount');
-  var name = cfg.title || TITLE[cfg.collection] || 'Today';
-  if (t) t.textContent = name;
-  if (c) c.innerHTML = cfg.count !== undefined ? cfg.count : (COUNT[cfg.collection] || '');
-  if (c) c.style.display = (cfg.count === '' ) ? 'none' : '';
-  var si = document.getElementById('stateInd'); if (si && cfg.ind) si.textContent = cfg.ind;
-  var et = document.getElementById('emptyTitle'); if (et && cfg.emptyTitle) et.textContent = cfg.emptyTitle;
-  var eb = document.getElementById('emptyBody'); if (eb && cfg.emptyBody) eb.textContent = cfg.emptyBody;
-  var badge = document.querySelectorAll('.path .count');
-  for (var i=0;i<badge.length;i++){
-    var n = cfg.today === undefined ? 4 : cfg.today;
-    badge[i].textContent = String(n);
-    badge[i].style.display = n === 0 ? 'none' : '';
+  function file(){ return screenName + plat + '.html'; }
+
+  function load(){
+    frame.src = file();
+    document.getElementById('openIt').href = file();
+    fit();
   }
-}
 
-function toggleTheme(){
-  var h = document.documentElement;
-  h.setAttribute('data-theme', h.getAttribute('data-theme')==='dark' ? 'light' : 'dark');
-}
-function setFrame(f){
-  var stage = document.getElementById('stage');
-  if (f) stage.setAttribute('data-frame', f); else stage.removeAttribute('data-frame');
-}
-showState('applied-diff');
+  /* The frame renders at its TRUE width and is scaled to the room available, so
+     what you are looking at is the layout that width really produces — not a
+     narrower one squeezed to fit. */
+  function fit(){
+    var avail = wrap.clientWidth || 1200;
+    var s = Math.min(1, avail / width);
+    frame.style.width = width + 'px';
+    frame.style.height = Math.round(1120 / s) + 'px';
+    frame.style.transform = 'scale(' + s + ')';
+    wrap.style.height = '1120px';
+    document.getElementById('metaLeft').textContent =
+      file() + ' · ' + width + 'px' + (s < 1 ? ' · shown at ' + Math.round(s*100) + '%' : '');
+  }
+
+  window.addEventListener('resize', fit);
+  fit();
+})();
 </script>
 </body>
 </html>

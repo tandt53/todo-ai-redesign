@@ -1,595 +1,922 @@
 <!doctype html>
-<!--
-  F-001 voice-assistant-view — WEB mockup · design-agent T-005
-  Design system: docs/design/_shared/{DESIGN.md, tokens.json, components.md}. Every value in :root is
-  generated verbatim from tokens.json; semantic aliases + px derivation live in the html{} blocks.
-
-  OQ-1 DECISION (owner-delegated to this dispatch): INLINE LIST + DRAWER KEPT.
-  The assistant view sits ABOVE the existing navigation, it does not replace it. Reason: AC-1/AC-4
-  require an applied turn's changes to appear in the on-screen todo list within the same turn — the
-  list is "the source of truth the user verifies with their eyes" (spec Purpose), so it must share
-  the screen with the conversation: split pane at >=768px, pinned list panel above the conversation
-  at 375px. The drawer (Inbox/Today/...) stays reachable through the top-bar button, carried
-  unchanged per components.md §Drawer (UC-52 AC-52.9).
-
-  STATES — 19, switchable via the dev bar (showState):
-  idle-empty · idle-tasks · listening · thinking · applied-diff · question-confirm · question-clarify ·
-  declined-superseded · reverted · nothing-reverted · no-match · error · offline ·
-  nma-new · nma-waiting · boundary ·
-  mic-permission · mic-transient · mic-hidden
-
-  BUG-004 / owner decision 2026-08-17: the two new-message states are the ONE affordance that
-  covers "the view did not move". They are deliberately rendered scrolled to the TOP of the
-  thread — the affordance only exists while the newest message is off screen.
-
-  DEV CHROME: the top state-switcher bar + theme toggle are mockup tooling only — NOT part of the
-  design, excluded from the testid contract.
-
-  TESTID CANON: each contract testid appears exactly ONCE (design-check requires per-file
-  uniqueness), on an exemplar element. The app repeats the element dynamically and applies the SAME
-  testid to every instance: assistant-task-row / assistant-task-checkbox on every row,
-  assistant-undo-button on the newest applied bubble, assistant-option-chip on every clarify
-  candidate chip. assistant-chip-affirm / assistant-chip-negative are the confirm question's two
-  chips. Undo is VIOLET (assistant's own act — owner decision); danger red belongs ONLY to the
-  delete-confirmation chip.
--->
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>F-001 · Voice Assistant — web</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<title>Talk — the conversation · WEB · v2</title>
+<!--
+  TALK — the conversation's own states · WEB mockup · design-agent T-204 · 2026-08-21
+
+  REDRAWN TO VISUAL LANGUAGE v2 (Swiss). Exactly the 23 conversation ids, the
+  same 23 as before, in this platform's spelling — src/assistant/mobile/model/a11y.ts
+  parses all three files and compares them with each other in both directions.
+
+  THE ONE CONTINUOUS ANIMATION IN THE WHOLE SYSTEM is the listening rule: a 2px
+  accent rule growing along the composer while the microphone is live. v1's
+  2400ms aurora breath and the cyan→violet handoff are retired with the gradient
+  — the handoff never once rendered in the running app, and who is speaking is
+  already carried by side, ground and label.
+
+  BOTTOM-ANCHORED, and this is the rule the shipped app dropped: a short thread
+  sits ON the composer. `margin-top:auto` on the first message, never
+  `align-items:flex-end`.
+
+  Self-contained: no network, no server, no build. Open by double-click.
+  Design system: docs/design/_shared/DESIGN.md · tokens: tokens.json ·
+  rendered proof of the system: docs/design/_shared/specimen.html
+  Product language is English (ADR-008). Task titles are user content and are
+  not English by construction — the running store holds Vietnamese ones today,
+  which is why one of the rows below is one.
+-->
 <style>
-/* ============ tokens.json → :root (generated; names/values verbatim) ============ */
-:root {
-  --color-dark-bg-base: #0C0E16;
-  --color-dark-bg-raised: #161A28;
-  --color-dark-bg-hairline: #232741;
-  --color-dark-text-primary: #F2F4FA;
-  --color-dark-text-secondary: #A9B0CC;
-  --color-dark-text-muted: #8189A8;
-  --color-dark-text-onAccent: #0C0E16;
-  --color-dark-primary: #9D8CFF;
-  --color-dark-primaryTint: #1B1833;
-  --color-dark-voice-listening: #3EE6D2;
-  --color-dark-voice-listeningTint: #0E2724;
-  --color-dark-voice-thinking: #9D8CFF;
-  --color-dark-voice-thinkingTint: #1B1833;
-  --color-dark-danger: #FF7A8A;
-  --color-dark-success: #4ADE9E;
-  --color-dark-question: #FFC24B;
-  --color-dark-questionTint: #2A2113;
-  --color-dark-diff-add: #4ADE9E;
-  --color-dark-diff-addTint: #10261C;
-  --color-dark-diff-remove: #FF7A8A;
-  --color-dark-diff-removeTint: #2C161A;
-  --color-dark-focusRing: #3EE6D2;
-  --color-light-bg-base: #F6F7FB;
+/* ══════════════════════════════════════════════════════════════════════════
+   :root — GENERATED FROM tokens.json, every leaf, verbatim. Nothing in this
+   block is typed by hand; design-check's token-drift half reads it back
+   against the same file. Semantic aliases below are var()-derived from it, so
+   a number appears exactly once in this document.
+   ══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --color-light-bg-base: #FFFFFF;
+  --color-light-bg-sunken: #F2F2F4;
   --color-light-bg-raised: #FFFFFF;
-  --color-light-bg-hairline: #E4E6F0;
-  --color-light-text-primary: #191D33;
-  --color-light-text-secondary: #454C6E;
-  --color-light-text-muted: #5D6486;
+  --color-light-bg-ink: #111318;
+  --color-light-bg-hairline: #DCDCE1;
+  --color-light-bg-rule: #94949E;
+  --color-light-bg-scrim: rgba(17, 19, 24, 0.32);
+  --color-light-text-primary: #111318;
+  --color-light-text-secondary: #54545E;
+  --color-light-text-muted: #646470;
+  --color-light-text-onInk: #FFFFFF;
   --color-light-text-onAccent: #FFFFFF;
-  --color-light-primary: #5646D6;
-  --color-light-primaryTint: #EAE7FB;
-  --color-light-voice-listening: #0A7473;
-  --color-light-voice-listeningTint: #DFF2F1;
-  --color-light-voice-thinking: #5646D6;
-  --color-light-voice-thinkingTint: #EAE7FB;
-  --color-light-danger: #C7223A;
-  --color-light-success: #0E7B4F;
-  --color-light-question: #8A5A00;
-  --color-light-questionTint: #F7EDD8;
-  --color-light-diff-add: #0E7B4F;
-  --color-light-diff-addTint: #E3F4EA;
-  --color-light-diff-remove: #C7223A;
-  --color-light-diff-removeTint: #FBE7EA;
-  --color-light-focusRing: #5646D6;
-  --gradient-voice-angle_deg: 135;
-  --font-family-display: 'Space Grotesk', 'Be Vietnam Pro', sans-serif;
-  --font-family-body: 'Be Vietnam Pro', system-ui, sans-serif;
-  --font-size-display: 34;
-  --font-size-title: 22;
-  --font-size-stateLabel: 17;
-  --font-size-body: 15;
-  --font-size-meta: 13;
+  --color-light-accent: #002FA7;
+  --color-light-accentTint: #E6EAF6;
+  --color-light-danger: #C8102E;
+  --color-light-dangerTint: #FBE9EC;
+  --color-light-attention: #9A4C00;
+  --color-light-attentionTint: #FBEFE2;
+  --color-light-focusRing: #002FA7;
+  --color-dark-bg-base: #0E0E11;
+  --color-dark-bg-sunken: #17171C;
+  --color-dark-bg-raised: #17171C;
+  --color-dark-bg-ink: #F4F4F6;
+  --color-dark-bg-hairline: #2E2E38;
+  --color-dark-bg-rule: #63636F;
+  --color-dark-bg-scrim: rgba(0, 0, 0, 0.56);
+  --color-dark-text-primary: #F4F4F6;
+  --color-dark-text-secondary: #A8A8B4;
+  --color-dark-text-muted: #9296A3;
+  --color-dark-text-onInk: #0E0E11;
+  --color-dark-text-onAccent: #0E0E11;
+  --color-dark-accent: #8AA6FF;
+  --color-dark-accentTint: #1A2140;
+  --color-dark-danger: #FF7183;
+  --color-dark-dangerTint: #2C1519;
+  --color-dark-attention: #FFB020;
+  --color-dark-attentionTint: #2B2010;
+  --color-dark-focusRing: #8AA6FF;
+
+  --font-family-ui: Inter, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI', Roboto, system-ui, sans-serif;
+  --font-family-numeric: ui-monospace, 'SF Mono', 'JetBrains Mono', 'Roboto Mono', Menlo, Consolas, monospace;
+  --font-scale_ratio: 1.25;
   --font-size-label: 11;
-  --font-weight-display: 700;
-  --font-weight-title: 600;
-  --font-weight-body: 400;
-  --font-weight-emphasis: 600;
-  --font-weight-label: 700;
-  --font-lineHeight-display: 1.2;
-  --font-lineHeight-title: 1.3;
+  --font-size-meta: 13;
+  --font-size-body: 16;
+  --font-size-lead: 20;
+  --font-size-title: 25;
+  --font-size-display: 31;
+  --font-size-hero: 39;
+  --font-size-mega: 49;
+  --font-size_ios-label: 11;
+  --font-size_ios-meta: 13;
+  --font-size_ios-body: 17;
+  --font-size_ios-lead: 20;
+  --font-size_ios-title: 28;
+  --font-size_ios-display: 34;
+  --font-size_ios-hero: 40;
+  --font-size_ios-mega: 50;
+  --font-size_android-label: 11;
+  --font-size_android-meta: 14;
+  --font-size_android-body: 16;
+  --font-size_android-lead: 20;
+  --font-size_android-title: 24;
+  --font-size_android-display: 32;
+  --font-size_android-hero: 40;
+  --font-size_android-mega: 48;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-lineHeight-tight: 1.15;
+  --font-lineHeight-title: 1.25;
   --font-lineHeight-body: 1.5;
   --font-lineHeight-meta: 1.4;
-  --font-letterSpacing-display: -0.03em;
-  --font-letterSpacing-label: 0.06em;
+  --font-letterSpacing-mega: -0.035em;
+  --font-letterSpacing-hero: -0.03em;
+  --font-letterSpacing-display: -0.025em;
+  --font-letterSpacing-title: -0.015em;
+  --font-letterSpacing-body: 0;
+  --font-letterSpacing-label: 0.08em;
+  --font-case-label: uppercase;
   --font-numeric: tabular-nums;
-  --spacing-xs: 4;
-  --spacing-sm: 8;
-  --spacing-md: 12;
-  --spacing-lg: 16;
-  --spacing-xl: 24;
-  --spacing-xxl: 32;
-  --spacing-gutter_mobile: 20;
-  --spacing-gutter_web: 24;
-  --radius-sm: 8;
-  --radius-md: 14;
-  --radius-bubble: 18;
-  --radius-sheet: 20;
+
+  --space-0: 0;
+  --space-1: 4;
+  --space-2: 8;
+  --space-3: 12;
+  --space-4: 16;
+  --space-5: 24;
+  --space-6: 32;
+  --space-7: 48;
+  --space-8: 64;
+  --space-9: 96;
+
+  --radius-none: 0;
+  --radius-bubble: 4;
   --radius-pill: 999;
-  --radius-orb: 50%;
-  --radius-taskRow: 0;
-  --shadow-raised: 0 8px 24px -8px rgba(4, 6, 16, 0.50);
-  --shadow-raisedLight: 0 8px 24px -10px rgba(25, 29, 51, 0.18);
-  --shadow-glowListening: 0 0 24px rgba(62, 230, 210, 0.35);
-  --shadow-glowThinking: 0 0 24px rgba(157, 140, 255, 0.35);
-  --motion-duration_ms-micro: 120;
-  --motion-duration_ms-standard: 200;
-  --motion-duration_ms-emphasis: 320;
-  --motion-duration_ms-celebrate: 600;
-  --motion-duration_ms-auroraBreath: 2400;
-  --motion-duration_ms-diffFlashHold: 1600;
-  --motion-duration_ms-diffFlashFade: 400;
+  --radius-circle: 50%;
+
+  --border-hairline: 1;
+  --border-rule: 1;
+  --border-focus: 2;
+  --border-mark: 2;
+
+  --shadow-overlay: 0 12px 32px -12px rgba(17, 19, 24, 0.28);
+  --shadow-overlayDark: 0 12px 32px -12px rgba(0, 0, 0, 0.64);
+
+  --control-height-sm: 36;
+  --control-height-md: 44;
+  --control-height-lg: 52;
+  --control-minTarget-web: 40;
+  --control-minTarget-ios: 44;
+  --control-minTarget-android: 48;
+  --control-padding_x-sm: 12;
+  --control-padding_x-md: 20;
+  --control-padding_x-lg: 24;
+
+  --field-height: 44;
+  --field-height_multiline_min: 96;
+  --field-padding_x: 12;
+  --field-padding_y: 10;
+  --field-label_gap: 6;
+  --field-help_gap: 6;
+  --field-row_gap: 24;
+  --field-min_rendered_width: 240;
+
+  --layout-grid-columns: 12;
+  --layout-grid-gutter: 24;
+  --layout-grid-gutter_mobile: 16;
+  --layout-measure-text_ch: 68;
+  --layout-measure-list_min: 560;
+  --layout-measure-list_max: 820;
+  --layout-measure-form_max: 640;
+  --layout-measure-panel_min: 380;
+  --layout-measure-panel_max: 420;
+  --layout-measure-rail: 240;
+  --layout-measure-timerail-compact: 72;
+  --layout-measure-timerail-default: 96;
+  --layout-measure-timerail-wide: 136;
+  --layout-frame_max: 2200;
+  --layout-margin_max: 96;
+  --layout-fill_min_ratio: 0.9;
+
+  --breakpoints-mobile: 375;
+  --breakpoints-phone: 390;
+  --breakpoints-tablet: 768;
+  --breakpoints-split: 1024;
+  --breakpoints-desktop: 1280;
+  --breakpoints-laptop: 1440;
+  --breakpoints-wide: 1536;
+  --breakpoints-ultra: 1920;
+
+  --motion-duration_ms-micro: 100;
+  --motion-duration_ms-standard: 180;
+  --motion-duration_ms-emphasis: 280;
+  --motion-duration_ms-rulegrow: 900;
   --motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
-  --motion-easing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --motion-easing-exit: cubic-bezier(0.4, 0, 1, 1);
-  --icon-stroke: 1.8;
+  --motion-easing-linear: linear;
+
+  --icon-set: lucide;
+  --icon-stroke: 1.5;
+  --icon-cap: square;
   --icon-size-sm: 16;
   --icon-size-md: 20;
   --icon-size-lg: 24;
+
+  --haptic-listenStart: impact.light;
+  --haptic-listenEnd: impact.light x2;
+  --haptic-applied: notification.success;
+  --haptic-error: notification.warning;
+  --haptic-undo: impact.medium;
+  --haptic-optionTap: selection;
 }
 
-/* ============ derived units + theme aliases (not raw tokens — kept out of :root) ============ */
-html {
-  --fs-display: calc(var(--font-size-display) * 1px);
-  --fs-title: calc(var(--font-size-title) * 1px);
-  --fs-state: calc(var(--font-size-stateLabel) * 1px);
-  --fs-body: calc(var(--font-size-body) * 1px);
-  --fs-meta: calc(var(--font-size-meta) * 1px);
-  --fs-label: calc(var(--font-size-label) * 1px);
-  --sp-xs: calc(var(--spacing-xs) * 1px);
-  --sp-sm: calc(var(--spacing-sm) * 1px);
-  --sp-md: calc(var(--spacing-md) * 1px);
-  --sp-lg: calc(var(--spacing-lg) * 1px);
-  --sp-xl: calc(var(--spacing-xl) * 1px);
-  --sp-xxl: calc(var(--spacing-xxl) * 1px);
-  --gutter: calc(var(--spacing-gutter_web) * 1px);
-  --r-sm: calc(var(--radius-sm) * 1px);
-  --r-md: calc(var(--radius-md) * 1px);
-  --r-bubble: calc(var(--radius-bubble) * 1px);
-  --r-pill: calc(var(--radius-pill) * 1px);
-  --r-row: calc(var(--radius-taskRow) * 1px);
-  --dur-micro: calc(var(--motion-duration_ms-micro) * 1ms);
-  --dur-standard: calc(var(--motion-duration_ms-standard) * 1ms);
-  --dur-emphasis: calc(var(--motion-duration_ms-emphasis) * 1ms);
-  --dur-breath: calc(var(--motion-duration_ms-auroraBreath) * 1ms);
-  --dur-flash: calc((var(--motion-duration_ms-diffFlashHold) + var(--motion-duration_ms-diffFlashFade)) * 1ms);
-  --icon-sm: calc(var(--icon-size-sm) * 1px);
-  --icon-md: calc(var(--icon-size-md) * 1px);
-  --icon-lg: calc(var(--icon-size-lg) * 1px);
-  /* gradient.voice — legal ONLY on the voice surface (orb, band, breath) */
-  --grad-voice: linear-gradient(calc(var(--gradient-voice-angle_deg) * 1deg), var(--color-dark-voice-listening), var(--color-dark-voice-thinking));
-}
-html[data-theme="dark"] {
-  --bg-base: var(--color-dark-bg-base); --bg-raised: var(--color-dark-bg-raised); --hairline: var(--color-dark-bg-hairline);
-  --tx: var(--color-dark-text-primary); --tx-2: var(--color-dark-text-secondary); --tx-muted: var(--color-dark-text-muted); --tx-onaccent: var(--color-dark-text-onAccent);
-  --primary: var(--color-dark-primary); --primary-tint: var(--color-dark-primaryTint);
-  --listening: var(--color-dark-voice-listening); --listening-tint: var(--color-dark-voice-listeningTint);
-  --thinking: var(--color-dark-voice-thinking); --thinking-tint: var(--color-dark-voice-thinkingTint);
-  --danger: var(--color-dark-danger); --success: var(--color-dark-success);
-  --question: var(--color-dark-question); --question-tint: var(--color-dark-questionTint);
-  --add: var(--color-dark-diff-add); --add-tint: var(--color-dark-diff-addTint);
-  --remove: var(--color-dark-diff-remove); --remove-tint: var(--color-dark-diff-removeTint);
-  --focus: var(--color-dark-focusRing);
-  --shadow-card: var(--shadow-raised);
-  color-scheme: dark;
-}
-html[data-theme="light"] {
-  --bg-base: var(--color-light-bg-base); --bg-raised: var(--color-light-bg-raised); --hairline: var(--color-light-bg-hairline);
-  --tx: var(--color-light-text-primary); --tx-2: var(--color-light-text-secondary); --tx-muted: var(--color-light-text-muted); --tx-onaccent: var(--color-light-text-onAccent);
-  --primary: var(--color-light-primary); --primary-tint: var(--color-light-primaryTint);
-  --listening: var(--color-light-voice-listening); --listening-tint: var(--color-light-voice-listeningTint);
-  --thinking: var(--color-light-voice-thinking); --thinking-tint: var(--color-light-voice-thinkingTint);
-  --danger: var(--color-light-danger); --success: var(--color-light-success);
-  --question: var(--color-light-question); --question-tint: var(--color-light-questionTint);
-  --add: var(--color-light-diff-add); --add-tint: var(--color-light-diff-addTint);
-  --remove: var(--color-light-diff-remove); --remove-tint: var(--color-light-diff-removeTint);
-  --focus: var(--color-light-focusRing);
-  --shadow-card: var(--shadow-raisedLight);
-  color-scheme: light;
+/* ── Semantic aliases. Every one is var()-derived from the mirror above, so a
+   number appears exactly once in this file and drift is not expressible. ── */
+html{
+  /* colour — light is the design (DESIGN.md ## Identity) */
+  --bg-base:var(--color-light-bg-base); --bg-sunken:var(--color-light-bg-sunken);
+  --bg-raised:var(--color-light-bg-raised); --bg-ink:var(--color-light-bg-ink);
+  --bg-hairline:var(--color-light-bg-hairline); --bg-rule:var(--color-light-bg-rule);
+  --bg-scrim:var(--color-light-bg-scrim);
+  --text-primary:var(--color-light-text-primary); --text-secondary:var(--color-light-text-secondary);
+  --text-muted:var(--color-light-text-muted); --text-on-ink:var(--color-light-text-onInk);
+  --text-on-accent:var(--color-light-text-onAccent);
+  --accent:var(--color-light-accent); --accent-tint:var(--color-light-accentTint);
+  --danger:var(--color-light-danger); --danger-tint:var(--color-light-dangerTint);
+  --attention:var(--color-light-attention); --attention-tint:var(--color-light-attentionTint);
+  --focus-ring:var(--color-light-focusRing);
+
+  /* type */
+  --font-ui:var(--font-family-ui); --font-num:var(--font-family-numeric);
+  --fs-label:calc(var(--font-size-label) * 1px);
+  --fs-meta:calc(var(--font-size-meta) * 1px);
+  --fs-body:calc(var(--font-size-body) * 1px);
+  --fs-lead:calc(var(--font-size-lead) * 1px);
+  --fs-title:calc(var(--font-size-title) * 1px);
+  --fs-display:calc(var(--font-size-display) * 1px);
+  --fs-hero:calc(var(--font-size-hero) * 1px);
+  --fs-mega:calc(var(--font-size-mega) * 1px);
+  --lh-tight:var(--font-lineHeight-tight); --lh-title:var(--font-lineHeight-title);
+  --lh-body:var(--font-lineHeight-body); --lh-meta:var(--font-lineHeight-meta);
+  --ls-mega:var(--font-letterSpacing-mega); --ls-hero:var(--font-letterSpacing-hero);
+  --ls-display:var(--font-letterSpacing-display); --ls-title:var(--font-letterSpacing-title);
+  --ls-label:var(--font-letterSpacing-label);
+  --w-regular:var(--font-weight-regular); --w-medium:var(--font-weight-medium);
+  --w-semibold:var(--font-weight-semibold); --w-bold:var(--font-weight-bold);
+
+  /* space */
+  --s1:calc(var(--space-1) * 1px); --s2:calc(var(--space-2) * 1px);
+  --s3:calc(var(--space-3) * 1px); --s4:calc(var(--space-4) * 1px);
+  --s5:calc(var(--space-5) * 1px); --s6:calc(var(--space-6) * 1px);
+  --s7:calc(var(--space-7) * 1px); --s8:calc(var(--space-8) * 1px);
+  --s9:calc(var(--space-9) * 1px);
+
+  /* shape */
+  --r-none:calc(var(--radius-none) * 1px);
+  --r-bubble:calc(var(--radius-bubble) * 1px);
+  --r-pill:calc(var(--radius-pill) * 1px);
+  --r-circle:var(--radius-circle);
+  --b-hairline:calc(var(--border-hairline) * 1px);
+  --b-rule:calc(var(--border-rule) * 1px);
+  --b-focus:calc(var(--border-focus) * 1px);
+  --b-mark:calc(var(--border-mark) * 1px);
+
+  /* controls + fields */
+  --h-sm:calc(var(--control-height-sm) * 1px);
+  --h-md:calc(var(--control-height-md) * 1px);
+  --h-lg:calc(var(--control-height-lg) * 1px);
+  --min-target:calc(var(--control-minTarget-web) * 1px);
+  --px-sm:calc(var(--control-padding_x-sm) * 1px);
+  --px-md:calc(var(--control-padding_x-md) * 1px);
+  --field-h:calc(var(--field-height) * 1px);
+  --field-h-multi:calc(var(--field-height_multiline_min) * 1px);
+  --field-px:calc(var(--field-padding_x) * 1px);
+  --field-py:calc(var(--field-padding_y) * 1px);
+  --field-label-gap:calc(var(--field-label_gap) * 1px);
+  --field-help-gap:calc(var(--field-help_gap) * 1px);
+  --field-row-gap:calc(var(--field-row_gap) * 1px);
+
+  /* layout */
+  --gutter:calc(var(--layout-grid-gutter_mobile) * 1px);
+  --rail:calc(var(--layout-measure-timerail-compact) * 1px);
+  --list-max:calc(var(--layout-measure-list_max) * 1px);
+  --form-max:calc(var(--layout-measure-form_max) * 1px);
+  --panel-max:calc(var(--layout-measure-panel_max) * 1px);
+  --lists-rail:calc(var(--layout-measure-rail) * 1px);
+  --text-ch:var(--layout-measure-text_ch);
+  --frame-max:calc(var(--layout-frame_max) * 1px);
+
+  /* motion */
+  --t-micro:calc(var(--motion-duration_ms-micro) * 1ms);
+  --t-std:calc(var(--motion-duration_ms-standard) * 1ms);
+  --t-emph:calc(var(--motion-duration_ms-emphasis) * 1ms);
+  --t-rule:calc(var(--motion-duration_ms-rulegrow) * 1ms);
+  --ease:var(--motion-easing-standard); --ease-exit:var(--motion-easing-exit);
 }
 
-/* ============ base ============ */
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; }
-body {
-  font-family: var(--font-family-body);
-  font-size: var(--fs-body);
-  font-weight: var(--font-weight-body);
-  line-height: var(--font-lineHeight-body); /* 1.5 floor — long wrapped sentences stay readable in a bubble */
-  color: var(--tx);
-  background: var(--bg-base);
-  display: flex; flex-direction: column;
-  overflow: hidden;
+[data-theme="dark"]{
+  --shadow-overlay:var(--shadow-overlayDark);
+  --bg-base:var(--color-dark-bg-base); --bg-sunken:var(--color-dark-bg-sunken);
+  --bg-raised:var(--color-dark-bg-raised); --bg-ink:var(--color-dark-bg-ink);
+  --bg-hairline:var(--color-dark-bg-hairline); --bg-rule:var(--color-dark-bg-rule);
+  --bg-scrim:var(--color-dark-bg-scrim);
+  --text-primary:var(--color-dark-text-primary); --text-secondary:var(--color-dark-text-secondary);
+  --text-muted:var(--color-dark-text-muted); --text-on-ink:var(--color-dark-text-onInk);
+  --text-on-accent:var(--color-dark-text-onAccent);
+  --accent:var(--color-dark-accent); --accent-tint:var(--color-dark-accentTint);
+  --danger:var(--color-dark-danger); --danger-tint:var(--color-dark-dangerTint);
+  --attention:var(--color-dark-attention); --attention-tint:var(--color-dark-attentionTint);
+  --focus-ring:var(--color-dark-focusRing);
 }
-button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
-:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--r-sm); }
-svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; stroke-width: var(--icon-stroke); stroke-linecap: round; stroke-linejoin: round; fill: none; flex: none; }
 
-/* ============ dev chrome (mockup only — not part of the design) ============ */
-.dev-bar {
-  flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
-  padding: 6px 10px; background: var(--bg-raised); border-bottom: 1px solid var(--hairline);
-  font-size: 11px; color: var(--tx-muted); z-index: 40;
+/* ══════════════════════════════════════════════════════════════════════════
+   RESET + PAGE
+   ══════════════════════════════════════════════════════════════════════════ */
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg-sunken); color:var(--text-primary);
+  font-family:var(--font-ui); font-size:var(--fs-body); line-height:var(--lh-body);
+  font-variant-numeric:var(--font-numeric); -webkit-font-smoothing:antialiased;
 }
-.dev-bar .dev-tag { font-family: var(--font-family-display); font-weight: 600; color: var(--tx-2); margin-right: 6px; }
-.dev-bar button { padding: 3px 8px; border-radius: var(--r-pill); border: 1px solid var(--hairline); color: var(--tx-2); font-size: 11px; }
-.dev-bar button.on { border-color: var(--primary); color: var(--primary); }
-.dev-bar .dev-theme { margin-left: auto; }
+svg{display:block; flex:none}
+button,input,textarea{font:inherit; color:inherit}
 
-/* ============ app shell ============ */
-.app { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.topbar {
-  flex: none; display: flex; align-items: center; gap: var(--sp-md);
-  height: 56px; padding: 0 var(--sp-lg);
-  background: var(--bg-base); border-bottom: 1px solid var(--hairline);
+/* ── mockup chrome. Not part of the design and not part of the testid
+   contract: a state switcher, a theme switch and a frame switch. ── */
+.dev{
+  position:sticky; top:0; z-index:90; background:var(--bg-base);
+  border-bottom:var(--b-rule) solid var(--bg-rule); padding:var(--s2) var(--s4);
+  display:flex; flex-wrap:wrap; gap:var(--s1); align-items:center;
 }
-.topbar .wordmark { font-family: var(--font-family-display); font-weight: var(--font-weight-display); font-size: var(--fs-state); letter-spacing: var(--font-letterSpacing-display); }
-.topbar .topdate { margin-left: auto; font-size: var(--fs-meta); line-height: var(--font-lineHeight-meta); color: var(--tx-muted); font-variant-numeric: var(--font-numeric); }
-.icon-btn {
-  width: 40px; height: 40px; border-radius: var(--r-sm);
-  display: inline-flex; align-items: center; justify-content: center; color: var(--tx-2);
-  transition: background var(--dur-micro) var(--motion-easing-standard);
+.dev-tag{
+  font-family:var(--font-num); font-size:var(--fs-label); letter-spacing:var(--ls-label);
+  text-transform:var(--font-case-label); color:var(--text-primary); font-weight:var(--w-semibold);
+  margin-right:var(--s3);
 }
-.icon-btn:hover { background: var(--bg-raised); }
+.dev button{
+  appearance:none; cursor:pointer; background:transparent; color:var(--text-secondary);
+  border:var(--b-hairline) solid var(--bg-hairline); border-radius:var(--r-none);
+  font-size:var(--fs-label); letter-spacing:.02em; padding:var(--s1) var(--s2); line-height:1.4;
+}
+.dev button:hover{color:var(--text-primary); border-color:var(--bg-rule)}
+.dev button.on{background:var(--text-primary); color:var(--bg-base); border-color:var(--text-primary); font-weight:var(--w-semibold)}
+.dev button:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:1px}
+.dev-note{
+  flex:1 0 100%; font-size:var(--fs-label); color:var(--text-secondary); line-height:var(--lh-meta);
+  margin-top:var(--s1);
+}
+.stagewrap{overflow-x:auto; background:var(--bg-sunken); padding:0}
+.stage{container-type:inline-size; width:100%; margin:0 auto; background:var(--bg-base)}
+.stage[data-frame="phone"]{width:calc(var(--breakpoints-phone) * 1px); box-shadow:var(--shadow-overlay)}
+.stage[data-frame="wide"]{width:calc(var(--breakpoints-wide) * 1px)}
 
-.panes { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-@media (min-width: 768px) { .panes { flex-direction: row; } }
+/* ══════════════════════════════════════════════════════════════════════════
+   FRAME — layout.wide_rule, drawn. Three tiers, one branch each.
+   ══════════════════════════════════════════════════════════════════════════ */
+.app{display:flex; flex-direction:column; min-height:820px; background:var(--bg-base)}
+.frame{display:flex; flex:1 1 auto; min-height:0; max-width:var(--frame-max); width:100%; margin:0 auto}
+.col-rail{display:none; flex-direction:column; min-width:0; background:var(--bg-sunken); border-right:var(--b-rule) solid var(--bg-rule)}
+.col-main{display:flex; flex-direction:column; flex:1 1 auto; min-width:0}
+.col-panel{display:none; flex-direction:column; min-width:0; background:var(--bg-base)}
+.app[data-surface="talk"] .col-main{display:none}
+.app[data-surface="talk"] .col-panel{display:flex; flex:1 1 auto}
 
-/* ============ task list pane — the source of truth ============ */
-.list-pane {
-  flex: none; display: flex; flex-direction: column; min-height: 0;
-  max-height: 38%;
-  border-bottom: 1px solid var(--hairline);
-  background: var(--bg-base);
+/* tokens.json breakpoints.split — the one branch. A container query, not a
+   viewport query: the app reads its own width, so a stage narrower than the
+   window still renders the frame it would really get (components.md § AppFrame). */
+@container (min-width:1024px){
+  .app[data-surface] .col-main{display:flex}
+  .app[data-surface] .col-panel{
+    display:flex; flex:0 0 var(--panel-max);
+    border-left:var(--b-rule) solid var(--bg-rule);
+  }
+  .app[data-surface]{--gutter:calc(var(--layout-grid-gutter) * 1px); --rail:calc(var(--layout-measure-timerail-default) * 1px)}
 }
-@media (min-width: 768px) {
-  .list-pane { width: 320px; max-height: none; height: auto; border-bottom: 0; border-right: 1px solid var(--hairline); }
+/* tokens.json breakpoints.wide — above desktop the app adds a COLUMN, never a
+   gutter. The Lists rail arrives here and at no narrower width, because 1536 is
+   where it fits without the task list getting narrower than it was at 1440. */
+@container (min-width:1536px){
+  .app[data-surface] .col-rail{display:flex; flex:0 0 var(--lists-rail)}
+  .app[data-surface]{--rail:calc(var(--layout-measure-timerail-wide) * 1px)}
+  .app[data-surface] .hide-wide{display:none}
+  .app[data-surface] .row-time .wd{display:inline}
 }
-@media (min-width: 1024px) { .list-pane { width: 360px; } }
-.list-head {
-  flex: none; display: flex; align-items: baseline; gap: var(--sp-sm);
-  padding: var(--sp-lg) var(--sp-lg) var(--sp-sm);
-}
-.list-head h2 { font-family: var(--font-family-display); font-size: var(--fs-state); font-weight: var(--font-weight-title); line-height: var(--font-lineHeight-title); }
-.list-head .count { font-size: var(--fs-meta); color: var(--tx-muted); font-variant-numeric: var(--font-numeric); }
-.add-btn {
-  margin-left: auto; display: inline-flex; align-items: center; gap: var(--sp-xs);
-  color: var(--primary); font-size: var(--fs-meta); font-weight: var(--font-weight-emphasis);
-  padding: var(--sp-xs) var(--sp-sm); border-radius: var(--r-pill);
-}
-.add-btn:hover { background: var(--primary-tint); }
-.add-btn svg.ic { width: var(--icon-sm); height: var(--icon-sm); }
-.list-scroll { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: var(--sp-lg); }
-.day-head {
-  padding: var(--sp-md) var(--sp-lg) var(--sp-xs);
-  font-size: var(--fs-label); font-weight: var(--font-weight-label);
-  letter-spacing: var(--font-letterSpacing-label); text-transform: uppercase; color: var(--tx-muted);
-}
-.tasks { list-style: none; }
-.task-row {
-  display: flex; align-items: flex-start; gap: var(--sp-md);
-  padding: var(--sp-md) var(--sp-lg);
-  border-radius: var(--r-row); /* flat rows, carried from v3 */
-  border-bottom: 1px solid var(--hairline);
-}
-.task-row:last-child { border-bottom: 0; }
-.checkbox {
-  flex: none; width: 20px; height: 20px; margin-top: 1px;
-  border: 1.8px solid var(--tx-muted); border-radius: 6px;
-  display: inline-flex; align-items: center; justify-content: center; color: transparent;
-  transition: border-color var(--dur-micro) var(--motion-easing-standard);
-}
-.checkbox:hover { border-color: var(--primary); }
-.checkbox svg.ic { width: 12px; height: 12px; }
-.task-row.done .checkbox { border-color: var(--tx-muted); color: var(--tx-muted); }
-.task-main { flex: 1; min-width: 0; }
-.task-title { display: inline; font-size: var(--fs-body); }
-.task-row.done .task-title { text-decoration: line-through; }
-.task-row.done { opacity: 0.6; }
-.task-meta { display: block; font-size: var(--fs-meta); line-height: var(--font-lineHeight-meta); color: var(--tx-muted); font-variant-numeric: var(--font-numeric); margin-top: 1px; }
-.badge {
-  display: none; vertical-align: 2px; margin-left: var(--sp-sm);
-  font-size: var(--fs-label); font-weight: var(--font-weight-label);
-  letter-spacing: var(--font-letterSpacing-label); text-transform: uppercase;
-}
-.badge-new { color: var(--add); }
-.badge-edited { color: var(--primary); } /* violet — an applied change is the assistant's act */
-.row-diff { display: none; margin-top: var(--sp-xs); font-size: var(--fs-meta); line-height: var(--font-lineHeight-meta); }
-.list-empty { display: none; padding: var(--sp-xl) var(--sp-lg); color: var(--tx-muted); }
-.list-empty strong { display: block; color: var(--tx-2); font-weight: var(--font-weight-emphasis); margin-bottom: var(--sp-xs); }
 
-/* per-state list variants */
-.st-idle-empty .list-scroll { display: none; }
-.st-idle-empty .list-empty { display: block; }
-.st-idle-empty .count { display: none; }
-.row-t10, .row-t11 { display: none; }
-.meta-after { display: none; }
-.st-applied-diff .row-t10, .st-nothing-reverted .row-t10, .st-declined-superseded .row-t11 { display: flex; }
-.st-applied-diff .row-t2 .meta-before, .st-reverted .row-t2 .meta-before, .st-nothing-reverted .row-t2 .meta-before { display: none; }
-.st-applied-diff .row-t2 .meta-after, .st-reverted .row-t2 .meta-after, .st-nothing-reverted .row-t2 .meta-after { display: block; }
-.st-applied-diff .row-t2 .badge-edited, .st-applied-diff .row-t10 .badge-new, .st-declined-superseded .row-t11 .badge-new { display: inline; }
-.st-applied-diff .row-t2 .row-diff { display: block; } /* marker expanded: per-field old → new */
-.st-applied-diff .row-t2, .st-applied-diff .row-t10, .st-declined-superseded .row-t11 {
-  animation: rowFlash var(--dur-flash) var(--motion-easing-standard) forwards;
-}
-@keyframes rowFlash { 0%, 80% { background-color: var(--add-tint); } 100% { background-color: transparent; } }
+/* ONE CENTRING, AND IT IS AT THE CONTENT COLUMN (layout.content_column_rule).
+   Each frame column holds exactly one, centred in its pane; everything inside
+   it is left-aligned and nothing inside it centres again. */
+.content-col{width:100%; max-width:var(--list-max); margin-left:auto; margin-right:auto}
+.pane{flex:1 1 auto; min-height:0; overflow-y:auto; padding:0 var(--gutter) var(--s8)}
 
-.st-idle-tasks .row-t3 .badge-new { display: inline; }
-.st-idle-tasks .row-t3 { animation: rowFlash var(--dur-flash) var(--motion-easing-standard) forwards; }
+/* ══════════════════════════════════════════════════════════════════════════
+   TOP BARS — the platform chrome, and the only place the three diverge
+   ══════════════════════════════════════════════════════════════════════════ */
+.topbar{
+  display:block; flex:none; padding:0;
+  border-bottom:var(--b-hairline) solid var(--bg-hairline); background:var(--bg-base);
+}
+.bar-in{
+  display:flex; align-items:center; gap:var(--s2); height:100%;
+  width:100%; max-width:var(--list-max); margin:0 auto;
+  padding:0 calc(var(--gutter) - var(--s3));
+}
+.plat-web .topbar{height:56px}
+.plat-ios .topbar{height:44px}
+.plat-android .topbar{height:56px}
+.plat-android .topbar .bar-title{font-size:var(--fs-lead); font-weight:var(--w-medium)}
+.bar-title{font-size:var(--fs-body); font-weight:var(--w-semibold)}
+.spacer{flex:1 1 auto}
+.iconbtn{
+  appearance:none; border:0; background:transparent; cursor:pointer; color:var(--text-primary);
+  width:var(--min-target); height:var(--min-target); display:grid; place-items:center; flex:none;
+  border-radius:var(--r-none);
+}
+.iconbtn:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
+.backlink{
+  appearance:none; border:0; background:transparent; cursor:pointer; color:var(--accent);
+  display:inline-flex; align-items:center; gap:var(--s1); min-height:var(--min-target);
+  font-size:var(--fs-body); padding:0 var(--s2) 0 0;
+}
+.backlink:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
 
-/* ============ conversation pane ============ */
-.conv-pane { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--bg-base); }
-.conv-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: var(--sp-xl) var(--gutter); }
-.conv { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--sp-lg); }
-.conv[hidden] { display: none; }
+/* PathSwitch — below-split only. Above the split both peers are on screen and a
+   control that switches to what you are already looking at is a dead control. */
+.path{
+  appearance:none; cursor:pointer; background:transparent; color:var(--text-primary);
+  border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-none);
+  height:var(--h-sm); min-height:var(--min-target); padding:0 var(--s3);
+  display:inline-flex; align-items:center; gap:var(--s2); font-size:var(--fs-meta); font-weight:var(--w-semibold);
+}
+.path:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
+.path .count{font-family:var(--font-num); color:var(--text-on-accent); background:var(--accent); padding:0 var(--s1); min-width:calc(var(--icon-size-md) * 1px); text-align:center}
+@container (min-width:1024px){ .app[data-surface] .path{display:none} }
 
-/* empty conversation — the invitation */
-.invite { margin: auto; text-align: center; padding: var(--sp-xxl) var(--sp-lg); }
-.invite h3 {
-  font-family: var(--font-family-display); font-size: var(--fs-display); font-weight: var(--font-weight-display);
-  line-height: var(--font-lineHeight-display); letter-spacing: var(--font-letterSpacing-display);
-  margin-bottom: var(--sp-md);
+/* ══════════════════════════════════════════════════════════════════════════
+   BUTTONS (components.md § Buttons)
+   ══════════════════════════════════════════════════════════════════════════ */
+.btn{
+  appearance:none; cursor:pointer; font:inherit; font-size:var(--fs-body); font-weight:var(--w-semibold);
+  height:var(--h-md); min-height:var(--min-target); padding:0 var(--px-md); border-radius:var(--r-none);
+  border:var(--b-hairline) solid transparent; display:inline-flex; align-items:center; justify-content:center;
+  gap:var(--s2); white-space:nowrap;
+  transition:background var(--t-micro) var(--ease), color var(--t-micro) var(--ease);
 }
-.invite p { color: var(--tx-muted); max-width: 34em; margin: 0 auto; }
-.invite p + p { margin-top: var(--sp-xs); }
+.btn:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
+.btn-primary{background:var(--accent); color:var(--text-on-accent)}
+.btn-accent-quiet{background:transparent; color:var(--accent); border-color:var(--accent)}
+.btn-secondary{background:transparent; color:var(--text-primary); border-color:var(--bg-rule)}
+.btn-ghost{background:transparent; color:var(--text-secondary); padding:0 var(--s3)}
+.btn-ghost:hover{color:var(--text-primary); background:var(--bg-sunken)}
+.btn-danger{background:var(--danger); color:var(--text-on-accent)}
+.btn-danger-quiet{background:transparent; color:var(--danger); border-color:var(--danger)}
+.btn-sm{height:var(--h-sm); font-size:var(--fs-meta); padding:0 var(--s3)}
+.btn[disabled]{opacity:.4; cursor:not-allowed; border-color:transparent}
+.btn-row{display:flex; flex-wrap:wrap; gap:var(--s3); align-items:center}
+.fab{
+  position:absolute; right:var(--s4); bottom:var(--s4); z-index:5;
+  width:56px; height:56px; border-radius:var(--r-circle); border:0; cursor:pointer;
+  background:var(--accent); color:var(--text-on-accent); display:grid; place-items:center;
+  box-shadow:var(--shadow-overlay);
+}
+.fab:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
 
-/* messages */
-.msg { display: flex; flex-direction: column; align-items: flex-start; }
-.msg.user { align-items: flex-end; }
-.bubble {
-  max-width: min(560px, 84%);
-  background: var(--bg-raised); border-radius: var(--r-bubble);
-  padding: var(--sp-md) var(--sp-lg);
-  border-bottom-left-radius: var(--r-sm);
-}
-.msg.user .bubble { border-radius: var(--r-bubble); border-bottom-right-radius: var(--r-sm); border: 1px solid var(--hairline); background: var(--bg-base); }
-.msg-meta { font-size: var(--fs-label); line-height: var(--font-lineHeight-meta); color: var(--tx-muted); margin-top: var(--sp-xs); padding: 0 var(--sp-xs); font-variant-numeric: var(--font-numeric); }
-.bubble-head { font-weight: var(--font-weight-emphasis); margin-bottom: var(--sp-sm); }
-.bubble p + p { margin-top: var(--sp-xs); }
-.quote { font-style: italic; }
+/* ══════════════════════════════════════════════════════════════════════════
+   TYPE HELPERS
+   ══════════════════════════════════════════════════════════════════════════ */
+.t-label{font-size:var(--fs-label); line-height:var(--lh-meta); letter-spacing:var(--ls-label); text-transform:var(--font-case-label); font-weight:var(--w-semibold); color:var(--text-muted)}
+.t-meta{font-size:var(--fs-meta); line-height:var(--lh-meta); color:var(--text-secondary)}
+.t-num{font-family:var(--font-num)}
 
-/* applied bubble — diff anatomy */
-.diff-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-sm); padding: var(--sp-xs) 0; }
-.diff-task { font-weight: var(--font-weight-emphasis); margin-right: var(--sp-xs); }
-.chip-old, .chip-new {
-  font-size: var(--fs-meta); line-height: var(--font-lineHeight-meta);
-  padding: 2px var(--sp-sm); border-radius: var(--r-sm); font-variant-numeric: var(--font-numeric);
+/* ══════════════════════════════════════════════════════════════════════════
+   SURFACE HEAD — the collection, its count, and the one rule under them
+   ══════════════════════════════════════════════════════════════════════════ */
+.head{padding:var(--s6) 0 var(--s4); border-bottom:var(--b-rule) solid var(--bg-rule); margin-bottom:var(--s2)}
+.head h1{
+  margin:0; font-size:var(--fs-hero); line-height:var(--lh-tight); letter-spacing:var(--ls-hero);
+  font-weight:var(--w-bold);
 }
-.chip-old { color: var(--remove); background: var(--remove-tint); text-decoration: line-through; }
-.chip-new { color: var(--add); background: var(--add-tint); }
-.diff-arrow { color: var(--tx-muted); }
-.mini-label {
-  font-size: var(--fs-label); font-weight: var(--font-weight-label);
-  letter-spacing: var(--font-letterSpacing-label); text-transform: uppercase;
-}
-.mini-label.add { color: var(--add); }
-.mini-label.edit { color: var(--primary); }
-.undo-btn {
-  display: inline-flex; align-items: center; gap: var(--sp-xs);
-  margin-top: var(--sp-sm); padding: var(--sp-xs) var(--sp-md);
-  border-radius: var(--r-pill); color: var(--primary); font-weight: var(--font-weight-emphasis);
-  transition: background var(--dur-micro) var(--motion-easing-standard);
-}
-.undo-btn:hover { background: var(--primary-tint); }
-.undo-btn svg.ic { width: var(--icon-sm); height: var(--icon-sm); }
-.bubble.undone { color: var(--tx-muted); }
-.bubble.undone .chip-old, .bubble.undone .chip-new { opacity: 0.6; }
-.undone-tag { font-size: var(--fs-label); font-weight: var(--font-weight-label); letter-spacing: var(--font-letterSpacing-label); text-transform: uppercase; color: var(--tx-muted); margin-top: var(--sp-sm); display: block; }
+.plat-ios .head h1{letter-spacing:var(--ls-display)}
+.head .count{margin:var(--s3) 0 0; font-size:var(--fs-meta); color:var(--text-secondary); font-family:var(--font-num)}
+.head .count b{color:var(--text-primary); font-weight:var(--w-semibold)}
+.head .count .late{color:var(--danger); font-weight:var(--w-semibold)}
 
-/* question bubbles */
-.bubble.q { background: var(--question-tint); border-left: 3px solid var(--question); }
-.bubble.q.resolved { background: var(--bg-raised); border-left-color: var(--hairline); color: var(--tx-muted); }
-.chips { display: flex; flex-wrap: wrap; gap: var(--sp-sm); margin-top: var(--sp-md); }
-.chip {
-  padding: var(--sp-xs) var(--sp-lg); border-radius: var(--r-pill);
-  border: 1px solid var(--primary); color: var(--primary); font-weight: var(--font-weight-emphasis);
-  transition: background var(--dur-micro) var(--motion-easing-standard), transform var(--dur-micro) var(--motion-easing-spring);
+/* ══════════════════════════════════════════════════════════════════════════
+   TIME RAIL + TASK ROW  (§ TimeRail, § TaskRow)
+   ══════════════════════════════════════════════════════════════════════════ */
+.list{position:relative}
+.list::before{
+  content:""; position:absolute; top:0; bottom:0; width:var(--b-hairline);
+  background:var(--bg-hairline); left:var(--rail);
 }
-.chip:hover { background: var(--primary-tint); }
-.chip:active { transform: scale(0.96); }
-.chip.chip-danger { border-color: var(--danger); color: var(--danger); } /* the ONLY red action: delete confirmation */
-.chip.chip-danger:hover { background: var(--remove-tint); }
-.chip[disabled] { border-color: var(--hairline); color: var(--tx-muted); cursor: default; }
-.chip[disabled]:hover { background: none; }
+.group{padding:var(--s5) 0 var(--s2) calc(var(--rail) + var(--gutter))}
+.group:first-child{padding-top:var(--s4)}
+.group h3{margin:0; font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:var(--font-case-label); font-weight:var(--w-semibold); color:var(--text-muted)}
+.group.overdue h3{color:var(--danger)}
+.row{
+  display:grid; grid-template-columns:var(--rail) minmax(0,1fr) auto;
+  align-items:center; min-height:var(--h-lg); padding:var(--s2) 0;
+}
+.row-time{
+  font-family:var(--font-num); font-size:var(--fs-meta); color:var(--text-muted);
+  align-self:stretch; display:flex; align-items:center; justify-content:flex-end;
+  gap:var(--s2); padding-right:var(--s4); white-space:nowrap;
+}
+.row-time .wd{display:none; color:var(--text-muted)}
+.row-main{padding-left:var(--gutter); min-width:0; display:flex; align-items:center; gap:var(--s3)}
+.cbx{
+  appearance:none; margin:0; width:calc(var(--icon-size-md) * 1px); height:calc(var(--icon-size-md) * 1px); flex:none; cursor:pointer;
+  border:var(--b-hairline) solid var(--bg-rule); background:var(--bg-base);
+  border-radius:var(--r-none); display:grid; place-items:center;
+}
+.plat-ios .cbx{border-radius:var(--r-circle)}
+.plat-android .cbx{border-radius:2px; border-width:2px}
+.cbx:checked{background:var(--text-primary); border-color:var(--text-primary)}
+.cbx:checked::after{content:""; width:10px; height:6px; border-left:2px solid var(--bg-base); border-bottom:2px solid var(--bg-base); transform:rotate(-45deg) translate(1px,-1px)}
+.cbx:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
+.row-open{
+  appearance:none; background:transparent; border:0; padding:0; margin:0; cursor:pointer;
+  text-align:left; min-width:0; flex:1 1 auto; color:inherit; font:inherit;
+}
+.row-open:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
+.row-title{
+  min-width:0; font-size:var(--fs-body); line-height:1.35; color:var(--text-primary);
+}
+/* A TITLE IS NEVER TRUNCATED TO PROTECT A COLUMN. It wraps and the row grows. */
+.row-marks{display:inline-flex; align-items:baseline; gap:var(--s2); margin-left:var(--s2)}
+.mark{font-family:var(--font-num); font-size:var(--fs-body); font-weight:var(--w-bold); color:var(--text-primary); line-height:1.35}
+.mark-quiet{color:var(--text-muted); display:inline-flex; align-self:center}
+.tag{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:var(--font-case-label); font-weight:var(--w-semibold); padding:2px 6px; background:var(--accent-tint); color:var(--accent); white-space:nowrap}
+.tag.edited{background:var(--bg-sunken); color:var(--text-secondary)}
+.row-trail{display:flex; align-items:center; flex:none; gap:var(--s1)}
+.row-del{
+  appearance:none; border:0; background:transparent; cursor:pointer; color:var(--text-muted);
+  width:var(--min-target); height:var(--min-target); display:grid; place-items:center; opacity:0;
+}
+.row:hover .row-del,.row:focus-within .row-del{opacity:1}
+.plat-ios .row-del,.plat-android .row-del{opacity:1}
+.row-del:hover{color:var(--danger)}
+.row-rule{height:var(--b-hairline); background:var(--bg-hairline); margin-left:var(--rail)}
+.row.done .row-title{color:var(--text-muted); text-decoration:line-through}
+.row.arrived{box-shadow:inset var(--b-mark) 0 0 var(--accent)}
+.rename{display:flex; align-items:center; gap:var(--s2); flex:1 1 auto; min-width:0}
 
-/* error bubble */
-.bubble.err { border-left: 3px solid var(--danger); }
-.bubble.err .bubble-head { color: var(--danger); }
-.retry-btn {
-  display: inline-flex; align-items: center; gap: var(--sp-xs);
-  margin-top: var(--sp-sm); padding: var(--sp-sm) var(--sp-lg);
-  border-radius: var(--r-pill); background: var(--primary); color: var(--tx-onaccent); font-weight: var(--font-weight-emphasis);
-  transition: transform var(--dur-micro) var(--motion-easing-spring);
+/* ══════════════════════════════════════════════════════════════════════════
+   BANNERS — offline, inline retry, save notice, carried notice
+   ══════════════════════════════════════════════════════════════════════════ */
+.banner{
+  display:flex; align-items:flex-start; gap:var(--s3); padding:var(--s3) var(--s4);
+  border:var(--b-hairline) solid var(--bg-rule); background:var(--bg-base);
+  font-size:var(--fs-meta); line-height:var(--lh-meta); margin-top:var(--s4);
 }
-.retry-btn:active { transform: scale(0.96); }
+.banner .btxt{flex:1 1 auto; min-width:0; color:var(--text-secondary)}
+.banner .btxt b{display:block; color:var(--text-primary); font-weight:var(--w-semibold); margin-bottom:2px}
+.banner.attention{border-left:var(--b-mark) solid var(--attention)}
+.banner.attention .ico{color:var(--attention)}
+.banner.danger{border-left:var(--b-mark) solid var(--danger)}
+.banner.danger .ico{color:var(--danger)}
+.banner.quiet{border-color:var(--bg-hairline); background:var(--bg-sunken)}
+.banner .ico{color:var(--text-muted); margin-top:2px}
+.dismiss{
+  appearance:none; border:0; background:transparent; cursor:pointer; color:var(--text-muted);
+  width:var(--min-target); height:var(--min-target); display:grid; place-items:center; flex:none; margin:calc(var(--s2) * -1) calc(var(--s2) * -1) 0 0;
+}
+.dismiss:hover{color:var(--text-primary)}
 
-/* boundary marker */
-.boundary { display: flex; align-items: flex-start; gap: var(--sp-md); color: var(--tx-muted); }
-/* M3: rules anchor to the TITLE line (half a meta line-box down), not the block's vertical
-   centre — centring them on a 3-line marker drew them straight through the body copy. */
-.boundary::before, .boundary::after {
-  content: ""; flex: 1; height: 1px; background: var(--hairline);
-  margin-top: calc(var(--fs-meta) * var(--font-lineHeight-meta) / 2);
+/* § CarriedNotice — docked at the FRAME, above both surface bars, spanning the
+   full frame width, outside the stacking layer. */
+.carried{display:none; flex-direction:column; background:var(--bg-base); border-bottom:var(--b-rule) solid var(--bg-rule)}
+.app[data-carried] .carried{display:flex}
+.carried-in{max-width:var(--frame-max); width:100%; margin:0 auto; padding:var(--s3) var(--s5); display:flex; flex-direction:column; gap:var(--s2)}
+.cn{display:flex; align-items:flex-start; gap:var(--s3); font-size:var(--fs-meta); line-height:var(--lh-meta)}
+.cn .cn-body{flex:1 1 auto; min-width:0}
+.cn .cn-head{color:var(--text-primary); font-weight:var(--w-semibold)}
+.cn .cn-value{
+  display:block; margin-top:var(--s1); color:var(--text-primary);
+  border-left:var(--b-mark) solid var(--bg-rule); padding-left:var(--s3);
 }
-.boundary-body { max-width: 78%; text-align: center; font-size: var(--fs-meta); line-height: var(--font-lineHeight-meta); }
-.boundary-body strong { display: block; font-weight: var(--font-weight-emphasis); color: var(--tx-2); }
-.boundary-body p { margin-top: var(--sp-xs); }
+.cn .cn-why{display:block; margin-top:var(--s1); color:var(--text-secondary)}
+.cn.failed .cn-head{color:var(--danger)}
+.cn.offline .cn-head{color:var(--attention)}
+.cn-acts{display:flex; align-items:center; gap:var(--s2); flex:none}
 
-/* queued turn notice */
-.queued-note { display: inline-flex; align-items: center; gap: var(--sp-xs); margin-top: var(--sp-xs); padding: 0 var(--sp-xs); font-size: var(--fs-meta); color: var(--tx-muted); }
-.queued-note .dot-pulse { width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--question); animation: qPulse var(--dur-breath) var(--motion-easing-standard) infinite; }
-@keyframes qPulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+/* ══════════════════════════════════════════════════════════════════════════
+   EMPTY / SKELETON / SURFACE ERROR
+   ══════════════════════════════════════════════════════════════════════════ */
+.empty{padding:var(--s7) 0 var(--s6)}
+.empty h2{margin:0 0 var(--s2); font-size:var(--fs-title); letter-spacing:var(--ls-title); line-height:var(--lh-title); font-weight:var(--w-semibold)}
+.empty p{margin:0 0 var(--s5); color:var(--text-secondary); font-size:var(--fs-body); max-width:44ch}
+.sk{display:block; background:var(--bg-sunken); height:var(--s3)}
+.sk-row{display:grid; grid-template-columns:var(--rail) minmax(0,1fr); align-items:center; min-height:var(--h-lg); padding:var(--s2) 0}
+.sk-row .sk-time{justify-self:end; width:var(--h-md); margin-right:var(--s4)}
+.sk-row .sk-main{margin-left:var(--gutter); display:flex; align-items:center; gap:var(--s3)}
+.sk-box{width:calc(var(--icon-size-md) * 1px); height:calc(var(--icon-size-md) * 1px); background:var(--bg-sunken); flex:none}
+.surface-error{padding:var(--s8) 0 var(--s7); max-width:52ch}
+.surface-error h2{margin:0 0 var(--s3); font-size:var(--fs-title); letter-spacing:var(--ls-title); line-height:var(--lh-title); font-weight:var(--w-semibold)}
+.surface-error p{margin:0 0 var(--s5); color:var(--text-secondary)}
 
-/* thinking indicator (in-conversation) */
-.thinking-msg { display: inline-flex; align-items: center; gap: var(--sp-sm); }
-.tdots { display: inline-flex; gap: 5px; }
-.tdots i { width: 7px; height: 7px; border-radius: var(--r-pill); background: var(--thinking); animation: tBlink var(--dur-breath) var(--motion-easing-standard) infinite; }
-.tdots i:nth-child(2) { animation-delay: calc(var(--dur-breath) / 6); }
-.tdots i:nth-child(3) { animation-delay: calc(var(--dur-breath) / 3); }
-@keyframes tBlink { 0%, 100% { opacity: 0.25; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-2px); } }
+/* ══════════════════════════════════════════════════════════════════════════
+   TALK — conversation, bubbles, composer  (§ Message bubbles, § Composer)
+   ══════════════════════════════════════════════════════════════════════════ */
+.talk-head{display:flex; align-items:center; gap:var(--s2); flex:none; height:56px; padding:0 calc(var(--gutter) - var(--s3)); border-bottom:var(--b-hairline) solid var(--bg-hairline)}
+.plat-ios .talk-head{height:44px}
+.talk-title{font-size:var(--fs-body); font-weight:var(--w-semibold)}
+.talk-scroll{flex:1 1 auto; min-height:0; overflow-y:auto; display:flex; flex-direction:column}
+/* NEWEST AT BOTTOM. 'margin-top:auto' on the first child, NOT
+   'justify-content:flex-end' — flex-end clips the top of an overflowing
+   scroller, and a short thread must sit ON the composer rather than floating at
+   the top of a tall column with half a screen of nothing under it. The app
+   dropped this rule and shipped a 618px gap at 1440; it is drawn here and
+   defended here so it is not dropped again. */
+.conv{display:flex; flex-direction:column; gap:var(--s4); padding:var(--s5) var(--gutter) var(--s4); width:100%; max-width:var(--list-max); margin:auto auto 0}
+.msg{max-width:88%; display:flex; flex-direction:column; gap:var(--s1)}
+.msg.user{align-self:flex-end; align-items:flex-end}
+.msg.bot{align-self:flex-start}
+.bubble{padding:var(--s3) var(--s4); border-radius:var(--r-bubble); font-size:var(--fs-body); line-height:var(--lh-body)}
+.msg.user .bubble{background:var(--bg-ink); color:var(--text-on-ink)}
+.msg.bot .bubble{background:var(--bg-base); border:var(--b-hairline) solid var(--bg-hairline); color:var(--text-primary)}
+.msg.bot.applied .bubble{border-left:var(--b-mark) solid var(--accent)}
+.msg.bot.error .bubble{border-left:var(--b-mark) solid var(--danger)}
+.msg.bot.question .bubble{border-left:var(--b-mark) solid var(--attention)}
+.msg-time{font-family:var(--font-num); font-size:var(--fs-label); color:var(--text-muted); letter-spacing:.04em}
+.bubble-head{font-weight:var(--w-semibold)}
+.diff{margin:var(--s3) 0 0; border-top:var(--b-hairline) solid var(--bg-hairline); padding-top:var(--s3); display:grid; gap:var(--s2)}
+.diff-row{display:grid; grid-template-columns:calc(var(--layout-measure-timerail-compact) * 1px) minmax(0,1fr); gap:var(--s3); font-size:var(--fs-meta); align-items:baseline}
+.diff-row dt{color:var(--text-muted)}
+.diff-row dd{margin:0}
+.old{color:var(--text-muted); text-decoration:line-through}
+.arrow{color:var(--text-muted); padding:0 var(--s2)}
+.new{font-weight:var(--w-semibold); color:var(--text-primary)}
+.old.num,.new.num,.cn-value.num{font-family:var(--font-num)}
+.tasklink{
+  appearance:none; background:transparent; border:0; padding:0; cursor:pointer; font:inherit;
+  color:var(--text-primary); font-weight:var(--w-semibold); text-decoration:underline;
+  text-underline-offset:3px; text-decoration-color:var(--bg-rule); text-align:left;
+}
+.tasklink:hover{text-decoration-color:var(--accent)}
+.tasklink:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
+.msg-acts{margin-top:var(--s3); display:flex; flex-wrap:wrap; gap:var(--s2)}
+.qtext{color:var(--attention); font-weight:var(--w-semibold)}
+.chip{
+  appearance:none; cursor:pointer; background:transparent; color:var(--text-primary);
+  border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-none);
+  height:var(--h-sm); min-height:var(--min-target); padding:0 var(--s3); font-size:var(--fs-meta); font-weight:var(--w-semibold);
+}
+.chip:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
+.boundary{display:flex; align-items:center; gap:var(--s3); color:var(--text-muted); font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:var(--font-case-label); font-weight:var(--w-semibold)}
+.boundary::before,.boundary::after{content:""; height:var(--b-hairline); background:var(--bg-hairline); flex:1 1 auto}
+.sk-bubble{display:flex; flex-direction:column; gap:var(--s2); padding:var(--s3) var(--s4); border:var(--b-hairline) solid var(--bg-hairline); border-radius:var(--r-bubble)}
 
-/* ============ voice surface — the ONE place the aurora lives ============ */
-.voice-surface { display: none; position: relative; flex: none; padding: var(--sp-md) var(--gutter); overflow: hidden; }
-.st-listening .voice-surface, .st-thinking .voice-surface { display: block; }
-.aurora-band {
-  position: absolute; inset: var(--sp-sm) 12%;
-  background: var(--grad-voice); opacity: 0.32; filter: blur(22px); border-radius: var(--r-pill);
-  animation: bandBreath var(--dur-breath) var(--motion-easing-standard) infinite;
+/* composer + the one continuous animation in the system */
+.composer{flex:none; border-top:var(--b-rule) solid var(--bg-rule); background:var(--bg-base); position:relative}
+.composer-in{display:flex; align-items:center; gap:var(--s3); padding:var(--s3) var(--gutter); max-width:var(--list-max); margin:0 auto; width:100%}
+.composer .live{position:absolute; top:calc(var(--b-rule) * -1); left:0; height:var(--b-mark); width:0; background:var(--accent)}
+.app[data-mic="live"] .composer .live{animation:rulegrow var(--t-rule) var(--motion-easing-linear) infinite alternate}
+@keyframes rulegrow{from{width:6%}to{width:94%}}
+.transcript{padding:var(--s3) var(--gutter) 0; font-size:var(--fs-lead); line-height:1.35; color:var(--text-primary); max-width:var(--list-max); margin:0 auto; width:100%}
+.transcript .pend{color:var(--text-muted)}
+.cinput{
+  flex:1 1 auto; min-width:0; height:var(--field-h); border:0; background:transparent;
+  font-size:var(--fs-body); color:var(--text-primary); padding:0;
 }
-.st-thinking .aurora-band { inset: var(--sp-md) 28%; opacity: 0.22; background: var(--color-dark-voice-thinking); }
-@keyframes bandBreath { 0%, 100% { transform: scaleX(0.96); opacity: 0.22; } 50% { transform: scaleX(1); opacity: 0.36; } }
-.state-indicator { position: relative; display: flex; align-items: center; justify-content: center; gap: var(--sp-md); min-height: 44px; }
-.state-word { font-family: var(--font-family-display); font-size: var(--fs-state); font-weight: var(--font-weight-title); }
-.si-listening, .si-thinking { display: none; align-items: center; gap: var(--sp-md); }
-.cancel-btn {
-  display: inline-flex; align-items: center; padding: var(--sp-xs) var(--sp-md);
-  border-radius: var(--r-pill); background: var(--bg-raised); border: 1px solid var(--hairline);
-  color: var(--primary); font-weight: var(--font-weight-emphasis); font-size: var(--fs-meta);
-  transition: background var(--dur-micro) var(--motion-easing-standard);
+.cinput::placeholder{color:var(--text-muted)}
+.cinput:focus{outline:0}
+.mic{
+  width:var(--h-md); height:var(--h-md); min-width:var(--min-target); min-height:var(--min-target);
+  border-radius:var(--r-circle); border:0; background:var(--accent); color:var(--text-on-accent);
+  display:grid; place-items:center; cursor:pointer; flex:none;
 }
-.cancel-btn:hover { background: var(--primary-tint); }
-.st-listening .si-listening { display: inline-flex; }
-.st-thinking .si-thinking { display: inline-flex; }
-.waveform { display: inline-flex; align-items: center; gap: 3px; height: 24px; }
-.waveform i { width: 3px; border-radius: var(--r-pill); background: var(--tx); animation: wave var(--dur-breath) var(--motion-easing-standard) infinite; }
-.waveform i:nth-child(1) { height: 8px; animation-delay: 0ms; }
-.waveform i:nth-child(2) { height: 16px; animation-delay: 120ms; }
-.waveform i:nth-child(3) { height: 22px; animation-delay: 240ms; }
-.waveform i:nth-child(4) { height: 12px; animation-delay: 360ms; }
-.waveform i:nth-child(5) { height: 18px; animation-delay: 480ms; }
-.waveform i:nth-child(6) { height: 9px; animation-delay: 600ms; }
-@keyframes wave { 0%, 100% { transform: scaleY(0.5); } 50% { transform: scaleY(1); } }
+.mic.idle,.app[data-mic="idle"] .mic{background:transparent; color:var(--text-secondary); border:var(--b-hairline) solid var(--bg-rule)}
+.app[data-mic="hidden"] .mic{display:none}
+.app[data-mic="denied"] .mic,.app[data-mic="transient"] .mic{opacity:.4; background:transparent; color:var(--text-muted); border:var(--b-hairline) solid var(--bg-hairline)}
+/* While the microphone is live the composer is not a text field — it is a
+   transcript. Leaving the input in the row squeezes it to a stub at 390 and
+   offers a control the user is not using. */
+.app[data-mic="live"] .cinput,.app[data-mic="thinking"] .cinput,
+.app[data-mic="live"] .composer-send,.app[data-mic="thinking"] .composer-send{display:none}
+.app[data-mic="live"] .state-ind,.app[data-mic="thinking"] .state-ind{flex:1 1 auto}
+.mic[disabled]{opacity:.4; cursor:not-allowed}
+.mic:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
+.state-ind{font-size:var(--fs-meta); color:var(--text-secondary); font-weight:var(--w-semibold); white-space:nowrap}
+.nma{
+  position:absolute; left:50%; transform:translateX(-50%); top:calc(var(--s7) * -1); z-index:6;
+  background:var(--bg-ink); color:var(--text-on-ink); border:0; border-radius:var(--r-none);
+  height:var(--h-sm); min-height:var(--min-target); padding:0 var(--s4); cursor:pointer;
+  font-size:var(--fs-meta); font-weight:var(--w-semibold); box-shadow:var(--shadow-overlay);
+  display:inline-flex; align-items:center; gap:var(--s2);
+}
 
-/* ============ offline banner ============ */
-.offline-banner {
-  display: none; align-items: center; gap: var(--sp-sm); flex: none;
-  padding: var(--sp-sm) var(--gutter);
-  background: var(--bg-raised); border-top: 1px solid var(--hairline);
-  color: var(--question); font-size: var(--fs-meta); line-height: var(--font-lineHeight-meta);
+/* ══════════════════════════════════════════════════════════════════════════
+   FIELD · LABEL · FORM ROW  — a field has NO intrinsic width
+   ══════════════════════════════════════════════════════════════════════════ */
+.form{width:100%; max-width:var(--form-max); display:grid; gap:var(--field-row-gap)}
+.field-row{display:block; width:100%}
+.field-label{display:block; font-size:var(--fs-meta); font-weight:var(--w-semibold); color:var(--text-secondary); margin-bottom:var(--field-label-gap)}
+.field{
+  display:block; width:100%; height:var(--field-h); padding:0 var(--field-px);
+  font:inherit; font-size:var(--fs-body); color:var(--text-primary); background:var(--bg-base);
+  border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-none);
 }
-.st-offline .offline-banner { display: flex; }
-.offline-banner svg.ic { width: var(--icon-sm); height: var(--icon-sm); }
-.offline-banner .queued-count { margin-left: auto; font-variant-numeric: var(--font-numeric); }
+textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field-py) var(--field-px); line-height:var(--lh-body); resize:vertical}
+.field::placeholder{color:var(--text-muted)}
+.field:focus{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px; border-color:var(--accent)}
+.field-help{display:block; font-size:var(--fs-meta); color:var(--text-muted); margin-top:var(--field-help-gap)}
+.field-row.error .field{border-color:var(--danger)}
+.app[data-fail="field"] .field-row[data-field="title"] .field{border-color:var(--danger)}
+.field-error{display:block; font-size:var(--fs-meta); color:var(--danger); margin-top:var(--field-help-gap)}
+.field-inline{display:flex; align-items:center; gap:var(--s2); flex-wrap:wrap}
+.field-inline .field{width:auto; flex:1 1 200px; min-width:0}
+.field-inline .field.narrow{flex:0 1 132px}
 
-/* ============ new-message affordance — BUG-004 / owner decision 2026-08-17 ============ */
-/* components.md §NewMessageAffordance. ONE control, however many messages arrived.
-   The dock has zero height so the pill OVERLAYS the last line of the conversation
-   instead of reflowing it — an affordance that appears by pushing history upward
-   moves the sentence the user is reading, which is the defect it exists to prevent. */
-.nm-dock { flex: none; position: relative; height: 0; z-index: 6; }
-.nm-wrap { display: none; position: absolute; left: var(--gutter); right: var(--gutter); bottom: var(--sp-sm); justify-content: center; }
-.st-nma-new .nm-wrap, .st-nma-waiting .nm-wrap { display: flex; }
-.nm-pill {
-  display: inline-flex; align-items: center; gap: var(--sp-sm); max-width: 100%;
-  padding: var(--sp-sm) var(--sp-lg); border-radius: var(--r-pill);
-  background: var(--bg-raised); border: 1px solid var(--hairline); color: var(--tx);
-  box-shadow: var(--shadow-card);
-  font-size: var(--fs-body); font-weight: var(--font-weight-emphasis);
-  transition: transform var(--dur-micro) var(--motion-easing-spring), background var(--dur-micro) var(--motion-easing-standard);
+/* segmented control (priority, theme) */
+.seg{display:inline-flex; border:var(--b-hairline) solid var(--bg-rule); max-width:100%}
+.seg button{
+  appearance:none; border:0; background:transparent; cursor:pointer; font:inherit;
+  font-size:var(--fs-meta); font-weight:var(--w-medium); color:var(--text-secondary);
+  padding:0 var(--s4); height:var(--field-h); min-height:var(--min-target);
+  border-right:var(--b-hairline) solid var(--bg-hairline); white-space:nowrap;
 }
-.nm-pill:hover { background: var(--primary-tint); }
-.nm-pill:active { transform: scale(0.96); }
-.nm-pill svg.ic { width: var(--icon-sm); height: var(--icon-sm); color: var(--tx-2); }
-/* One line where it fits, TWO where it does not. The question is the half that
-   matters: at 375px a single nowrap line ellipsises exactly it away, leaving
-   "Waiting for your answer — Delete …", which says something is pending and
-   withholds what. Wrapping to a second line keeps the question; the accessible
-   name carries the whole string either way. */
-.nm-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.nm-count, .nm-waiting { display: none; }
-.st-nma-new .nm-count { display: block; }
-.st-nma-waiting .nm-waiting {
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
-  white-space: normal; line-height: var(--font-lineHeight-meta);
-}
-/* NMA-WAITING — the amber that already means "open question" everywhere else here.
-   Colour never carries this alone: the words change too (components.md §NewMessageAffordance). */
-.st-nma-waiting .nm-pill { background: var(--question-tint); border-color: var(--question); color: var(--question); }
-.st-nma-waiting .nm-pill:hover { background: var(--question-tint); }
-.st-nma-waiting .nm-pill svg.ic { color: var(--question); }
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--text-primary); color:var(--bg-base); font-weight:var(--w-semibold)}
+.seg button:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
 
-/* ============ composer ============ */
-.composer {
-  flex: none; display: flex; align-items: center; gap: var(--sp-md);
-  padding: var(--sp-md) var(--gutter) var(--sp-lg);
-  background: var(--bg-raised); border-top: 1px solid var(--hairline);
+/* ══════════════════════════════════════════════════════════════════════════
+   TASK DETAIL (S6)
+   ══════════════════════════════════════════════════════════════════════════ */
+.detail-head{padding:var(--s6) 0 var(--s4); border-bottom:var(--b-rule) solid var(--bg-rule)}
+.detail-head h1{
+  margin:0; font-size:var(--fs-display); line-height:var(--lh-title); letter-spacing:var(--ls-display);
+  font-weight:var(--w-semibold); max-width:24ch;
 }
-.composer-inner { display: flex; align-items: center; gap: var(--sp-md); width: 100%; max-width: 720px; margin: 0 auto; }
-.composer-input {
-  flex: 1; min-width: 0; height: 44px;
-  background: var(--bg-base); border: 1px solid var(--hairline); border-radius: var(--r-pill);
-  padding: 0 var(--sp-lg); color: var(--tx);
-  font-family: var(--font-family-body); font-size: var(--fs-body);
-  caret-color: var(--primary);
+.detail-head .meta{margin:var(--s3) 0 0; font-size:var(--fs-meta); color:var(--text-muted); font-family:var(--font-num)}
+.fields{display:grid; gap:var(--field-row-gap); padding:var(--s6) 0 0; width:100%; max-width:var(--form-max)}
+.fail{
+  display:flex; align-items:center; gap:var(--s2); flex-wrap:wrap;
+  font-size:var(--fs-meta); color:var(--danger); margin-top:var(--field-help-gap);
 }
-.composer-input::placeholder { color: var(--tx-muted); }
-.composer-input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.st-listening .composer-input { color: var(--listening); caret-color: var(--listening); border-color: var(--listening); }
+.shortcuts{display:flex; flex-wrap:wrap; gap:var(--s2); margin-top:var(--s3)}
+.stepline{display:flex; align-items:center; gap:var(--s3); min-height:var(--h-md); border-bottom:var(--b-hairline) solid var(--bg-hairline); padding:var(--s1) 0}
+.stepline:last-of-type{border-bottom:0}
+.stepname{flex:1 1 auto; min-width:0; font-size:var(--fs-body)}
+.stepline.done .stepname{color:var(--text-muted); text-decoration:line-through}
+.step-add{display:flex; align-items:center; gap:var(--s2); margin-top:var(--s3)}
+.step-add .field{flex:1 1 auto}
+.repeat-summary{display:flex; align-items:center; gap:var(--s3); flex-wrap:wrap; min-height:var(--field-h)}
+.repeat-summary .txt{flex:1 1 auto; min-width:0; font-size:var(--fs-body)}
+.picker{border:var(--b-hairline) solid var(--bg-rule); padding:var(--s4); display:grid; gap:var(--s4)}
+.picker .cad{display:flex; flex-wrap:wrap; gap:var(--s2)}
+.wk{display:flex; flex-wrap:wrap; gap:var(--s2)}
+.wk button{
+  appearance:none; cursor:pointer; background:transparent; color:var(--text-secondary);
+  border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-none);
+  width:var(--min-target); height:var(--min-target); font-size:var(--fs-meta); font-weight:var(--w-semibold);
+}
+.wk button[aria-pressed="true"]{background:var(--text-primary); color:var(--bg-base); border-color:var(--text-primary)}
+.wk button:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
+.preview{border-left:var(--b-mark) solid var(--bg-rule); padding-left:var(--s4); display:grid; gap:var(--s2)}
+.preview .pv{display:flex; gap:var(--s3); font-size:var(--fs-meta); align-items:baseline}
+.preview .pv strong{font-family:var(--font-num); font-weight:var(--w-semibold); color:var(--text-primary)}
+.preview .pv span{color:var(--text-muted)}
+.preview.refused{border-left-color:var(--attention)}
+.preview .refusal{font-size:var(--fs-meta); color:var(--attention)}
+.danger-zone{max-width:var(--form-max); margin-top:var(--s7); padding-top:var(--s5); border-top:var(--b-rule) solid var(--bg-rule); display:flex; flex-wrap:wrap; gap:var(--s3)}
+.terminal{padding:var(--s8) 0; max-width:56ch}
+.terminal h2{margin:0 0 var(--s3); font-size:var(--fs-title); letter-spacing:var(--ls-title); line-height:var(--lh-title); font-weight:var(--w-semibold)}
+.terminal p{margin:0 0 var(--s4); color:var(--text-secondary)}
+.terminal .typed{border-left:var(--b-mark) solid var(--bg-rule); padding-left:var(--s4); margin:0 0 var(--s5)}
+.sk-detail{display:grid; gap:var(--field-row-gap); padding:var(--s6) 0 0; max-width:var(--form-max)}
+.sk-pair{display:grid; gap:var(--s2)}
 
-.mic {
-  position: relative; flex: none; width: 52px; height: 52px; border-radius: var(--radius-orb);
-  background: var(--bg-raised); border: 1px solid var(--hairline);
-  display: inline-flex; align-items: center; justify-content: center; color: var(--tx);
-  transition: transform var(--dur-micro) var(--motion-easing-spring), box-shadow var(--dur-standard) var(--motion-easing-standard);
-}
-.mic::after { /* idle ember — the gradient at 8%, a promise of the bloom */
-  content: ""; position: absolute; inset: 0; border-radius: var(--radius-orb);
-  background: var(--grad-voice); opacity: 0.08; pointer-events: none;
-  transition: opacity var(--dur-standard) var(--motion-easing-standard);
-}
-.mic:hover { transform: scale(1.04); }
-.mic:active { transform: scale(0.94); }
-.mic svg.ic { width: var(--icon-lg); height: var(--icon-lg); position: relative; z-index: 1; }
-.st-listening .mic { background: var(--grad-voice); border-color: transparent; box-shadow: var(--shadow-glowListening); color: var(--tx-onaccent); }
-html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); }
-.st-listening .mic::after { opacity: 0; }
-.st-thinking .mic { border-color: var(--thinking); box-shadow: var(--shadow-glowThinking); animation: orbBreath var(--dur-breath) var(--motion-easing-standard) infinite; }
-.st-thinking .mic::after { opacity: 0.3; }
-@keyframes orbBreath { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-.st-error .mic { border-color: var(--danger); }
-.st-mic-permission .mic, .st-mic-transient .mic { opacity: 0.4; }
-.st-mic-hidden .mic { display: none; }
-.mic-slash { display: none; position: absolute; inset: 0; z-index: 2; align-items: center; justify-content: center; }
-.st-mic-permission .mic-slash { display: flex; }
-.mic-slash svg { width: 100%; height: 100%; }
-.mic-slash line { stroke: var(--danger); stroke-width: var(--icon-stroke); stroke-linecap: round; }
+/* ══════════════════════════════════════════════════════════════════════════
+   LISTS RAIL — the wide tier's third column (frame-level, not the S3 menu)
+   ══════════════════════════════════════════════════════════════════════════ */
+.rail-in{padding:var(--s5) var(--s4); display:flex; flex-direction:column; gap:var(--s1); height:100%}
+.rail-word{font-size:var(--fs-meta); font-weight:var(--w-bold); letter-spacing:.02em; margin-bottom:var(--s4); color:var(--text-primary)}
+.rail-row{display:flex; align-items:center; gap:var(--s3); min-height:var(--min-target); padding:0 var(--s3); font-size:var(--fs-meta); color:var(--text-secondary); cursor:pointer}
+.rail-row .n{margin-left:auto; font-family:var(--font-num); color:var(--text-muted)}
+.rail-row.on{background:var(--bg-base); color:var(--text-primary); font-weight:var(--w-semibold); box-shadow:inset var(--b-mark) 0 0 var(--accent)}
+.rail-break{height:var(--s5)}
+.rail-sub{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:var(--font-case-label); font-weight:var(--w-semibold); color:var(--text-muted); padding:var(--s3) var(--s3) var(--s1)}
 
-.send {
-  flex: none; width: 40px; height: 40px; border-radius: var(--radius-orb);
-  background: var(--primary); color: var(--tx-onaccent);
-  display: inline-flex; align-items: center; justify-content: center;
-  transition: transform var(--dur-micro) var(--motion-easing-spring), opacity var(--dur-micro) var(--motion-easing-standard);
+/* ══════════════════════════════════════════════════════════════════════════
+   SLIDE-OVERS — Lists menu / Settings / New list.
+   CARRIED FROM v1 AT v2 TOKEN VALUES, NOT REDESIGNED. Tranche 2 owns their
+   shape; they are here because the 52 published ids are one contract and a
+   mockup that drops twelve of them breaks three suites for no design reason.
+   ══════════════════════════════════════════════════════════════════════════ */
+.scrim{position:absolute; inset:0; background:var(--bg-scrim); z-index:20; display:none}
+.app[data-menu] .scrim,.app[data-sheet] .scrim{display:block}
+.over{
+  position:absolute; top:0; bottom:0; left:0; width:calc(var(--layout-measure-rail) * 1px + var(--s8)); max-width:86%; z-index:21;
+  background:var(--bg-base); border-right:var(--b-rule) solid var(--bg-rule);
+  display:none; flex-direction:column; box-shadow:var(--shadow-overlay);
 }
-.send:active { transform: scale(0.96); }
-.send[aria-disabled="true"] { opacity: 0.4; }
+.app[data-menu] .over{display:flex}
+.over-head{display:flex; align-items:center; gap:var(--s2); height:56px; padding:0 var(--s3); border-bottom:var(--b-hairline) solid var(--bg-hairline); flex:none}
+.over-body{flex:1 1 auto; overflow-y:auto; padding:var(--s3) 0}
+.mrow{display:flex; align-items:center; gap:var(--s3); min-height:var(--min-target); height:var(--h-lg); padding:0 var(--s4); font-size:var(--fs-body); cursor:pointer; color:var(--text-primary)}
+.mrow .n{margin-left:auto; font-family:var(--font-num); font-size:var(--fs-meta); color:var(--text-muted)}
+.mrow.on{font-weight:var(--w-semibold); box-shadow:inset var(--b-mark) 0 0 var(--accent)}
+.over-foot{flex:none; border-top:var(--b-hairline) solid var(--bg-hairline); padding:var(--s2) 0}
+.sheet{
+  position:absolute; left:0; right:0; bottom:0; z-index:22; background:var(--bg-base);
+  border-top:var(--b-rule) solid var(--bg-rule); padding:var(--s4) var(--s5) var(--s5);
+  display:none; box-shadow:var(--shadow-overlay);
+}
+.app[data-sheet] .sheet{display:block}
+.grabber{width:36px; height:4px; border-radius:var(--r-pill); background:var(--bg-rule); margin:0 auto var(--s4)}
+.settings-panel{display:none; flex-direction:column; flex:1 1 auto; min-height:0}
+.app[data-settings] .settings-panel{display:flex}
+.app[data-settings] .pane-tasks{display:none}
+.srow{display:flex; align-items:center; gap:var(--s4); min-height:var(--h-lg); padding:var(--s3) 0; border-bottom:var(--b-hairline) solid var(--bg-hairline)}
+.srow .slab{flex:1 1 auto; min-width:0}
+.srow .slab b{display:block; font-weight:var(--w-semibold)}
+.srow .slab span{display:block; font-size:var(--fs-meta); color:var(--text-secondary)}
+.srow.failed .slab span{color:var(--danger)}
+.sw{width:52px; height:32px; border-radius:var(--r-pill); background:var(--accent); position:relative; flex:none; cursor:pointer; border:0}
+.sw::after{content:""; position:absolute; right:3px; top:3px; width:26px; height:26px; border-radius:var(--r-circle); background:var(--color-light-bg-base)}
+.plat-android .sw{border:2px solid var(--accent)}
 
-/* ============ reduced motion — end states kept ============ */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: 80ms !important; animation-iteration-count: 1 !important; transition-duration: 80ms !important; }
+/* ── platform bottom chrome ── */
+.homebar{height:5px; width:134px; border-radius:var(--r-pill); background:var(--text-primary); margin:var(--s3) auto var(--s2)}
+.gesturebar{height:3px; width:108px; border-radius:var(--r-pill); background:var(--text-primary); opacity:.55; margin:var(--s3) auto var(--s2)}
+.plat-web .homebar,.plat-web .gesturebar,.plat-android .homebar,.plat-ios .gesturebar{display:none}
+
+.pos{position:relative; flex:1 1 auto; min-height:0; display:flex; flex-direction:column}
+
+/* view switching — a state shows exactly the views it names */
+.v{display:none}
+.v.on{display:block}
+.v-flex.on{display:flex}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms !important; transition-duration:.001ms !important}
 }
+
+.ic{stroke-width:var(--icon-stroke)}
+
+/* ── view switching: one rule per state attribute a state actually sets ── */
+.app[data-mic="denied"] .v-mic-denied{display:block}
+.app[data-mic="denied"] .v-mic-denied.v-flex{display:flex}
+.app[data-mic="hidden"] .v-mic-hidden{display:block}
+.app[data-mic="hidden"] .v-mic-hidden.v-flex{display:flex}
+.app[data-mic="idle"] .v-mic-idle{display:block}
+.app[data-mic="idle"] .v-mic-idle.v-flex{display:flex}
+.app[data-mic="live"] .v-mic-live{display:block}
+.app[data-mic="live"] .v-mic-live.v-flex{display:flex}
+.app[data-mic="thinking"] .v-mic-thinking{display:block}
+.app[data-mic="thinking"] .v-mic-thinking.v-flex{display:flex}
+.app[data-mic="transient"] .v-mic-transient{display:block}
+.app[data-mic="transient"] .v-mic-transient.v-flex{display:flex}
+.app[data-nma="new"] .v-nma-new{display:block}
+.app[data-nma="new"] .v-nma-new.v-flex{display:flex}
+.app[data-nma="waiting"] .v-nma-waiting{display:block}
+.app[data-nma="waiting"] .v-nma-waiting.v-flex{display:flex}
+.app[data-notice="offline"] .v-notice-offline{display:block}
+.app[data-notice="offline"] .v-notice-offline.v-flex{display:flex}
+.app[data-notice="queued"] .v-notice-queued{display:block}
+.app[data-notice="queued"] .v-notice-queued.v-flex{display:flex}
+.app[data-surface="talk"] .v-surface-talk{display:block}
+.app[data-surface="talk"] .v-surface-talk.v-flex{display:flex}
+.app[data-surface="tasks"] .v-surface-tasks{display:block}
+.app[data-surface="tasks"] .v-surface-tasks.v-flex{display:flex}
+.app[data-talk="applied"] .v-talk-applied{display:block}
+.app[data-talk="applied"] .v-talk-applied.v-flex{display:flex}
+.app[data-talk="boundary"] .v-talk-boundary{display:block}
+.app[data-talk="boundary"] .v-talk-boundary.v-flex{display:flex}
+.app[data-talk="clarify"] .v-talk-clarify{display:block}
+.app[data-talk="clarify"] .v-talk-clarify.v-flex{display:flex}
+.app[data-talk="confirm"] .v-talk-confirm{display:block}
+.app[data-talk="confirm"] .v-talk-confirm.v-flex{display:flex}
+.app[data-talk="empty"] .v-talk-empty{display:block}
+.app[data-talk="empty"] .v-talk-empty.v-flex{display:flex}
+.app[data-talk="error"] .v-talk-error{display:block}
+.app[data-talk="error"] .v-talk-error.v-flex{display:flex}
+.app[data-talk="listening"] .v-talk-listening{display:block}
+.app[data-talk="listening"] .v-talk-listening.v-flex{display:flex}
+.app[data-talk="no-match"] .v-talk-no-match{display:block}
+.app[data-talk="no-match"] .v-talk-no-match.v-flex{display:flex}
+.app[data-talk="nothing-reverted"] .v-talk-nothing-reverted{display:block}
+.app[data-talk="nothing-reverted"] .v-talk-nothing-reverted.v-flex{display:flex}
+.app[data-talk="offline"] .v-talk-offline{display:block}
+.app[data-talk="offline"] .v-talk-offline.v-flex{display:flex}
+.app[data-talk="reverted"] .v-talk-reverted{display:block}
+.app[data-talk="reverted"] .v-talk-reverted.v-flex{display:flex}
+.app[data-talk="superseded"] .v-talk-superseded{display:block}
+.app[data-talk="superseded"] .v-talk-superseded.v-flex{display:flex}
+.app[data-talk="thinking"] .v-talk-thinking{display:block}
+.app[data-talk="thinking"] .v-talk-thinking.v-flex{display:flex}
+.rename{display:none}
+.app[data-row="rename"] .rename{display:flex}
+.app[data-row="rename"] .row-editable .row-open{display:none}
+.app[data-row="arrived"] .row-editable{box-shadow:inset var(--b-mark) 0 0 var(--accent)}
+
+/* This file draws the CONVERSATION's own states, one surface at a time. The
+   frame that puts Tasks beside Talk is app-shell.html's subject, and drawing it
+   twice would give two files an opinion about one layout. */
+.app[data-surface="talk"] .col-main{display:none}
+.app[data-surface="talk"] .col-panel{display:flex; flex:1 1 auto; border-left:0}
+.app[data-surface="tasks"] .col-main{display:flex}
+.app[data-surface="tasks"] .col-panel{display:none}
+/* mic modes — one control, four appearances, and one of them is absence.
+   A hover-revealed or silently-dead microphone is worse than no microphone. */
+.app[data-mic="idle"] .mic{background:transparent; color:var(--text-secondary); border:var(--b-hairline) solid var(--bg-rule)}
+.app[data-mic="hidden"] .mic{display:none}
+.app[data-mic="denied"] .mic,.app[data-mic="transient"] .mic{opacity:.4; background:transparent; color:var(--text-muted); border:var(--b-hairline) solid var(--bg-hairline)}
+.app[data-mic="denied"] .v-mic-denied{display:flex}
+.app[data-mic="transient"] .v-mic-transient{display:flex}
+.app[data-notice="offline"] .v-notice-offline{display:flex}
+.app[data-notice="queued"] .v-notice-queued{display:flex}
+.app[data-nma="new"] .v-nma-new,.app[data-nma="waiting"] .v-nma-waiting{display:inline-flex}
+
 </style>
 </head>
-<body>
+<body class="plat-web">
 
-<!-- dev chrome: state switcher — mockup tooling, excluded from testid contract -->
-<div class="dev-bar" aria-label="Mockup state switcher (dev chrome)">
-  <span class="dev-tag">F-001 web</span>
+<!-- Mockup chrome. Not the design, and not part of the testid contract. -->
+<div class="dev" aria-label="Mockup state switcher">
+  <span class="dev-tag">talk · WEB · v2</span>
   <button data-s="idle-empty" onclick="showState('idle-empty')">idle-empty</button>
   <button data-s="idle-tasks" onclick="showState('idle-tasks')">idle-tasks</button>
   <button data-s="listening" onclick="showState('listening')">listening</button>
@@ -597,533 +924,372 @@ html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); 
   <button data-s="applied-diff" onclick="showState('applied-diff')">applied-diff</button>
   <button data-s="question-confirm" onclick="showState('question-confirm')">question-confirm</button>
   <button data-s="question-clarify" onclick="showState('question-clarify')">question-clarify</button>
-  <button data-s="declined-superseded" onclick="showState('declined-superseded')">declined-superseded</button>
-  <button data-s="reverted" onclick="showState('reverted')">reverted</button>
-  <button data-s="nothing-reverted" onclick="showState('nothing-reverted')">nothing-reverted</button>
   <button data-s="no-match" onclick="showState('no-match')">no-match</button>
   <button data-s="error" onclick="showState('error')">error</button>
   <button data-s="offline" onclick="showState('offline')">offline</button>
+  <button data-s="queued" onclick="showState('queued')">queued</button>
+  <button data-s="boundary" onclick="showState('boundary')">boundary</button>
   <button data-s="nma-new" onclick="showState('nma-new')">nma-new</button>
   <button data-s="nma-waiting" onclick="showState('nma-waiting')">nma-waiting</button>
-  <button data-s="boundary" onclick="showState('boundary')">boundary</button>
   <button data-s="mic-permission" onclick="showState('mic-permission')">mic-permission</button>
-  <button data-s="mic-transient" onclick="showState('mic-transient')">mic-transient</button>
   <button data-s="mic-hidden" onclick="showState('mic-hidden')">mic-hidden</button>
-  <button class="dev-theme" onclick="toggleTheme()">dark / light</button>
+  <button data-s="mic-transient" onclick="showState('mic-transient')">mic-transient</button>
+  <button data-s="reverted" onclick="showState('reverted')">reverted</button>
+  <button data-s="nothing-reverted" onclick="showState('nothing-reverted')">nothing-reverted</button>
+  <button data-s="declined-superseded" onclick="showState('declined-superseded')">declined-superseded</button>
+  <button onclick="toggleTheme()">light / dark</button>
+  <button onclick="setFrame('')">frame: real width</button>
+  <button onclick="setFrame('phone')">frame: phone</button>
+  <button onclick="setFrame('wide')">frame: wide</button>
+  <p class="dev-note">The conversation states. Above 1024px the task list is on screen beside the panel — that is the app, not a mockup convenience. “frame: phone” forces the one-surface frame.</p>
 </div>
 
-<div id="app" class="app st-idle-empty">
+<div class="stagewrap"><div class="stage" id="stage">
 
-  <header class="topbar">
-    <button class="icon-btn" data-testid="assistant-drawer-button" aria-label="Open lists">
-      <svg class="ic" viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
-    </button>
-    <span class="wordmark">todo-ai</span>
-    <span class="topdate">Sat, Aug 16</span>
-  </header>
+<div class="app" id="app" data-surface="talk" data-talk="applied" data-mic="idle" data-notice="none">
+  <div class="frame">
+    <div class="col-main">
+      <header class="topbar"><div class="bar-in">
+        <span class="bar-title">Today</span>
+        <span class="spacer"></span>
+        <button class="btn btn-sm btn-primary" data-testid="assistant-add-task-button"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Add task</button>
+      </div></header>
+      <div class="pos">
 
-  <div class="panes">
-
-    <!-- ======== task list — the source of truth (OQ-1: inline, drawer kept) ======== -->
-    <aside class="list-pane" aria-label="Your tasks">
-      <div class="list-head">
-        <h2>Your list</h2>
-        <span class="count">3 tasks left today</span>
-        <button class="add-btn" data-testid="assistant-add-task-button">
-          <svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-          Add task
-        </button>
-      </div>
-
-      <div class="list-empty">
-        <strong>No tasks yet — say one.</strong>
-        Say one sentence and it lands right here — or add it by hand.
-      </div>
-
-      <div class="list-scroll">
-        <div class="day-head">Today · Sat, Aug 16</div>
-        <ul class="tasks">
-          <li class="task-row done row-t1">
-            <button class="checkbox" aria-label="Mark “Morning stand-up” not done" aria-pressed="true"><svg class="ic" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></button>
-            <div class="task-main"><span class="task-title">Morning stand-up</span><span class="task-meta">9:30 AM</span></div>
-          </li>
-          <li class="task-row row-t2" data-testid="assistant-task-row">
-            <button class="checkbox" data-testid="assistant-task-checkbox" aria-label="Mark “Review the Q3 budget draft” done" aria-pressed="false"></button>
-            <div class="task-main">
-              <span class="task-title">Review the Q3 budget draft</span><span class="badge badge-edited" data-testid="assistant-row-badge">EDITED</span>
-              <span class="task-meta meta-before">2:00 PM</span>
-              <span class="task-meta meta-after">4:00 PM</span>
-              <span class="row-diff"><span class="chip-old">2:00 PM</span> <span class="diff-arrow">→</span> <span class="chip-new">4:00 PM</span></span>
+      <main class="pane">
+        <div class="content-col">
+          <div class="head">
+            <h1>Today</h1>
+            <p class="count"><b>3</b> open</p>
+          </div>
+          <div class="list">
+            <div class="group"><h3>Today · Fri, Aug 21</h3></div>
+            <div class="row" data-testid="assistant-task-row">
+              <div class="row-time">4:00 PM</div>
+              <div class="row-main">
+                <input class="cbx" type="checkbox" data-testid="assistant-task-checkbox" aria-label="Complete: Review the Q3 budget draft">
+                <span class="row-title">Review the Q3 budget draft<span class="row-marks"><span class="tag edited" data-testid="assistant-row-badge">EDITED</span></span></span>
+              </div>
             </div>
-          </li>
-          <li class="task-row row-t3">
-            <button class="checkbox" aria-label="Mark “Pay the electricity bill” done" aria-pressed="false"></button>
-            <div class="task-main"><span class="task-title">Pay the electricity bill</span><span class="badge badge-new">NEW</span><span class="task-meta">due today</span></div>
-          </li>
-          <li class="task-row row-t4">
-            <button class="checkbox" aria-label="Mark “1:1 with Hà” done" aria-pressed="false"></button>
-            <div class="task-main"><span class="task-title">1:1 with Hà</span><span class="task-meta">4:30 PM</span></div>
-          </li>
-        </ul>
-        <div class="day-head">Tomorrow · Sun, Aug 17</div>
-        <ul class="tasks">
-          <li class="task-row row-t5">
-            <button class="checkbox" aria-label="Mark “Grocery run for the week” done" aria-pressed="false"></button>
-            <div class="task-main"><span class="task-title">Grocery run for the week</span><span class="task-meta">morning</span></div>
-          </li>
-          <li class="task-row row-t6">
-            <button class="checkbox" aria-label="Mark “Call Mum” done" aria-pressed="false"></button>
-            <div class="task-main"><span class="task-title">Call Mum</span><span class="task-meta">10:00 AM</span></div>
-          </li>
-          <li class="task-row row-t7">
-            <button class="checkbox" aria-label="Mark “Order the birthday cake” done" aria-pressed="false"></button>
-            <div class="task-main"><span class="task-title">Order the birthday cake</span><span class="task-meta">before noon</span></div>
-          </li>
-          <li class="task-row row-t11">
-            <button class="checkbox" aria-label="Mark “Call the bank” done" aria-pressed="false"></button>
-            <div class="task-main"><span class="task-title">Call the bank</span><span class="badge badge-new">NEW</span><span class="task-meta">9:00 AM</span></div>
-          </li>
-        </ul>
-        <div class="day-head">Next week</div>
-        <ul class="tasks">
-          <li class="task-row row-t8">
-            <button class="checkbox" aria-label="Mark “Pick up dry cleaning” done" aria-pressed="false"></button>
-            <div class="task-main"><span class="task-title">Pick up dry cleaning</span><span class="task-meta">Mon</span></div>
-          </li>
-          <li class="task-row row-t9">
-            <button class="checkbox" aria-label="Mark “Dentist appointment” done" aria-pressed="false"></button>
-            <div class="task-main"><span class="task-title">Dentist appointment</span><span class="task-meta">Wed, 3:00 PM</span></div>
-          </li>
-          <li class="task-row row-t10">
-            <button class="checkbox" aria-label="Mark “Pick up the birthday cake” done" aria-pressed="false"></button>
-            <div class="task-main"><span class="task-title">Pick up the birthday cake</span><span class="badge badge-new">NEW</span><span class="task-meta">Sat, Aug 22</span></div>
-          </li>
-        </ul>
+            <div class="row-rule"></div>
+            <div class="row">
+              <div class="row-time">6:00 PM</div>
+              <div class="row-main">
+                <input class="cbx" type="checkbox" aria-label="Complete: Pay the electricity bill">
+                <span class="row-title">Pay the electricity bill<span class="row-marks"><span class="tag">NEW</span></span></span>
+              </div>
+            </div>
+            <div class="row-rule"></div>
+            <div class="row">
+              <div class="row-time">—</div>
+              <div class="row-main">
+                <input class="cbx" type="checkbox" aria-label="Complete: Gọi nha sĩ đặt lịch khám răng">
+                <span class="row-title">Gọi nha sĩ đặt lịch khám răng<span class="row-marks"><span class="mark" title="High priority">!</span></span></span>
+              </div>
+            </div>
+            <div class="row-rule"></div>
+          </div>
+        </div>
+      </main>
+      </div>
+    </div>
+    <aside class="col-panel" aria-label="Talk">
+      <header class="talk-head">
+        <button class="iconbtn" data-testid="assistant-drawer-button" aria-label="Lists"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+        <span class="talk-title">Talk</span>
+        <span class="spacer"></span>
+      </header>
+      <div class="talk-scroll">
+        <div class="conv">
+
+          <div class="v v-talk-empty">
+            <div class="empty" style="padding-left:0">
+              <h2>Say it. I’ll write it down.</h2>
+              <p>Tap the microphone and talk the way you would to a person — “move the budget review to 4 and add pay the electricity bill”.</p>
+            </div>
+          </div>
+
+          <div class="v v-talk-applied">
+            <div class="msg user"><div class="bubble">Move the budget review to 4 and add pay the electricity bill</div><span class="msg-time">2:04 PM</span></div>
+            <div class="msg bot applied"><div class="bubble" data-testid="assistant-message-bubble"><div class="bubble-head">Edited <b>1 task</b>, added 1.</div>
+              <dl class="diff">
+                <div class="diff-row"><dt>Budget review</dt><dd><span class="old num" data-testid="assistant-diff-old">2:00 PM</span><span class="arrow">→</span><span class="new num" data-testid="assistant-diff-new">4:00 PM</span></dd></div>
+                <div class="diff-row"><dt>Added</dt><dd><span class="new">Pay the electricity bill</span> <span class="tag">NEW</span></dd></div>
+              </dl>
+              <div class="msg-acts"><button class="btn btn-sm btn-accent-quiet" data-testid="assistant-undo-button"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Undo</button></div></div><span class="msg-time">2:04 PM</span></div>
+          </div>
+
+          <div class="v v-talk-listening">
+            <div class="msg user"><div class="bubble">Move the budget review to 4 and add pay the electricity bill</div><span class="msg-time">2:04 PM</span></div>
+          </div>
+
+          <div class="v v-talk-thinking">
+            <div class="msg user"><div class="bubble">Delete everything I finished last week</div><span class="msg-time">2:06 PM</span></div>
+          </div>
+
+          <div class="v v-talk-confirm">
+            <div class="msg user"><div class="bubble">delete all my shopping tasks</div><span class="msg-time">2:07 PM</span></div>
+            <div class="msg bot question"><div class="bubble"><span class="qtext">Delete 3 tasks: Buy milk, Buy a birthday present, Order the cake?</span>
+              <div class="msg-acts">
+                <button class="btn btn-sm btn-danger" data-testid="assistant-chip-affirm">Delete</button>
+                <button class="btn btn-sm btn-ghost" data-testid="assistant-chip-negative">Cancel</button>
+              </div></div><span class="msg-time">2:07 PM</span></div>
+          </div>
+
+          <div class="v v-talk-clarify">
+            <div class="msg user"><div class="bubble">move the meeting</div><span class="msg-time">2:08 PM</span></div>
+            <div class="msg bot question"><div class="bubble"><span class="qtext">Which meeting?</span>
+              <div class="msg-acts">
+                <button class="chip" data-testid="assistant-option-chip">Team meeting · Sat 2:00 PM</button>
+                <button class="chip">Budget review · Fri 4:00 PM</button>
+              </div></div><span class="msg-time">2:08 PM</span></div>
+          </div>
+
+          <div class="v v-talk-no-match">
+            <div class="msg user"><div class="bubble">finish the tax return</div><span class="msg-time">2:10 PM</span></div>
+            <div class="msg bot "><div class="bubble">Nothing in your list matches “tax return”. It is on <b>Tasks</b> if you want to look, and you can add it there by hand.</div><span class="msg-time">2:10 PM</span></div>
+          </div>
+
+          <div class="v v-talk-error">
+            <div class="msg user"><div class="bubble">add call the plumber tomorrow</div><span class="msg-time">2:12 PM</span></div>
+            <div class="msg bot error"><div class="bubble"><div class="bubble-head">That didn’t go through.</div>
+              <p style="margin:var(--s2) 0 0">The assistant didn’t answer. Nothing was changed.</p>
+              <div class="msg-acts"><button class="btn btn-sm btn-secondary" data-testid="assistant-retry-button"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>Retry</button></div></div><span class="msg-time">2:12 PM</span></div>
+          </div>
+
+          <div class="v v-talk-offline">
+            <div class="msg user"><div class="bubble">add buy milk</div><span class="msg-time">2:14 PM</span></div>
+            <div class="msg bot "><div class="bubble">Saved on this device. It will go up when you’re back online.</div><span class="msg-time">2:14 PM</span></div>
+          </div>
+
+          <div class="v v-talk-boundary">
+            <div class="msg bot "><div class="bubble">Added <b>Team meeting</b> for Saturday at 2:00 PM.</div><span class="msg-time">Yesterday, 9:38 PM</span></div>
+            <div class="boundary" data-testid="assistant-boundary-marker">Today</div>
+            <div class="msg user"><div class="bubble">what’s left today</div><span class="msg-time">8:02 AM</span></div>
+          </div>
+
+          <div class="v v-talk-reverted">
+            <div class="msg user"><div class="bubble">undo</div><span class="msg-time">2:05 PM</span></div>
+            <div class="msg bot applied"><div class="bubble"><div class="bubble-head">Put back.</div><p style="margin:var(--s2) 0 0">Budget review is at 2:00 PM again, and “Pay the electricity bill” is gone.</p></div><span class="msg-time">2:05 PM</span></div>
+          </div>
+
+          <div class="v v-talk-nothing-reverted">
+            <div class="msg user"><div class="bubble">undo</div><span class="msg-time">2:20 PM</span></div>
+            <div class="msg bot "><div class="bubble">There is nothing to undo — the last thing I did was answer a question.</div><span class="msg-time">2:20 PM</span></div>
+          </div>
+
+          <div class="v v-talk-superseded">
+            <div class="msg user"><div class="bubble">undo</div><span class="msg-time">2:22 PM</span></div>
+            <div class="msg bot question"><div class="bubble"><span class="qtext">That change has been overtaken.</span>
+              <p style="margin:var(--s2) 0 0">You edited “Budget review” by hand after I moved it, so undoing would throw your edit away. It is on <b>Tasks</b> if you want to change it there.</p></div><span class="msg-time">2:22 PM</span></div>
+          </div>
+        
+        </div>
+      </div>
+      <div class="pos" style="flex:none; position:relative">
+        <button class="v v-nma-new nma" data-testid="assistant-new-message-affordance"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>1 new message</button>
+        <button class="v v-nma-waiting nma"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>Still working…</button>
+
+        <div class="composer">
+          <span class="live" aria-hidden="true"></span>
+          <div class="v v-mic-live transcript">move the budget review to <span class="pend">four</span></div>
+
+          <div class="v v-flex v-notice-offline banner attention" style="margin:0; border-width:0 0 var(--b-hairline) 0" data-testid="assistant-offline-banner">
+            <span class="ico"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m2 2 20 20"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M2 8.8a15.9 15.9 0 0 1 4.6-2.9"/><path d="M10.7 5c4 -.4 8.1 .9 11.3 3.8"/><path d="M5 12.9a10 10 0 0 1 3-1.8"/><path d="M12 20h.01"/></svg></span>
+            <span class="btxt"><b>You’re offline</b>Your list still works by hand.</span>
+          </div>
+          <div class="v v-flex v-notice-queued banner quiet" style="margin:0; border-width:0 0 var(--b-hairline) 0" data-testid="assistant-queued-notice">
+            <span class="ico"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+            <span class="btxt"><b>1 waiting to send</b>It goes up as soon as you’re back.</span>
+          </div>
+          <div class="v v-flex v-mic-denied banner attention" style="margin:0; border-width:0 0 var(--b-hairline) 0">
+            <span class="ico"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m2 2 20 20"/><path d="M9 9v3a3 3 0 0 0 5.1 2.1"/><path d="M15 9.3V5a3 3 0 0 0-5.9-.7"/><path d="M19 10v2a7 7 0 0 1-.9 3.4"/><path d="M5 10v2a7 7 0 0 0 11 5.7"/><path d="M12 19v3"/></svg></span>
+            <span class="btxt"><b>Microphone is off</b>Turn Microphone on in Settings to talk. Typing works either way.</span>
+            <button class="btn btn-sm btn-secondary" data-testid="assistant-permission-cta">Open Settings</button>
+          </div>
+          <div class="v v-flex v-mic-transient banner quiet" style="margin:0; border-width:0 0 var(--b-hairline) 0">
+            <span class="ico"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m2 2 20 20"/><path d="M9 9v3a3 3 0 0 0 5.1 2.1"/><path d="M15 9.3V5a3 3 0 0 0-5.9-.7"/><path d="M19 10v2a7 7 0 0 1-.9 3.4"/><path d="M5 10v2a7 7 0 0 0 11 5.7"/><path d="M12 19v3"/></svg></span>
+            <span class="btxt"><b>Speech recognition is busy</b>The recognition service isn’t answering. Typing still works as usual.</span>
+          </div>
+
+          <div class="composer-in">
+            <input class="cinput" data-testid="assistant-composer-input" placeholder="Say or type what needs doing." aria-label="Message">
+            <span class="v v-flex v-mic-live v-mic-thinking state-ind" id="stateInd" data-testid="assistant-state-indicator">Listening</span>
+            <button class="v v-flex v-mic-live v-mic-thinking btn btn-sm btn-ghost" data-testid="assistant-cancel-button">Cancel</button>
+            <button class="btn btn-sm btn-ghost composer-send" data-testid="assistant-composer-send" aria-label="Send"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button class="mic" data-testid="assistant-mic-button" aria-label="Start listening"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></button>
+          </div>
+          
+        </div>
       </div>
     </aside>
-
-    <!-- ======== conversation ======== -->
-    <main class="conv-pane">
-      <div class="conv-scroll">
-
-        <!-- idle-empty: first run. The invitation, not a shrug. -->
-        <section class="conv" data-conv="idle-empty">
-          <div class="invite">
-            <h3>Say it.<br>I'll write it down.</h3>
-            <p>Tap the mic and try saying “team meeting tomorrow at 2”.</p>
-            <p>Typing does exactly the same.</p>
-          </div>
-        </section>
-
-        <!-- idle with tasks: the resting surface after one applied turn -->
-        <section class="conv" data-conv="idle-tasks" hidden>
-          <div class="msg user"><div class="bubble">Add pay the electricity bill today</div><span class="msg-meta">You · 1:58 PM</span></div>
-          <div class="msg ai">
-            <div class="bubble">
-              <div class="bubble-head">Added 1 task</div>
-              <div class="diff-row"><span class="diff-task">Pay the electricity bill</span><span class="chip-new">due today</span><span class="mini-label add">NEW</span></div>
-              <button class="undo-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>Undo</button>
-            </div>
-            <span class="msg-meta">1:58 PM</span>
-          </div>
-        </section>
-
-        <!-- listening: live transcript streams into the composer -->
-        <section class="conv" data-conv="listening" hidden>
-          <div class="msg user"><div class="bubble">Add pay the electricity bill today</div><span class="msg-meta">You · 1:58 PM</span></div>
-          <div class="msg ai">
-            <div class="bubble">
-              <div class="bubble-head">Added 1 task</div>
-              <div class="diff-row"><span class="diff-task">Pay the electricity bill</span><span class="chip-new">due today</span><span class="mini-label add">NEW</span></div>
-              <button class="undo-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>Undo</button>
-            </div>
-            <span class="msg-meta">1:58 PM</span>
-          </div>
-        </section>
-
-        <!-- thinking -->
-        <section class="conv" data-conv="thinking" hidden>
-          <div class="msg user"><div class="bubble">Move the budget review to 4pm and add pick up the birthday cake on Saturday</div><span class="msg-meta">You · 2:04 PM</span></div>
-          <div class="msg ai"><div class="bubble thinking-msg"><span class="tdots"><i></i><i></i><i></i></span></div></div>
-        </section>
-
-        <!-- applied: multi-task diff + violet Undo (AC-4, AC-5) -->
-        <section class="conv" data-conv="applied-diff" hidden>
-          <div class="msg user"><div class="bubble">Move the budget review to 4pm and add pick up the birthday cake on Saturday</div><span class="msg-meta">You · 2:04 PM</span></div>
-          <div class="msg ai">
-            <div class="bubble" data-testid="assistant-message-bubble">
-              <div class="bubble-head">Edited 1 task · added 1</div>
-              <div class="diff-row"><span class="diff-task">Review the Q3 budget draft</span><span class="chip-old" data-testid="assistant-diff-old">2:00 PM</span><span class="diff-arrow">→</span><span class="chip-new" data-testid="assistant-diff-new">4:00 PM</span><span class="mini-label edit">EDITED</span></div>
-              <div class="diff-row"><span class="diff-task">Pick up the birthday cake</span><span class="chip-new">Sat, Aug 22</span><span class="mini-label add">NEW</span></div>
-              <button class="undo-btn" data-testid="assistant-undo-button"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>Undo</button>
-            </div>
-            <span class="msg-meta">2:04 PM</span>
-          </div>
-        </section>
-
-        <!-- confirm question: bulk delete — the ONLY red action (AC-9, AC-10) -->
-        <section class="conv" data-conv="question-confirm" hidden>
-          <div class="msg user"><div class="bubble">Delete the shopping tasks</div><span class="msg-meta">You · 2:10 PM</span></div>
-          <div class="msg ai">
-            <div class="bubble q">
-              <div class="bubble-head">Delete 3 tasks?</div>
-              <p>Will delete: Grocery run for the week, Order the birthday cake, Pick up dry cleaning.</p>
-              <div class="chips">
-                <button class="chip chip-danger" data-testid="assistant-chip-affirm">Delete 3 tasks</button>
-                <button class="chip" data-testid="assistant-chip-negative">Keep them</button>
-              </div>
-            </div>
-            <span class="msg-meta">2:10 PM · answer by tapping, speaking or typing — the list still works</span>
-          </div>
-        </section>
-
-        <!-- clarify question: real candidates as chips (AC-13) -->
-        <section class="conv" data-conv="question-clarify" hidden>
-          <div class="msg user"><div class="bubble">Cancel the meeting</div><span class="msg-meta">You · 2:12 PM</span></div>
-          <div class="msg ai">
-            <div class="bubble q">
-              <div class="bubble-head">“Meeting” matches two tasks — which one?</div>
-              <div class="chips">
-                <button class="chip" data-testid="assistant-option-chip">Morning stand-up — 9:30 AM</button>
-                <button class="chip">1:1 with Hà — 4:30 PM</button><!-- same testid as exemplar in the app -->
-              </div>
-            </div>
-            <span class="msg-meta">2:12 PM · answer by tapping, speaking or typing — the list still works</span>
-          </div>
-        </section>
-
-        <!-- superseded: unrelated command declines the question, visibly (AC-10, AC-11) -->
-        <section class="conv" data-conv="declined-superseded" hidden>
-          <div class="msg ai">
-            <div class="bubble q resolved">
-              <div class="bubble-head">Delete 3 tasks?</div>
-              <p>Will delete: Grocery run for the week, Order the birthday cake, Pick up dry cleaning.</p>
-              <div class="chips">
-                <button class="chip" disabled>Delete 3 tasks</button>
-                <button class="chip" disabled>Keep them</button>
-              </div>
-            </div>
-            <span class="msg-meta">2:10 PM</span>
-          </div>
-          <div class="msg user"><div class="bubble">Add call the bank tomorrow at 9</div><span class="msg-meta">You · 2:11 PM</span></div>
-          <div class="msg ai">
-            <div class="bubble">
-              <div class="bubble-head">Kept all 3 tasks</div>
-              <p>The delete was set aside because you moved on to something else. Nothing was deleted.</p>
-            </div>
-            <span class="msg-meta">2:11 PM</span>
-          </div>
-          <div class="msg ai">
-            <div class="bubble">
-              <div class="bubble-head">Added 1 task</div>
-              <div class="diff-row"><span class="diff-task">Call the bank</span><span class="chip-new">Tomorrow, 9:00 AM</span><span class="mini-label add">NEW</span></div>
-              <button class="undo-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>Undo</button>
-            </div>
-            <span class="msg-meta">2:11 PM</span>
-          </div>
-        </section>
-
-        <!-- reverted, with a skipped task named (AC-7) -->
-        <section class="conv" data-conv="reverted" hidden>
-          <div class="msg ai">
-            <div class="bubble undone">
-              <div class="bubble-head">Edited 1 task · added 1</div>
-              <div class="diff-row"><span class="diff-task">Review the Q3 budget draft</span><span class="chip-old">2:00 PM</span><span class="diff-arrow">→</span><span class="chip-new">4:00 PM</span></div>
-              <div class="diff-row"><span class="diff-task">Pick up the birthday cake</span><span class="chip-new">Sat, Aug 22</span></div>
-              <span class="undone-tag">Undone</span>
-            </div>
-            <span class="msg-meta">2:04 PM</span>
-          </div>
-          <div class="msg user"><div class="bubble">Undo</div><span class="msg-meta">You · 2:06 PM · voice</span></div>
-          <div class="msg ai">
-            <div class="bubble">
-              <div class="bubble-head">Undone — except one task</div>
-              <p>Undone: Pick up the birthday cake.</p>
-              <p>Skipped: Review the Q3 budget draft — it changed after my edit, so I left it alone.</p>
-            </div>
-            <span class="msg-meta">2:06 PM</span>
-          </div>
-        </section>
-
-        <!-- nothing reverted — never dressed as success (AC-7) + local nothing-to-undo refusal (AC-6, ADR-006) -->
-        <section class="conv" data-conv="nothing-reverted" hidden>
-          <div class="msg user"><div class="bubble">Undo</div><span class="msg-meta">You · 2:08 PM · voice</span></div>
-          <div class="msg ai">
-            <div class="bubble">
-              <div class="bubble-head">Nothing was undone</div>
-              <p>Both of those changed after my edit: Review the Q3 budget draft, Pick up the birthday cake. I left them as they are.</p>
-            </div>
-            <span class="msg-meta">2:08 PM</span>
-          </div>
-          <div class="msg user"><div class="bubble">Undo</div><span class="msg-meta">You · 2:09 PM · voice</span></div>
-          <div class="msg ai">
-            <div class="bubble">
-              <p>There is nothing to undo — nothing has been applied in this session.</p>
-            </div>
-            <span class="msg-meta">2:09 PM</span>
-          </div>
-        </section>
-
-        <!-- no match: quote the heard transcript so a mishearing is visible (AC-14) -->
-        <section class="conv" data-conv="no-match" hidden>
-          <div class="msg user"><div class="bubble">Cross off bad mitten</div><span class="msg-meta">You · 2:15 PM · voice</span></div>
-          <div class="msg ai">
-            <div class="bubble">
-              <p>I heard <span class="quote">“cross off bad mitten”</span> — nothing in your list matches.</p>
-              <p>Nothing changed. If I misheard, say it again or type it.</p>
-            </div>
-            <span class="msg-meta">2:15 PM</span>
-          </div>
-        </section>
-
-        <!-- error: cause + retry; words kept in the composer (AC-24) -->
-        <section class="conv" data-conv="error" hidden>
-          <div class="msg user"><div class="bubble">Move the gym session to Monday at 7</div><span class="msg-meta">You · 2:20 PM</span></div>
-          <div class="msg ai">
-            <div class="bubble err">
-              <div class="bubble-head">Couldn't send</div>
-              <p>The assistant couldn't handle that one. Nothing changed — your words are still in the box below.</p>
-              <button class="retry-btn" data-testid="assistant-retry-button">Retry</button>
-            </div>
-            <span class="msg-meta">2:20 PM · the list still works by hand</span>
-          </div>
-        </section>
-
-        <!-- offline: hand over to the list; queued turn visible (AC-25) -->
-        <section class="conv" data-conv="offline" hidden>
-          <div class="msg user">
-            <div class="bubble">Mark the electricity bill done</div>
-            <span class="queued-note" data-testid="assistant-queued-notice"><span class="dot-pulse"></span>Waiting for the network — will send again</span>
-          </div>
-        </section>
-
-        <!-- new messages arrived while the user reads history — the view did NOT move (BUG-004).
-             NMA-NEW: nothing is pending, so the pill reports a count. -->
-        <section class="conv" data-conv="nma-new" hidden>
-          <div class="msg user"><div class="bubble">Add pay the electricity bill today</div><span class="msg-meta">You · 1:58 PM</span></div>
-          <div class="msg ai">
-            <div class="bubble">
-              <div class="bubble-head">Added 1 task</div>
-              <div class="diff-row"><span class="diff-task">Pay the electricity bill</span><span class="chip-new">due today</span><span class="mini-label add">NEW</span></div>
-            </div>
-            <span class="msg-meta">1:58 PM</span>
-          </div>
-          <div class="msg user"><div class="bubble">Move the budget review to 4pm and add pick up the birthday cake on Saturday</div><span class="msg-meta">You · 2:04 PM</span></div>
-          <div class="msg ai">
-            <div class="bubble">
-              <div class="bubble-head">Edited 1 task · added 1</div>
-              <div class="diff-row"><span class="diff-task">Review the Q3 budget draft</span><span class="chip-old">2:00 PM</span><span class="diff-arrow">→</span><span class="chip-new">4:00 PM</span><span class="mini-label edit">EDITED</span></div>
-              <div class="diff-row"><span class="diff-task">Pick up the birthday cake</span><span class="chip-new">Sat, Aug 22</span><span class="mini-label add">NEW</span></div>
-            </div>
-            <span class="msg-meta">2:04 PM</span>
-          </div>
-          <div class="msg user"><div class="bubble">Add call the bank tomorrow at 9</div><span class="msg-meta">You · 2:11 PM</span></div>
-          <div class="msg ai">
-            <div class="bubble">
-              <div class="bubble-head">Added 1 task</div>
-              <div class="diff-row"><span class="diff-task">Call the bank</span><span class="chip-new">Tomorrow, 9:00 AM</span><span class="mini-label add">NEW</span></div>
-            </div>
-            <span class="msg-meta">2:11 PM</span>
-          </div>
-          <div class="msg user"><div class="bubble">Order the birthday cake before noon tomorrow</div><span class="msg-meta">You · 2:13 PM</span></div>
-          <div class="msg ai">
-            <div class="bubble">
-              <div class="bubble-head">Added 1 task</div>
-              <div class="diff-row"><span class="diff-task">Order the birthday cake</span><span class="chip-new">Tomorrow, before noon</span><span class="mini-label add">NEW</span></div>
-              <button class="undo-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>Undo</button>
-            </div>
-            <span class="msg-meta">2:13 PM</span>
-          </div>
-        </section>
-
-        <!-- same situation, but a bulk-delete confirmation is pending off screen and the app is
-             waiting on an answer (owner decision rule 5 — no scroll carve-out). NMA-WAITING:
-             the pill stops reporting and asks, quoting the question's own head. -->
-        <section class="conv" data-conv="nma-waiting" hidden>
-          <div class="msg user"><div class="bubble">Add pay the electricity bill today</div><span class="msg-meta">You · 1:58 PM</span></div>
-          <div class="msg ai">
-            <div class="bubble">
-              <div class="bubble-head">Added 1 task</div>
-              <div class="diff-row"><span class="diff-task">Pay the electricity bill</span><span class="chip-new">due today</span><span class="mini-label add">NEW</span></div>
-            </div>
-            <span class="msg-meta">1:58 PM</span>
-          </div>
-          <div class="msg user"><div class="bubble">Move the budget review to 4pm and add pick up the birthday cake on Saturday</div><span class="msg-meta">You · 2:04 PM</span></div>
-          <div class="msg ai">
-            <div class="bubble">
-              <div class="bubble-head">Edited 1 task · added 1</div>
-              <div class="diff-row"><span class="diff-task">Review the Q3 budget draft</span><span class="chip-old">2:00 PM</span><span class="diff-arrow">→</span><span class="chip-new">4:00 PM</span><span class="mini-label edit">EDITED</span></div>
-              <div class="diff-row"><span class="diff-task">Pick up the birthday cake</span><span class="chip-new">Sat, Aug 22</span><span class="mini-label add">NEW</span></div>
-            </div>
-            <span class="msg-meta">2:04 PM</span>
-          </div>
-          <div class="msg user"><div class="bubble">Add call the bank tomorrow at 9</div><span class="msg-meta">You · 2:11 PM</span></div>
-          <div class="msg ai">
-            <div class="bubble">
-              <div class="bubble-head">Added 1 task</div>
-              <div class="diff-row"><span class="diff-task">Call the bank</span><span class="chip-new">Tomorrow, 9:00 AM</span><span class="mini-label add">NEW</span></div>
-            </div>
-            <span class="msg-meta">2:11 PM</span>
-          </div>
-          <div class="msg user"><div class="bubble">Delete the shopping tasks</div><span class="msg-meta">You · 2:16 PM</span></div>
-          <div class="msg ai">
-            <div class="bubble q">
-              <div class="bubble-head">Delete 3 tasks?</div>
-              <p>Will delete: Grocery run for the week, Order the birthday cake, Pick up dry cleaning.</p>
-              <div class="chips">
-                <button class="chip chip-danger">Delete 3 tasks</button>
-                <button class="chip">Keep them</button>
-              </div>
-            </div>
-            <span class="msg-meta">2:16 PM · answer by tapping, speaking or typing — the list still works</span>
-          </div>
-        </section>
-
-        <!-- boundary: exactly one marker carrying the closed session's terminal outcomes (AC-28) -->
-        <section class="conv" data-conv="boundary" hidden>
-          <div class="boundary" data-testid="assistant-boundary-marker">
-            <div class="boundary-body">
-              <strong>Session closed — no activity · Fri 11:42 PM</strong>
-              <p>Closing the session declined “Delete 3 tasks?” — Grocery run for the week, Order the birthday cake and Pick up dry cleaning were all kept.</p>
-              <p>While you were away: added “Call the bank” — Tomorrow, 9:00 AM.</p>
-            </div>
-          </div>
-          <div class="invite">
-            <p>Starting fresh. Say it — I'll write it down.</p>
-          </div>
-        </section>
-
-        <!-- mic dimmed: permission denied (AC-21) -->
-        <section class="conv" data-conv="mic-permission" hidden>
-          <div class="msg ai">
-            <div class="bubble">
-              <div class="bubble-head">Microphone needs permission</div>
-              <p>Your browser is blocking the microphone for this page. Allow it in the site settings and the mic lights up again.</p>
-              <p>Typing still works as usual.</p>
-              <button class="retry-btn" data-testid="assistant-permission-cta">Show me where</button>
-            </div>
-            <span class="msg-meta">2:24 PM</span>
-          </div>
-        </section>
-
-        <!-- mic dimmed: transient recognition failure — distinguishable from permission (AC-22) -->
-        <section class="conv" data-conv="mic-transient" hidden>
-          <div class="msg ai">
-            <div class="bubble">
-              <div class="bubble-head">Speech recognition is busy</div>
-              <p>The recognition service isn't answering. It usually clears in a moment — the mic will come back on its own.</p>
-              <p>Typing still works as usual.</p>
-            </div>
-            <span class="msg-meta">2:26 PM</span>
-          </div>
-        </section>
-
-        <!-- mic hidden: no capability, no error — composer reflows (AC-20) -->
-        <section class="conv" data-conv="mic-hidden" hidden>
-          <div class="msg user"><div class="bubble">Add pay the electricity bill today</div><span class="msg-meta">You · 1:58 PM</span></div>
-          <div class="msg ai">
-            <div class="bubble">
-              <div class="bubble-head">Added 1 task</div>
-              <div class="diff-row"><span class="diff-task">Pay the electricity bill</span><span class="chip-new">due today</span><span class="mini-label add">NEW</span></div>
-              <button class="undo-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>Undo</button>
-            </div>
-            <span class="msg-meta">1:58 PM</span>
-          </div>
-        </section>
-
-      </div>
-
-      <!-- the voice surface — the one place gradient.voice lives -->
-      <div class="voice-surface">
-        <div class="aurora-band"></div>
-        <div class="state-indicator" data-testid="assistant-state-indicator" aria-live="polite">
-          <span class="si-listening"><span class="waveform"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="state-word">Listening…</span></span>
-          <span class="si-thinking"><span class="state-word">Thinking…</span><button class="cancel-btn" data-testid="assistant-cancel-button" aria-label="Cancel — your words stay in the box">Cancel</button></span>
-        </div>
-      </div>
-
-      <!-- new-message affordance (BUG-004) — ONE control, near the composer, whatever arrived.
-           Zero-height dock: it floats over the last line rather than pushing history up. -->
-      <div class="nm-dock">
-        <div class="nm-wrap" aria-live="polite">
-          <button class="nm-pill" data-testid="assistant-new-message-affordance">
-            <svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
-            <span class="nm-label nm-count">3 new messages</span>
-            <span class="nm-label nm-waiting">Waiting for your answer — Delete 3 tasks?</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="offline-banner" data-testid="assistant-offline-banner">
-        <svg class="ic" viewBox="0 0 24 24"><line x1="2" y1="2" x2="22" y2="22"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M2 8.82a15 15 0 0 1 4.17-2.65"/><path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/><path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/><path d="M5 13a10 10 0 0 1 5.24-2.76"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
-        No connection — the list still works, and what you type is saved on the device.
-        <span class="queued-count">1 waiting to send</span>
-      </div>
-
-      <footer class="composer">
-        <div class="composer-inner">
-          <input class="composer-input" data-testid="assistant-composer-input" type="text" placeholder="Say or type what needs doing…" aria-label="Say or type what needs doing">
-          <button class="mic" data-testid="assistant-mic-button" aria-label="Tap to speak" aria-pressed="false">
-            <svg class="ic" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
-            <span class="mic-slash" aria-hidden="true"><svg viewBox="0 0 52 52"><line x1="14" y1="14" x2="38" y2="38"/></svg></span>
-          </button>
-          <button class="send" data-testid="assistant-composer-send" aria-label="Send" aria-disabled="true">
-            <svg class="ic" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
-          </button>
-        </div>
-      </footer>
-    </main>
-
   </div>
 </div>
+</div></div>
 
 <script>
-/* State machine — mockup chrome. The app has exactly four surface states
-   (idle / listening / thinking / error, AC-29); everything else here is a
-   message scenario rendered for review. */
-var COMPOSER_VALUE = {
-  'listening': 'move the budget review to four o',
-  'error': 'Move the gym session to Monday at 7'
-};
-function showState(name) {
-  document.querySelectorAll('[data-conv]').forEach(function (el) {
-    el.hidden = el.getAttribute('data-conv') !== name;
-  });
-  var app = document.getElementById('app');
-  app.className = 'app st-' + name;
-  var input = document.querySelector('.composer-input');
-  if (input) input.value = COMPOSER_VALUE[name] || '';
-  var send = document.querySelector('.send');
-  if (send) send.setAttribute('aria-disabled', COMPOSER_VALUE[name] ? 'false' : 'true');
-  var mic = document.querySelector('.mic');
-  if (mic) {
-    mic.setAttribute('aria-pressed', name === 'listening' ? 'true' : 'false');
-    mic.setAttribute('aria-label',
-      name === 'listening' ? 'Listening — tap to stop' :
-      name === 'mic-permission' ? 'Microphone needs permission' :
-      name === 'mic-transient' ? 'Microphone is temporarily unavailable' : 'Tap to speak');
+var STATES = {
+  "idle-empty": {
+    "surface": "talk",
+    "talk": "empty",
+    "mic": "idle"
+  },
+  "idle-tasks": {
+    "surface": "tasks",
+    "talk": "applied",
+    "mic": "idle"
+  },
+  "listening": {
+    "surface": "talk",
+    "talk": "listening",
+    "mic": "live",
+    "ind": "Listening"
+  },
+  "thinking": {
+    "surface": "talk",
+    "talk": "thinking",
+    "mic": "thinking",
+    "ind": "Thinking…"
+  },
+  "applied-diff": {
+    "surface": "talk",
+    "talk": "applied",
+    "mic": "idle"
+  },
+  "question-confirm": {
+    "surface": "talk",
+    "talk": "confirm",
+    "mic": "idle"
+  },
+  "question-clarify": {
+    "surface": "talk",
+    "talk": "clarify",
+    "mic": "idle"
+  },
+  "no-match": {
+    "surface": "talk",
+    "talk": "no-match",
+    "mic": "idle"
+  },
+  "error": {
+    "surface": "talk",
+    "talk": "error",
+    "mic": "idle"
+  },
+  "offline": {
+    "surface": "talk",
+    "talk": "offline",
+    "mic": "idle",
+    "notice": "offline"
+  },
+  "queued": {
+    "surface": "talk",
+    "talk": "offline",
+    "mic": "idle",
+    "notice": "queued"
+  },
+  "boundary": {
+    "surface": "talk",
+    "talk": "boundary",
+    "mic": "idle"
+  },
+  "nma-new": {
+    "surface": "talk",
+    "talk": "applied",
+    "mic": "idle",
+    "nma": "new"
+  },
+  "nma-waiting": {
+    "surface": "talk",
+    "talk": "applied",
+    "mic": "idle",
+    "nma": "waiting"
+  },
+  "mic-permission": {
+    "surface": "talk",
+    "talk": "applied",
+    "mic": "denied"
+  },
+  "mic-hidden": {
+    "surface": "talk",
+    "talk": "applied",
+    "mic": "hidden"
+  },
+  "mic-transient": {
+    "surface": "talk",
+    "talk": "applied",
+    "mic": "transient"
+  },
+  "reverted": {
+    "surface": "talk",
+    "talk": "reverted",
+    "mic": "idle"
+  },
+  "nothing-reverted": {
+    "surface": "talk",
+    "talk": "nothing-reverted",
+    "mic": "idle"
+  },
+  "declined-superseded": {
+    "surface": "talk",
+    "talk": "superseded",
+    "mic": "idle"
   }
-  document.querySelectorAll('.dev-bar [data-s]').forEach(function (b) {
-    b.classList.toggle('on', b.getAttribute('data-s') === name);
-  });
-  /* NewMessageAffordance — accessible name is the VISIBLE label plus the action
-     (WCAG 2.5.3: the visible text is a prefix of the name, never a replacement). */
-  var nm = document.querySelector('.nm-pill');
-  if (nm) nm.setAttribute('aria-label',
-    name === 'nma-waiting'
-      ? 'Waiting for your answer — Delete 3 tasks? Scroll to newest'
-      : '3 new messages, scroll to newest');
-  var scroller = document.querySelector('.conv-scroll');
-  /* The two new-message states depict someone READING HISTORY: the view has not
-     moved and must not, so the mockup stays at the top of the thread. That is the
-     situation the affordance exists for — auto-scrolling here would hide it. */
-  if (scroller) scroller.scrollTop = name.indexOf('nma-') === 0 ? 0 : scroller.scrollHeight;
+};
+var KEYS = ["surface","talk","mic","notice","nma"];
+
+function showState(name){
+  var cfg = STATES[name]; if(!cfg) return;
+  var app = document.getElementById('app');
+  for (var i=0;i<KEYS.length;i++){
+    var k = KEYS[i];
+    if (cfg[k] !== undefined && cfg[k] !== null) app.setAttribute('data-'+k, cfg[k]);
+    else app.removeAttribute('data-'+k);
+  }
+  app.setAttribute('data-state', name);
+  var stage = document.getElementById('stage');
+  if (cfg.frame) stage.setAttribute('data-frame', cfg.frame); else stage.removeAttribute('data-frame');
+  var b = document.querySelectorAll('.dev button[data-s]');
+  for (var j=0;j<b.length;j++) b[j].classList.toggle('on', b[j].getAttribute('data-s')===name);
+  paint(cfg);
 }
-function toggleTheme() {
+
+/* One number, one place. The head's count and the PathSwitch badge are the same
+   open-today figure; a state cannot show a summary that disagrees with the bar. */
+function paint(cfg){
+  var TITLE = {today:'Today', upcoming:'Upcoming', inbox:'Inbox', done:'Done'};
+  var COUNT = {
+    today:'<b>4</b> open · <span class="late">2 overdue</span>',
+    upcoming:'<b>3</b> coming up',
+    inbox:'<b>16</b> filed here',
+    done:'<b>4</b> completed'
+  };
+  var t = document.getElementById('colTitle');
+  var c = document.getElementById('colCount');
+  var name = cfg.title || TITLE[cfg.collection] || 'Today';
+  if (t) t.textContent = name;
+  if (c) c.innerHTML = cfg.count !== undefined ? cfg.count : (COUNT[cfg.collection] || '');
+  if (c) c.style.display = (cfg.count === '' ) ? 'none' : '';
+  var si = document.getElementById('stateInd'); if (si && cfg.ind) si.textContent = cfg.ind;
+  var et = document.getElementById('emptyTitle'); if (et && cfg.emptyTitle) et.textContent = cfg.emptyTitle;
+  var eb = document.getElementById('emptyBody'); if (eb && cfg.emptyBody) eb.textContent = cfg.emptyBody;
+  var badge = document.querySelectorAll('.path .count');
+  for (var i=0;i<badge.length;i++){
+    var n = cfg.today === undefined ? 4 : cfg.today;
+    badge[i].textContent = String(n);
+    badge[i].style.display = n === 0 ? 'none' : '';
+  }
+}
+
+function toggleTheme(){
   var h = document.documentElement;
-  h.setAttribute('data-theme', h.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  h.setAttribute('data-theme', h.getAttribute('data-theme')==='dark' ? 'light' : 'dark');
 }
-showState('idle-empty');
+function setFrame(f){
+  var stage = document.getElementById('stage');
+  if (f) stage.setAttribute('data-frame', f); else stage.removeAttribute('data-frame');
+}
+showState('applied-diff');
 </script>
 </body>
 </html>

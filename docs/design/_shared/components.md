@@ -1,5 +1,24 @@
 # Component Inventory — todo-ai redesign (F-001)
 
+**Rewritten for visual language v2 in the sections the T-204 screens touch (2026-08-21).** v2
+replaces colour, type, spacing, shape and layout completely (`DESIGN.md`, `tokens.json`,
+`specimen.html`); **behaviour, copy and every element id are unchanged.** Where a section below
+describes *appearance*, that description is v2's. Where it describes *behaviour*, it is the same
+text it has always been. Six sections still carry v1 appearance and say so at their head —
+§ ListsMenu, § SettingsRow, § ListEditorSheet, § Drawer, § Spoken frames, § Two axes — because
+their screens are tranche 2 and rewriting an appearance before it is drawn is how a document
+starts describing something nobody has seen.
+
+**Three tokens v2 retired, and what says the same thing now:** `gradient.voice` and the whole
+`voice.listening` / `voice.thinking` pair — the gradient is illegal under this direction and the
+handoff never once rendered in the running app, so **one accent means *the assistant*** on both
+halves of its turn. `success` / `diff.add` / `diff.remove` — state is never allowed to travel on
+colour alone, so the `NEW` and `EDITED` labels were already carrying the meaning; the new value
+now reads semibold in `text.primary` against the old struck through in `text.muted`, which a
+colour-blind reader can follow by construction. `question` is renamed `attention` and keeps its
+meaning exactly. Corner radius is **0** everywhere except a message bubble (4), the M3 switch
+track and sheet handle (pill), and the mic and the FAB (circle).
+
 All values come from `tokens.json` (referenced below as `color.*`, `motion.*`, …; theme resolved at runtime). Interaction behaviour cites the F-001 AC that fixes it — components render the spec's model, they do not reinterpret it. The surface has exactly four states (idle / listening / thinking / error, AC-29); everything below that looks stateful is a **message** or a **mode**, never a fifth state.
 
 Accessibility floor for every interactive component (AC-19): keyboard operable (2.1.1), exposes name/role/value (4.1.2), visible label text == accessible name (2.5.3), contrast per §Contrast (1.4.3). Focus = 2px `color.focusRing` ring, offset 2px, never removed.
@@ -8,16 +27,23 @@ Accessibility floor for every interactive component (AC-19): keyboard operable (
 
 ## MicControl (the orb) — signature component
 
-Purpose: tap-to-talk entry; the one place `gradient.voice` lives. Circular, `radius.orb`, sits in the Composer.
+Purpose: tap-to-talk entry. Circular (`radius.circle` — one of three shapes in the system that
+keep a curve, because the shape *is* the control), `control.height.md` with the platform hit floor
+met by padding, sits at the trailing end of the Composer.
+
+**v2 retires the orb's glow, its gradient and its breath.** The one continuous animation left in
+the whole system is the **listening rule**: a `border.mark` accent rule growing linearly along the
+top of the Composer while the microphone is live, at `motion.duration_ms.rulegrow`. It is the only
+thing on screen that moves without the user acting.
 
 **Surface-state renderings** (follow the four states, AC-29 — each transition has a visible cue):
 
 | Surface state | Rendering |
 |---|---|
-| idle | quiet orb, `color.bg.raised` fill, mic icon `text.primary`, faint gradient ember (8% opacity) |
-| listening | orb fills with `gradient.voice`, `shadow.glowListening`; aurora band blooms behind waveform; live transcript renders as words land (AC-2) |
-| thinking | gradient contracts, slides violet-ward (`motion.stateTransition`), slow breath at `motion.duration_ms.auroraBreath`, `shadow.glowThinking` |
-| error | glow off; orb rim `color.danger`; error message carries the retry (AC-24) — orb itself returns to idle rendering after the cue |
+| idle | transparent fill, 1px `bg.rule` border, mic icon `text.secondary`. The quiet state is an outline, not a filled button — nothing is happening |
+| listening | filled `accent`, icon `text.onAccent`; the listening rule grows along the Composer; the text input gives way to the live transcript, because while the microphone is live the Composer is not a text field (AC-2) |
+| thinking | the same filled `accent`; the rule stops where it stopped and the state indicator reads `Thinking…`. **One accent covers both halves of the turn** — who is speaking is carried by side, ground and label in the message list, and was never carried by hue |
+| error | the control returns to its idle outline; the error **message** carries the cause and the retry (AC-24). The control never turns red — a red microphone says *this control is broken* when what failed is the turn |
 
 **Modes** (orthogonal to states — AC-20/21/22; the *message* states which cause, the orb only dims):
 
@@ -57,30 +83,50 @@ Adjacent, same message family, **not** a permission combination — recognizer p
 
 ## Composer
 
-Purpose: voice + text parity — typed input takes the same interpretation path as speech (AC-17). Text field + MicControl + send. Bottom-docked, `color.bg.raised`, top hairline.
+Purpose: voice + text parity — typed input takes the same interpretation path as speech (AC-17).
+Text field + MicControl + send. Bottom-docked on `bg.base`, separated by a 1px `bg.rule` — a
+boundary that carries meaning, so it is `rule` and not `hairline`. Its content sits in the
+conversation's own content column, so the input's left edge lines up with the bubbles above it.
 
-States: empty (placeholder "Say or type what needs doing…") · with-text (send activates) · focused · listening (interim transcript streams into the field, `color.voice.listening` caret) · restored (preserved words from cancel/interruption/background reappear here — AC-3, AC-26) · offline (input still works — local no-AI path, AC-25) · disabled: **never** (the composer is never locked; pending questions block nothing, AC-11).
+States: empty (placeholder "Say or type what needs doing.") · with-text (send activates) · focused · listening (**the input and send give way to the interim transcript**, at `font.size.lead`, with the words not yet committed in `text.muted`; a text field squeezed to a stub beside a transcript at 390px offers a control the user is not using) · restored (preserved words from cancel/interruption/background reappear here — AC-3, AC-26) · offline (input still works — local no-AI path, AC-25) · disabled: **never** (the composer is never locked; pending questions block nothing, AC-11).
 
 ## Message bubbles (conversation surface)
 
-Chat layout is deliberately Zalo-familiar: user turns right-aligned, assistant left-aligned, `radius.bubble`, body text `text.primary` on `bg.raised` unless a tint is named. Newest at bottom. Every accent below also carries a text label — never colour-only.
+Chat layout is deliberately Zalo-familiar: user turns right-aligned on `bg.ink` in `text.onInk`,
+assistant left-aligned on `bg.base` inside a 1px `bg.hairline`, `radius.bubble` (4 — a spoken block
+is squared, not pilled). Every accent below also carries a text label — never colour-only.
+
+**Newest at bottom, and the rule that makes it true is worth its own sentence because the build
+dropped it.** The conversation container takes `margin-top: auto` inside its scroller — **not**
+`align-items: flex-end`, which clips the top of an overflowing thread. A short thread therefore
+sits *on* the Composer instead of floating at the ceiling. Measured in the shipped app before this
+was redrawn: two bubbles at the top of the panel with **618px** of nothing between the last one and
+the Composer at 1440, and **462px** at 390. Zalo, Momo and every messenger the audience opens daily
+anchor a short thread to the bottom.
+
+**A bubble that changed something carries a `border.mark` accent rule down its leading edge**, and
+that is the only place the accent appears in the thread. `attention` marks a bubble that is asking;
+`danger` marks one that is reporting a failure. One rule, one meaning, never two on one bubble.
 
 | Bubble | Purpose + anatomy | Key states |
 |---|---|---|
 | UserTurn | the user's words (spoken or typed) — plain bubble, right side | default · queued (see QueuedTurnNotice) |
-| Applied | AI applied a turn (AC-1, AC-4): per-field old→new diff rows (`diff.remove` strikethrough old on `removeTint`, `diff.add` new on `addTint`); creates labelled `NEW` with no fabricated old value; deletes named by title; count stated. Carries UndoAffordance | default · undone (marked, `text.muted`, Undo gone — AC-6) |
-| Question — clarify | ≥2 matching tasks (AC-13): question text + OptionChips of the **actual candidates** | pending (left `question` accent bar on `questionTint`) · resolved (accent bar off, chips disabled) |
+| Applied | AI applied a turn (AC-1, AC-4): per-field old→new diff rows — **old struck through in `text.muted`, new semibold in `text.primary`, no tint and no hue on either**, so the diff is legible without colour vision; creates labelled `NEW` with no fabricated old value; deletes named by title; count stated. The numeric face is used on the values that are times, dates or counts and **not** on a task title, which is user content in an arbitrary script. Carries UndoAffordance | default · undone (marked, `text.muted`, Undo gone — AC-6) |
+| Question — clarify | ≥2 matching tasks (AC-13): question text + OptionChips of the **actual candidates** | pending (leading `attention` rule, question text in `attention` at semibold, bubble ground unchanged — a tinted fill plus a rule plus coloured text is three signals for one meaning) · resolved (rule off, chips disabled) |
 | Question — confirm | bulk delete (AC-9): names count + titles, affirmative/negative OptionChips | pending · resolved (same as clarify) |
 | Outcome | resolution results, one bubble per resolution — variants: executed (full Applied anatomy incl. Undo, AC-11) · declined · declined-superseded · already-resolved · undo-refused with reason (AC-6) | variant is content, not colour; executed uses Applied styling |
 | Reverted | undo result (AC-7): reverted tasks named; **skipped tasks named**; all-skipped renders "nothing was reverted" wording, never a success | default |
 | NoMatch | no matching task (AC-14): message **quotes the heard transcript** in `font.family.body` italic so a mishearing is visible | default |
 | Error | AI error (AC-24): `danger` accent bar, plain cause, Retry button (same `client_turn_id`, AC-16); user's words kept in Composer | default · retrying (spinner on button) |
-| BoundaryMarker | session close (AC-28): full-width centered hairline marker, `text.muted`, close reason + the closed session's terminal outcomes (questions declined by name, late-resolved turns named). Exactly one per clean start | default |
+| BoundaryMarker | session close (AC-28): a full-width `bg.hairline` rule broken by one uppercase `font.size.label` word in `text.muted`, close reason + the closed session's terminal outcomes (questions declined by name, late-resolved turns named). Exactly one per clean start | default |
 | QueuedTurnNotice | turn in flight when connection dropped (AC-25): thin note under the UserTurn, "Waiting for the network — will send again" | queued · replaying · resolved (notice disappears, outcome renders) |
 
 Empty conversation state: `font.family.display` line "Say it. I'll write it down." + one `text.muted` hint line. No fabricated sample messages.
 
 ## Spoken frames (F-002 talk-back — AC-22)
+
+> **Still v1 appearance.** Behaviour, copy and ids below are current; the *look* is the
+> retired language, and it is rewritten when this surface is drawn — F-002 is specced and unbuilt, so there is no rendering to describe.
 
 **Scope note:** this section belongs to **F-002**, not F-001. It is placed here because `docs/specs/assistant/F-002-talk-back.md` AC-22 makes this file the owning artifact for spoken sentence frames, and its test **parses this section by row ID at run time** (L-008 — the assertion fails when the upstream artifact moves, which is the direction drift travels). Nothing above this section changes.
 
@@ -125,19 +171,44 @@ Empty conversation state: `font.family.display` line "Say it. I'll write it down
 
 ## OptionChip
 
-Purpose: tappable answer to a question — tap sends the option's **literal text as a normal turn** (AC-10, AC-13); a tap binds explicitly to its question's turn. Pill (`radius.pill`), 1px `primary` border, `primary` text.
-States: default · hover · focused · pressed · disabled (question resolved — stays visible for history, `text.muted` border) · loading (the sent chip shows the standard sending cue).
+Purpose: tappable answer to a question — tap sends the option's **literal text as a normal turn**
+(AC-10, AC-13); a tap binds explicitly to its question's turn. **Square** (`radius.none`),
+`control.height.sm` with the platform hit floor met by padding, 1px `bg.rule` border,
+`text.primary` label at `font.weight.semibold`.
+
+**It is deliberately not accent-coloured.** A chip is the *user's* answer, and `accent` means the
+assistant. The chip a user is choosing between should read as a control, not as something the
+assistant is recommending.
+
+States: default · hover · focused · pressed · disabled (question resolved — stays visible for history, `text.muted` border and label) · loading (the sent chip shows the standard sending cue).
 
 ## UndoAffordance
 
-Purpose: one-gesture undo of the newest applied turn (AC-5), by tap here or by voice ("undo"). Button inside Applied/executed bubbles: `primary` text + undo icon — violet because reverting is the assistant's own act.
+Purpose: one-gesture undo of the newest applied turn (AC-5), by tap here or by voice ("undo").
+Button inside Applied/executed bubbles: the `accent-quiet` variant — `accent` text and a 1px
+`accent` border on the bubble's own ground, with the undo icon. **It wears the accent because
+reverting is the assistant's own act**, which is the same reason `put back` (§ Buttons, § CarriedNotice
+CN-UNDO) wears none: a delete your own hand performed was never the assistant's.
 States: default · hover · focused · pressed · gone (a newer applied turn or session close removes it visibly, AC-8 — the bubble keeps a `text.muted` "Undo window passed" note so history stays honest) · undone (replaced by "Undone" label).
 A stale/voice undo outside the window renders AC-6's refusal Outcome — the affordance never fails silently.
 
 ## TaskRow (+ AI-change marker)
 
-Purpose: the source of truth (F-001 Purpose) — flat row, `radius.taskRow` 0, no border/shadow; checkbox + title + due meta (`text.muted`, tabular).
-**AI-change marker (AC-4):** rows in the current turn's `changed_task_ids` get an uppercase text label — `NEW` (`diff.add`) or `EDITED` (`diff.remove→add` per-field old→new on tap-expand) — plus a one-time tint flash (`addTint`/`removeTint`-family background, hold `diffFlashHold`, fade `diffFlashFade`). Only the turn's own changes are marked — hand edits and other turns' rows never attributed. No raw uuids or draft-ref tokens ever render.
+Purpose: the source of truth (F-001 Purpose) — a flat row with no border, no fill and no shadow at
+any state, `control.height.lg` minimum, separated from its neighbour by one `bg.hairline` rule that
+starts at the time rail's spine.
+
+**Anatomy, left to right: the time rail, then the checkbox, then the title, then the trailing
+delete.** The due time leads the row rather than trailing it — see § TimeRail, which is where the
+whole novelty budget of this system is spent. A title **wraps to as many lines as it needs and the
+row grows**; it is never truncated to protect a column, because clipping a task's own name to keep
+a column tidy is the same mistake the 197px field made.
+**AI-change marker (AC-4):** rows in the current turn's `changed_task_ids` get an uppercase
+`font.size.label` marker — `NEW` on `accentTint` in `accent`, or `EDITED` on `bg.sunken` in
+`text.secondary` (per-field old→new on tap-expand) — plus a one-time arrival cue. **The cue is a
+`border.mark` `accent` rule down the row's leading edge, not a background tint**: a tinted row
+changes the ground under the time and the title and costs both of them contrast, and it reads as a
+selection rather than as news. Hold `diffFlashHold`, fade `diffFlashFade`. Only the turn's own changes are marked — hand edits and other turns' rows never attributed. No raw uuids or draft-ref tokens ever render.
 States: default · hover · focused · pressed · done (strikethrough `motion` MO-3, 60% fade) · editing (inline, manual path) · flashing (above) · marker-expanded (diff visible) · empty list state ("No tasks yet — say one." + hint).
 Manual path: create/edit/complete/delete all doable by touch with zero AI calls (AC-18).
 
@@ -393,22 +464,25 @@ values today and no fallback case to design.
 
 ## OfflineBanner
 
-Purpose: no half-running conversation (AC-25) — full-width thin note above the Composer, `bg.raised`, `question` accent text: "No connection — the list still works, and what you type is saved on the device." Shows queued-turn count when one is in flight.
+Purpose: no half-running conversation (AC-25) — a full-width note above the Composer on `bg.base`
+inside a 1px `bg.rule`, with a `border.mark` `attention` rule down its leading edge and the icon in
+`attention`; the sentence itself stays `text.secondary`, because a banner whose every word is
+coloured reads as an alarm about something that is merely true: "No connection — the list still works, and what you type is saved on the device." Shows queued-turn count when one is in flight.
 States: offline · offline-with-queued (count) · replaying · hidden (online).
 
 ## NewMessageAffordance
 
 Purpose: BUG-004 / **owner decision 2026-08-17** — when messages arrive while the user is not at the bottom, **the view does not move**; one control near the Composer says so, and tapping it scrolls to the newest message. **One control, however many messages arrived** — it never multiplies and there is never one per message.
 
-Placement: a pill, horizontally centred, docked just above the Composer (above the OfflineBanner when that is showing). It **overlays** the last line of the conversation rather than reflowing it: an affordance that appears by pushing history upward moves the sentence the user is reading, which is the defect it exists to prevent. `radius.pill`, `shadow.raised`, `padding: sm lg`, `font.size.body` at `font.weight.emphasis`, down-arrow icon at `icon.size.sm`.
+Placement: a pill, horizontally centred, docked just above the Composer (above the OfflineBanner when that is showing). It **overlays** the last line of the conversation rather than reflowing it: an affordance that appears by pushing history upward moves the sentence the user is reading, which is the defect it exists to prevent. `radius.none`, `shadow.overlay` (this is a layer floating over another, which is the one thing that shadow is legal for), `control.height.sm`, `font.size.meta` at `font.weight.semibold`, down-arrow icon at `icon.size.sm`.
 
-**Why the label carries a state.** The owner was offered a carve-out that would have scrolled a bulk-delete confirmation into view and declined it (decision rule 5), so a destructive question can sit unseen behind this one control while the app waits for an answer. That consistency was chosen knowingly, and its whole cost lands here: this control is the user's only indication that anything is pending. A label reading the same whether the app is idle or blocked on an answer would spend the consistency and return nothing. So the affordance **names its newest reason**: with nothing pending it reports a count; with a question pending off screen it stops reporting and asks, quoting the question's own head and taking the `question` accent that already means *open question* everywhere else in this catalogue. One control, one position, one action, one tap target — only the words and the accent change.
+**Why the label carries a state.** The owner was offered a carve-out that would have scrolled a bulk-delete confirmation into view and declined it (decision rule 5), so a destructive question can sit unseen behind this one control while the app waits for an answer. That consistency was chosen knowingly, and its whole cost lands here: this control is the user's only indication that anything is pending. A label reading the same whether the app is idle or blocked on an answer would spend the consistency and return nothing. So the affordance **names its newest reason**: with nothing pending it reports a count; with a question pending off screen it stops reporting and asks, quoting the question's own head and taking the `attention` accent that already means *needs your answer* everywhere else in this catalogue. One control, one position, one action, one tap target — only the words and the accent change.
 
 | ID | State | Shown when | Label | Rendering |
 |---|---|---|---|---|
 | **NMA-HIDDEN** | hidden | the newest message is on screen — after a tap, and after the user reaches the bottom by hand | — | not rendered; it holds no layout, so nothing reflows when it goes |
-| **NMA-NEW** | new | ≥1 message arrived while the newest was off screen, and **no** question is pending off screen | `1 new message` · `{count} new messages` | `bg.raised`, 1px `hairline` border, `text.primary`, arrow `text.secondary` |
-| **NMA-WAITING** | waiting on you | a question (clarify or confirm) is **pending** and off screen — whatever else also arrived | `Waiting for your answer — {question}` | `questionTint` fill, 1px `question` border, `question` text and arrow |
+| **NMA-NEW** | new | ≥1 message arrived while the newest was off screen, and **no** question is pending off screen | `1 new message` · `{count} new messages` | `bg.ink` fill, `text.onInk` label and arrow — the strongest ground in the system, because this control has to be seen over a thread |
+| **NMA-WAITING** | waiting on you | a question (clarify or confirm) is **pending** and off screen — whatever else also arrived | `Waiting for your answer — {question}` | `attentionTint` fill, 1px `attention` border, `attention` text and arrow |
 
 **Slots** (same closed vocabulary as §Spoken frames): `count` integer — the two literal forms above are the whole set, singular and plural, not a template over a noun. `{question}` is `verbatim`: the pending question's own head as §Message bubbles publishes it ("Delete 3 tasks?", "“Meeting” matches two tasks — which one?"), never re-worded for the pill. The label is one line where it fits and **two at most** where it does not (RN `numberOfLines={2}`); the accessible name keeps the whole string either way. The second line is not cosmetic: at 375px a single non-wrapping line ellipsises the question away and leaves "Waiting for your answer — Delete …", which announces that something is pending and withholds what — the exact failure this row exists to prevent. NMA-NEW never needs the second line.
 
@@ -416,7 +490,7 @@ Placement: a pill, horizontally centred, docked just above the Composer (above t
 
 **Tapping only scrolls.** It never answers, dismisses or resolves anything — the question's OptionChips remain the only way to answer (AC-10), so the pill cannot become a second, quieter answer path.
 
-Control states: default · hover (web: fill lifts to `primaryTint`; NMA-WAITING keeps its own tint) · focused (ring) · pressed (scale 0.96) — the §Buttons behaviours, unchanged.
+Control states: default · hover (web: NMA-NEW's ink fill lightens toward `text.secondary`; NMA-WAITING keeps its own tint) · focused (ring) · pressed (scale 0.96) — the §Buttons behaviours, unchanged.
 
 A11y: `role=button`; the accessible name is the visible label followed by the action, so the visible text is always a prefix of the name and never a replacement (2.5.3). Two literals, because the punctuation differs and a template would guess: NMA-NEW → `{label}, scroll to newest`; NMA-WAITING → `{label} Scroll to newest` (the label already ends in a question mark, so the action is a new sentence, not a clause). The dock is a `polite` live region, so a screen-reader user hears the control arrive **and** hears it change from NMA-NEW to NMA-WAITING. Keyboard: it sits in DOM order between the conversation and the Composer, so `Tab` out of the conversation reaches it before the input. Hit area follows the platform minimum (44pt / 48dp) via `hitSlop`; no content-width floor is published in §Touch, because those floors are measured from a shipped control and this one does not exist yet.
 
@@ -430,10 +504,23 @@ The idle-auto-close marker (AC-28) — same rendering family as BoundaryMarker; 
 
 ## Buttons
 
-Variants: primary (fill `primary`, text `text.onAccent`) · ghost (text `primary`, no fill) · danger (fill `danger`, text `text.onAccent` — confirm-delete contexts only) · **neutral** (fill `bg.hairline`, 1px `text.muted` border, label `text.primary` at `font.weight.emphasis`) — added T-152.
+Variants, v2 (2026-08-21): **primary** (fill `accent`, text `text.onAccent`) · **accent-quiet**
+(text `accent`, 1px `accent` border, no fill — Undo, and only actions that are the assistant's own)
+· **secondary** (text `text.primary`, 1px `bg.rule`, no fill — this is what `neutral` became) ·
+**ghost** (text `text.secondary`, no border, no fill) · **danger** (fill `danger`, text
+`text.onAccent` — legal **only inside a confirmation** whose sentence has already named what goes)
+· **danger-quiet** (text `danger`, 1px `danger` border — the action that *asks*). All square
+(`radius.none`), `control.height.md`, `control.padding_x.md`, with the platform hit floor met by
+padding and never by painting a bigger control.
 States: default · hover · focused · pressed (scale 0.96) · disabled (40% opacity, no pointer) · loading (spinner replaces label, width locked).
 
-**Why `neutral` exists, because three variants were not a shortage until F-005** (added 2026-08-19, T-152). Every one of the three carries an assigned meaning through its fill or its text: `primary` and `ghost` are both the **violet** `primary` token, which § Colour rules 1 assigns to *the assistant* and § UndoAffordance fixes as *"the assistant's own act"*; `danger` is red. F-005 AC-43's hand-action undo is an action the user's own hand caused, and the AC forbids violet for it **wherever it renders** — so it could wear none of the three, and the catalogue had no way to draw an action that means nothing beyond *this is a button*. `neutral` is that: built entirely from neutrals, adding no colour meaning, and reusable anywhere an action must not claim one. **Contrast, computed (§ Contrast's method, not eyeballed):** label `text.primary` on `bg.hairline` **13.28** dark / **13.34** light; the 1px `text.muted` border against `bg.raised` **5.01** dark / **5.78** light, clearing 1.4.11's 3:1 for a non-text boundary — which is why the border is `text.muted` and not `bg.hairline` (that pairing measures 1.19 / 1.24 and would draw a button nobody can see the edge of). Zero new tokens. States and focus/pressed/disabled/loading behaviour are the rows above, unchanged. **Hover strengthens the 1px border from `text.muted` to `text.secondary` and leaves the fill alone** — there is no fifth neutral to lift the fill toward, and lifting it toward `bg.raised` would make the button match the strip it sits on. `text.secondary` on `bg.raised` is 8.1 dark / 8.4 light in § Contrast, so the hover boundary clears 1.4.11 as comfortably as the default one.
+**Why `neutral` exists, because three variants were not a shortage until F-005** (added 2026-08-19, T-152). Every one of the three carried an assigned meaning through its fill or its text: `primary` and `ghost` were both the accent token, which § Colour rules 1 assigns to *the assistant* and § UndoAffordance fixes as *"the assistant's own act"*; `danger` is red. F-005 AC-43's hand-action undo is an action the user's own hand caused, and the AC forbids the accent for it **wherever it renders** — so it could wear none of the three, and the catalogue had no way to draw an action that means nothing beyond *this is a button*. `neutral` was that: built entirely from neutrals, adding no colour meaning, and reusable anywhere
+an action must not claim one. **v2 keeps the requirement and renames the variant `secondary`**,
+because in a system whose ground is white and whose structure is 1px rules, a neutral-fill button
+and a bordered no-fill button are the same button drawn twice. It is `text.primary` on no fill
+inside a 1px `bg.rule`; `bg.rule` on `bg.base` measures **3.00** and clears 1.4.11's 3:1 for a
+non-text boundary, and the label clears 1.4.3 by a wide margin. Hover fills to `bg.sunken`. Zero new
+tokens. States and focus/pressed/disabled/loading behaviour are the rows above, unchanged.
 Standard copy for standard actions: "Undo", "Retry", "Send", "Cancel" — no themed replacements ("Take it back", "Give it another go", "Off it goes" are all wrong, however well they fit the voice).
 
 **One word per concept — the rule, not a preference.** The Vietnamese catalogue needed a house spelling (`Xoá` vs `Xóa`); that problem leaves with the Vietnamese and English supplies its own, synonym drift, which is worse because both spellings are correct and nothing looks broken. A user who is told "Delete 3 tasks?" and then reads "3 items removed" cannot tell whether the same thing happened. Fixed choices, binding on this catalogue, the mockups, and the strings implementers ship:
@@ -457,10 +544,13 @@ Standard copy for standard actions: "Undo", "Retry", "Send", "Cancel" — no the
 | the date a task must be done by (F-005 AC-10) | **deadline** | due date, due, when, target, by-date |
 | a task inside a task (F-005 AC-14 … AC-18) | **step** | subtask, sub-task, child, checklist item, item |
 
-**The three rows added 2026-08-19 (T-152), and the first one needs its reasoning beside it.** `put back` is not a synonym for `undo` sneaking past the row above it — it is the row above's rule being *obeyed*: **undo** is bound to reversing the last applied **turn**, F-005 AC-43 defines a different mechanism (reversing a delete or a reorder the user's own hand performed), and one word per concept means the second mechanism gets its own word rather than sharing one. `§ SaveNotice` refused to carry an `Undo` action for exactly this reason, in writing, and that refusal stands. Note `take back` is forbidden **as a synonym for undo** and `put back` is close to it in shape — the difference is the whole point of the two rows, so they are read together: *undo* reverses what the assistant did, *put back* returns what your hand removed. The word has precedent outside this catalogue (Apple Photos' *Put Back* for recovering a deleted photo), which is what keeps it standard copy for a standard action rather than a themed replacement. It renders in `§ CarriedNotice` as CN-UNDO, in the `neutral` variant above, never in violet.
+**The three rows added 2026-08-19 (T-152), and the first one needs its reasoning beside it.** `put back` is not a synonym for `undo` sneaking past the row above it — it is the row above's rule being *obeyed*: **undo** is bound to reversing the last applied **turn**, F-005 AC-43 defines a different mechanism (reversing a delete or a reorder the user's own hand performed), and one word per concept means the second mechanism gets its own word rather than sharing one. `§ SaveNotice` refused to carry an `Undo` action for exactly this reason, in writing, and that refusal stands. Note `take back` is forbidden **as a synonym for undo** and `put back` is close to it in shape — the difference is the whole point of the two rows, so they are read together: *undo* reverses what the assistant did, *put back* returns what your hand removed. The word has precedent outside this catalogue (Apple Photos' *Put Back* for recovering a deleted photo), which is what keeps it standard copy for a standard action rather than a themed replacement. It renders in `§ CarriedNotice` as CN-UNDO, in the `secondary` variant above, never in the accent.
 
 **`deadline` and `step` are here because this pass publishes strings that use them.** F-005's own vocabulary is *deadline* and *step*, `§ CarriedNotice`'s literal message table names both, and a word that appears in published copy and not in this table is the drift the table exists to stop. `due_at` and `parent_id` remain the field names; these are the words the user reads.
 ## Drawer (carried, pending Open Question 1)
+
+> **Still v1 appearance.** Behaviour, copy and ids below are current; the *look* is the
+> retired language, and it is rewritten when this surface is drawn — nothing in tranche 1 renders it.
 
 Assumption per spec OQ-1: drawer + full list stay reachable. Carries the existing app's drawer unchanged (active row = 7% `primary` tint — the one legal chrome tint). Not restyled in this feature; flagged for design review when OQ-1 resolves.
 
@@ -488,7 +578,10 @@ Heights are not published here: they are derived from `font.size` + `spacing` to
 
 ## Contrast — verified pairs (AC-19 / WCAG 1.4.3, AA ≥ 4.5:1 normal text)
 
-Computed (not eyeballed) via WCAG 2.1 relative-luminance formula; every pair passed. Dark theme: `text.primary`(17.5/15.8), `text.secondary`(9.0/8.1), `text.muted`(5.6/5.0) on `bg.base`/`bg.raised`; `primary` 7.0/6.3; `voice.listening` 12.3/11.1; `danger` 7.7/6.9; `success`&`diff.add` 11.2/10.1; `question` 12.0/10.8 on base/raised; `text.onAccent` on `primary` 7.0, on `voice.listening` 12.3, on `danger` 7.7; accents on own tints: add 9.3, remove 6.8, question 9.9, listening 10.1, `text.primary` on `primaryTint` 15.6. Light theme: `text.primary` 15.5/16.6, `text.secondary` 7.8/8.4, `text.muted` 5.4/5.8 on `bg.base`/`bg.raised`; `primary` 6.1/6.5; `voice.listening` 4.6/4.8; `danger` 5.3/5.7; `success` 5.0/5.3; `question` 5.5/5.9; white on `primary` 6.5; accents on own tints: add 4.6, remove 4.8, question 5.1, listening 4.8, `text.primary` on `primaryTint` 13.7.
+**Superseded by `DESIGN.md ## Contrast` for v2 — the numbers below are v1's and describe a palette
+that no longer exists.** The current computed pairs live in `DESIGN.md`, are re-derived from
+`tokens.json`, and are what `.claude/tools/design-check` reads its 4.5:1 threshold against. Kept
+here as the record of what was measured before. Dark theme: `text.primary`(17.5/15.8), `text.secondary`(9.0/8.1), `text.muted`(5.6/5.0) on `bg.base`/`bg.raised`; `primary` 7.0/6.3; `voice.listening` 12.3/11.1; `danger` 7.7/6.9; `success`&`diff.add` 11.2/10.1; `question` 12.0/10.8 on base/raised; `text.onAccent` on `primary` 7.0, on `voice.listening` 12.3, on `danger` 7.7; accents on own tints: add 9.3, remove 6.8, question 9.9, listening 10.1, `text.primary` on `primaryTint` 15.6. Light theme: `text.primary` 15.5/16.6, `text.secondary` 7.8/8.4, `text.muted` 5.4/5.8 on `bg.base`/`bg.raised`; `primary` 6.1/6.5; `voice.listening` 4.6/4.8; `danger` 5.3/5.7; `success` 5.0/5.3; `question` 5.5/5.9; white on `primary` 6.5; accents on own tints: add 4.6, remove 4.8, question 5.1, listening 4.8, `text.primary` on `primaryTint` 13.7.
 **One pair added 2026-08-19 (T-152)** for § Buttons' new `neutral` variant, computed by the same formula: `text.primary` on `bg.hairline` **13.28** dark / **13.34** light. It is a neutral-on-neutral pair, so the accent rule below does not bind it; the variant's 1px boundary is `text.muted` against `bg.raised` at **5.01** dark / **5.78** light, which clears 1.4.11's 3:1 for non-text. No accent gained a new ground and no new colour token exists, so every other pair in this section is unchanged and still complete.
 
 Rule for implementers: accent text is legal only on `bg.base`, `bg.raised`, or its own tint token — any new pairing must be re-verified before use. The `gradient.voice` surface never carries body text; the live transcript renders on `bg.base` beside it, `text.primary`.
@@ -523,7 +616,7 @@ bar: the bottom of the Talk surface belongs to the Composer and the mic orb.
 
 | ID | On surface | Label | Rendering |
 |---|---|---|---|
-| **PS-TASKS** | Talk | `Tasks` + count badge | ghost button, list icon, `text.primary`; badge is a `radius.pill` `primaryTint` fill with `primary` text, `font.size.meta` tabular |
+| **PS-TASKS** | Talk | `Tasks` + count badge | square outline button, 1px `bg.rule`, list icon, `text.primary`; the badge is a **square `accent` fill with `text.onAccent`**, `font.size.meta` in the numeric face — the one place a count is loud, because it is the only peripheral evidence that the second path exists |
 | **PS-TALK** | Tasks | `Talk` | ghost button, mic icon, `text.primary` |
 
 **The count is open tasks due today** — the same number § TaskList's header publishes, never a
@@ -541,6 +634,9 @@ failure below. That is the whole point of it; a fallback control that disappears
 surface it is meant to escape is not a fallback.
 
 ## ListsMenu
+
+> **Still v1 appearance.** Behaviour, copy and ids below are current; the *look* is the
+> retired language, and it is rewritten when this surface is drawn — the wide-frame Lists rail (§ AppFrame, tier 3) answers half of what this section is for and the slide-over is redrawn beside it.
 
 Purpose: choose which collection Tasks renders, make a list, reach Settings. Opened by the
 hamburger on the Tasks surface. **A slide-over panel from the left at every width** — scrim,
@@ -727,6 +823,9 @@ route to the second path.
 
 ## SettingsRow
 
+> **Still v1 appearance.** Behaviour, copy and ids below are current; the *look* is the
+> retired language, and it is rewritten when this surface is drawn — Settings is a tranche-2 surface.
+
 Purpose: one preference per row on the Settings surface. Flat rows on `bg.base`, hairline
 between, `padding: md lg` — no cards.
 
@@ -750,6 +849,9 @@ switch that toggles nothing is worse than an absent one.
 
 ## ListEditorSheet
 
+> **Still v1 appearance.** Behaviour, copy and ids below are current; the *look* is the
+> retired language, and it is rewritten when this surface is drawn — the New-list sheet is a tranche-2 surface.
+
 Purpose: name a new list. Bottom sheet on phones, centred dialog ≥ 1024px, `radius.sheet`,
 `bg.raised`, `shadow.raised`. Title **New list**; text field; **Create** (primary) and **Cancel**
 (ghost).
@@ -772,7 +874,8 @@ that bubble already carry meaning and a second signal on the same text would col
 § Colour rules 1. Hit area follows the platform minimum via `hitSlop`.
 
 The arrival flash reuses AC-4's existing treatment — `motion.duration_ms.diffFlashHold` then
-`diffFlashFade`, `addTint` / `removeTint` — moved from "whenever a turn applies" to "on arrival
+`diffFlashFade`, and in v2 the cue is § TaskRow's leading `accent` rule rather than a background
+tint — moved from "whenever a turn applies" to "on arrival
 from the message that changed it". Same cue, attached to the moment it informs.
 
 States: default · hover (underline to `text.secondary`) · focused (ring) · pressed ·
@@ -849,9 +952,12 @@ app** — the only spinner is the one § Buttons puts inside a button that was p
 | **SK-LISTROW** | LM-LIST | icon square + one bar at 55%, two rows |
 | **SK-DETAIL** | the F-005 task detail (IA § 6, S6) | one bar at 70% at title size, then five field-shaped pairs — a short label bar at 30% over a value bar at 55% — and one step-list block of three SK-ROW-shaped bars. Added 2026-08-19, T-152 |
 
-Fill `bg.hairline` on `bg.raised`, `radius.sm`, a 1600ms opacity pulse between 100% and 55%.
-Under `prefers-reduced-motion` the pulse stops and the bars hold at 78% — still visibly
-placeholder, no motion. Skeletons carry no text and no testid: nothing about them is assertable
+Fill `bg.sunken` on `bg.base`, `radius.none`, **and no pulse.** v2's motion budget is spent
+entirely on the listening rule; a loading state that breathes is a second thing moving without the
+user acting. A skeleton row keeps the real row's silhouette exactly — a bar in the time rail, a
+square where the checkbox goes, a bar where the title goes — so the list does not resize when the
+read lands.
+There is no reduced-motion clause to write, because there is no motion to collapse. Skeletons carry no text and no testid: nothing about them is assertable
 except that they are not the empty state.
 
 **A loading surface never renders its empty state.** A returning user who sees "Say it. I'll
@@ -878,8 +984,9 @@ section ever asked for; the words were never part of the silhouette. Collections
 
 ## InlineRetryBanner
 
-Purpose: the failure that must not take the surface. Full-width strip at the top of a list,
-`bg.raised`, 1px `danger` top-and-bottom hairline, `danger` icon, `text.primary` message,
+Purpose: the failure that must not take the surface. A full-width block at the top of a list on
+`bg.base` inside a 1px `bg.rule`, with a `border.mark` `danger` rule down its leading edge, a
+`danger` icon, a `text.primary` head and a `text.secondary` sentence,
 ghost **Retry**.
 
 Used when a refresh fails **and the known content is still worth showing**: "Couldn't refresh
@@ -898,7 +1005,10 @@ States: default · retrying (Retry takes the § Buttons loading treatment) · hi
 Purpose: the failure that has nothing to attach to — the conversation's own session read fails,
 so there is no thread to put an Error bubble in; or the task list fails with nothing on device.
 
-Anatomy, centred, `bg.base`: one line at `font.size.title` naming what happened in plain words,
+Anatomy — **left-aligned**, on `bg.base`, in the surface's own content column, and left-aligned is
+the v2 change: centring an error puts it somewhere the eye has never been on this screen, and the
+line under it starts at a different x from every other line the user has read. One line at
+`font.size.title` naming what happened in plain words,
 one `text.secondary` line naming the next thing to do, one primary **Retry**, and — this is the
 part that is not decoration — **the other path stays reachable**: PS-TASKS / PS-TALK remains
 visible and enabled in the top bar, and on the Tasks variant `Add task` stays live, because the
@@ -925,6 +1035,11 @@ makes users abandon.
 
 Three, because they are three different facts and one message for all of them tells at least two
 users something untrue.
+
+Anatomy: **left-aligned, in the content column, at the same left edge as the head above it** —
+v2's change, for § SurfaceError's reason. Head at `font.size.title` `font.weight.semibold`, one
+`text.secondary` sentence at `font.size.body` capped at 44 characters of measure, then at most one
+button. **No illustration and no icon**: an empty list is not an event.
 
 | ID | When | Head | Action |
 |---|---|---|---|
@@ -1028,12 +1143,41 @@ was renamed or was reordered. Two cells changed content and are called out at th
 Mockups: `app-shell.html` (web, both sides of the branch) · `app-shell-ios.html` ·
 `app-shell-android.html` (T-104 — phones, always below the branch).
 
-**The branch is `tokens.json breakpoints.split`, and there is exactly one of it.**
+**There are now TWO branches, and the second is new in v2 (2026-08-21, T-204).**
 
 | Width | Frame | PathSwitch | Settings |
 |---|---|---|---|
-| **below split** | one surface on screen: Talk **or** Tasks | present; one tap between them | replaces the surface |
-| **at or above split** | Tasks in the centre, Talk in a `360–420px` right panel, both permanently on screen | **absent** | replaces the **centre**, never the panel |
+| **below `breakpoints.split`** | one surface on screen: Talk **or** Tasks | present; one tap between them | replaces the surface |
+| **`split` up to `wide`** | Tasks in the centre, Talk in a `measure.panel_max` right panel, both permanently on screen | **absent** | replaces the **centre**, never the panel |
+| **`breakpoints.wide` and above** | a permanent **Lists rail** (`measure.rail`) joins on the left; Tasks takes what is left; Talk keeps its panel | **absent** | replaces the **centre**, never the rail and never the panel |
+
+### Above the desktop width the app adds a column, never a gutter
+
+`tokens.json layout.wide_rule`. The v1 frame stopped branching at `split`, and the consequence was
+measured on 2026-08-21: `.tasks-col` was `max-width: 720px` with **no `margin: 0 auto`**, so at
+1440 it left **300px** dead on one side and 0 on the other, and at 1920 it left **780px** — 52% of
+the pane. Every check passed, because `design-check` tested horizontal overflow and nothing else,
+and because `breakpoints` declared four widths and stopped at `desktop`. **The defect was in the
+mockup too**, at identical measurements, so this was never implementation drift.
+
+**One centring, and it is at the content column** (`layout.content_column_rule`). Each frame column
+— Lists rail, Tasks pane, Talk panel — holds exactly **one** content column,
+`min(pane − 2×gutter, its measure token)`, **centred in its pane**. Everything inside a content
+column is left-aligned and nothing inside it centres again. Leftover width is therefore always
+symmetric and always at one known level.
+
+**Why the rail arrives at `wide` (1536) and not at `laptop` (1440).** 1536 is the narrowest frame
+where `rail 240 + list_max 820 + 2×gutter + panel_max 420` fits. Bring the rail in at 1440 and a
+user maximising their window watches the task list get *narrower* than it was one breakpoint
+earlier — a regression wearing a feature's clothes.
+
+**The rail is a frame column, not the S3 Lists menu.** It shows the same rows in the same order
+(§ Two axes: `Today · Upcoming · Done`, a group break, then `Inbox` and the personal lists, with
+`New list` and `Settings` at the foot) and it is what makes the hamburger absent at this width —
+a control that opens what is already on screen is a dead control, the same argument § PathSwitch
+makes one tier down. **Its rows carry no testid yet**, and that is a recorded debt rather than an
+omission: the ids would have to be either `menu-collection-row` reused for a different control, or
+new ones, and the second is a decision that belongs with the tranche-2 redraw of § ListsMenu.
 
 **Tablet is not a third case.** `768` renders the below-split frame unchanged from `375`.
 Splitting `768` leaves the panel about `330px` and the centre about `420px`: the centre loses the
@@ -1653,7 +1797,7 @@ section changed for F-005; this paragraph exists so the next reader does not wid
 It joins the **Tasks surface's banner stack**, the strip family § OfflineBanner and
 § InlineRetryBanner already occupy: top of the surface, below the top bar, **in flow**.
 Full-width, `bg.raised`, 1px `bg.hairline` bottom hairline, `padding: sm gutter`, Lucide `inbox`
-at `icon.size.sm` in `success`, message at `font.size.meta` in `text.primary`, dismiss control at
+at `icon.size.sm` in `text.muted`, message at `font.size.meta` in `text.primary`, dismiss control at
 the trailing edge.
 
 **Why the stack and not a float.** (1) The class already exists — a full-width strip reporting one
@@ -1678,7 +1822,7 @@ one appear together on the first try.
 
 **Icon: `inbox`, not a tick.** A tick says *saved*, which the user knows — they pressed the button.
 The news is the **destination**, so the icon is the one the destination wears in the Lists menu.
-`success` green because § Colour rules 1 already assigns green to *added* and this is an add; per
+**no accent at all in v2** — green is retired (§ head), and the notice is a receipt rather than an alarm, so it sits on `bg.sunken` inside a 1px `bg.hairline` and lets its words do the work; per
 rule 3 the meaning never rests on the colour — the words carry it alone.
 
 ### The two rows
@@ -1789,7 +1933,7 @@ entirely. This one is specified so they lose nothing.
   the 80ms opacity change per `motion.reducedMotion`, and — because there is no timer — **nothing
   else about the component changes at all.** Same promise as § NewMessageAffordance, for the same
   reason.
-- **No new contrast pair.** `text.primary` and `text.muted` on `bg.raised`, and `success` as a
+- **No new contrast pair.** `text.primary` and `text.muted` on `bg.sunken`, and the icon as a
   non-text icon, are all verified in § Contrast already.
 
 ### Testids and states
@@ -2132,10 +2276,10 @@ the words carry the meaning alone, in every row):
 | Row | Lucide icon | Colour | Why that colour is already legal |
 |---|---|---|---|
 | CN-FAILED | `alert-circle` | `danger` | § InlineRetryBanner already uses a `danger` icon for a write/read that failed |
-| CN-OFFLINE | `wifi-off` | `question` | § OfflineBanner already carries the offline news in the `question` accent |
+| CN-OFFLINE | `wifi-off` | `attention` | § OfflineBanner already carries the offline news in the `attention` accent (v2's name for the same meaning) |
 | CN-SUPERSEDED | `history` | `text.muted` | nothing is wrong and there is no action |
 | CN-DELETED | `trash-2` | `text.muted` | as above |
-| CN-UNDO | `corner-up-left` | `text.muted` | **must not be violet.** § UndoAffordance fixes violet as *the assistant's own act* and AC-43's offer reverses the **user's** act — the constraint travels with the affordance, wherever it renders |
+| CN-UNDO | `corner-up-left` | `text.muted` | **must not wear the accent.** § UndoAffordance fixes the accent as *the assistant's own act* and AC-43's offer reverses the **user's** act — the constraint travels with the affordance, wherever it renders |
 | CN-UNDONE | `corner-up-left` | `text.muted` | same glyph, no action |
 
 ### The rows
@@ -2291,7 +2435,7 @@ the observable is one write, and QA asserts that a retry from either site produc
   `prefers-reduced-motion` that collapses to the 80ms opacity change per `motion.reducedMotion`, and —
   because there is no timer — **nothing else about the component changes at all.**
 - **No new contrast pair beyond the one § Contrast now publishes** for the `neutral` variant.
-  `text.primary` / `text.muted` on `bg.raised`, and `danger` / `question` as non-text icons, are all
+  `text.primary` / `text.muted` on `bg.base`, and `danger` / `attention` as non-text icons, are all
   verified there already.
 
 ### Testids and states
@@ -2369,3 +2513,151 @@ Five, and none of them is a rename or a reorder.
    widened, so the next reader does not widen it by mistake. **§ Contrast** gains one computed pair and
    **§ Testid catalogue — app shell** gains five rows and a counts note; both are listed here rather than
    separately because neither changed a decision.
+
+---
+
+## TimeRail — where the whole novelty budget is spent (TR-RAIL-*)
+
+**Added 2026-08-21 (T-204), for visual language v2.** Owed by `DESIGN.md ## Identity`, which names
+the time rail as this system's one differentiator and spends the entire novelty budget on it.
+Drawn in `specimen.html` plate 03 and in all three `app-shell*.html`.
+
+**What it is.** Every task row opens with its due time, set in `font.family.numeric`,
+right-aligned in a fixed column, with a 1px `bg.hairline` running the length of the list as the
+column's spine. Nowhere else in the app does a second face appear.
+
+| ID | Element | Rendering |
+|---|---|---|
+| **TR-RAIL-TIME** | the due time | `font.family.numeric` at `font.size.meta` in `text.muted`, right-aligned, `space.4` clear of the spine |
+| **TR-RAIL-ZERO** | a task with no time | an em dash, in the same column, same face, same alignment |
+| **TR-RAIL-DAY** | the weekday | rendered **only** at `wide` and above, preceding the time, in `text.muted`, `space.2` clear of it |
+| **TR-RAIL-SPINE** | the column's edge | 1px `bg.hairline`, full height of the list; every row's separator rule starts on it rather than at the pane edge |
+
+**Three widths, from `layout.measure.timerail`.** `compact 72` below `split` · `default 96` from
+`split` · `wide 136` at `wide` and above. **The rail widening and gaining the weekday is what a wide
+screen buys** — the alternative, which v1 shipped, is the list growing a dead gutter.
+
+**The zero case is drawn, not absent.** A task with no deadline shows `—`. An empty cell reads as a
+rendering failure and collapses the column's rhythm; a dash says *this one has no time* in the same
+place every other row says what its time is.
+
+**One signal per meaning, and this is where it is easiest to break.** The `Overdue` group heading
+carries lateness for its whole set in `color.danger` (§ TaskList). **The times inside that group
+stay `text.muted`.** A red heading over red dates is two signals for one fact; they dilute each
+other and the row stops being scannable.
+
+**The rail is a column, not a prefix.** It is a real grid track — `grid-template-columns: rail,
+minmax(0,1fr), auto` — so a title that wraps to two lines leaves the time on the first line and the
+column's edges do not move. A title is **never** truncated to keep the rail tidy.
+
+**Two left edges, and the spine is what explains the second one.** The surface head (`Today`, its
+count, the rule under them) and the banner stack begin at the pane's gutter; group headings and task
+titles begin at `gutter + rail`, past the spine. That is one deliberate step, drawn by a visible
+1px line. It is not the three unexplained left edges the 2026-08-21 audit measured on the shipped
+Tasks surface (title at x=84, rows at 32, the primary action at 592).
+
+---
+
+## Field · Label · FormRow — a field has no intrinsic width (FLD-*)
+
+**Added 2026-08-21 (T-204).** Owed since v1, which never defined them, which is why the task detail
+shipped without them. Rule text: `DESIGN.md ## Fields, labels and form rows` and
+`tokens.json field.rule`. Drawn in `specimen.html` plate 06 and in all three `task-detail*.html`.
+
+**The defect this exists to make unrepeatable.** On a 1440px screen the shipped task detail rendered
+the Name input, the Note textarea and the Add-a-step input at **197px each**, inside a `.detail-col`
+of 720 inside a pane of 1020. The Name field displayed `Gọi nha sĩ đặt lịch khám` for a task called
+`Gọi nha sĩ đặt lịch khám răng` — **a form for editing a task truncated the task's own title, with
+823px to spare.** Cause, located: `.detail-field-control` was used in JSX and styled nowhere, so the
+input fell back to the HTML default `size=20`.
+
+| ID | Element | Rendering |
+|---|---|---|
+| **FLD-FIELD** | the control | `width: 100%` of its form row, `field.height` tall, 1px `bg.rule`, `radius.none`, `font.size.body`, `field.padding_x` inset. Multiline starts at `field.height_multiline_min` and may only grow |
+| **FLD-LABEL** | its name | always present, always **above** the field, `font.size.meta` at `font.weight.semibold` in `text.secondary`, `field.label_gap` beneath. **A placeholder is never a label** — it disappears exactly when the reader needs it |
+| **FLD-HELP** | the quiet line under it | `font.size.meta` in `text.muted`, `field.help_gap` beneath the field. States a consequence the field cannot ("Dated today, so it sits in Today") |
+| **FLD-ERROR** | the loud one | `font.size.meta` in `color.danger`, same gap, **and the field's border turns `danger` too** |
+| **FLD-ROW** | the row | `min(100%, measure.form_max)`, `field.row_gap` between rows |
+| **FLD-GROUP** | several controls on one line (a date and a time and a Clear) | they share the row and wrap together; none of them takes a fixed px width |
+
+**States:** default · focus (`border.focus` `focusRing` inset **and** the border to `accent`) ·
+error · disabled (opacity **and** the border drops to `bg.hairline` — state never travels on
+opacity alone) · read-only.
+
+**Two signals are allowed here and nowhere else.** § Colour rules 1 forbids a meaning carried by two
+things; a form error is the documented exception, because an error the reader misses costs them the
+whole form. The message and the border are the pair. Nothing else joins them — no icon, no fill.
+
+**The rule, and its check.** A field has **no intrinsic width**. The HTML `size` attribute and any
+fixed px width on an input are forbidden. **Checkable:** inside a form row wider than 320, a field
+rendering below `field.min_rendered_width` (240) is a failure.
+
+**No control in a form wears the accent unless it is the form's primary action.** The shipped task
+detail painted seven in it — `Clear` twice, three deadline shortcuts, `Set a repeat`, `Add step`.
+`accent` means *the assistant*; every one of those is the user's own hand. On the redrawn detail the
+only accent is the focus ring and the repeat picker's `Save the repeat`.
+
+---
+
+## TaskDetail — the surface that was never drawn (DET-*)
+
+**Added 2026-08-21 (T-204), for `F-005`.** `src/assistant/web/components/TaskDetail.tsx` shipped its
+ids marked *proposed, pending design's `phase: screens`*; **this section adopts them verbatim**
+rather than respelling them — 1,362 binding sites in code and tests is the wrong thing to move for a
+spelling, and the spellings already follow the catalogue's `{surface}-{control}` convention. Drawn
+in `task-detail.html`, `-ios.html`, `-android.html`. IA § S6 records the surface as **web-only for
+this phase**; the two phone drawings are the contract parity closes against, not a claim it is built.
+
+**Anatomy.** A `topbar` carrying only the close affordance and the word `Task`; then, in the pane's
+content column: the task's title at `font.size.display`, one `font.family.numeric` meta line
+(`Added Aug 18 · edited 9:40 PM · 3 steps`), a 1px `bg.rule`, then the seven fields as § Field form
+rows, then a rule and the destructive actions. **Above `breakpoints.split` it takes the column the
+task list occupies and the conversation stays rendered beside it** — one application state placed by
+CSS, never two states selected by a measured width (IA § S6).
+
+**AC-1's account of itself.** All seven fields render inline, whether or not they hold a value, each
+as an explicit `detail-field` node carrying `data-field`. The mockup marks **one** of them with the
+`detail-field` id as the exemplar, the same convention § ListsMenu's `menu-collection-row` uses.
+
+| Field | Label | Controls |
+|---|---|---|
+| title | **Name** | `detail-title-input` |
+| note | **Note** | `detail-note-input`, multiline |
+| priority | **Priority** | `detail-priority-control` — a four-segment control, `detail-priority-option` exemplar. `None · Low · Medium · High`; the active segment is `text.primary` fill, **not** accent |
+| deadline | **Deadline** | `detail-deadline-date` · `detail-deadline-time` · `detail-deadline-clear`, then `detail-deadline-shortcut` chips (`Today · Tomorrow · Next week`), then `detail-deadline-collection` — the FLD-HELP line stating which collection this date files it into |
+| reminder | **Reminder** | `detail-reminder-date` · `detail-reminder-time` · `detail-reminder-clear`, with the FLD-HELP line "This is the one that alerts you. The deadline on its own is silent." |
+| steps | **Steps** | `detail-steps` wrapping `detail-step-row` (`detail-step-checkbox`, `detail-step-name`, `detail-step-move`, `detail-step-delete`), then `detail-step-add-input` + `detail-step-add-button`. `detail-steps-refused` when the task cannot take them |
+| repeat | **Repeat** | summary form: `detail-repeat-summary` + `detail-repeat-edit` + `detail-repeat-clear`. Picker form: `detail-repeat-picker` holding `detail-repeat-cadence`, `detail-repeat-interval`, `detail-repeat-weekday`, `detail-repeat-end` (+ `detail-repeat-until` / `detail-repeat-count`), `detail-repeat-preview` (`detail-repeat-preview-date`, `detail-repeat-preview-collection`, `detail-repeat-refusal`), `detail-repeat-commit`, `detail-repeat-cancel`. `detail-repeat-refused` when the task cannot take one |
+
+**The repeat picker is the one control with preview-then-commit**, because AC-22/23/25 have
+outcomes that must be seen before they happen and a save-on-blur control has nowhere to render a
+refusal. Everything else on this surface saves on leaving the field. **There is no third model.**
+The preview is a `border.mark` rule with three dates in the numeric face and the collection each
+lands in; when a rule refuses an occurrence the rule turns `attention` and the refusals read as
+sentences, never as an error.
+
+**Destructive actions sit last, under a rule**, in the `danger` **outlined** variant and never the
+filled one: filled `danger` is the button that *does* the deleting and is legal only inside a
+confirmation whose sentence has already named what goes. `detail-delete-button` says `Delete task`;
+`detail-delete-series-button` says `Delete every repeat` and renders only for a live series.
+
+### States, and the ones deliberately not drawn
+
+| ID | State | Rendering |
+|---|---|---|
+| **DET-DEFAULT** | a task with values | above |
+| **DET-BLANK** | every field empty | identical structure; the step region renders its own invitation rather than nothing. **There is no empty state for this surface** — under AC-1 an empty field is the ordinary appearance, not a degraded one |
+| **DET-LOADING** | the read in flight | § Skeletons SK-DETAIL. It exists because DET-BLANK and a not-yet-read task are otherwise pixel-identical |
+| **DET-FIELD-FAILED** | one field's write failed (AC-2) | `detail-field-failure` **on the field**, the typed value kept, `detail-field-retry` beside it, the field's border `danger`. The surface does not close and never silently reverts. Concurrent failures aggregate into one announcement, not N |
+| **DET-OFFLINE** | AC-2's third state | § OfflineBanner above, and the field states the refusal. **It is not a queue** — no spinner, no pending badge, no timer, no replay on reconnection |
+| **DET-ERROR** | the detail's own read failed | § SurfaceError SE-DETAIL. Takes the **column**, not the frame, so the conversation stays beside it, and the close affordance stays live |
+| **DET-DELETED** | AC-4's terminal state | `detail-deleted` — the unsaved text legible in `detail-deleted-text`, a way back in `detail-back-button`, and **no retry**: a retry aimed at a deleted row is dead or a resurrection |
+| **DET-STEPS-REFUSED**, **DET-REPEAT-REFUSED** | the task cannot take steps / a repeat | one `attention` line where the region would be. Not an error — nothing failed |
+
+**Not drawn, on purpose, and named so the omission is a decision:** the delete **confirmation**
+itself (§ Buttons and the platform table in `DESIGN.md` fix its three platform shapes, and it is
+drawn in `specimen.html` plate 09, so drawing it a second time here would give two files an opinion
+about one dialog); a **dirty-field-in-flight** state (the save is on blur and completes or fails —
+there is no observable third moment); and **§ CarriedNotice's rows on this surface**, which are
+drawn in the three shell mockups because the whole point of that family is that it renders on every
+surface, including the two the detail mockup does not contain.

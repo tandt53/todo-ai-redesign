@@ -3,23 +3,30 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Talk — the conversation · ANDROID · v2</title>
+<title>Task detail — iOS · v2</title>
 <!--
-  TALK — the conversation's own states · ANDROID mockup · design-agent T-204 · 2026-08-21
+  TASK DETAIL (S6) — every field one task has, set by hand · iOS mockup
+  design-agent T-204 · 2026-08-21 · F-005 · IA § S6
 
-  REDRAWN TO VISUAL LANGUAGE v2 (Swiss). Exactly the 23 conversation ids, the
-  same 23 as before, in this platform's spelling — src/assistant/mobile/model/a11y.ts
-  parses all three files and compares them with each other in both directions.
+  THIS SURFACE HAD NEVER BEEN DRAWN, at any width, on any platform. What shipped
+  without a drawing: every input rendered at 197px inside a 1020px pane, and the
+  Name field clipped the task's own title — the class was used in JSX and styled
+  nowhere, so the input fell back to the HTML default size=20.
 
-  THE ONE CONTINUOUS ANIMATION IN THE WHOLE SYSTEM is the listening rule: a 2px
-  accent rule growing along the composer while the microphone is live. v1's
-  2400ms aurora breath and the cyan→violet handoff are retired with the gradient
-  — the handoff never once rendered in the running app, and who is speaking is
-  already carried by side, ground and label.
+  THE RULE THAT REPLACES IT (DESIGN.md ## Fields, labels and form rows): a field
+  has NO INTRINSIC WIDTH. It is width:100% of its form row, always; the size
+  attribute and any fixed px width on an input are forbidden. A form row is
+  min(100%, measure.form_max) with field.row_gap between rows. Checkable: inside
+  a form row wider than 320, a field rendering below field.min_rendered_width is
+  a failure.
 
-  BOTTOM-ANCHORED, and this is the rule the shipped app dropped: a short thread
-  sits ON the composer. `margin-top:auto` on the first message, never
-  `align-items:flex-end`.
+  AND THE SECOND HALF OF THE OLD DEFECT: seven controls in this form rendered in
+  the accent — Clear ×2, three deadline shortcuts, Set a repeat, Add step. The
+  accent means THE ASSISTANT. Every one of those is the user's own hand, so none
+  of them wears it here. The only accent on this surface is the focus ring.
+
+  IA § 2 records S6 as web-only for this phase; the iOS and Android drawings are
+  the contract parity has to close against, not a claim that the phone has it.
 
   Self-contained: no network, no server, no build. Open by double-click.
   Design system: docs/design/_shared/DESIGN.md · tokens: tokens.json ·
@@ -229,14 +236,14 @@ html{
 
   /* type */
   --font-ui:var(--font-family-ui); --font-num:var(--font-family-numeric);
-  --fs-label:calc(var(--font-size_android-label) * 1px);
-  --fs-meta:calc(var(--font-size_android-meta) * 1px);
-  --fs-body:calc(var(--font-size_android-body) * 1px);
-  --fs-lead:calc(var(--font-size_android-lead) * 1px);
-  --fs-title:calc(var(--font-size_android-title) * 1px);
-  --fs-display:calc(var(--font-size_android-display) * 1px);
-  --fs-hero:calc(var(--font-size_android-hero) * 1px);
-  --fs-mega:calc(var(--font-size_android-mega) * 1px);
+  --fs-label:calc(var(--font-size_ios-label) * 1px);
+  --fs-meta:calc(var(--font-size_ios-meta) * 1px);
+  --fs-body:calc(var(--font-size_ios-body) * 1px);
+  --fs-lead:calc(var(--font-size_ios-lead) * 1px);
+  --fs-title:calc(var(--font-size_ios-title) * 1px);
+  --fs-display:calc(var(--font-size_ios-display) * 1px);
+  --fs-hero:calc(var(--font-size_ios-hero) * 1px);
+  --fs-mega:calc(var(--font-size_ios-mega) * 1px);
   --lh-tight:var(--font-lineHeight-tight); --lh-title:var(--font-lineHeight-title);
   --lh-body:var(--font-lineHeight-body); --lh-meta:var(--font-lineHeight-meta);
   --ls-mega:var(--font-letterSpacing-mega); --ls-hero:var(--font-letterSpacing-hero);
@@ -266,7 +273,7 @@ html{
   --h-sm:calc(var(--control-height-sm) * 1px);
   --h-md:calc(var(--control-height-md) * 1px);
   --h-lg:calc(var(--control-height-lg) * 1px);
-  --min-target:calc(var(--control-minTarget-android) * 1px);
+  --min-target:calc(var(--control-minTarget-ios) * 1px);
   --px-sm:calc(var(--control-padding_x-sm) * 1px);
   --px-md:calc(var(--control-padding_x-md) * 1px);
   --field-h:calc(var(--field-height) * 1px);
@@ -837,406 +844,445 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .ic{stroke-width:var(--icon-stroke)}
 
 /* ── view switching: one rule per state attribute a state actually sets ── */
-.app[data-mic="denied"] .v-mic-denied{display:block}
-.app[data-mic="denied"] .v-mic-denied.v-flex{display:flex}
-.app[data-mic="hidden"] .v-mic-hidden{display:block}
-.app[data-mic="hidden"] .v-mic-hidden.v-flex{display:flex}
-.app[data-mic="idle"] .v-mic-idle{display:block}
-.app[data-mic="idle"] .v-mic-idle.v-flex{display:flex}
-.app[data-mic="live"] .v-mic-live{display:block}
-.app[data-mic="live"] .v-mic-live.v-flex{display:flex}
-.app[data-mic="thinking"] .v-mic-thinking{display:block}
-.app[data-mic="thinking"] .v-mic-thinking.v-flex{display:flex}
-.app[data-mic="transient"] .v-mic-transient{display:block}
-.app[data-mic="transient"] .v-mic-transient.v-flex{display:flex}
-.app[data-nma="new"] .v-nma-new{display:block}
-.app[data-nma="new"] .v-nma-new.v-flex{display:flex}
-.app[data-nma="waiting"] .v-nma-waiting{display:block}
-.app[data-nma="waiting"] .v-nma-waiting.v-flex{display:flex}
-.app[data-notice="offline"] .v-notice-offline{display:block}
-.app[data-notice="offline"] .v-notice-offline.v-flex{display:flex}
-.app[data-notice="queued"] .v-notice-queued{display:block}
-.app[data-notice="queued"] .v-notice-queued.v-flex{display:flex}
-.app[data-surface="talk"] .v-surface-talk{display:block}
-.app[data-surface="talk"] .v-surface-talk.v-flex{display:flex}
-.app[data-surface="tasks"] .v-surface-tasks{display:block}
-.app[data-surface="tasks"] .v-surface-tasks.v-flex{display:flex}
-.app[data-talk="applied"] .v-talk-applied{display:block}
-.app[data-talk="applied"] .v-talk-applied.v-flex{display:flex}
-.app[data-talk="boundary"] .v-talk-boundary{display:block}
-.app[data-talk="boundary"] .v-talk-boundary.v-flex{display:flex}
-.app[data-talk="clarify"] .v-talk-clarify{display:block}
-.app[data-talk="clarify"] .v-talk-clarify.v-flex{display:flex}
-.app[data-talk="confirm"] .v-talk-confirm{display:block}
-.app[data-talk="confirm"] .v-talk-confirm.v-flex{display:flex}
-.app[data-talk="empty"] .v-talk-empty{display:block}
-.app[data-talk="empty"] .v-talk-empty.v-flex{display:flex}
-.app[data-talk="error"] .v-talk-error{display:block}
-.app[data-talk="error"] .v-talk-error.v-flex{display:flex}
-.app[data-talk="listening"] .v-talk-listening{display:block}
-.app[data-talk="listening"] .v-talk-listening.v-flex{display:flex}
-.app[data-talk="no-match"] .v-talk-no-match{display:block}
-.app[data-talk="no-match"] .v-talk-no-match.v-flex{display:flex}
-.app[data-talk="nothing-reverted"] .v-talk-nothing-reverted{display:block}
-.app[data-talk="nothing-reverted"] .v-talk-nothing-reverted.v-flex{display:flex}
-.app[data-talk="offline"] .v-talk-offline{display:block}
-.app[data-talk="offline"] .v-talk-offline.v-flex{display:flex}
-.app[data-talk="reverted"] .v-talk-reverted{display:block}
-.app[data-talk="reverted"] .v-talk-reverted.v-flex{display:flex}
-.app[data-talk="superseded"] .v-talk-superseded{display:block}
-.app[data-talk="superseded"] .v-talk-superseded.v-flex{display:flex}
-.app[data-talk="thinking"] .v-talk-thinking{display:block}
-.app[data-talk="thinking"] .v-talk-thinking.v-flex{display:flex}
+.app[data-body="deleted"] .v-body-deleted{display:block}
+.app[data-body="deleted"] .v-body-deleted.v-flex{display:flex}
+.app[data-body="error"] .v-body-error{display:block}
+.app[data-body="error"] .v-body-error.v-flex{display:flex}
+.app[data-body="fields"] .v-body-fields{display:block}
+.app[data-body="fields"] .v-body-fields.v-flex{display:flex}
+.app[data-body="loading"] .v-body-loading{display:block}
+.app[data-body="loading"] .v-body-loading.v-flex{display:flex}
+.app[data-fail="field"] .v-fail-field{display:block}
+.app[data-fail="field"] .v-fail-field.v-flex{display:flex}
+.app[data-fail="none"] .v-fail-none{display:block}
+.app[data-fail="none"] .v-fail-none.v-flex{display:flex}
+.app[data-fail="offline"] .v-fail-offline{display:block}
+.app[data-fail="offline"] .v-fail-offline.v-flex{display:flex}
+.app[data-repeat="count"] .v-repeat-count{display:block}
+.app[data-repeat="count"] .v-repeat-count.v-flex{display:flex}
+.app[data-repeat="none"] .v-repeat-none{display:block}
+.app[data-repeat="none"] .v-repeat-none.v-flex{display:flex}
+.app[data-repeat="picker"] .v-repeat-picker{display:block}
+.app[data-repeat="picker"] .v-repeat-picker.v-flex{display:flex}
+.app[data-repeat="refused"] .v-repeat-refused{display:block}
+.app[data-repeat="refused"] .v-repeat-refused.v-flex{display:flex}
+.app[data-repeat="summary"] .v-repeat-summary{display:block}
+.app[data-repeat="summary"] .v-repeat-summary.v-flex{display:flex}
+.app[data-repeat="unsupported"] .v-repeat-unsupported{display:block}
+.app[data-repeat="unsupported"] .v-repeat-unsupported.v-flex{display:flex}
+.app[data-repeat="until"] .v-repeat-until{display:block}
+.app[data-repeat="until"] .v-repeat-until.v-flex{display:flex}
+.app[data-series="single"] .v-series-single{display:block}
+.app[data-series="single"] .v-series-single.v-flex{display:flex}
+.app[data-series="yes"] .v-series-yes{display:block}
+.app[data-series="yes"] .v-series-yes.v-flex{display:flex}
+.app[data-steps="empty"] .v-steps-empty{display:block}
+.app[data-steps="empty"] .v-steps-empty.v-flex{display:flex}
+.app[data-steps="list"] .v-steps-list{display:block}
+.app[data-steps="list"] .v-steps-list.v-flex{display:flex}
+.app[data-steps="refused"] .v-steps-refused{display:block}
+.app[data-steps="refused"] .v-steps-refused.v-flex{display:flex}
+.app[data-surface="detail"] .v-surface-detail{display:block}
+.app[data-surface="detail"] .v-surface-detail.v-flex{display:flex}
 .rename{display:none}
 .app[data-row="rename"] .rename{display:flex}
 .app[data-row="rename"] .row-editable .row-open{display:none}
 .app[data-row="arrived"] .row-editable{box-shadow:inset var(--b-mark) 0 0 var(--accent)}
 
-/* This file draws the CONVERSATION's own states, one surface at a time. The
-   frame that puts Tasks beside Talk is app-shell.html's subject, and drawing it
-   twice would give two files an opinion about one layout. */
-.app[data-surface="talk"] .col-main{display:none}
-.app[data-surface="talk"] .col-panel{display:flex; flex:1 1 auto; border-left:0}
-.app[data-surface="tasks"] .col-main{display:flex}
-.app[data-surface="tasks"] .col-panel{display:none}
-/* mic modes — one control, four appearances, and one of them is absence.
-   A hover-revealed or silently-dead microphone is worse than no microphone. */
-.app[data-mic="idle"] .mic{background:transparent; color:var(--text-secondary); border:var(--b-hairline) solid var(--bg-rule)}
-.app[data-mic="hidden"] .mic{display:none}
-.app[data-mic="denied"] .mic,.app[data-mic="transient"] .mic{opacity:.4; background:transparent; color:var(--text-muted); border:var(--b-hairline) solid var(--bg-hairline)}
-.app[data-mic="denied"] .v-mic-denied{display:flex}
-.app[data-mic="transient"] .v-mic-transient{display:flex}
-.app[data-notice="offline"] .v-notice-offline{display:flex}
-.app[data-notice="queued"] .v-notice-queued{display:flex}
-.app[data-nma="new"] .v-nma-new,.app[data-nma="waiting"] .v-nma-waiting{display:inline-flex}
-
 </style>
 </head>
-<body class="plat-android">
+<body class="plat-ios">
 
 <!-- Mockup chrome. Not the design, and not part of the testid contract. -->
 <div class="dev" aria-label="Mockup state switcher">
-  <span class="dev-tag">talk · ANDROID · v2</span>
-  <button data-s="idle-empty" onclick="showState('idle-empty')">idle-empty</button>
-  <button data-s="idle-tasks" onclick="showState('idle-tasks')">idle-tasks</button>
-  <button data-s="listening" onclick="showState('listening')">listening</button>
-  <button data-s="thinking" onclick="showState('thinking')">thinking</button>
-  <button data-s="applied-diff" onclick="showState('applied-diff')">applied-diff</button>
-  <button data-s="question-confirm" onclick="showState('question-confirm')">question-confirm</button>
-  <button data-s="question-clarify" onclick="showState('question-clarify')">question-clarify</button>
-  <button data-s="no-match" onclick="showState('no-match')">no-match</button>
-  <button data-s="error" onclick="showState('error')">error</button>
-  <button data-s="offline" onclick="showState('offline')">offline</button>
-  <button data-s="queued" onclick="showState('queued')">queued</button>
-  <button data-s="boundary" onclick="showState('boundary')">boundary</button>
-  <button data-s="nma-new" onclick="showState('nma-new')">nma-new</button>
-  <button data-s="nma-waiting" onclick="showState('nma-waiting')">nma-waiting</button>
-  <button data-s="mic-permission" onclick="showState('mic-permission')">mic-permission</button>
-  <button data-s="mic-hidden" onclick="showState('mic-hidden')">mic-hidden</button>
-  <button data-s="mic-transient" onclick="showState('mic-transient')">mic-transient</button>
-  <button data-s="reverted" onclick="showState('reverted')">reverted</button>
-  <button data-s="nothing-reverted" onclick="showState('nothing-reverted')">nothing-reverted</button>
-  <button data-s="declined-superseded" onclick="showState('declined-superseded')">declined-superseded</button>
+  <span class="dev-tag">task detail · iOS · v2</span>
+  <button data-s="detail-default" onclick="showState('detail-default')">detail-default</button>
+  <button data-s="detail-blank" onclick="showState('detail-blank')">detail-blank</button>
+  <button data-s="detail-loading" onclick="showState('detail-loading')">detail-loading</button>
+  <button data-s="detail-field-failed" onclick="showState('detail-field-failed')">detail-field-failed</button>
+  <button data-s="detail-offline" onclick="showState('detail-offline')">detail-offline</button>
+  <button data-s="detail-repeat" onclick="showState('detail-repeat')">detail-repeat</button>
+  <button data-s="detail-repeat-until" onclick="showState('detail-repeat-until')">detail-repeat-until</button>
+  <button data-s="detail-repeat-count" onclick="showState('detail-repeat-count')">detail-repeat-count</button>
+  <button data-s="detail-repeat-refused" onclick="showState('detail-repeat-refused')">detail-repeat-refused</button>
+  <button data-s="detail-repeat-unsupported" onclick="showState('detail-repeat-unsupported')">detail-repeat-unsupported</button>
+  <button data-s="detail-steps-refused" onclick="showState('detail-steps-refused')">detail-steps-refused</button>
+  <button data-s="detail-series" onclick="showState('detail-series')">detail-series</button>
+  <button data-s="detail-error" onclick="showState('detail-error')">detail-error</button>
+  <button data-s="detail-deleted" onclick="showState('detail-deleted')">detail-deleted</button>
+  <button data-s="phone-detail" onclick="showState('phone-detail')">phone-detail</button>
   <button onclick="toggleTheme()">light / dark</button>
   <button onclick="setFrame('')">frame: real width</button>
   <button onclick="setFrame('phone')">frame: phone</button>
   <button onclick="setFrame('wide')">frame: wide</button>
-  <p class="dev-note">The conversation states. Above 1024px the task list is on screen beside the panel — that is the app, not a mockup convenience. “frame: phone” forces the one-surface frame.</p>
+  <p class="dev-note">The detail takes the centre column and the conversation stays beside it (IA § S6: one application state placed by CSS, never two states selected by a measured width). “frame: phone” shows the same surface below the split.</p>
 </div>
 
 <div class="stagewrap"><div class="stage" id="stage">
 
-<div class="app" id="app" data-surface="talk" data-talk="applied" data-mic="idle" data-notice="none">
+<div class="app" id="app" data-surface="detail" data-body="fields" data-repeat="summary" data-steps="list" data-fail="none" data-series="single">
   <div class="frame">
     <div class="col-main">
-      <header class="topbar"><div class="bar-in">
-        <span class="bar-title">Today</span>
-        <span class="spacer"></span>
-        <button class="btn btn-sm btn-primary" data-testid="assistant-add-task-button" resource-id="assistant-add-task-button"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Add task</button>
-      </div></header>
+      <header class="topbar"><div class="bar-in"><button class="backlink" data-testid="detail-close-button" accessibilityIdentifier="detail-close-button"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Today</button><span class="spacer"></span></div></header>
       <div class="pos">
+        <main class="pane surface" data-testid="detail-surface" accessibilityIdentifier="detail-surface">
+          <div class="content-col">
+            <div class="v v-flex v-fail-offline banner attention" data-testid="assistant-offline-banner" accessibilityIdentifier="assistant-offline-banner" style="margin:var(--s4) 0 0">
+              <span class="ico"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m2 2 20 20"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M2 8.8a15.9 15.9 0 0 1 4.6-2.9"/><path d="M10.7 5c4 -.4 8.1 .9 11.3 3.8"/><path d="M5 12.9a10 10 0 0 1 3-1.8"/><path d="M12 20h.01"/></svg></span>
+              <span class="btxt"><b>You’re offline</b>This task is already on the server, so edits to it are refused rather than queued.</span>
+            </div>
+            <div class="v v-body-fields">
+              <div class="detail-head">
+                <h1>Gọi nha sĩ đặt lịch khám răng</h1>
+                <p class="meta">Added Aug 18 · edited 9:40 PM · 3 steps</p>
+              </div>
 
-      <main class="pane">
-        <div class="content-col">
-          <div class="head">
-            <h1>Today</h1>
-            <p class="count"><b>3</b> open</p>
+          <div class="fields" data-testid="detail-fields" accessibilityIdentifier="detail-fields">
+
+            <div class="field-row" data-testid="detail-field" accessibilityIdentifier="detail-field" data-field="title">
+              <label class="field-label" for="d-title">Name</label>
+              <input class="field" id="d-title" data-testid="detail-title-input" accessibilityIdentifier="detail-title-input" value="Gọi nha sĩ đặt lịch khám răng">
+              <span class="v v-flex v-fail-field fail" data-testid="detail-field-failure" accessibilityIdentifier="detail-field-failure">
+                <svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg> Couldn’t save the name. Your text is still here.
+                <button class="btn btn-sm btn-secondary" data-testid="detail-field-retry" accessibilityIdentifier="detail-field-retry"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>Retry</button>
+              </span>
+              <span class="v v-flex v-fail-offline fail" style="color:var(--attention)">
+                <svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m2 2 20 20"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M2 8.8a15.9 15.9 0 0 1 4.6-2.9"/><path d="M10.7 5c4 -.4 8.1 .9 11.3 3.8"/><path d="M5 12.9a10 10 0 0 1 3-1.8"/><path d="M12 20h.01"/></svg> You’re offline, so this edit was refused. Nothing is queued — try again when you’re back.
+              </span>
+            </div>
+
+            <div class="field-row" data-field="note">
+              <label class="field-label" for="d-note">Note</label>
+              <textarea class="field" id="d-note" data-testid="detail-note-input" accessibilityIdentifier="detail-note-input" rows="3">Ask about Saturday afternoon slots, and the price of a scale and polish.</textarea>
+            </div>
+
+            <div class="field-row" data-field="priority">
+              <span class="field-label" id="d-prio-l">Priority</span>
+              <span class="seg" data-testid="detail-priority-control" accessibilityIdentifier="detail-priority-control" role="group" aria-labelledby="d-prio-l">
+                <button type="button" data-testid="detail-priority-option" accessibilityIdentifier="detail-priority-option" aria-pressed="false">None</button>
+                <button type="button" aria-pressed="false">Low</button>
+                <button type="button" aria-pressed="false">Medium</button>
+                <button type="button" aria-pressed="true">High</button>
+              </span>
+            </div>
+
+            <div class="field-row" data-field="deadline">
+              <label class="field-label" for="d-dl">Deadline</label>
+              <div class="field-inline">
+                <input class="field" type="date" id="d-dl" data-testid="detail-deadline-date" accessibilityIdentifier="detail-deadline-date" value="2026-08-21">
+                <input class="field narrow" type="time" data-testid="detail-deadline-time" accessibilityIdentifier="detail-deadline-time" value="18:00" aria-label="Deadline time">
+                <button class="btn btn-sm btn-ghost" data-testid="detail-deadline-clear" accessibilityIdentifier="detail-deadline-clear">Clear</button>
+              </div>
+              <div class="shortcuts">
+                <button class="chip" data-testid="detail-deadline-shortcut" accessibilityIdentifier="detail-deadline-shortcut">Today</button>
+                <button class="chip">Tomorrow</button>
+                <button class="chip">Next week</button>
+              </div>
+              <span class="field-help" data-testid="detail-deadline-collection" accessibilityIdentifier="detail-deadline-collection">Dated today, so it sits in Today.</span>
+            </div>
+
+            <div class="field-row" data-field="reminder">
+              <label class="field-label" for="d-rm">Reminder</label>
+              <div class="field-inline">
+                <input class="field" type="date" id="d-rm" data-testid="detail-reminder-date" accessibilityIdentifier="detail-reminder-date" value="2026-08-21">
+                <input class="field narrow" type="time" data-testid="detail-reminder-time" accessibilityIdentifier="detail-reminder-time" value="17:30" aria-label="Reminder time">
+                <button class="btn btn-sm btn-ghost" data-testid="detail-reminder-clear" accessibilityIdentifier="detail-reminder-clear">Clear</button>
+              </div>
+              <span class="field-help">This is the one that alerts you. The deadline on its own is silent.</span>
+            </div>
+
+            <div class="field-row" data-field="steps">
+              <span class="field-label">Steps</span>
+              <div class="v v-steps-list" data-testid="detail-steps" accessibilityIdentifier="detail-steps">
+                <ul style="list-style:none; margin:0; padding:0">
+                  
+              <li class="stepline done" data-testid="detail-step-row" accessibilityIdentifier="detail-step-row">
+                <input class="cbx" type="checkbox" checked data-testid="detail-step-checkbox" accessibilityIdentifier="detail-step-checkbox" aria-label="Mark not done: Ring at 9 and ask for Dr Minh">
+                <span class="stepname" data-testid="detail-step-name" accessibilityIdentifier="detail-step-name">Ring at 9 and ask for Dr Minh</span>
+                <button class="iconbtn" data-testid="detail-step-move" accessibilityIdentifier="detail-step-move" aria-label="Move step"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg></button>
+                <button class="iconbtn" data-testid="detail-step-delete" accessibilityIdentifier="detail-step-delete" aria-label="Delete step"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+              </li>
+                  
+              <li class="stepline">
+                <input class="cbx" type="checkbox" aria-label="Complete: Check the insurance card is still valid">
+                <span class="stepname">Check the insurance card is still valid</span>
+                <button class="iconbtn" aria-label="Move step"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg></button>
+                <button class="iconbtn" aria-label="Delete step"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+              </li>
+                  
+              <li class="stepline">
+                <input class="cbx" type="checkbox" aria-label="Complete: Ask what a scale and polish costs">
+                <span class="stepname">Ask what a scale and polish costs</span>
+                <button class="iconbtn" aria-label="Move step"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg></button>
+                <button class="iconbtn" aria-label="Delete step"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+              </li>
+                </ul>
+              </div>
+              <p class="v v-steps-empty field-help" style="margin:0">No steps yet. Break the task down if it helps — one line each.</p>
+              <p class="v v-steps-refused field-help" data-testid="detail-steps-refused" accessibilityIdentifier="detail-steps-refused" style="color:var(--attention); margin:0">This task can’t take steps yet, so nothing was added.</p>
+              <div class="step-add">
+                <input class="field" data-testid="detail-step-add-input" accessibilityIdentifier="detail-step-add-input" placeholder="What is the next step?" aria-label="Add a step">
+                <button class="btn btn-secondary" data-testid="detail-step-add-button" accessibilityIdentifier="detail-step-add-button"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Add step</button>
+              </div>
+            </div>
+
+            <div class="field-row" data-field="repeat">
+              <span class="field-label">Repeat</span>
+
+              <div class="v v-flex v-repeat-summary repeat-summary">
+                <svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>
+                <span class="txt" data-testid="detail-repeat-summary" accessibilityIdentifier="detail-repeat-summary">Every week on Thursday, until Dec 18</span>
+                <button class="btn btn-sm btn-secondary" data-testid="detail-repeat-edit" accessibilityIdentifier="detail-repeat-edit">Edit</button>
+                <button class="btn btn-sm btn-ghost" data-testid="detail-repeat-clear" accessibilityIdentifier="detail-repeat-clear">Clear</button>
+              </div>
+
+              <div class="v v-repeat-none">
+                <button class="btn btn-secondary"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>Set a repeat</button>
+              </div>
+
+              <p class="v v-repeat-unsupported field-help" data-testid="detail-repeat-refused" accessibilityIdentifier="detail-repeat-refused" style="color:var(--attention); margin:0">
+                A repeat needs a deadline. Set one above and this opens.
+              </p>
+
+              <div class="v v-repeat-picker v-repeat-until v-repeat-count v-repeat-refused picker" data-testid="detail-repeat-picker" accessibilityIdentifier="detail-repeat-picker">
+                <div>
+                  <span class="field-label">How often</span>
+                  <div class="cad">
+                    <button class="chip" data-testid="detail-repeat-cadence" accessibilityIdentifier="detail-repeat-cadence" aria-pressed="false">Daily</button>
+                    <button class="chip" aria-pressed="true">Weekly</button>
+                    <button class="chip" aria-pressed="false">Monthly</button>
+                    <button class="chip" aria-pressed="false">Yearly</button>
+                  </div>
+                </div>
+                <div>
+                  <label class="field-label" for="d-int">Every</label>
+                  <div class="field-inline">
+                    <input class="field narrow" type="number" id="d-int" data-testid="detail-repeat-interval" accessibilityIdentifier="detail-repeat-interval" value="1" min="1">
+                    <span class="t-meta">week(s)</span>
+                  </div>
+                </div>
+                <div>
+                  <span class="field-label">On</span>
+                  <div class="wk" role="group" aria-label="Days of the week"><button type="button" data-testid="detail-repeat-weekday" accessibilityIdentifier="detail-repeat-weekday" aria-pressed="false" aria-label="Monday">M</button><button type="button" aria-pressed="false" aria-label="Tuesday">T</button><button type="button" aria-pressed="false" aria-label="Wednesday">W</button><button type="button" aria-pressed="true" aria-label="Thursday">T</button><button type="button" aria-pressed="false" aria-label="Friday">F</button><button type="button" aria-pressed="false" aria-label="Saturday">S</button><button type="button" aria-pressed="false" aria-label="Sunday">S</button></div>
+                </div>
+                <div>
+                  <span class="field-label">Ends</span>
+                  <span class="seg" data-testid="detail-repeat-end" accessibilityIdentifier="detail-repeat-end" role="group" aria-label="When the repeat ends">
+                    <button type="button" aria-pressed="true">Never</button>
+                    <button type="button" aria-pressed="false">On a date</button>
+                    <button type="button" aria-pressed="false">After</button>
+                  </span>
+                  <div class="v v-repeat-until" style="margin-top:var(--s3)">
+                    <input class="field" type="date" data-testid="detail-repeat-until" accessibilityIdentifier="detail-repeat-until" value="2026-12-18" aria-label="Repeat until">
+                  </div>
+                  <div class="v v-repeat-count field-inline" style="margin-top:var(--s3)">
+                    <input class="field narrow" type="number" data-testid="detail-repeat-count" accessibilityIdentifier="detail-repeat-count" value="12" min="1" aria-label="Number of times">
+                    <span class="t-meta">times</span>
+                  </div>
+                </div>
+
+                <div class="preview" data-testid="detail-repeat-preview" accessibilityIdentifier="detail-repeat-preview">
+                  <p class="t-label" style="margin:0">The next three</p>
+                  <p class="pv"><strong data-testid="detail-repeat-preview-date" accessibilityIdentifier="detail-repeat-preview-date">Thu Aug 27</strong> <span data-testid="detail-repeat-preview-collection" accessibilityIdentifier="detail-repeat-preview-collection">Upcoming</span></p>
+                  <p class="pv"><strong>Thu Sep 03</strong> <span>Upcoming</span></p>
+                  <p class="pv"><strong>Thu Sep 10</strong> <span>Upcoming</span></p>
+                </div>
+
+                <div class="v v-repeat-refused preview refused">
+                  <p class="t-label" style="margin:0; color:var(--attention)">Two of these can’t be made</p>
+                  <p class="refusal" data-testid="detail-repeat-refusal" accessibilityIdentifier="detail-repeat-refusal">Feb 30 does not exist — that month is skipped.</p>
+                  <p class="refusal">The 12th falls before the deadline you set, so it is dropped.</p>
+                </div>
+
+                <div class="btn-row">
+                  <button class="btn btn-primary" data-testid="detail-repeat-commit" accessibilityIdentifier="detail-repeat-commit">Save the repeat</button>
+                  <button class="btn btn-ghost" data-testid="detail-repeat-cancel" accessibilityIdentifier="detail-repeat-cancel">Cancel</button>
+                </div>
+              </div>
+            </div>
+
           </div>
-          <div class="list">
-            <div class="group"><h3>Today · Fri, Aug 21</h3></div>
-            <div class="row" data-testid="assistant-task-row" resource-id="assistant-task-row">
-              <div class="row-time">4:00 PM</div>
-              <div class="row-main">
-                <input class="cbx" type="checkbox" data-testid="assistant-task-checkbox" resource-id="assistant-task-checkbox" aria-label="Complete: Review the Q3 budget draft">
-                <span class="row-title">Review the Q3 budget draft<span class="row-marks"><span class="tag edited" data-testid="assistant-row-badge" resource-id="assistant-row-badge">EDITED</span></span></span>
-              </div>
-            </div>
-            <div class="row-rule"></div>
-            <div class="row">
-              <div class="row-time">6:00 PM</div>
-              <div class="row-main">
-                <input class="cbx" type="checkbox" aria-label="Complete: Pay the electricity bill">
-                <span class="row-title">Pay the electricity bill<span class="row-marks"><span class="tag">NEW</span></span></span>
-              </div>
-            </div>
-            <div class="row-rule"></div>
-            <div class="row">
-              <div class="row-time">—</div>
-              <div class="row-main">
-                <input class="cbx" type="checkbox" aria-label="Complete: Gọi nha sĩ đặt lịch khám răng">
-                <span class="row-title">Gọi nha sĩ đặt lịch khám răng<span class="row-marks"><span class="mark" title="High priority">!</span></span></span>
-              </div>
-            </div>
-            <div class="row-rule"></div>
+
+          <div class="danger-zone">
+            <button class="btn btn-danger-quiet" data-testid="detail-delete-button" accessibilityIdentifier="detail-delete-button"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete task</button>
+            <button class="v v-flex v-series-yes btn btn-danger-quiet" data-testid="detail-delete-series-button" accessibilityIdentifier="detail-delete-series-button"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>Delete every repeat</button>
           </div>
-        </div>
-      </main>
+            </div>
+            <div class="v v-body-loading">
+          <div class="sk-detail" aria-busy="true">
+            <div class="sk-pair"><span class="sk" style="width:96px"></span><span class="sk" style="height:var(--field-h)"></span></div><div class="sk-pair"><span class="sk" style="width:96px"></span><span class="sk" style="height:var(--field-h)"></span></div><div class="sk-pair"><span class="sk" style="width:96px"></span><span class="sk" style="height:var(--field-h)"></span></div><div class="sk-pair"><span class="sk" style="width:96px"></span><span class="sk" style="height:var(--field-h)"></span></div><div class="sk-pair"><span class="sk" style="width:96px"></span><span class="sk" style="height:var(--field-h)"></span></div>
+            <div class="sk-pair"><span class="sk" style="width:96px"></span><span class="sk" style="width:70%"></span><span class="sk" style="width:56%"></span><span class="sk" style="width:62%"></span></div>
+          </div></div>
+            <div class="v v-body-error">
+          <div class="surface-error" style="padding-left:0" data-testid="detail-surface-error" accessibilityIdentifier="detail-surface-error">
+            <h2>Couldn’t load this task</h2>
+            <p>Your other tasks are unaffected. Try again, or go back to the list.</p>
+            <div class="btn-row"><button class="btn btn-secondary" data-testid="detail-retry-button" accessibilityIdentifier="detail-retry-button"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>Retry</button></div>
+          </div></div>
+            <div class="v v-body-deleted">
+          <div class="terminal" data-testid="detail-deleted" accessibilityIdentifier="detail-deleted">
+            <h2>This task was deleted.</h2>
+            <p>It went from another window while you were typing. There is nothing here to save it to.</p>
+            <p class="t-label" style="margin:0 0 var(--s2)">You typed</p>
+            <p class="typed" data-testid="detail-deleted-text" accessibilityIdentifier="detail-deleted-text">Gọi nha sĩ đặt lịch khám răng — hỏi giá lấy cao răng</p>
+            <div class="btn-row"><button class="btn btn-primary" data-testid="detail-back-button" accessibilityIdentifier="detail-back-button"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>Back to your tasks</button></div>
+          </div></div>
+          </div>
+        </main>
       </div>
     </div>
-    <aside class="col-panel" aria-label="Talk">
-      <header class="talk-head">
-        <button class="iconbtn" data-testid="assistant-drawer-button" resource-id="assistant-drawer-button" aria-label="Lists"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
-        <span class="talk-title">Talk</span>
-        <span class="spacer"></span>
-      </header>
-      <div class="talk-scroll">
-        <div class="conv">
 
-          <div class="v v-talk-empty">
-            <div class="empty" style="padding-left:0">
-              <h2>Say it. I’ll write it down.</h2>
-              <p>Tap the microphone and talk the way you would to a person — “move the budget review to 4 and add pay the electricity bill”.</p>
+      <aside class="col-panel" aria-label="Talk">
+        <header class="talk-head"><span class="talk-title">Talk</span></header>
+        <div class="talk-scroll">
+          <div class="conv">
+            <div class="msg user"><div class="bubble">make the dentist one high priority</div><span class="msg-time">9:41 PM</span></div>
+            <div class="msg bot applied">
+              <div class="bubble">
+                <div class="bubble-head">Done.</div>
+                <dl class="diff"><div class="diff-row"><dt>Priority</dt><dd><span class="old">none</span><span class="arrow">→</span><span class="new">high</span></dd></div></dl>
+              </div>
+              <span class="msg-time">9:41 PM</span>
             </div>
           </div>
-
-          <div class="v v-talk-applied">
-            <div class="msg user"><div class="bubble">Move the budget review to 4 and add pay the electricity bill</div><span class="msg-time">2:04 PM</span></div>
-            <div class="msg bot applied"><div class="bubble" data-testid="assistant-message-bubble" resource-id="assistant-message-bubble"><div class="bubble-head">Edited <b>1 task</b>, added 1.</div>
-              <dl class="diff">
-                <div class="diff-row"><dt>Budget review</dt><dd><span class="old num" data-testid="assistant-diff-old" resource-id="assistant-diff-old">2:00 PM</span><span class="arrow">→</span><span class="new num" data-testid="assistant-diff-new" resource-id="assistant-diff-new">4:00 PM</span></dd></div>
-                <div class="diff-row"><dt>Added</dt><dd><span class="new">Pay the electricity bill</span> <span class="tag">NEW</span></dd></div>
-              </dl>
-              <div class="msg-acts"><button class="btn btn-sm btn-accent-quiet" data-testid="assistant-undo-button" resource-id="assistant-undo-button"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Undo</button></div></div><span class="msg-time">2:04 PM</span></div>
-          </div>
-
-          <div class="v v-talk-listening">
-            <div class="msg user"><div class="bubble">Move the budget review to 4 and add pay the electricity bill</div><span class="msg-time">2:04 PM</span></div>
-          </div>
-
-          <div class="v v-talk-thinking">
-            <div class="msg user"><div class="bubble">Delete everything I finished last week</div><span class="msg-time">2:06 PM</span></div>
-          </div>
-
-          <div class="v v-talk-confirm">
-            <div class="msg user"><div class="bubble">delete all my shopping tasks</div><span class="msg-time">2:07 PM</span></div>
-            <div class="msg bot question"><div class="bubble"><span class="qtext">Delete 3 tasks: Buy milk, Buy a birthday present, Order the cake?</span>
-              <div class="msg-acts">
-                <button class="btn btn-sm btn-danger" data-testid="assistant-chip-affirm" resource-id="assistant-chip-affirm">Delete</button>
-                <button class="btn btn-sm btn-ghost" data-testid="assistant-chip-negative" resource-id="assistant-chip-negative">Cancel</button>
-              </div></div><span class="msg-time">2:07 PM</span></div>
-          </div>
-
-          <div class="v v-talk-clarify">
-            <div class="msg user"><div class="bubble">move the meeting</div><span class="msg-time">2:08 PM</span></div>
-            <div class="msg bot question"><div class="bubble"><span class="qtext">Which meeting?</span>
-              <div class="msg-acts">
-                <button class="chip" data-testid="assistant-option-chip" resource-id="assistant-option-chip">Team meeting · Sat 2:00 PM</button>
-                <button class="chip">Budget review · Fri 4:00 PM</button>
-              </div></div><span class="msg-time">2:08 PM</span></div>
-          </div>
-
-          <div class="v v-talk-no-match">
-            <div class="msg user"><div class="bubble">finish the tax return</div><span class="msg-time">2:10 PM</span></div>
-            <div class="msg bot "><div class="bubble">Nothing in your list matches “tax return”. It is on <b>Tasks</b> if you want to look, and you can add it there by hand.</div><span class="msg-time">2:10 PM</span></div>
-          </div>
-
-          <div class="v v-talk-error">
-            <div class="msg user"><div class="bubble">add call the plumber tomorrow</div><span class="msg-time">2:12 PM</span></div>
-            <div class="msg bot error"><div class="bubble"><div class="bubble-head">That didn’t go through.</div>
-              <p style="margin:var(--s2) 0 0">The assistant didn’t answer. Nothing was changed.</p>
-              <div class="msg-acts"><button class="btn btn-sm btn-secondary" data-testid="assistant-retry-button" resource-id="assistant-retry-button"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>Retry</button></div></div><span class="msg-time">2:12 PM</span></div>
-          </div>
-
-          <div class="v v-talk-offline">
-            <div class="msg user"><div class="bubble">add buy milk</div><span class="msg-time">2:14 PM</span></div>
-            <div class="msg bot "><div class="bubble">Saved on this device. It will go up when you’re back online.</div><span class="msg-time">2:14 PM</span></div>
-          </div>
-
-          <div class="v v-talk-boundary">
-            <div class="msg bot "><div class="bubble">Added <b>Team meeting</b> for Saturday at 2:00 PM.</div><span class="msg-time">Yesterday, 9:38 PM</span></div>
-            <div class="boundary" data-testid="assistant-boundary-marker" resource-id="assistant-boundary-marker">Today</div>
-            <div class="msg user"><div class="bubble">what’s left today</div><span class="msg-time">8:02 AM</span></div>
-          </div>
-
-          <div class="v v-talk-reverted">
-            <div class="msg user"><div class="bubble">undo</div><span class="msg-time">2:05 PM</span></div>
-            <div class="msg bot applied"><div class="bubble"><div class="bubble-head">Put back.</div><p style="margin:var(--s2) 0 0">Budget review is at 2:00 PM again, and “Pay the electricity bill” is gone.</p></div><span class="msg-time">2:05 PM</span></div>
-          </div>
-
-          <div class="v v-talk-nothing-reverted">
-            <div class="msg user"><div class="bubble">undo</div><span class="msg-time">2:20 PM</span></div>
-            <div class="msg bot "><div class="bubble">There is nothing to undo — the last thing I did was answer a question.</div><span class="msg-time">2:20 PM</span></div>
-          </div>
-
-          <div class="v v-talk-superseded">
-            <div class="msg user"><div class="bubble">undo</div><span class="msg-time">2:22 PM</span></div>
-            <div class="msg bot question"><div class="bubble"><span class="qtext">That change has been overtaken.</span>
-              <p style="margin:var(--s2) 0 0">You edited “Budget review” by hand after I moved it, so undoing would throw your edit away. It is on <b>Tasks</b> if you want to change it there.</p></div><span class="msg-time">2:22 PM</span></div>
-          </div>
-        
         </div>
-      </div>
-      <div class="pos" style="flex:none; position:relative">
-        <button class="v v-nma-new nma" data-testid="assistant-new-message-affordance" resource-id="assistant-new-message-affordance"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>1 new message</button>
-        <button class="v v-nma-waiting nma"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>Still working…</button>
-
         <div class="composer">
-          <span class="live" aria-hidden="true"></span>
-          <div class="v v-mic-live transcript">move the budget review to <span class="pend">four</span></div>
-
-          <div class="v v-flex v-notice-offline banner attention" style="margin:0; border-width:0 0 var(--b-hairline) 0" data-testid="assistant-offline-banner" resource-id="assistant-offline-banner">
-            <span class="ico"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m2 2 20 20"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M2 8.8a15.9 15.9 0 0 1 4.6-2.9"/><path d="M10.7 5c4 -.4 8.1 .9 11.3 3.8"/><path d="M5 12.9a10 10 0 0 1 3-1.8"/><path d="M12 20h.01"/></svg></span>
-            <span class="btxt"><b>You’re offline</b>Your list still works by hand.</span>
-          </div>
-          <div class="v v-flex v-notice-queued banner quiet" style="margin:0; border-width:0 0 var(--b-hairline) 0" data-testid="assistant-queued-notice" resource-id="assistant-queued-notice">
-            <span class="ico"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
-            <span class="btxt"><b>1 waiting to send</b>It goes up as soon as you’re back.</span>
-          </div>
-          <div class="v v-flex v-mic-denied banner attention" style="margin:0; border-width:0 0 var(--b-hairline) 0">
-            <span class="ico"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m2 2 20 20"/><path d="M9 9v3a3 3 0 0 0 5.1 2.1"/><path d="M15 9.3V5a3 3 0 0 0-5.9-.7"/><path d="M19 10v2a7 7 0 0 1-.9 3.4"/><path d="M5 10v2a7 7 0 0 0 11 5.7"/><path d="M12 19v3"/></svg></span>
-            <span class="btxt"><b>Microphone is off</b>Turn Microphone on in Settings to talk. Typing works either way.</span>
-            <button class="btn btn-sm btn-secondary" data-testid="assistant-permission-cta" resource-id="assistant-permission-cta">Open Settings</button>
-          </div>
-          <div class="v v-flex v-mic-transient banner quiet" style="margin:0; border-width:0 0 var(--b-hairline) 0">
-            <span class="ico"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m2 2 20 20"/><path d="M9 9v3a3 3 0 0 0 5.1 2.1"/><path d="M15 9.3V5a3 3 0 0 0-5.9-.7"/><path d="M19 10v2a7 7 0 0 1-.9 3.4"/><path d="M5 10v2a7 7 0 0 0 11 5.7"/><path d="M12 19v3"/></svg></span>
-            <span class="btxt"><b>Speech recognition is busy</b>The recognition service isn’t answering. Typing still works as usual.</span>
-          </div>
-
           <div class="composer-in">
-            <input class="cinput" data-testid="assistant-composer-input" resource-id="assistant-composer-input" placeholder="Say or type what needs doing." aria-label="Message">
-            <span class="v v-flex v-mic-live v-mic-thinking state-ind" id="stateInd" data-testid="assistant-state-indicator" resource-id="assistant-state-indicator">Listening</span>
-            <button class="v v-flex v-mic-live v-mic-thinking btn btn-sm btn-ghost" data-testid="assistant-cancel-button" resource-id="assistant-cancel-button">Cancel</button>
-            <button class="btn btn-sm btn-ghost composer-send" data-testid="assistant-composer-send" resource-id="assistant-composer-send" aria-label="Send"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button>
-            <button class="mic" data-testid="assistant-mic-button" resource-id="assistant-mic-button" aria-label="Start listening"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></button>
+            <input class="cinput" placeholder="Say or type what needs doing." aria-label="Message">
+            <button class="mic idle" aria-label="Start listening"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></button>
           </div>
-          <div class="gesturebar"></div>
+          <div class="homebar"></div>
         </div>
-      </div>
-    </aside>
+      </aside>
   </div>
 </div>
 </div></div>
 
 <script>
 var STATES = {
-  "idle-empty": {
-    "surface": "talk",
-    "talk": "empty",
-    "mic": "idle"
+  "detail-default": {
+    "surface": "detail",
+    "body": "fields",
+    "repeat": "summary",
+    "steps": "list",
+    "fail": "none",
+    "series": "single"
   },
-  "idle-tasks": {
-    "surface": "tasks",
-    "talk": "applied",
-    "mic": "idle"
+  "detail-blank": {
+    "surface": "detail",
+    "body": "fields",
+    "repeat": "none",
+    "steps": "empty",
+    "fail": "none",
+    "series": "single"
   },
-  "listening": {
-    "surface": "talk",
-    "talk": "listening",
-    "mic": "live",
-    "ind": "Listening"
+  "detail-loading": {
+    "surface": "detail",
+    "body": "loading",
+    "repeat": "summary",
+    "steps": "list",
+    "fail": "none",
+    "series": "single"
   },
-  "thinking": {
-    "surface": "talk",
-    "talk": "thinking",
-    "mic": "thinking",
-    "ind": "Thinking…"
+  "detail-field-failed": {
+    "surface": "detail",
+    "body": "fields",
+    "repeat": "summary",
+    "steps": "list",
+    "fail": "field",
+    "series": "single"
   },
-  "applied-diff": {
-    "surface": "talk",
-    "talk": "applied",
-    "mic": "idle"
+  "detail-offline": {
+    "surface": "detail",
+    "body": "fields",
+    "repeat": "summary",
+    "steps": "list",
+    "fail": "offline",
+    "series": "single"
   },
-  "question-confirm": {
-    "surface": "talk",
-    "talk": "confirm",
-    "mic": "idle"
+  "detail-repeat": {
+    "surface": "detail",
+    "body": "fields",
+    "repeat": "picker",
+    "steps": "list",
+    "fail": "none",
+    "series": "single"
   },
-  "question-clarify": {
-    "surface": "talk",
-    "talk": "clarify",
-    "mic": "idle"
+  "detail-repeat-until": {
+    "surface": "detail",
+    "body": "fields",
+    "repeat": "until",
+    "steps": "list",
+    "fail": "none",
+    "series": "single"
   },
-  "no-match": {
-    "surface": "talk",
-    "talk": "no-match",
-    "mic": "idle"
+  "detail-repeat-count": {
+    "surface": "detail",
+    "body": "fields",
+    "repeat": "count",
+    "steps": "list",
+    "fail": "none",
+    "series": "single"
   },
-  "error": {
-    "surface": "talk",
-    "talk": "error",
-    "mic": "idle"
+  "detail-repeat-refused": {
+    "surface": "detail",
+    "body": "fields",
+    "repeat": "refused",
+    "steps": "list",
+    "fail": "none",
+    "series": "single"
   },
-  "offline": {
-    "surface": "talk",
-    "talk": "offline",
-    "mic": "idle",
-    "notice": "offline"
+  "detail-repeat-unsupported": {
+    "surface": "detail",
+    "body": "fields",
+    "repeat": "unsupported",
+    "steps": "list",
+    "fail": "none",
+    "series": "single"
   },
-  "queued": {
-    "surface": "talk",
-    "talk": "offline",
-    "mic": "idle",
-    "notice": "queued"
+  "detail-steps-refused": {
+    "surface": "detail",
+    "body": "fields",
+    "repeat": "summary",
+    "steps": "refused",
+    "fail": "none",
+    "series": "single"
   },
-  "boundary": {
-    "surface": "talk",
-    "talk": "boundary",
-    "mic": "idle"
+  "detail-series": {
+    "surface": "detail",
+    "body": "fields",
+    "repeat": "summary",
+    "steps": "list",
+    "fail": "none",
+    "series": "yes"
   },
-  "nma-new": {
-    "surface": "talk",
-    "talk": "applied",
-    "mic": "idle",
-    "nma": "new"
+  "detail-error": {
+    "surface": "detail",
+    "body": "error",
+    "repeat": "summary",
+    "steps": "list",
+    "fail": "none",
+    "series": "single"
   },
-  "nma-waiting": {
-    "surface": "talk",
-    "talk": "applied",
-    "mic": "idle",
-    "nma": "waiting"
+  "detail-deleted": {
+    "surface": "detail",
+    "body": "deleted",
+    "repeat": "summary",
+    "steps": "list",
+    "fail": "none",
+    "series": "single"
   },
-  "mic-permission": {
-    "surface": "talk",
-    "talk": "applied",
-    "mic": "denied"
-  },
-  "mic-hidden": {
-    "surface": "talk",
-    "talk": "applied",
-    "mic": "hidden"
-  },
-  "mic-transient": {
-    "surface": "talk",
-    "talk": "applied",
-    "mic": "transient"
-  },
-  "reverted": {
-    "surface": "talk",
-    "talk": "reverted",
-    "mic": "idle"
-  },
-  "nothing-reverted": {
-    "surface": "talk",
-    "talk": "nothing-reverted",
-    "mic": "idle"
-  },
-  "declined-superseded": {
-    "surface": "talk",
-    "talk": "superseded",
-    "mic": "idle"
+  "phone-detail": {
+    "surface": "detail",
+    "body": "fields",
+    "repeat": "summary",
+    "steps": "list",
+    "fail": "none",
+    "series": "single",
+    "frame": "phone"
   }
 };
-var KEYS = ["surface","talk","mic","notice","nma"];
+var KEYS = ["surface","body","repeat","steps","fail","series"];
 
 function showState(name){
   var cfg = STATES[name]; if(!cfg) return;
@@ -1289,7 +1335,7 @@ function setFrame(f){
   var stage = document.getElementById('stage');
   if (f) stage.setAttribute('data-frame', f); else stage.removeAttribute('data-frame');
 }
-showState('applied-diff');
+showState('detail-default');
 </script>
 </body>
 </html>
