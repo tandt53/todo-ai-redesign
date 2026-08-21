@@ -234,8 +234,14 @@ fi
 # is given. Feed it a queue that breaks C1 and C4 and require a non-zero exit.
 FIXTURE="$(mktemp -d)"
 trap 'rm -rf "$FIXTURE"' EXIT
-mkdir -p "$FIXTURE/.claude/state" "$FIXTURE/.claude/hooks"
+mkdir -p "$FIXTURE/.claude/state" "$FIXTURE/.claude/hooks" "$FIXTURE/.claude/lib"
 cp "$VALIDATOR" "$FIXTURE/.claude/hooks/"
+# The shared reader MUST be copied too. Without it the validator dies at its
+# `source` line and exits non-zero because it could not RUN — which satisfies
+# "rejects a broken queue" while detecting nothing. That is L-012 inside the
+# scenario that guards the validator: measured 2026-08-21, this fixture had
+# been passing on the crash, not on the finding.
+cp "$LIB_SH" "$FIXTURE/.claude/lib/"
 cp "$MANIFEST" "$FIXTURE/MANIFEST.md"
 cat > "$FIXTURE/.claude/state/TASKS.md" <<'FIXTURE_EOF'
 | ID | Title | Module | Feature | Agent | Pri | Depends | Status | Artifacts | Outcome |
@@ -248,6 +254,58 @@ if bash "$FIXTURE/.claude/hooks/validate-state.sh" >/dev/null 2>&1; then
   _record_fail "validate-state.sh passed a queue with a DONE-without-artifacts row, a duplicate ID and a dangling dependency"
 else
   _record_pass "validate-state.sh rejects a knowingly broken queue"
+fi
+
+# ── C3 resolves Depends across TASKS.md AND TASKS-archive.md ───────────────
+# T-149. Archiving is not deletion, so a live row may still name an archived id.
+# When C3 read only TASKS.md the two were indistinguishable, and the done_rows
+# cap became unsatisfiable: measured 2026-08-21 at 61 DONE rows with ZERO
+# archivable, because every candidate turned one FAIL into several. The only
+# remaining move was raising the cap, which MANIFEST ## Limits forbids in
+# writing — so the deadlock was real, not cosmetic.
+#
+# Both directions, because a resolver that accepts everything is not a resolver.
+FIX3="$(mktemp -d)"
+trap 'rm -rf "$FIXTURE" "$FIX2" "$FIX3"' EXIT
+mkdir -p "$FIX3/.claude/state" "$FIX3/.claude/hooks" "$FIX3/.claude/lib"
+cp "$VALIDATOR" "$FIX3/.claude/hooks/"
+cp "$LIB_SH" "$FIX3/.claude/lib/"
+cp "$MANIFEST" "$FIX3/MANIFEST.md"
+cat > "$FIX3/.claude/state/TASKS.md" <<'FIX3_EOF'
+| ID | Title | Module | Feature | Agent | Pri | Depends | Status | Artifacts | Outcome |
+|----|-------|--------|---------|-------|-----|---------|--------|-----------|---------|
+| T-500 | Names an ARCHIVED row | auth | F-001 | web-agent | P1 | T-400 | PENDING | — | — |
+| T-501 | Names a LETTERED archived row | auth | F-001 | web-agent | P1 | T-401b | PENDING | — | — |
+FIX3_EOF
+cat > "$FIX3/.claude/state/TASKS-archive.md" <<'FIX3_EOF'
+| ID | Title | Module | Feature | Agent | Pri | Depends | Status | Artifacts | Outcome |
+|----|-------|--------|---------|-------|-----|---------|--------|-----------|---------|
+| T-400 | Archived, still referenced | auth | F-001 | spec-agent | P0 | — | DONE | MANIFEST.md | done |
+| T-401b | Lettered sub-task, archived | auth | F-001 | spec-agent | P0 | — | DONE | MANIFEST.md | done |
+FIX3_EOF
+
+if bash "$FIX3/.claude/hooks/validate-state.sh" 2>&1 | grep -q "depends on 'T-400'"; then
+  _record_fail "C3 rejects a dependency on an ARCHIVED task — archiving is not deletion"
+else
+  _record_pass "C3 resolves a dependency on an archived task"
+fi
+
+# The lettered-sub-task hazard has bitten this queue twice: a reader matching
+# T-[0-9]+ silently drops T-070b and every one of its siblings.
+if bash "$FIX3/.claude/hooks/validate-state.sh" 2>&1 | grep -q "depends on 'T-401b'"; then
+  _record_fail "C3's archive reader drops LETTERED sub-tasks (T-401b) — the T-\\d+ hazard again"
+else
+  _record_pass "C3's archive reader keeps lettered sub-tasks"
+fi
+
+# And it must still catch a dependency that exists in NEITHER file, or the fix
+# has simply switched the check off.
+printf '| T-502 | Names nothing real | auth | F-001 | web-agent | P1 | T-999 | PENDING | — | — |\n' \
+  >> "$FIX3/.claude/state/TASKS.md"
+if bash "$FIX3/.claude/hooks/validate-state.sh" 2>&1 | grep -q "depends on 'T-999'"; then
+  _record_pass "C3 still rejects a dependency that is in neither the queue nor the archive"
+else
+  _record_fail "C3 accepts a dependency that exists nowhere — the archive union switched the check off"
 fi
 
 # ── The event log is hook-written, never agent-written ─────────────────────
@@ -272,8 +330,9 @@ assert_file_contains "$VALIDATOR" 'done_without_artifacts' \
 # certifies whatever it is handed.
 FIX2="$(mktemp -d)"
 trap 'rm -rf "$FIXTURE" "$FIX2"' EXIT
-mkdir -p "$FIX2/.claude/state" "$FIX2/.claude/hooks" "$FIX2/.claude/eval" "$FIX2/qa/auth"
+mkdir -p "$FIX2/.claude/state" "$FIX2/.claude/hooks" "$FIX2/.claude/lib" "$FIX2/.claude/eval" "$FIX2/qa/auth"
 cp "$VALIDATOR" "$FIX2/.claude/hooks/"
+cp "$LIB_SH" "$FIX2/.claude/lib/"   # see the note on FIXTURE above
 cp "$MANIFEST" "$FIX2/MANIFEST.md"
 touch "$FIX2/qa/auth/TC.md"
 

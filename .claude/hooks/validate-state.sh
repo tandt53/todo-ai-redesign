@@ -177,7 +177,25 @@ done <<< "$ROWS"
 echo
 
 # ─── C3 + C4 ────────────────────────────────────────────────────────────────
+# C3 resolves `Depends` against the LIVE queue and the ARCHIVE TOGETHER (T-149).
+#
+# Archiving is not deletion: a row moved to TASKS-archive.md still exists, and a
+# live row may legitimately still name it. Reading only TASKS.md made the two
+# indistinguishable, which put `## Limits.done_rows` and C3 in DIRECT CONFLICT —
+# every archival candidate turned one FAIL into several, so the cap could only be
+# met by rows that happened to be leaves. Measured 2026-08-21: 61 DONE rows and
+# **zero** archivable, because every one was named by a row that stays. The cap
+# had become unsatisfiable by any means except raising it, which is what MANIFEST
+# ## Limits forbids in writing. Guarded by eval scenario R9.
+#
+# `T-[0-9]*[a-z]?` and not `T-[0-9]*`: lettered sub-tasks (T-070b) are real rows,
+# and a reader that drops them has bitten this queue twice already.
 ALL_IDS="$(while IFS= read -r r; do [ -n "$r" ] && cell "$r" ID; done <<< "$ROWS")"
+TASKS_ARCHIVE="$ROOT/.claude/state/TASKS-archive.md"
+if [ -f "$TASKS_ARCHIVE" ]; then
+  ALL_IDS="${ALL_IDS}
+$(sed -n 's/^| *\(T-[0-9][0-9]*[a-z]\{0,1\}\) *|.*/\1/p' "$TASKS_ARCHIVE")"
+fi
 
 echo "C3 — Depends entries reference existing tasks"
 while IFS= read -r row; do
@@ -205,7 +223,13 @@ done <<< "$ROWS"
 [ -z "$ANY_DEPS" ] && note "no dependencies declared"
 echo
 
-echo "C4 — task IDs are unique"
+# C4 spans the archive too, and that is forced by C3 above rather than chosen:
+# once `Depends` resolves across both files, an id that appears in both resolves
+# to two different rows and the resolution is ambiguous rather than wrong-in-one-
+# direction. Widening this found three template SAMPLE rows (`module: auth`, a
+# module this project does not have) sitting in the archive under ids T-002..T-004
+# that real rows already used — removed 2026-08-21.
+echo "C4 — task IDs are unique across the queue and the archive"
 DUPES="$(printf '%s\n' "$ALL_IDS" | sort | uniq -d)"
 if [ -n "$DUPES" ]; then
   while IFS= read -r d; do

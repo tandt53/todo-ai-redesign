@@ -219,16 +219,15 @@ limits:
                         # readable. Lower it if this file starts accruing prose.
   status_lines:   100   # .claude/state/STATUS.md
   tasks_lines:    300   # .claude/state/TASKS.md — triggers archival to TASKS-archive.md
-  done_rows:       60   # DONE rows in TASKS.md before archival, independent of line count.
-                        # RAISED from 50 on 2026-08-18, and it reverts when T-149
-                        # lands. The cap and C3 are mutually unsatisfiable right
-                        # now: archiving is not deletion, but C3 resolves Depends
-                        # against TASKS.md alone, so moving a row a live row still
-                        # names turns one FAIL into eight (measured, then
-                        # reverted). Of 52 DONE rows exactly two were archivable.
-                        # Raising the number is the honest move only because the
-                        # ARCHIVAL MECHANISM is what is broken, not the queue's
-                        # size — do not raise it again to buy silence.
+  done_rows:       50   # DONE rows in TASKS.md before archival, independent of line count.
+                        # BACK TO 50 on 2026-08-21, as the raise-to-60 note promised
+                        # once T-149 landed: C3 now resolves `Depends` against
+                        # TASKS.md AND TASKS-archive.md, so archiving is archiving
+                        # rather than deletion-with-extra-steps, and any DONE row can
+                        # move instead of only the leaves. Guarded by eval R9, which
+                        # fails both ways, so a sync cannot revert it as one reverted
+                        # L-016. The prohibition stands and is now the only thing
+                        # keeping this number honest: DO NOT RAISE IT TO BUY SILENCE.
 ```
 
 ---
