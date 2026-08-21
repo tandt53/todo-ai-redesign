@@ -27,7 +27,7 @@ the AC text rather than assumed.
 
 ## Read these files first
 
-1. `reports/owner-decision-2026-08-19-carried-notice-placement-and-timer.md` — the
+1. `docs/reports/owner-decision-2026-08-19-carried-notice-placement-and-timer.md` — the
    decision, all five sections. §2's table and §4's last paragraph are the two that
    change AC text most directly.
 2. `docs/specs/assistant/F-005-task-detail.md` — **AC-43, AC-47, AC-33 and OQ13**. AC-47's
@@ -41,7 +41,7 @@ the AC text rather than assumed.
 4. `src/assistant/mobile/model/carried.ts` — `carriedRows()`. The row-type boundary
    edit (b) needs is already visible here: `CN-UNDONE` is built with `blocks: []` and
    `action: null`.
-5. `reports/owner-decision-2026-08-19-close-gate-one.md` §2 — the decision this one
+5. `docs/reports/owner-decision-2026-08-19-close-gate-one.md` §2 — the decision this one
    amends. The undo offer was put in AC-47's family there; that placement stands.
 
 ## Write to
