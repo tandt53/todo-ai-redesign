@@ -342,3 +342,15 @@ Entries are **append-only by agents**; humans may edit or delete.
 - **Related** — **L-013** (impact sections), **L-009** (read the individual lens returns), **L-021** (a rule landing while its predecessor stands).
 - **Scope** — project-wide; any spec, ADR, report or review that enumerates code sites.
 - **Stale check** — permanent.
+
+### L-028 — The consolidation is the orchestrator's artifact, and its losses are silent because nothing counts
+
+- **Date added** — 2026-08-21 by orchestrator, from spec-agent's return on T-188. **This is a lesson about the orchestrator's own output, recorded because nobody else is positioned to notice it.**
+- **Trigger** — Gate 1 round 2 on F-006 produced **37 findings across nine lens files**. The orchestrator's consolidation named **25** of them. The ten it dropped included **one HIGH** — an unbounded assistant read that would speak step titles and break ADR-013 in the one path no AC asserts on. Measured after the fact: `grep -c '^## F[0-9]'` over the nine files returns 37; unique finding ids in the consolidation, 25.
+- **Why L-009 does not already cover it** — L-009 says *read the individual lens returns, the consolidation drops what one lens saw alone.* True, and it addresses the reader. **This is about the writer.** The consolidation is authored by the orchestrator under the same compaction pressure that produced the loss, so *"read the individual files too"* is advice the orchestrator cannot follow on its own behalf. Twice in one gate the compaction lost content the next dispatch needed — the ten findings here, and earlier a `would_not_be_a_finding_if:` field that a briefing then told an agent to use.
+- **What makes it silent** — a consolidation has no count to check against. Nine returns with 4, 7, 4, 3, 4, 4, 3, 4, 4 findings sum to 37, and nothing anywhere compares that to what the consolidation carries. **A dropped finding leaves no trace at all** — not a gap, not a mismatch, not a red check.
+- **How to apply** — **two counts, both cheap.** The orchestrator states the per-lens finding counts and their total in the consolidation itself, so the number is on the page. And the revision agent **reconciles that total against the lens files before writing anything**, treating a difference as the set nobody re-reads. On T-188 that reconciliation is what recovered the HIGH.
+- **The general form** — any summary written by the party under time pressure, consumed by a party that trusts it, and carrying no checkable invariant, loses content in exactly the direction that is hardest to notice.
+- **Related** — **L-009** (the reader's half), **L-027** (the enumeration is the contract, the number is not — *and this is the case where a number is exactly right, because nobody has to re-derive a set to check it*).
+- **Scope** — project-wide; any Gate 1 or Gate 1.5 consolidation, any handover, any drift-log compaction.
+- **Stale check** — permanent.
