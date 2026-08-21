@@ -51,7 +51,7 @@ the AC text rather than assumed.
 - `/Users/tandt/projects/todo-ai-redesign/docs/specs/assistant/index.md`
   (the revision number — revision 4 shipped without this being updated once already,
   and it is the one file a fresh session reads to learn where a feature stands)
-- `/Users/tandt/projects/todo-ai-redesign/reports/gate1-lenses/F-005-revision-5-log.md`
+- `/Users/tandt/projects/todo-ai-redesign/docs/reports/gate1-lenses/F-005-revision-5-log.md`
   (one row per edit, with the AC ids touched)
 
 ## The four edits
