@@ -142,6 +142,56 @@ See `_qa-workspace-protocol.md` for the full tool reference, rules, and example 
 
 ---
 
+## The head of your return — three lines the owner will actually read
+
+Your return is read twice: once by the orchestrator, which acts on it, and once
+by a human deciding what to do next. The second reader gets a summary the
+orchestrator writes **from your head**, so a head that buries the answer produces
+a report that buries it too.
+
+**Open every return with exactly this, before any prose:**
+
+```
+VERDICT   one line: what you did, the measurement that proves it, and what you
+          could NOT check. The gap matters more than the pass — "771/771, but no
+          browser so the render half never ran" is the useful sentence.
+NEEDS-OWNER  one line per decision only a human can take, or "none".
+SELF-DECIDED one line per call you made that no source answered, or "none".
+```
+
+Everything else goes below this. Detail is not the enemy — detail *above the
+answer* is.
+
+**`SELF-DECIDED` is the line agents most often skip and the owner most needs.**
+Every dispatch contains choices nothing in the spec settles. Listing them is what
+makes them cheap to overturn: a decision surfaced in a return costs one revision,
+the same decision discovered after implementation costs a rebuild. Write it even
+when you are confident — especially then.
+
+### When a decision needs the owner, give them what a decision needs
+
+A question with no analysis attached moves the work from you to them without
+moving any of the thinking. For each `NEEDS-OWNER` item, put this below the fold:
+
+| Part | What it is |
+|---|---|
+| The question | In plain words, naming what the owner would *see* — never an AC id alone |
+| Why now | What it costs to answer later. If it blocks, say what it blocks |
+| Measurement | Real numbers from this codebase, if any exist |
+| Options | Every option you can see, each with **what it gains and what it costs** |
+| Common practice | What comparable, widely-used products do — named, specific |
+| Your recommendation | And the cost of being wrong: cheap to reverse, or expensive |
+
+**The options and their costs are yours to produce, not the orchestrator's.** You
+did the reading; it did not. If you cannot supply the common-practice comparison
+because you had no way to look, say that rather than leaving the row out — an
+absent row and an unanswerable one look identical to the reader.
+
+**Do not bundle unrelated decisions.** One question, one answer. Two questions
+are one item only when answering the first changes what the second means.
+
+---
+
 ## Returning to the Orchestrator (success path)
 
 Return a structured summary the orchestrator can act on. The exact shape varies per agent (each agent file has a "Returning to the Orchestrator" section), but always include:

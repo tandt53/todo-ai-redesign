@@ -183,6 +183,19 @@ run_case R6 "protocol reachable from no agent" \
 run_case R7 "competing return-contract definition" \
   "printf '\n---METRICS---\nstatus: DONE\n' >> $A/_ethos.md"
 
+# R7 — the report contract. Three ways it decays, each leaving the rest intact:
+# the agent stops declaring the calls it made alone, the owner starts getting
+# bundled questions again, or the orchestrator substitutes its own reasoning for
+# the agent's analysis.
+run_case R7 "agents stop declaring the decisions they took alone" \
+  "sed -i.bak 's/SELF-DECIDED/SELF-NOTES/g' $A/_completion-protocol.md"
+
+run_case R7 "unrelated decisions may be bundled into one question again" \
+  "sed -i.bak 's/Do not bundle unrelated decisions/Decisions may be bundled/' $A/_completion-protocol.md"
+
+run_case R7 "the orchestrator may write the option list itself" \
+  "sed -i.bak 's/wearing the agent/dressed up/' .claude/ORCHESTRATION.md"
+
 # R8 — a renamed injection placeholder must abort the build, not emit a page
 # with no data.
 run_case R8 "dashboard injection placeholder renamed" \

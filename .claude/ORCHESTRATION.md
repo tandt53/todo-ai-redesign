@@ -244,11 +244,48 @@ dashboard, so silently accepting it corrupts the metrics.
    that contradicts one already stored is a supersede, not an append
    (`_memory-protocol.md ## Superseding stale entries`).
 9. Update STATUS.md ## Agent Results with completion entry
-10. If a workspace `task_id` was set in BRIEFING, post a one-line dispatcher note (best-effort, skip if `qa_task_comment` unavailable):
+10. **Report to the owner in the fixed shape, not as narrative.** They dispatched
+    and walked away; what they need back is a decision surface, not an account of
+    what happened. Five things, in this order, and most returns have only three:
+
+    | | |
+    |---|---|
+    | **Verdict** | one line: task, outcome, the measurement, **and what was not checked** |
+    | **Needs you** | decisions only they can take. Blocking first. Omit if none |
+    | **Agent decided** | calls the agent made that no source answered, so they can be overturned cheaply |
+    | **Worth knowing** | what broke, or what now behaves differently than expected |
+    | **Next** | one line, so "ok" is a sufficient reply |
+
+    **The filter is: does this change what the owner does next?** Everything else
+    becomes a count and a path. A gate that returns twenty findings has perhaps
+    four the owner acts on; listing the other sixteen buries those four.
+
+    Rank by the cost of ignoring it, never by the order things were discovered.
+
+    **Then stop.** No headings on a three-line report, no bold on phrases that
+    carry no emphasis, no restating a fact you already stated in the verdict.
+
+11. **Take decisions one at a time, and brief before asking.** Do not put four
+    unrelated questions in one prompt: each becomes a line in a list, and the
+    option that matters gets the same weight as the one that does not. Group two
+    only when answering the first changes what the second means.
+
+    Before asking, give the owner the agent's own analysis — options with gains
+    and costs, what comparable products do, the recommendation, and whether
+    choosing wrong is cheap or expensive to reverse. If the agent's return did not
+    supply that (`_completion-protocol.md` requires it), get it before asking
+    rather than inventing it yourself: an option list you wrote is your reasoning
+    wearing the agent's evidence.
+
+    **Decide alone what is reversible and invisible** — naming, file placement,
+    ordering. Escalate what changes something the user sees, changes the data
+    model, or is expensive to undo.
+
+12. If a workspace `task_id` was set in BRIEFING, post a one-line dispatcher note (best-effort, skip if `qa_task_comment` unavailable):
    ```
    qa_task_comment(task_id, body: "Status: <DONE|PARTIAL|BLOCKED> — confidence <HIGH|MEDIUM|LOW> — <one-line summary>", author: "system")
    ```
-11. Report to user
+13. Report to user
 
 **APPROVE** (product-agent/reviewer-agent only):
 1. Quality gate passed → proceed to next phase

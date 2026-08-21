@@ -66,6 +66,35 @@ for f in "$AGENTS_DIR"/*-agent.md; do
 done
 
 # The orchestrator must route on status: from the block, not on prose.
+# --- the head of a return, and the report it becomes ---
+#
+# The return is read twice: the orchestrator acts on it, and a human reads the
+# report the orchestrator writes from it. A return that buries its answer
+# produces a report that buries it too, so the shape is fixed at the source
+# rather than repaired downstream.
+#
+# SELF-DECIDED is the line agents skip and owners need: a call surfaced in a
+# return costs one revision, the same call found after implementation costs a
+# rebuild.
+assert_file_contains "$CONTRACT" 'SELF-DECIDED' \
+  "contract requires agents to declare the calls no source answered"
+assert_file_contains "$CONTRACT" 'NEEDS-OWNER' \
+  "contract requires agents to name what only a human can decide"
+assert_file_contains "$CONTRACT" 'could NOT check' \
+  "the verdict line must carry the gap, not only the pass"
+assert_file_contains "$CONTRACT" 'Common practice' \
+  "a decision handed to the owner carries what comparable products do"
+assert_file_contains "$CONTRACT" 'Do not bundle unrelated decisions' \
+  "the contract forbids bundling unrelated decisions into one question"
+
+ORCH_F="$CLAUDE_ROOT/ORCHESTRATION.md"
+assert_file_contains "$ORCH_F" 'does this change what the owner does next' \
+  "the report filter is stated: relevance to the next action, not completeness"
+assert_file_contains "$ORCH_F" 'one at a time' \
+  "decisions are put to the owner singly, not bundled"
+assert_file_contains "$ORCH_F" 'wearing the agent' \
+  "the orchestrator may not substitute its own reasoning for the agent's analysis"
+
 assert_file_contains "$CLAUDE_ROOT/ORCHESTRATION.md" '---METRICS---' \
   "ORCHESTRATION.md routes on the ---METRICS--- block"
 
