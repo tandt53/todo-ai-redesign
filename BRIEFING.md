@@ -1,73 +1,92 @@
-# BRIEFING — T-194
+# BRIEFING — T-193
 
-- **Task ID:** T-194 · **Feature:** F-002 · **Agent:** spec-agent · **Date:** 2026-08-21
-- **Description:** F-004 is committed and scheduled, not reserved
+- **Task ID:** T-193 · **Agent:** design-agent · **Date:** 2026-08-21
+- **Description:** Design audit — the elements are arranged badly, and only one feature is drawn
 
-## Tiny and surgical. Two sentences in two files. Change nothing else.
+## What the owner said
 
-The owner answered a question the voice-first audit raised. **No user to interview, no
-prototype, no restructuring, no AC added or touched.**
+> *"check lại design cẩn thận, các elements sắp xếp khá lộn xộn"*
 
-## The decision
+**They have been looking at the running app.** So must you.
 
-Full record: `docs/reports/owner-decision-2026-08-21-the-app-speaks-on-open.md`.
+## Do NOT answer this by re-reading `components.md` and declaring it consistent
 
-- **At MVP the app is silent.** It answers when asked and says nothing on its own. **This is
-  now a decision, not an accident** — F-002's shape was correct and nobody had said so on the
-  record. Say it.
-- **After MVP: on open, the app waits about two seconds, then greets and says what is still
-  left to do today.** That is F-004, and **it is committed with content and a position.**
-- **The ~2s pause is part of the decision, not a detail.** The owner said *wait, then speak*.
-  A user who opened the app to look at something gets two seconds to start before a voice
-  begins. **Whatever cancels the greeting inside that window has to exist** — speaking over a
-  user who has already started typing is the failure the pause exists to prevent. That is
-  design's to draw; record that it is owed.
+**Every design-level correction in this project's history came from the owner seeing a
+render, and no agent raised any of them.** Your own agent file says it: *the human is the
+only real taste gate in this pipeline.* An audit that reviews the catalogue against itself
+will find it self-consistent — **it is self-consistent, and the app still looks wrong.**
 
-## Why this matters more than its size
+**The app is running right now.** Drive it.
 
-**F-002 currently defers the spoken summary to F-004. F-004 has no spec file, and both F-002
-and the index call it *"reserved, not committed"*. So the requirement is deferred by citing a
-feature that exists only because F-002 deferred it.**
+```
+web    http://localhost:5173/?qaUser=design-audit-1787320423     (5 tasks seeded, Vietnamese titles)
+api    http://localhost:4460
+tool   playwright-cli -s=<yoursession> open <url> | resize <w> <h> | screenshot | eval "<js>"
+       screenshots land in .playwright-cli/page-*.png — copy them where you want them
+```
 
-**`UC-20 AC-20.6` carries a note saying this exact requirement was already lost once to a
-rewrite and restored.** Leaving it as *reserved* is how it gets lost a second time.
+**Starting screenshots already taken, for you to build on rather than repeat:**
+`output/design-audit/` — 1440, 1024, 1920, 390 wide, plus three more. **They are a starting
+point, not the audit.** Get to the states that have content in them; the ones I captured
+mostly do not.
 
-## The two edits
+## What I can already see in them, so you do not spend the audit finding it
 
-1. **`docs/specs/assistant/F-002-talk-back.md:297`** — currently
-   *"The spoken day summary (UC-20 AC-20.6) — **reserved as F-004, not committed**."*
-   Becomes **committed and scheduled after MVP**, with its content stated: a greeting plus
-   what remains today, after a ~2s pause on open. Keep the rest of the bullet — the
-   local-data / no-model / works-offline properties are still true and are why it is cheap.
-2. **`docs/specs/assistant/index.md:31`** — *"**F-004 is reserved, not committed**"*. Same
-   change, same words.
+At **1440×1000**, the Tasks column is ~70% of the width and **its content occupies the top
+~12% of it.** The rest is empty. In the Talk column the headline floats at ~42% vertical
+while the composer is pinned to the bottom — **~340px of nothing between them.**
 
-**Also, in F-002:** state that MVP silence is a recorded owner decision of 2026-08-21, not an
-omission. One sentence, wherever it belongs in `## Out of Scope`.
+**That is one observation at one width in one state.** Your job is the other widths, the
+other states, and whether there is a pattern behind it.
 
-**Line 346 is a traceability row** describing what revision 2 did. **It is history — do not
-rewrite it.** If it now reads as stale, add a dated note beside it rather than editing the
-record.
+## The second half, and it is measured
 
-## One reading to carry, recorded conservatively
+**Five features exist. `docs/design/assistant/screens/` holds screens for ONE.**
 
-The audit's stronger case was the **passed reminder**: set by voice, delivered only as pixels,
-dismissed only by hand. The owner's *"chỉ trả lời khi hỏi"* covers it — **a reminder is not a
-reply to a question, so at MVP it stays silent too.** Record that as the reading, not as a
-separate decision, so it is one word to overturn.
+app-shell and voice-assistant-view (× web/iOS/Android) — all of them the first feature.
+**Talk-back, the mobile surface, task detail and the trash have no drawn screen at any
+width.** Meanwhile `components.md` is **2,371 lines across 31 sections** carrying the whole
+vocabulary.
 
-## Do NOT
+**So the system is large and its application is one feature old, and the running app is four
+features past the last thing anyone drew.** That is the likeliest reason things look
+arranged badly — but **check it rather than assume it.** If the arrangement is bad for a
+different reason, say so.
 
-- Do not add, renumber or amend any AC.
-- Do not touch F-004 itself — it has no file and this task does not create one.
-- Do not touch the audit report or any other spec.
+## Read these
+
+1. **The running app** — first, and for real.
+2. `docs/design/_shared/DESIGN.md` and `information-architecture.md` — what the layout was
+   supposed to be. **§ breakpoints and § the split.**
+3. `docs/design/_shared/components.md` — but **only to check a specific thing you saw**, not
+   as the source of findings.
+4. `bash .claude/tools/design-check/run-design-check.sh` — free, mechanical. Run it first so
+   you do not spend findings on what it reports.
+
+## Return a report, not edits
+
+**Write nothing but the report.** Do not touch `components.md`, `tokens.json` or any screen —
+fixes are separate tasks the owner schedules.
+
+**Structure it as:**
+- **Layout findings**, ranked by how bad they look, each with the width and state it appears
+  at and a screenshot path.
+- **Whether the cause is the coverage gap** or something in the system itself. One sentence.
+- **Which screens are owed, in what order**, and which existing task already covers each.
+  *(Task screens are already queued as T-165; the notice-region change as T-179. Do not
+  duplicate them — say where they sit in your order.)*
+- **What is fine.** If the arrangement is defensible at some widths, say which and why.
+
+## Write to
+
+`/Users/tandt/projects/todo-ai-redesign/docs/reports/design-audit-2026-08-21.md`
+
+Put any new screenshots under `output/design-audit/` and reference them by path.
 
 ## Success criteria
 
-- Both sentences changed, both saying **committed and scheduled after MVP** with the content
-  named.
-- The ~2s pause and the cancel-affordance-is-owed note are in F-002.
-- MVP silence is stated as a decision with its date.
-- AC count unchanged in F-002 — verify by counting.
-- `bash .claude/tools/spec-check/declared-elements.sh docs/specs/assistant/F-002-talk-back.md`
-  exits 0.
+- **You drove the app and looked.** The report cites widths, states and screenshot paths.
+- Findings are ranked by **how bad it looks**, not by document order.
+- The coverage question is answered with a yes or a no, not deferred.
+- **At least one thing is named as fine**, with why. An audit that finds everything broken is
+  as useless as one that finds nothing.
