@@ -8,7 +8,7 @@
 
 - primary_module: assistant
 - depends_on: [F-001, F-005, F-006, F-008]
-- designed_in: [docs/design/_shared/components.md]
+- designed_in: [docs/design/_shared/components.md, docs/design/assistant/screens/app-shell.html, docs/design/assistant/screens/app-shell-ios.html, docs/design/assistant/screens/app-shell-android.html]
 - implemented_in: []
 - api_endpoints: []
 - tested_by: { api: [], web: [], mobile: [] }
