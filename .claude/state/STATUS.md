@@ -24,6 +24,8 @@
 
 | Task ID | Agent | Module | Feature | Subtree | Dispatched |
 |---------|-------|--------|---------|---------|------------|
+| T-233m + T-209 + T-241 | mobile-agent | assistant | — | src/assistant/mobile/, tests/assistant/mobile/ | 2026-08-22 |
+| T-233w + T-208 | web-agent | assistant | — | src/assistant/web/ | 2026-08-22 |
 <!-- Example:
 -->
 | — | — | — | — | — | — |
