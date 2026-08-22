@@ -404,7 +404,6 @@ button,input,textarea{font:inherit; color:inherit}
   .app[data-surface] .col-rail{display:flex; flex:0 0 var(--lists-rail); border-radius:var(--r-md)}
   .app[data-surface]{--rail:calc(var(--layout-measure-timerail-wide) * 1px)}
   .app[data-surface] .hide-wide{display:none}
-  .app[data-surface] .row-time .wd{display:inline}
 }
 
 /* ONE CENTRING, AND IT IS AT THE CONTENT COLUMN (layout.content_column_rule).
@@ -509,25 +508,22 @@ button,input,textarea{font:inherit; color:inherit}
    TIME RAIL + TASK ROW  (§ TimeRail, § TaskRow)
    ══════════════════════════════════════════════════════════════════════════ */
 .list{position:relative}
-.list::before{
-  content:""; position:absolute; top:0; bottom:0; width:var(--b-hairline);
-  background:var(--bg-hairline); left:var(--rail);
-}
-.group{padding:var(--s5) 0 var(--s2) calc(var(--rail) + var(--gutter))}
+/* SPINE REMOVED (T-227). The spine marked the time-rail column. With the rail
+   gone at all widths, the spine has nothing to separate and nothing to mark. */
+.group{padding:var(--s5) 0 var(--s2) 0}
 .group:first-child{padding-top:var(--s4)}
 .group h3{margin:0; font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:var(--font-case-label); font-weight:var(--w-semibold); color:var(--text-muted)}
 .group.overdue h3{color:var(--danger)}
+/* ROW: FLAT LAYOUT AT EVERY WIDTH (T-227). The base rule is flex, not grid with
+   a rail column. The owner decided: one row layout everywhere. The mobile's
+   flat row is now the default; the grid-with-rail override is deleted. */
 .row{
-  display:grid; grid-template-columns:var(--rail) minmax(0,1fr) auto;
-  align-items:center; min-height:var(--h-lg); padding:var(--s2) 0;
+  display:flex; align-items:center; gap:var(--s3);
+  min-height:var(--h-lg); padding:var(--s2) 0;
 }
-.row-time{
-  font-family:var(--font-num); font-size:var(--fs-meta); color:var(--text-muted);
-  align-self:stretch; display:flex; align-items:center; justify-content:flex-end;
-  gap:var(--s2); padding-right:var(--s4); white-space:nowrap;
-}
-.row-time .wd{display:none; color:var(--text-muted)}
-.row-main{padding-left:var(--gutter); min-width:0; display:flex; align-items:center; gap:var(--s3)}
+/* TIME COLUMN HIDDEN AT EVERY WIDTH. The time is now .row-due on the right. */
+.row-time{display:none}
+.row-main{padding-left:0; flex:1 1 auto; min-width:0; display:flex; align-items:center; gap:var(--s3)}
 .cbx{
   appearance:none; margin:0; width:calc(var(--icon-size-md) * 1px); height:calc(var(--icon-size-md) * 1px); flex:none; cursor:pointer;
   border:var(--b-hairline) solid var(--bg-rule); background:var(--bg-base);
@@ -639,9 +635,9 @@ button,input,textarea{font:inherit; color:inherit}
 .empty h2{margin:0 0 var(--s2); font-size:var(--fs-title); letter-spacing:var(--ls-title); line-height:var(--lh-title); font-weight:var(--w-semibold)}
 .empty p{margin:0 0 var(--s5); color:var(--text-secondary); font-size:var(--fs-body); max-width:44ch}
 .sk{display:block; background:var(--bg-sunken); border-radius:var(--r-xs); height:var(--s3)}
-.sk-row{display:grid; grid-template-columns:var(--rail) minmax(0,1fr); align-items:center; min-height:var(--h-lg); padding:var(--s2) 0}
-.sk-row .sk-time{justify-self:end; width:var(--h-md); margin-right:var(--s4)}
-.sk-row .sk-main{margin-left:var(--gutter); display:flex; align-items:center; gap:var(--s3)}
+.sk-row{display:flex; align-items:center; gap:var(--s3); min-height:var(--h-lg); padding:var(--s2) 0}
+.sk-row .sk-time{display:none}
+.sk-row .sk-main{flex:1 1 auto; min-width:0; display:flex; align-items:center; gap:var(--s3)}
 .sk-box{width:calc(var(--icon-size-md) * 1px); height:calc(var(--icon-size-md) * 1px); background:var(--bg-sunken); border-radius:var(--r-xs); flex:none}
 .surface-error{padding:var(--s8) 0 var(--s7); max-width:52ch}
 .surface-error h2{margin:0 0 var(--s3); font-size:var(--fs-title); letter-spacing:var(--ls-title); line-height:var(--lh-title); font-weight:var(--w-semibold)}
@@ -1033,27 +1029,16 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
    ══════════════════════════════════════════════════════════════════════════ */
 
 
-/* ── row-due hidden by default — the time rail shows the time at wider widths ── */
-.row-due{display:none}
+/* ROW-DUE VISIBLE AT ALL WIDTHS (T-227). Right-aligned in the row. */
+.row-due{
+  font-family:var(--font-num); font-size:var(--fs-meta);
+  color:var(--text-muted); white-space:nowrap; flex:none; margin-left:auto;
+}
 
-/* ── Hide time rail and spine below split ── */
+/* ── Below-split: mobile-specific layout (T-227 simplified) ── */
 @container (max-width:1023px){
-  .list::before{display:none}
-  .row-time{display:none}
-  .sk-row{grid-template-columns:minmax(0,1fr)}
-  .sk-row .sk-time{display:none}
-  .row{
-    display:flex; align-items:center; gap:var(--s3);
-    min-height:var(--h-lg); padding:var(--s2) var(--gutter);
-    position:relative; overflow:hidden;
-  }
-  .row-main{padding-left:0; flex:1 1 auto}
+  .row{padding:var(--s2) var(--gutter); position:relative; overflow:hidden}
   .group{padding-left:var(--gutter)}
-  /* Show due date below split */
-  .row-due{
-    display:inline; font-family:var(--font-num); font-size:var(--fs-meta);
-    color:var(--text-muted); white-space:nowrap; flex:none; margin-left:var(--s2);
-  }
   /* Swipe-to-delete replaces always-visible delete button */
   .row-trail{display:none}
   /* List padding to clear floating button */
@@ -1092,9 +1077,8 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .inline-new span.inline-label{font-size:var(--fs-body); color:var(--text-muted)}
 .inline-new:hover .inline-label{color:var(--text-secondary)}
 .inline-new:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
-/* At wider widths with the time rail, indent to align with the task titles */
-@container (min-width:1024px){
-  .inline-new{padding-left:calc(var(--rail) + var(--gutter))}
+@container (max-width:1023px){
+  .inline-new{padding:var(--s1) var(--gutter)}
 }
 
 /* ── Floating voice button — below split only ── */

@@ -80,3 +80,20 @@ thing the owner asked to fix, under a sentence saying it was fixed.
 **How to apply.** Any sentence carrying a count, a "zero", or the word "all" is a command you ran
 and whose output you quote. Change three files of ten and the honest sentence says three. **If no
 command was run, write the sentence without the number.**
+
+## A change claimed for N files is measured in N files
+
+**2026-08-22, T-227 — the third instance in one day**, after the browser claim and the checkbox
+count. The return listed `app-shell.html`, `-ios` and `-android` as modified and gave a measurement
+table for the row-layout change. Measured later, after the owner opened the iOS file and saw the
+old layout: `row-time` was `none` in `app-shell.html` and **`flex 96x44` and `96x48` in the two
+platform files at 1440.** The change had landed in one file of three.
+
+**What makes this one different from the other two: everything else in that pass DID land in all
+three** — header controls, inline add row, voice button. So a spot check on any of those would have
+confirmed the pass and missed the defect. **Coverage is per change, not per pass.**
+
+**How to apply.** When a change touches several files, the measurement has **one row per file**, and
+the table is pasted from output rather than summarised. A table shorter than the file list is a
+claim without evidence for the missing rows. See [[the browser claim]] and [[the count entry]] — the
+form is the same each time.
