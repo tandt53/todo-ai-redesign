@@ -1,87 +1,90 @@
-# BRIEFING — T-218
+# BRIEFING — T-220
 
-- **Task ID:** T-218 · **Agent:** design-agent · **phase:** `screens` · 2026-08-22
-- **Description:** One gutter rule, Android's AM/PM, and better copy for an empty name
+- **Task ID:** T-220 · **Agent:** design-agent · **phase:** `system` + `screens` · 2026-08-22
+- **Description:** Panels on a canvas, and the two self-checks that were skipped
 
-## The owner reviewed your three states and passed all three questions
+## 1 · The big layout regions stop being separated by lines
 
-*Does the ground read as editable?* — **yes.** *Do the iOS wheel and Android calendar look
-native?* — **yes.** *Is Clear below the fold acceptable?* — **yes.**
+The owner, looking at the web shell:
 
-**Three things came back, one of them structural.**
+> *"web vẫn có các line border giữa các layout lớn. Hiện tại gần như tất cả các app đã bỏ các
+> border này rồi. Thay vào đó là 1 layout có nền màu nhạt ở dưới cùng, các layout chứa content
+> sẽ đặt lên trên có màu nền đậm hơn, giống nhau, bo tròn, và cách nhau 1 khoảng nhỏ."*
 
-## 1 · The typed fields sit on a different gutter from everything else
+**Measured at 1440 on `app-shell.html`, exactly three long structural borders remain:**
 
-> *"title và description đang có độ kích thước và căn lề không giống các element khác"*
+| element | side | length |
+|---|---|---|
+| `header.topbar` | bottom | 1020px |
+| `aside.col-panel` | **left** | 820px |
+| `div.composer` | top | 419px |
 
-**Measured at 390 in `detail-blank`, and both edges are off rather than one:**
+**The pattern replaces all three**, and it uses tokens you already have: the page becomes
+`bg.sunken`, each content region becomes a `bg.base` panel on top of it, **same ground as each
+other**, rounded, with a small gap between. Linear, Notion, Vercel and the current macOS
+sidebars all read this way.
 
-| | left | right | text starts |
-|---|---|---|---|
-| title ground · note ground | **4** | **386** | 16 |
-| property block | **16** | **374** | 24 |
-| Delete button | 16 | — | — |
+**This narrows a rule you wrote, and the narrowing is the coordinator's error to own.** Your
+`border.when_a_line_earns_it` has three cases and the third is *a container holding a different
+KIND of thing* — **I suggested that one, and the owner's pattern is the better answer to the
+same problem.** So the third case goes, or is rewritten as *panels, not lines*. **Say which in
+`tokens.json` and `DESIGN.md`.**
 
-**The two grounds are 12px wider on each side than everything else on the screen, and the
-text inside them does not line up either.**
+**This is a system change plus screens in one dispatch, deliberately, and here is why that is
+allowed here:** the usual rule forbids authoring a system and then building against it in one
+pass, because the system has no external standard to meet. **That is not this.** The system is
+authored, signed off, and one rule inside it is being narrowed by an owner instruction — the
+external standard exists and the owner is it.
 
-**This reads as a half-finished optical alignment.** Bleeding a ground out by its own padding
-so the *text* lands on the gutter is a real technique — **it works only when everything else
-puts its text on that gutter too, and the property rows do not.** So neither the grounds nor
-the text agree with anything.
+**Two things to get right rather than to assume:**
 
-**Pick ONE rule and apply it to every block on the screen**, then write it in `components.md`
-so the next surface inherits it rather than re-deciding:
+- **A panel's gap is not a margin around everything.** The elevation is what separates them, so
+  the gap is small — the pattern reads as *floating*, not *spaced out*. Look at it, do not
+  reason about it.
+- **The gutter rule you just landed (`16 → 374`) is inside the panel now.** Check it still
+  holds against the panel's edge rather than the window's, at every width including 1920.
 
-- every ground shares a left edge and every text is inset by the same amount, **or**
-- every ground bleeds by its own padding and every text lands on one gutter.
+## 2 · Re-run both self-checks — the last pass skipped them
 
-**Also answer the size half.** The owner said *"kích thước và căn lề"*. The title is 31px
-against 16 everywhere else — **it is the heading and the name of the thing, so large is
-probably right, but they raised it and it deserves an answer rather than an assumption.**
-Check it at 390 in a render, not in the CSS.
+**Your previous dispatch was interrupted and its return was lost, so neither the visual review
+nor the accessibility self-check has a recorded result for anything drawn since.** The owner
+noticed and asked for them.
 
-## 2 · Android's AM/PM is stacked and should be horizontal
+**Run both over the whole current set, not only what this task changes.** Record
+`visual_review:` and `a11y_review:` with counts, empty lists included.
 
-The owner liked the Android calendar and named exactly one thing wrong in it: **the AM/PM
-selector runs vertically. Lay it horizontally.**
+**Two things carried from the last recorded a11y run that need re-checking specifically:**
 
-*(Worth noting when you touch it: you already found and fixed this control once, for being
-48×34.5 against Android's 48dp floor. Do not lose that.)*
+- **Step checkboxes render 20×20 on all three platforms**, under every floor (web 40 · iOS 44 ·
+  Android 48). Filed as T-216 and not fixed. **If this pass touches them, fix with a hit area,
+  not bigger paint; if not, confirm the measurement still stands.**
+- **`detail-repeat-until` shows *Never* pressed while an until-date is displayed.** T-217. One
+  of the two is wrong and the drawing does not say which.
 
-## 3 · `Name this task` wants better copy
-
-**This screen is reached straight after a task is created by voice** — the metadata line right
-under it says *"Added just now · by voice"*. So this placeholder is **the first thing a new
-task says to its owner.**
-
-`Name this task` is an instruction to do work. Something that reads as the task waiting to be
-named would sit better with *simple, soft, easy*. **Your call; the house vocabulary in
-`components.md § Buttons` binds the words, and this is a placeholder rather than a label, so
-check what that section allows before inventing one.**
-
-**English — `ADR-008`.**
+**And one question with no recorded answer**, from T-219: the owner said *kích thước và căn lề*.
+Alignment was fixed and measured. **Size was never answered** — the title renders 32px against
+16 elsewhere. It is the heading and the name of the thing, so large is probably right, **but it
+was asked and deserves a sentence.**
 
 ## Scope
 
-The three task-detail mockups, `index.html`, and the `components.md` sections these touch.
-**Nothing else moves.** Not the property-sheet model, the picker model, radius, the 1920
-layout, or the ground-instead-of-border decision — all settled and all signed off.
+`tokens.json`, `DESIGN.md`, the `components.md` sections this touches, the nine mockups where
+the pattern applies, and `index.html`.
 
-**The gutter rule may touch the app shell if it is genuinely one rule for the system.** If it
-does, say so and change only what the rule forces; do not redraw the shell for tidiness.
+**Web is where the owner saw it. Check whether the pattern is right on iOS and Android too** —
+iOS grouped-inset lists are already this shape, Android's M3 is not always. **If a platform
+should keep its own answer, say so with the rule that forces it.**
 
-## Both self-checks
-
-Visual review and the accessibility self-check. **Change 2 touches a control you already
-repaired for a hit-area failure — re-measure it after moving it**, and record probe 3's count
-for that state specifically.
+**Nothing else moves:** the property-sheet model, the picker model, radius, the 1920 layout,
+ground-instead-of-border, the gutter rule. All settled.
 
 ## Success criteria
 
-- **One gutter rule, stated in `components.md` and true of every block** on the task detail.
-  Prove it with measured left/right edges in your return, the way this briefing did.
-- The title's size is answered, not assumed.
-- Android AM/PM horizontal, **and still meeting the 48dp floor** — give the measurement.
-- New placeholder copy, in English, consistent with the house vocabulary.
-- `design-check` still green. No testid invented or renamed. `index.html` rebuilt.
+- **Zero long structural borders between layout regions on web** — give the same measurement
+  this briefing did, at 1440 and 1920.
+- The narrowed border rule is written down, and says whether the third case is gone or rewritten.
+- **`visual_review:` and `a11y_review:` present, with counts** — this is the point of the task
+  as much as the panels are.
+- T-216 and T-217 either fixed or re-confirmed.
+- The title's size answered in one sentence.
+- `design-check` green. No testid invented or renamed. `index.html` rebuilt.

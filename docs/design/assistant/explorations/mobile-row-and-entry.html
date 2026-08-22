@@ -1,0 +1,722 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mobile row and entry — 3 options at 390px</title>
+<!--
+  EXPLORATION — T-221 · mobile-row-and-entry · design-agent · 2026-08-22
+
+  Three phone layouts side by side, each 390px, same six tasks.
+  The owner is deciding whether to keep the left time rail on mobile and
+  how task entry should work at the bottom of the screen.
+
+  This file is an exploration for the owner to approve before any change
+  touches the production screens or the design system.
+
+  Self-contained: no network, no server, no build. Open by double-click.
+  All values from docs/design/_shared/tokens.json (light theme, iOS sizes).
+  Product language is English (ADR-008). Task titles are user content.
+-->
+<style>
+/* ── Tokens from tokens.json, light theme, iOS size ramp ── */
+:root{
+  --bg:#FFFFFF; --bg-sunken:#F2F2F4; --bg-raised:#FFFFFF;
+  --bg-ink:#111318; --bg-hairline:#DCDCE1; --bg-rule:#94949E;
+  --bg-scrim:rgba(17,19,24,0.32);
+  --text:#111318; --text-2:#54545E; --text-m:#646470;
+  --text-on-ink:#FFFFFF; --text-on-accent:#FFFFFF;
+  --accent:#002FA7; --accent-t:#E6EAF6;
+  --danger:#C8102E; --danger-t:#FBE9EC;
+  --attention:#9A4C00; --focus-ring:#002FA7;
+
+  --font-ui:Inter,-apple-system,BlinkMacSystemFont,'Helvetica Neue','Segoe UI',Roboto,system-ui,sans-serif;
+  --font-num:ui-monospace,'SF Mono','JetBrains Mono','Roboto Mono',Menlo,Consolas,monospace;
+  --fs-label:11px; --fs-meta:13px; --fs-body:17px; --fs-lead:20px; --fs-title:28px;
+  --w-regular:400; --w-medium:500; --w-semi:600; --w-bold:700;
+  --lh-tight:1.15; --lh-title:1.25; --lh-body:1.5; --lh-meta:1.4;
+  --ls-label:0.08em; --ls-title:-0.015em;
+
+  --s0:0; --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px; --s8:64px;
+
+  --r-none:0; --r-xs:4px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:28px; --r-pill:999px; --r-circle:50%;
+  --b-hair:1px; --b-rule:1px; --b-focus:2px; --b-mark:2px;
+
+  --h-sm:36px; --h-md:44px; --h-lg:52px;
+  --min-target:44px;
+  --px-sm:12px;
+
+  --shadow-overlay:0 12px 32px -12px rgba(17,19,24,0.28);
+
+  --rail:72px;
+  --gutter:16px;
+  --icon-md:20px;
+}
+
+/* ── Reset ── */
+*{box-sizing:border-box; margin:0; padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:#E8E8ED; color:var(--text);
+  font-family:var(--font-ui); font-size:15px; line-height:1.5;
+  font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased;
+}
+svg{display:block; flex:none}
+button,input{font:inherit; color:inherit}
+
+/* ── Page layout ── */
+.page-head{
+  max-width:1320px; margin:0 auto; padding:var(--s5) var(--s5) var(--s3);
+}
+.page-head h1{font-size:var(--fs-lead); font-weight:var(--w-bold); line-height:var(--lh-title); letter-spacing:var(--ls-title)}
+.page-head p{font-size:var(--fs-meta); color:var(--text-2); margin-top:var(--s1)}
+
+.controls{
+  max-width:1320px; margin:0 auto; padding:0 var(--s5) var(--s4);
+  display:flex; gap:var(--s2); flex-wrap:wrap; align-items:center;
+}
+.controls button{
+  appearance:none; cursor:pointer; background:var(--bg); color:var(--text-2);
+  border:var(--b-hair) solid var(--bg-hairline); border-radius:var(--r-xs);
+  font-size:var(--fs-meta); padding:var(--s1) var(--s3); line-height:var(--lh-meta);
+}
+.controls button:hover{border-color:var(--bg-rule); color:var(--text)}
+.controls button.on{background:var(--text); color:var(--bg); border-color:var(--text); font-weight:var(--w-semi)}
+.controls button:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:1px}
+
+.phones{
+  display:flex; gap:var(--s6); padding:0 var(--s5) var(--s6);
+  overflow-x:auto; max-width:1320px; margin:0 auto;
+}
+
+/* ── Column (label + phone) ── */
+.col{flex:0 0 390px; display:flex; flex-direction:column; gap:var(--s3)}
+.col-label{
+  font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:uppercase;
+  font-weight:var(--w-bold); color:var(--text);
+}
+.col-label span{
+  font-size:var(--fs-meta); letter-spacing:0; text-transform:none;
+  font-weight:var(--w-regular); color:var(--text-2); margin-left:var(--s2);
+}
+.col-note{font-size:12px; color:var(--text-m); line-height:var(--lh-meta); margin-top:var(--s1)}
+
+/* ── Phone frame ── */
+.phone{
+  width:390px; height:780px; background:var(--bg); border-radius:var(--r-xl);
+  box-shadow:var(--shadow-overlay),0 0 0 1px var(--bg-hairline);
+  overflow:hidden; display:flex; flex-direction:column; position:relative;
+}
+
+/* status bar */
+.ph-status{
+  height:50px; padding:14px var(--s5) 0;
+  display:flex; align-items:flex-start; justify-content:space-between;
+  font-family:var(--font-num); font-size:var(--fs-meta); font-weight:var(--w-semi);
+  color:var(--text); flex:none;
+}
+.ph-status-r{display:flex; gap:6px; align-items:center}
+.ph-status-r svg{width:16px; height:16px}
+
+/* home indicator */
+.ph-home{
+  height:34px; flex:none; display:flex; align-items:center; justify-content:center;
+}
+.ph-home::after{
+  content:""; width:134px; height:5px; background:var(--text);
+  border-radius:var(--r-pill); opacity:0.18;
+}
+
+/* app content area */
+.ph-app{flex:1 1 auto; display:flex; flex-direction:column; min-height:0; overflow-y:auto}
+
+/* ── App header ── */
+.app-head{padding:var(--s4) var(--gutter) var(--s3)}
+.app-head h2{
+  font-size:var(--fs-title); font-weight:var(--w-bold);
+  line-height:var(--lh-title); letter-spacing:var(--ls-title);
+}
+.app-head .count{
+  font-size:var(--fs-meta); color:var(--text-2); margin-top:var(--s1);
+  font-family:var(--font-num);
+}
+.app-head .count b{color:var(--text); font-weight:var(--w-semi)}
+.app-head .count .late{color:var(--danger); font-weight:var(--w-semi)}
+
+/* ── Group headings ── */
+.group{
+  font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:uppercase;
+  font-weight:var(--w-semi); color:var(--text-m); line-height:var(--lh-meta);
+  padding:var(--s4) var(--gutter) var(--s2);
+}
+.group:first-child{padding-top:var(--s3)}
+.group.overdue{color:var(--danger)}
+
+/* ── Checkbox (shared) ── */
+.cbx{
+  appearance:none; margin:0; flex:none; cursor:pointer;
+  width:var(--icon-md); height:var(--icon-md);
+  border:var(--b-hair) solid var(--bg-rule); background:var(--bg);
+  border-radius:var(--r-circle); display:grid; place-items:center;
+  position:relative;
+}
+.cbx::before{
+  content:""; position:absolute; top:50%; left:50%;
+  width:var(--min-target); height:var(--min-target); transform:translate(-50%,-50%);
+}
+.cbx:checked{background:var(--text); border-color:var(--text)}
+.cbx:checked::after{
+  content:""; width:10px; height:6px;
+  border-left:2px solid var(--bg); border-bottom:2px solid var(--bg);
+  transform:rotate(-45deg) translate(1px,-1px);
+}
+.cbx:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
+
+/* ── Row title ── */
+.row-title{
+  font-size:var(--fs-body); line-height:1.35; color:var(--text);
+  min-width:0;
+  /* A TITLE IS NEVER TRUNCATED TO PROTECT A COLUMN. It wraps and the row grows. */
+}
+.done .row-title{color:var(--text-m); text-decoration:line-through}
+
+/* ── Marks ── */
+.mark{
+  font-family:var(--font-num); font-size:var(--fs-body); font-weight:var(--w-bold);
+  color:var(--text); line-height:1.35; flex:none; margin-left:var(--s2);
+}
+.tag{
+  font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:uppercase;
+  font-weight:var(--w-semi); padding:2px 6px; border-radius:var(--r-xs);
+  background:var(--accent-t); color:var(--accent); white-space:nowrap; flex:none;
+  margin-left:var(--s2);
+}
+
+/* ── Delete button (Option A, always visible) ── */
+.row-del{
+  appearance:none; border:0; background:transparent; cursor:pointer; color:var(--text-m);
+  width:var(--min-target); height:var(--min-target); display:grid; place-items:center;
+  flex:none;
+}
+.row-del:hover{color:var(--danger)}
+.row-del:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
+
+/* ── "NEW" arrived row highlight ── */
+.row-arrived{
+  box-shadow:inset var(--b-mark) 0 0 var(--accent);
+  border-radius:0 var(--r-md) var(--r-md) 0;
+}
+
+/* ── Bottom entry bar (shared by A and B) ── */
+.entry-bar{
+  flex:none; display:flex; align-items:center; gap:var(--s2);
+  padding:var(--s2) var(--gutter); background:var(--bg);
+  border-top:var(--b-rule) solid var(--bg-rule);
+}
+.entry-field{
+  flex:1 1 auto; height:var(--h-md); border:var(--b-hair) solid var(--bg-rule);
+  border-radius:var(--r-sm); padding:0 var(--px-sm); font-size:var(--fs-body);
+  background:var(--bg); color:var(--text); min-width:0;
+}
+.entry-field::placeholder{color:var(--text-m)}
+.entry-field:focus{outline:var(--b-focus) solid var(--focus-ring); border-color:var(--accent)}
+.mic-btn{
+  appearance:none; border:var(--b-hair) solid var(--bg-rule); background:var(--bg);
+  border-radius:var(--r-circle); width:var(--h-md); height:var(--h-md); flex:none;
+  cursor:pointer; display:grid; place-items:center; color:var(--text-2);
+}
+.mic-btn:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
+
+/* ══════════════════════════════════════════════════════════════════
+   OPTION A — time rail kept
+   ══════════════════════════════════════════════════════════════════ */
+.opt-a .task-list{position:relative}
+/* spine line */
+.opt-a .task-list::before{
+  content:""; position:absolute; top:0; bottom:0; width:var(--b-hair);
+  background:var(--bg-hairline); left:var(--rail);
+}
+.opt-a .group{padding-left:calc(var(--rail) + var(--gutter))}
+.opt-a .row{
+  display:grid; grid-template-columns:var(--rail) minmax(0,1fr) auto;
+  align-items:center; min-height:var(--h-lg); padding:var(--s1) 0;
+}
+.opt-a .row-time{
+  font-family:var(--font-num); font-size:var(--fs-meta); color:var(--text-m);
+  display:flex; align-items:center; justify-content:flex-end;
+  padding-right:var(--s4); white-space:nowrap; align-self:stretch;
+}
+.opt-a .row-main{
+  padding-left:var(--gutter); min-width:0;
+  display:flex; align-items:center; gap:var(--s3);
+}
+.opt-a .row-trail{display:flex; align-items:center; flex:none}
+
+/* ══════════════════════════════════════════════════════════════════
+   OPTION B — no rail, due date right, bottom field
+   ══════════════════════════════════════════════════════════════════ */
+.opt-b .group{padding-left:var(--gutter)}
+.opt-b .row{
+  display:flex; align-items:center; gap:var(--s3);
+  min-height:var(--h-lg); padding:var(--s1) var(--gutter);
+  position:relative; overflow:hidden;
+}
+.opt-b .row-inner{
+  display:flex; align-items:center; gap:var(--s3);
+  flex:1 1 auto; min-width:0;
+  transition:transform 0.2s ease;
+}
+.opt-b .row-title{flex:1 1 auto}
+.opt-b .row-due{
+  font-family:var(--font-num); font-size:var(--fs-meta); color:var(--text-m);
+  white-space:nowrap; flex:none;
+}
+/* swipe action reveal */
+.opt-b .swipe-action{
+  position:absolute; right:0; top:0; bottom:0; width:80px;
+  background:var(--danger); display:flex; align-items:center; justify-content:center;
+  color:var(--text-on-accent); font-size:var(--fs-meta); font-weight:var(--w-semi);
+  transform:translateX(80px); transition:transform 0.2s ease;
+}
+.opt-b .row-swiped .row-inner{transform:translateX(-80px)}
+.opt-b .row-swiped .swipe-action{transform:translateX(0)}
+
+/* ══════════════════════════════════════════════════════════════════
+   OPTION C — no rail, inline new-task row, floating mic
+   ══════════════════════════════════════════════════════════════════ */
+.opt-c .group{padding-left:var(--gutter)}
+.opt-c .row{
+  display:flex; align-items:center; gap:var(--s3);
+  min-height:var(--h-lg); padding:var(--s1) var(--gutter);
+  position:relative; overflow:hidden;
+}
+.opt-c .row-inner{
+  display:flex; align-items:center; gap:var(--s3);
+  flex:1 1 auto; min-width:0;
+  transition:transform 0.2s ease;
+}
+.opt-c .row-title{flex:1 1 auto}
+.opt-c .row-due{
+  font-family:var(--font-num); font-size:var(--fs-meta); color:var(--text-m);
+  white-space:nowrap; flex:none;
+}
+.opt-c .swipe-action{
+  position:absolute; right:0; top:0; bottom:0; width:80px;
+  background:var(--danger); display:flex; align-items:center; justify-content:center;
+  color:var(--text-on-accent); font-size:var(--fs-meta); font-weight:var(--w-semi);
+  transform:translateX(80px); transition:transform 0.2s ease;
+}
+.opt-c .row-swiped .row-inner{transform:translateX(-80px)}
+.opt-c .row-swiped .swipe-action{transform:translateX(0)}
+
+/* inline new-task row */
+.inline-new{
+  display:flex; align-items:center; gap:var(--s3);
+  min-height:var(--h-lg); padding:var(--s1) var(--gutter);
+  color:var(--text-m); cursor:pointer;
+}
+.inline-new .plus{
+  width:var(--icon-md); height:var(--icon-md); flex:none;
+  display:grid; place-items:center;
+}
+.inline-new span{font-size:var(--fs-body); color:var(--text-m)}
+.inline-new:hover span{color:var(--text-2)}
+
+/* FAB */
+.fab{
+  position:absolute; right:var(--s4); bottom:calc(34px + var(--s4));
+  width:56px; height:56px; border-radius:var(--r-circle); border:0;
+  cursor:pointer; background:var(--accent); color:var(--text-on-accent);
+  display:grid; place-items:center; box-shadow:var(--shadow-overlay);
+  z-index:2;
+}
+.fab:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
+
+/* ══════════════════════════════════════════════════════════════════
+   STATE TOGGLE — "after adding"
+   ══════════════════════════════════════════════════════════════════ */
+/* Hide added rows by default — needs enough specificity to beat .opt-X .row */
+.opt-a .row.added-row,
+.opt-b .row.added-row,
+.opt-c .row.added-row{display:none}
+body.state-added .opt-a .row.added-row{display:grid}
+body.state-added .opt-b .row.added-row,
+body.state-added .opt-c .row.added-row{display:flex}
+
+/* update count text */
+body.state-added .count-default{display:none}
+body.state-added .count-added{display:inline}
+.count-added{display:none}
+
+/* ══════════════════════════════════════════════════════════════════
+   RECOMMENDATION SECTION
+   ══════════════════════════════════════════════════════════════════ */
+.analysis{
+  max-width:820px; margin:0 auto; padding:var(--s6) var(--s5) var(--s8);
+  font-size:15px; line-height:1.6; color:var(--text);
+}
+.analysis h2{font-size:var(--fs-lead); font-weight:var(--w-bold); margin-bottom:var(--s3); letter-spacing:var(--ls-title)}
+.analysis h3{font-size:var(--fs-body); font-weight:var(--w-semi); margin:var(--s5) 0 var(--s2); color:var(--text)}
+.analysis p{margin:0 0 var(--s3); color:var(--text-2)}
+.analysis strong{color:var(--text); font-weight:var(--w-semi)}
+.analysis ul{margin:0 0 var(--s4); padding-left:var(--s5); color:var(--text-2)}
+.analysis li{margin-bottom:var(--s2)}
+.analysis .rule-ref{
+  font-family:var(--font-num); font-size:var(--fs-meta);
+  background:var(--bg-sunken); padding:2px 6px; border-radius:var(--r-xs);
+}
+.analysis table{width:100%; border-collapse:collapse; margin:var(--s3) 0 var(--s5); font-size:var(--fs-meta)}
+.analysis th{text-align:left; font-weight:var(--w-semi); color:var(--text); padding:var(--s2) var(--s3); border-bottom:var(--b-rule) solid var(--bg-rule)}
+.analysis td{padding:var(--s2) var(--s3); color:var(--text-2); border-bottom:var(--b-hair) solid var(--bg-hairline); vertical-align:top}
+.analysis td:first-child{font-weight:var(--w-semi); color:var(--text); white-space:nowrap}
+</style>
+</head>
+<body>
+
+<!-- ── Page header ── -->
+<div class="page-head">
+  <h1>Mobile task row and entry</h1>
+  <p>Three options at 390px. Same six tasks, same states. Toggle "After adding" to see where a new untimed task lands.</p>
+</div>
+
+<!-- ── State toggle ── -->
+<div class="controls">
+  <button class="on" onclick="setState(false,this)">Default</button>
+  <button onclick="setState(true,this)">After adding "Walk the dog"</button>
+</div>
+
+<!-- ── Three phone frames ── -->
+<div class="phones">
+
+<!-- ════════════════════════════════════════════════════════════════
+     OPTION A — time rail kept + bottom text field + mic
+     ════════════════════════════════════════════════════════════════ -->
+<div class="col">
+  <div class="col-label">A <span>Time rail kept + bottom field</span></div>
+  <div class="phone opt-a">
+    <div class="ph-status">
+      <span>9:41</span>
+      <span class="ph-status-r">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M5 12.5a7 7 0 0 1 14 0"/><path d="M8.5 16a3.5 3.5 0 0 1 7 0"/><circle cx="12" cy="20" r="1" fill="currentColor" stroke="none"/></svg>
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="2" y="6" width="20" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="4" y="8" width="14" height="8" rx="1"/><rect x="23" y="10" width="2" height="4" rx="0.5"/></svg>
+      </span>
+    </div>
+    <div class="ph-app">
+      <div class="app-head">
+        <h2>Today</h2>
+        <p class="count">
+          <span class="count-default"><b>4</b> open · <span class="late">2 overdue</span></span>
+          <span class="count-added"><b>5</b> open · <span class="late">2 overdue</span></span>
+        </p>
+      </div>
+      <div class="task-list">
+        <div class="group overdue">Overdue</div>
+        <div class="row">
+          <div class="row-time">5:00 PM</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Send the weekly report to Hanh">
+            <span class="row-title">Send the weekly report to Hanh</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <div class="row">
+          <div class="row-time">9:00 AM</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Gọi nha sĩ đặt lịch khám răng">
+            <span class="row-title">Gọi nha sĩ đặt lịch khám răng</span>
+            <span class="mark" aria-label="High priority">!</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+
+        <div class="group">Today</div>
+        <div class="row">
+          <div class="row-time">6:00 PM</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Pay the electricity bill">
+            <span class="row-title">Pay the electricity bill</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <div class="row">
+          <div class="row-time">2:00 PM</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Team meeting">
+            <span class="row-title">Team meeting</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <div class="row">
+          <div class="row-time">&mdash;</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Buy milk">
+            <span class="row-title">Buy milk</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+
+        <!-- ADDED ROW — appears when "After adding" is toggled -->
+        <div class="row added-row row-arrived">
+          <div class="row-time">&mdash;</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Walk the dog">
+            <span class="row-title">Walk the dog</span>
+            <span class="tag">NEW</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+
+        <div class="row done">
+          <div class="row-time">9:30 AM</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" checked aria-label="Mark not done: Change the tyres">
+            <span class="row-title">Change the tyres</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+      </div>
+    </div>
+    <!-- entry bar -->
+    <div class="entry-bar">
+      <input class="entry-field" type="text" placeholder="Say or type what needs doing.">
+      <button class="mic-btn" aria-label="Start listening"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></button>
+    </div>
+    <div class="ph-home"></div>
+  </div>
+  <p class="col-note">The rail is 72px of 390px (18.5%). Untimed tasks show "&mdash;" &mdash; a permanent column for a sometimes-absent value.</p>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     OPTION B — no rail, due date right, bottom field + mic
+     ════════════════════════════════════════════════════════════════ -->
+<div class="col">
+  <div class="col-label">B <span>No rail, due date right + bottom field</span></div>
+  <div class="phone opt-b">
+    <div class="ph-status">
+      <span>9:41</span>
+      <span class="ph-status-r">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M5 12.5a7 7 0 0 1 14 0"/><path d="M8.5 16a3.5 3.5 0 0 1 7 0"/><circle cx="12" cy="20" r="1" fill="currentColor" stroke="none"/></svg>
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="2" y="6" width="20" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="4" y="8" width="14" height="8" rx="1"/><rect x="23" y="10" width="2" height="4" rx="0.5"/></svg>
+      </span>
+    </div>
+    <div class="ph-app">
+      <div class="app-head">
+        <h2>Today</h2>
+        <p class="count">
+          <span class="count-default"><b>4</b> open · <span class="late">2 overdue</span></span>
+          <span class="count-added"><b>5</b> open · <span class="late">2 overdue</span></span>
+        </p>
+      </div>
+      <div class="task-list">
+        <div class="group overdue">Overdue</div>
+        <div class="row">
+          <div class="row-inner">
+            <input class="cbx" type="checkbox" aria-label="Complete: Send the weekly report to Hanh">
+            <span class="row-title">Send the weekly report to Hanh</span>
+            <span class="row-due">Thu 5 PM</span>
+          </div>
+        </div>
+        <div class="row row-swiped">
+          <div class="row-inner">
+            <input class="cbx" type="checkbox" aria-label="Complete: Gọi nha sĩ đặt lịch khám răng">
+            <span class="row-title">Gọi nha sĩ đặt lịch khám răng</span>
+            <span class="mark" aria-label="High priority">!</span>
+            <span class="row-due">Wed 9 AM</span>
+          </div>
+          <div class="swipe-action" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+
+        <div class="group">Today</div>
+        <div class="row">
+          <div class="row-inner">
+            <input class="cbx" type="checkbox" aria-label="Complete: Pay the electricity bill">
+            <span class="row-title">Pay the electricity bill</span>
+            <span class="row-due">6 PM</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="row-inner">
+            <input class="cbx" type="checkbox" aria-label="Complete: Team meeting">
+            <span class="row-title">Team meeting</span>
+            <span class="row-due">2 PM</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="row-inner">
+            <input class="cbx" type="checkbox" aria-label="Complete: Buy milk">
+            <span class="row-title">Buy milk</span>
+          </div>
+        </div>
+
+        <!-- ADDED ROW -->
+        <div class="row added-row row-arrived" style="padding:var(--s1) 0">
+          <div class="row-inner" style="padding:0 var(--gutter)">
+            <input class="cbx" type="checkbox" aria-label="Complete: Walk the dog">
+            <span class="row-title">Walk the dog</span>
+            <span class="tag">NEW</span>
+          </div>
+        </div>
+
+        <div class="row done">
+          <div class="row-inner">
+            <input class="cbx" type="checkbox" checked aria-label="Mark not done: Change the tyres">
+            <span class="row-title">Change the tyres</span>
+            <span class="row-due">9:30 AM</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- entry bar -->
+    <div class="entry-bar">
+      <input class="entry-field" type="text" placeholder="Say or type what needs doing.">
+      <button class="mic-btn" aria-label="Start listening"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></button>
+    </div>
+    <div class="ph-home"></div>
+  </div>
+  <p class="col-note">One swiped row shown. VoiceOver/TalkBack second path: the task detail screen (tap row) has a Delete button; or long-press custom action.</p>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     OPTION C — no rail, inline new-task row + floating voice button
+     ════════════════════════════════════════════════════════════════ -->
+<div class="col">
+  <div class="col-label">C <span>No rail, inline entry + floating mic</span></div>
+  <div class="phone opt-c">
+    <div class="ph-status">
+      <span>9:41</span>
+      <span class="ph-status-r">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M5 12.5a7 7 0 0 1 14 0"/><path d="M8.5 16a3.5 3.5 0 0 1 7 0"/><circle cx="12" cy="20" r="1" fill="currentColor" stroke="none"/></svg>
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="2" y="6" width="20" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="4" y="8" width="14" height="8" rx="1"/><rect x="23" y="10" width="2" height="4" rx="0.5"/></svg>
+      </span>
+    </div>
+    <div class="ph-app">
+      <div class="app-head">
+        <h2>Today</h2>
+        <p class="count">
+          <span class="count-default"><b>4</b> open · <span class="late">2 overdue</span></span>
+          <span class="count-added"><b>5</b> open · <span class="late">2 overdue</span></span>
+        </p>
+      </div>
+      <div class="task-list">
+        <div class="group overdue">Overdue</div>
+        <div class="row">
+          <div class="row-inner">
+            <input class="cbx" type="checkbox" aria-label="Complete: Send the weekly report to Hanh">
+            <span class="row-title">Send the weekly report to Hanh</span>
+            <span class="row-due">Thu 5 PM</span>
+          </div>
+        </div>
+        <div class="row row-swiped">
+          <div class="row-inner">
+            <input class="cbx" type="checkbox" aria-label="Complete: Gọi nha sĩ đặt lịch khám răng">
+            <span class="row-title">Gọi nha sĩ đặt lịch khám răng</span>
+            <span class="mark" aria-label="High priority">!</span>
+            <span class="row-due">Wed 9 AM</span>
+          </div>
+          <div class="swipe-action" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+
+        <div class="group">Today</div>
+        <div class="row">
+          <div class="row-inner">
+            <input class="cbx" type="checkbox" aria-label="Complete: Pay the electricity bill">
+            <span class="row-title">Pay the electricity bill</span>
+            <span class="row-due">6 PM</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="row-inner">
+            <input class="cbx" type="checkbox" aria-label="Complete: Team meeting">
+            <span class="row-title">Team meeting</span>
+            <span class="row-due">2 PM</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="row-inner">
+            <input class="cbx" type="checkbox" aria-label="Complete: Buy milk">
+            <span class="row-title">Buy milk</span>
+          </div>
+        </div>
+
+        <!-- ADDED ROW -->
+        <div class="row added-row row-arrived" style="padding:var(--s1) 0">
+          <div class="row-inner" style="padding:0 var(--gutter)">
+            <input class="cbx" type="checkbox" aria-label="Complete: Walk the dog">
+            <span class="row-title">Walk the dog</span>
+            <span class="tag">NEW</span>
+          </div>
+        </div>
+
+        <div class="row done">
+          <div class="row-inner">
+            <input class="cbx" type="checkbox" checked aria-label="Mark not done: Change the tyres">
+            <span class="row-title">Change the tyres</span>
+            <span class="row-due">9:30 AM</span>
+          </div>
+        </div>
+
+        <!-- Inline new-task row -->
+        <div class="inline-new" role="button" tabindex="0" aria-label="Add a task">
+          <span class="plus"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
+          <span>Add a task</span>
+        </div>
+      </div>
+    </div>
+    <!-- FAB mic -->
+    <button class="fab" aria-label="Start listening"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></button>
+    <div class="ph-home"></div>
+  </div>
+  <p class="col-note">Inline "Add a task" sits in the list. The FAB violates DESIGN.md line 86: "iOS has no FAB." On iOS this would be a header button instead, splitting voice entry from text entry.</p>
+</div>
+
+</div><!-- .phones -->
+
+<!-- ══════════════════════════════════════════════════════════════
+     RECOMMENDATION
+     ══════════════════════════════════════════════════════════════ -->
+<div class="analysis">
+  <h2>Recommendation: B</h2>
+  <p><strong>Drop the time rail on phone. Keep the bottom text field with mic.</strong> The time rail is the differentiator and it works on tablet and desktop where it has room. On a 390px phone it costs 18.5% of every row for a column that is sometimes "&mdash;". The title is the one thing a todo list is made of, and untimed rows in B get 96px more for it than in A.</p>
+
+  <h3>What each option costs</h3>
+  <table>
+    <tr><th>Option</th><th>Gains</th><th>Costs</th></tr>
+    <tr>
+      <td>A</td>
+      <td>No rule changes. The time rail stays on every surface.</td>
+      <td>72px (18.5%) reserved on every row. Untimed tasks get 96px less title width than B. The "&mdash;" reads as missing data, not as "no time." Timed and untimed rows look different enough that the owner already sees them as two UIs.</td>
+    </tr>
+    <tr>
+      <td>B</td>
+      <td>Title gets the full row width on untimed tasks. Timed and untimed rows look the same except for the quiet due-date text on the right. Bottom field + mic is one unified entry point, and the most familiar pattern (Apple Reminders, Todoist, Microsoft To-Do).</td>
+      <td>The time rail differentiator is tablet/desktop only. The placement conflict exists: the text field is at the bottom but a new task lands at its sorted position mid-list. Solved by scroll-to-new + highlight (the NEW tag and accent bar shown above). Swipe-to-delete needs a second accessible path.</td>
+    </tr>
+    <tr>
+      <td>C</td>
+      <td>Inline row is IN the list, so the spatial gap between entry and result is smaller.</td>
+      <td>The FAB violates DESIGN.md line 86 ("iOS has no FAB"). On iOS the voice button would be a header action, splitting voice and text entry into two different locations. Two entry mechanisms vs. one. The inline row takes a permanent row in the list.</td>
+    </tr>
+  </table>
+
+  <h3>Rule changes B requires</h3>
+  <ul>
+    <li><span class="rule-ref">DESIGN.md line 88</span> "Row delete control ... always visible" changes to <strong>swipe-to-reveal on mobile</strong>. The second path for VoiceOver and TalkBack: the task detail screen (tap the row) already has a Delete button. A custom-action rotor entry for Delete also works. Both are standard iOS/Android patterns. <strong>Swipe without a second path is a lockout, not a gesture.</strong></li>
+    <li><span class="rule-ref">DESIGN.md ## Identity, differentiator</span> narrows from "every task row" to "tablet and desktop only." The time rail is still the signature element; it just does not appear on the one surface where it cannot breathe. <strong>No line in DESIGN.md says the rail must appear at every breakpoint</strong>, so this is an explicit scope note rather than a contradiction.</li>
+  </ul>
+
+  <h3>What I could not settle by drawing</h3>
+  <ul>
+    <li><strong>Real ratio of timed vs. untimed tasks.</strong> The fixture is 14/18 (78% timed), but that is authored data. If real users have 40% untimed tasks, the "&mdash;" penalty is larger than it looks. If 95% are timed, the rail is earning its space. This is answerable only by the owner's own usage or by telemetry.</li>
+    <li><strong>Whether scroll-to-new is enough on a long list.</strong> A list of 30 tasks where the new one appears 20 rows above the text field is a bigger spatial gap than the 6-task prototype shows. The highlight and scroll help, but long lists may want a brief toast ("Added above") as well.</li>
+  </ul>
+</div>
+
+<script>
+function setState(added, btn) {
+  document.body.classList.toggle('state-added', added);
+  document.querySelectorAll('.controls button').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+}
+</script>
+</body>
+</html>

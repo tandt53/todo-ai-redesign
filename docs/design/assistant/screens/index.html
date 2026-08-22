@@ -342,10 +342,10 @@ button,input,textarea{font:inherit; color:inherit}
 /* ══════════════════════════════════════════════════════════════════════════
    FRAME — layout.wide_rule, drawn. Three tiers, one branch each.
    ══════════════════════════════════════════════════════════════════════════ */
-.app{display:flex; flex-direction:column; min-height:820px; background:var(--bg-base)}
+.app{display:flex; flex-direction:column; min-height:820px; background:var(--bg-sunken)}
 .frame{display:flex; flex:1 1 auto; min-height:0; max-width:var(--frame-max); width:100%; margin:0 auto}
-.col-rail{display:none; flex-direction:column; min-width:0; background:var(--bg-sunken)}
-.col-main{display:flex; flex-direction:column; flex:1 1 auto; min-width:0}
+.col-rail{display:none; flex-direction:column; min-width:0; background:var(--bg-base)}
+.col-main{display:flex; flex-direction:column; flex:1 1 auto; min-width:0; background:var(--bg-base)}
 .col-panel{display:none; flex-direction:column; min-width:0; background:var(--bg-base)}
 .app[data-surface="talk"] .col-main{display:none}
 .app[data-surface="talk"] .col-panel{display:flex; flex:1 1 auto}
@@ -354,10 +354,11 @@ button,input,textarea{font:inherit; color:inherit}
    viewport query: the app reads its own width, so a stage narrower than the
    window still renders the frame it would really get (components.md § AppFrame). */
 @container (min-width:1024px){
-  .app[data-surface] .col-main{display:flex}
+  .frame{gap:var(--s1); padding:var(--s1)}
+  .app[data-surface] .col-main{display:flex; border-radius:var(--r-md)}
   .app[data-surface] .col-panel{
     display:flex; flex:0 0 var(--panel-max);
-    border-left:var(--b-rule) solid var(--bg-rule);
+    border-radius:var(--r-md);
   }
   .app[data-surface]{--gutter:calc(var(--layout-grid-gutter) * 1px); --rail:calc(var(--layout-measure-timerail-default) * 1px)}
 }
@@ -365,7 +366,7 @@ button,input,textarea{font:inherit; color:inherit}
    gutter. The Lists rail arrives here and at no narrower width, because 1536 is
    where it fits without the task list getting narrower than it was at 1440. */
 @container (min-width:1536px){
-  .app[data-surface] .col-rail{display:flex; flex:0 0 var(--lists-rail)}
+  .app[data-surface] .col-rail{display:flex; flex:0 0 var(--lists-rail); border-radius:var(--r-md)}
   .app[data-surface]{--rail:calc(var(--layout-measure-timerail-wide) * 1px)}
   .app[data-surface] .hide-wide{display:none}
   .app[data-surface] .row-time .wd{display:inline}
@@ -382,7 +383,7 @@ button,input,textarea{font:inherit; color:inherit}
    ══════════════════════════════════════════════════════════════════════════ */
 .topbar{
   display:block; flex:none; padding:0;
-  border-bottom:var(--b-hairline) solid var(--bg-hairline); background:var(--bg-base);
+  background:var(--bg-base);
 }
 .bar-in{
   display:flex; align-items:center; gap:var(--s2); height:100%;
@@ -616,9 +617,12 @@ button,input,textarea{font:inherit; color:inherit}
 .bubble{padding:var(--s3) var(--s4); border-radius:var(--r-md); font-size:var(--fs-body); line-height:var(--lh-body)}
 .msg.user .bubble{background:var(--bg-ink); color:var(--text-on-ink)}
 .msg.bot .bubble{background:var(--bg-sunken); color:var(--text-primary)}
-.msg.bot.applied .bubble{border-left:var(--b-mark) solid var(--accent); border-radius:0 var(--r-md) var(--r-md) 0}
-.msg.bot.error .bubble{border-left:var(--b-mark) solid var(--danger); border-radius:0 var(--r-md) var(--r-md) 0}
-.msg.bot.question .bubble{border-left:var(--b-mark) solid var(--attention); border-radius:0 var(--r-md) var(--r-md) 0}
+.msg.bot .bubble{position:relative; overflow:hidden}
+.msg.bot.applied .bubble::before,.msg.bot.error .bubble::before,.msg.bot.question .bubble::before{content:""; position:absolute; left:0; top:0; bottom:0; width:var(--b-mark)}
+.msg.bot.applied .bubble::before{background:var(--accent)}
+.msg.bot.applied .bubble,.msg.bot.error .bubble,.msg.bot.question .bubble{padding-left:calc(var(--s3) + var(--b-mark))}
+.msg.bot.error .bubble::before{background:var(--danger)}
+.msg.bot.question .bubble::before{background:var(--attention)}
 .msg-time{font-family:var(--font-num); font-size:var(--fs-label); color:var(--text-muted); letter-spacing:.04em}
 .bubble-head{font-weight:var(--w-semibold)}
 .diff{margin:var(--s3) 0 0; background:var(--bg-base); border-radius:var(--r-sm); padding:var(--s3); display:grid; gap:var(--s2)}
@@ -653,9 +657,9 @@ button,input,textarea{font:inherit; color:inherit}
 .sk-bubble{display:flex; flex-direction:column; gap:var(--s2); padding:var(--s3) var(--s4); background:var(--bg-sunken); border-radius:var(--r-md)}
 
 /* composer + the one continuous animation in the system */
-.composer{flex:none; border-top:var(--b-rule) solid var(--bg-rule); background:var(--bg-base); position:relative}
+.composer{flex:none; background:var(--bg-base); position:relative}
 .composer-in{display:flex; align-items:center; gap:var(--s3); padding:var(--s3) var(--gutter); max-width:var(--list-max); margin:0 auto; width:100%}
-.composer .live{position:absolute; top:calc(var(--b-rule) * -1); left:0; height:var(--b-mark); width:0; background:var(--accent)}
+.composer .live{position:absolute; top:0; left:0; height:var(--b-mark); width:0; background:var(--accent)}
 .app[data-mic="live"] .composer .live{animation:rulegrow var(--t-rule) var(--motion-easing-linear) infinite alternate}
 @keyframes rulegrow{from{width:6%}to{width:94%}}
 .transcript{padding:var(--s3) var(--gutter) 0; font-size:var(--fs-lead); line-height:1.35; color:var(--text-primary); max-width:var(--list-max); margin:0 auto; width:100%}
@@ -781,7 +785,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .rail-word{font-size:var(--fs-meta); font-weight:var(--w-bold); letter-spacing:.02em; margin-bottom:var(--s4); color:var(--text-primary)}
 .rail-row{display:flex; align-items:center; gap:var(--s3); min-height:var(--min-target); padding:0 var(--s3); border-radius:var(--r-sm); font-size:var(--fs-meta); color:var(--text-secondary); cursor:pointer}
 .rail-row .n{margin-left:auto; font-family:var(--font-num); color:var(--text-muted)}
-.rail-row.on{background:var(--bg-base); color:var(--text-primary); font-weight:var(--w-semibold)}
+.rail-row.on{background:var(--bg-sunken); color:var(--text-primary); font-weight:var(--w-semibold)}
 .rail-break{height:var(--s5)}
 .rail-sub{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:var(--font-case-label); font-weight:var(--w-semibold); color:var(--text-muted); padding:var(--s3) var(--s3) var(--s1)}
 
