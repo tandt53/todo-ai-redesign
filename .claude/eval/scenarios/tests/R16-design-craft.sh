@@ -77,6 +77,13 @@ assert_file_contains "$TPL" '## Identity' \
 assert_file_contains "$TPL" 'novelty budget' \
   "template asks where the novelty budget is spent"
 
+assert_file_contains "$AGENT" 'Return an edge table' \
+  "every navigation edge is drawn and evidenced, not asserted as covered"
+assert_file_contains "$AGENT" 'enumerates its own states' \
+  "each screen lists the states it can reach, not the states the author recalled"
+assert_file_contains "$AGENT" 'deliberately do not draw' \
+  "a state omitted on purpose is named, so it is distinguishable from one forgotten"
+
 if pass_or_fail "R16"; then
   echo "R16 VERDICT: PASS"
   exit 0

@@ -190,6 +190,42 @@ run_case R7 "competing return-contract definition" \
 run_case R7 "agents stop declaring the decisions they took alone" \
   "sed -i.bak 's/SELF-DECIDED/SELF-NOTES/g' $A/_completion-protocol.md"
 
+run_case R7 "the verdict may narrate what was read instead of what was found" \
+  "sed -i.bak 's/the RESULT, not the activity/a summary of the work/' $A/_completion-protocol.md"
+
+run_case R7 "ids may reach the owner bare on lines other than the subject" \
+  "sed -i.bak 's/never travels alone/is fine on its own/' $A/_completion-protocol.md"
+
+run_case R7 "a bare feature id may stand in for the subject line" \
+  "sed -i.bak 's/Never an id alone/An id is enough/' $A/_completion-protocol.md"
+
+run_case R7 "the line budget becomes a feeling again" \
+  "sed -i.bak 's/a number rather than a feeling/whatever seems right/' $A/_completion-protocol.md"
+
+run_case R7 "a narrative section may be added outside the named zones" \
+  "sed -i.bak 's/Interesting is not a zone/Add a zone when it helps/' $A/_completion-protocol.md"
+
+run_case R7 "explanations may name the category instead of the case" \
+  "sed -i.bak 's/the case, not the category/at whatever altitude suits/' $A/_completion-protocol.md"
+
+run_case R7 "zone labels may become narrative headings" \
+  "sed -i.bak 's/a label, not a sentence/as expressive as you like/' $A/_completion-protocol.md"
+
+run_case R7 "zones may run into paragraphs again" \
+  "sed -i.bak 's/One fact per line/Group facts as convenient/' $A/_completion-protocol.md"
+
+run_case R7 "the one-line cap on head entries is removed" \
+  "sed -i.bak 's/One line means one line/Entries may run long/' $A/_completion-protocol.md"
+
+run_case R7 "self-decided calls may be argued rather than stated" \
+  "sed -i.bak 's/not a defence/a full defence/' $A/_completion-protocol.md"
+
+run_case R7 "a decision may be put to the owner with no brief in front of it" \
+  "sed -i.bak 's/Never ask cold/Ask when ready/' $A/_completion-protocol.md"
+
+run_case R7 "internal vocabulary may reach the owner unexpanded" \
+  "sed -i.bak 's/expand every code the first time/use the working vocabulary/' $A/_completion-protocol.md"
+
 run_case R7 "unrelated decisions may be bundled into one question again" \
   "sed -i.bak 's/Do not bundle unrelated decisions/Decisions may be bundled/' $A/_completion-protocol.md"
 
@@ -308,6 +344,15 @@ run_case R17 "MANIFEST stops declaring where memory lives" \
 
 # R15 — Gate 1.5. Three cases, one per way the design gate dies while the rest of
 # it keeps looking healthy.
+run_case R15 "a changed artifact stops reaching its consumers" \
+  "sed -i.bak 's/its consumers re-review/it is noted/' .claude/ORCHESTRATION.md"
+
+run_case R15 "the re-review threshold is dropped" \
+  "sed -i.bak 's/while being wrong against the new version/in the usual way/' .claude/ORCHESTRATION.md"
+
+run_case R16 "navigation edges may be described rather than drawn" \
+  "sed -i.bak 's/Return an edge table/Mention the edges/' $A/design-agent.md"
+
 run_case R15 "the design gate is removed from the pipeline" \
   "sed -i.bak 's/Gate 1.5/Gate ONE-POINT-FIVE-REMOVED/g' .claude/ORCHESTRATION.md"
 
@@ -332,6 +377,12 @@ run_case R15 "an unrenderable screen is allowed to read as a match" \
   "sed -i.bak 's/could not be rendered is not a screen/could not be rendered is a screen/' $A/reviewer-agent.md"
 
 # The design rubric goes back to being graded only by its author.
+run_case R15 "findings may run to paragraphs again" \
+  "sed -i.bak 's/Length is part of the format/Length is the author-s call/' $A/_review-protocol.md"
+
+run_case R15 "the checked list may be written as prose" \
+  "sed -i.bak 's/checklist, not prose/as detailed as needed/' $A/_review-protocol.md"
+
 run_case R15 "design's rubric returns to self-assessment" \
   "sed -i.bak 's/grades it instead/grades it alone/' $A/_review-protocol.md"
 
@@ -350,6 +401,12 @@ run_case R17 "silence starts counting as design approval" \
 # R16 — design craft. The scenario's claim is that the aesthetic direction is
 # delegated to the vendored skills rather than restated in prose, so the case
 # breaks the delegation and requires the scenario to notice.
+run_case R16 "screens stop enumerating the states they can reach" \
+  "sed -i.bak 's/enumerates its own states/covers the usual states/' $A/design-agent.md"
+
+run_case R16 "a state left out on purpose stops being named" \
+  "sed -i.bak 's/deliberately do not draw/skip as you see fit/' $A/design-agent.md"
+
 run_case R16 "design-agent stops delegating aesthetics to the vendored skills" \
   "sed -i.bak 's|.claude/skills/|.claude/skills-removed/|g' $A/design-agent.md"
 

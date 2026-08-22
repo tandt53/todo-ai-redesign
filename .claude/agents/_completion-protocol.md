@@ -152,14 +152,92 @@ a report that buries it too.
 **Open every return with exactly this, before any prose:**
 
 ```
-VERDICT   one line: what you did, the measurement that proves it, and what you
-          could NOT check. The gap matters more than the pass — "771/771, but no
-          browser so the render half never ran" is the useful sentence.
+<subject>    the work in plain words, then its id in brackets. Never an id alone —
+             "Trash: delete a task and get it back within 30 days (F-006, Gate 1)".
+             A reader who has not memorised the id set still knows what this is about.
+<blank>
+VERDICT      the RESULT, not the activity. Counts, the measurement, and what you
+             could NOT check. Never a list of what you read.
+<blank>
+<the result> one line per item, the id first so it can be typed back.
+<blank>
 NEEDS-OWNER  one line per decision only a human can take, or "none".
 SELF-DECIDED one line per call you made that no source answered, or "none".
 ```
 
-Everything else goes below this. Detail is not the enemy — detail *above the
+Worked example, and the shape is the point:
+
+```
+Trash: delete a task and get it back within 30 days (F-006, Gate 1)
+
+2 HIGH, 3 MEDIUM, 2 LOW. Every store measurement in the spec reproduces.
+Not checked: design, testability, product value — other lenses hold those.
+
+F1 HIGH  Delete a step, then its parent: nothing defines what the trash entry
+         contains. Restoring one can empty the other.
+F2 HIGH  The restore door refuses expired rows while the spec calls it unchanged.
+
+NEEDS-OWNER  none
+SELF-DECIDED none
+```
+
+**One fact per line, and a blank line between zones.** A zone that runs into a
+paragraph is unreadable in a terminal, whatever its content. If an item needs a
+second line, indent it under the first.
+
+**Twenty lines for the head, and that is a number rather than a feeling.** "Fits
+on a screen" gets interpreted generously; a count does not. Over twenty means
+something is being explained that should be a line, or a zone exists that should
+not.
+
+**No zone outside the ones named above.** If a thing does not fit the subject,
+the verdict, the result, NEEDS-OWNER or SELF-DECIDED, it does not belong in the
+head. Interesting is not a zone. A lesson learned, a piece of reasoning you are
+pleased with, the story of how a number turned out wrong — each is one line in
+the result or it goes below the head with a path.
+
+**A zone label is a label, not a sentence.** `SELF-DECIDED` is a label. "But the
+most valuable thing here is the mistake it caught in its own work" is a herald
+wearing a heading, and it commits you to the paragraph that follows it.
+
+**Explain with the case, not the category.** Name what happened, to what, with
+what result. A sentence that could describe ten situations describes none.
+
+- Category: "the count draws attention away from what it summarises"
+- Case: "the spec said 45 lines. Four lenses counted and got four different
+  numbers. Anyone who trusted the number stopped reading the list, and the list
+  was missing three entries."
+
+Use the plain word. If the reader has to decode a term to reach the point, the
+term is doing your work rather than theirs. And the concrete version *replaces*
+the abstract one — writing both is how two lines become six.
+
+**An id never travels alone to the owner.** Between agents `T-191` and `F-006`
+are efficient and correct. To the owner they name a queue row, not a thing in the
+product. Every id carries three to six plain words the first time it appears —
+"T-191, the architecture pass for the trash" — and may be bare after that within
+the same return. This holds on every line the owner reads, not only the subject.
+
+**"What you did" is not the verdict.** *"Reviewed all 16 ACs, ## Data and
+## Impact"* is process: it tells the reader how hard you worked and nothing about
+what came back. The verdict is the count, the finding, the number.
+
+**Bare numbers are not a measurement.** `839/57/20/4/0/0/420` means nothing to
+anyone but you. Label them or drop them.
+
+**`SELF-DECIDED` is for calls the owner could overturn** — a product or technical
+choice nothing specified. Not internal procedure: which lens owns a finding, how
+you sequenced your reads, why you filed something here rather than there. Those
+go below the head if they go anywhere.
+
+**One line means one line.** Each entry is what you decided or found, plus its
+consequence. Not the reasoning that got you there. A reader who wants the
+reasoning asks for it; a reader who does not want it cannot skip past it.
+
+The whole head fits on one screen. If it does not, you are explaining rather
+than reporting: move the explanation below the head, or cut it.
+
+Everything else goes below the head. Detail is not the enemy; detail *above the
 answer* is.
 
 **`SELF-DECIDED` is the line agents most often skip and the owner most needs.**
@@ -168,10 +246,23 @@ makes them cheap to overturn: a decision surfaced in a return costs one revision
 the same decision discovered after implementation costs a rebuild. Write it even
 when you are confident — especially then.
 
+**But a self-decided call gets one line, not a defence.** The owner needs enough
+to recognise it and say "change that", nothing more. The full brief below is for
+`NEEDS-OWNER` items only — writing one for a call you already made hands the
+reader an argument they did not ask to referee.
+
 ### When a decision needs the owner, give them what a decision needs
 
-A question with no analysis attached moves the work from you to them without
-moving any of the thinking. For each `NEEDS-OWNER` item, put this below the fold:
+**Never ask cold, and strip your vocabulary out.** The brief goes to the owner as
+prose *before* the question; the question itself is only the pick. Round cap,
+convergence, C1, HIGH, no_match — internal words are fine between agents and
+unreadable to the person deciding. Name the feature in plain words, say what goes
+wrong for a user, and expand every code the first time it appears. If the reader
+has to ask what this is about, the brief did not happen.
+
+**This section applies to `NEEDS-OWNER` items and to nothing else.** A question
+with no analysis attached moves the work from you to them without moving any of
+the thinking. For each such item, put this below the head:
 
 | Part | What it is |
 |---|---|

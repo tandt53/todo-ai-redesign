@@ -1,6 +1,6 @@
 # Design System — todo-ai redesign · visual language v2
 
-**Replaces v1 ("Aurora, voice-first") completely** — colour, type, spacing, shape and layout. Scope and reason: `docs/reports/owner-decision-2026-08-21-redesign-the-visual-language.md`. **The 52 published element ids are unchanged**; 1,362 places in code and tests bind to them and nobody ever sees a name. Tokens: `tokens.json`. Inventory: `components.md` (**not yet rewritten to v2** — see ## What this invalidates). **Rendered proof: `specimen.html`** — open it by double-click; it covers web, iOS and Android at seven widths in both themes.
+**Replaces v1 ("Aurora, voice-first") completely** — colour, type, spacing, shape and layout. Scope and reason: `docs/reports/owner-decision-2026-08-21-redesign-the-visual-language.md`. **The 52 published element ids are unchanged**; 1,362 places in code and tests bind to them and nobody ever sees a name. Tokens: `tokens.json`. Inventory: `components.md` (**not yet rewritten to v2** — see ## What this invalidates). **Rendered proof: `specimen.html`** — open it by double-click; it covers web, iOS and Android at seven widths in both themes. **Revised 2026-08-22 after the owner looked at the screens** (`docs/reports/owner-decision-2026-08-22-soften-the-language.md`): corners rounded, borders put on a budget, `ultra` given a fourth frame tier. Colour, type and spacing are unchanged — this is an adjustment to the direction, not a replacement of it.
 
 ## Identity
 
@@ -29,7 +29,30 @@
 
 **Two floors, and neither is negotiable.** Body is never below 16 on any platform: below it iOS zooms the page on focus, and stacked tone marks lose their separation from the letter. Line-height on body text is never below 1.5, for the same reason.
 
-## Layout — the two rules v1 did not have
+## Shape — corners, and when a line is allowed
+
+**The first pass set every structural component to `radius.none` and argued it at length.** The argument was good and the render disagreed with it: the owner opened the screens and it reads hard. Radius is back as a scale answering one question — **what kind of thing is this?** A line takes `none`. A small painted object — checkbox, tag, `NEW` marker — takes `xs 4`. A **control** — button, field, menu item, nav row — takes `sm 8`. A **ground** — the row's hover ground, card, banner, diff block, message bubble, toast — takes `md 12`. A **layer that floats** — menu, dialog, popover, the web sheet — takes `lg 16`, always with `shadow.overlay`. A bottom sheet's **top two** corners take `xl 28` and its bottom two stay 0. **The scale stops at 16 for everyday surfaces deliberately:** 24 and up is the wellness-app neighbourhood ## Identity rejected by name, and softening the corners is not a licence to move there. Checkable (`radius.nesting_rule`): an inner radius is never larger than its parent's, and a child inset by `n` inside a parent at `r` takes `r − n`.
+
+**Borders: the 1px rule was never the defect — the count was.** Measured on `app-shell.html` at 1920, state `tasks-default`: **13 structural lines and 9 full boxes.** Seven of the thirteen are `border` edges; the other six are the list spine (`.list::before`) and five row separators drawn as 1px `div`s — which is why a source grep reports 46 declarations and the screen shows thirteen lines. Every element had one, so the page read as a grid drawn over the content instead of content with structure in it.
+
+**Separation order: ground, then space, then a line** (`border.separation_order`) — a line only when neither of the first two reads. `bg.sunken` behind a group, or `space.5` around it, separates it without drawing anything.
+
+**Border density: 8 structural lines, 5 full boxes.** Both budgets are **per rendered state per breakpoint**, inside the app frame, and both count **painted lines rather than `border` declarations** (`border.density_rule`) — a declaration count is defeated by moving the line into a `div`, and this system already did exactly that.
+
+- **Structural lines ≤ 8** — a line separating content from content: a pane boundary, a section rule, a row separator, the time-rail spine. **Was 13.** The five row separators are the cheapest five to give back: rows separate by space and a hover ground at `radius.md`.
+- **Full boxes ≤ 5**, each on `border.box_allowlist`: a control whose outline *is* the control (checkbox, radio, field, quiet button, idle mic), or a layer floating over another. **Was 9.** A message bubble, a card, a banner and a task row are **grounds**, not boxes. A filled button is a ground too and carries no border.
+- The 2px accent left-mark on an assistant message that changed something is **one line, not a box**, and stays.
+
+## Fewest actions — a principle, not a note
+
+**Simple, soft, easy to use, and as few actions as possible** is the standing brief. The last clause is about interaction, which is exactly why a visual pass drops it. It binds here:
+
+1. **Every screen states its happy-path action count** in its mockup header, as ## User journey does below (2 actions). If the count surprises you, redesign the flow rather than the visuals.
+2. **A wider screen buys fewer actions, never more.** Any layout tier that adds a control owes an argument. **Tier 4 pays this one:** the next seven days sitting beside today removes the trip to Upcoming — **one action fewer, no control added.**
+3. **No confirmation for a reversible act** — a named Undo instead. A confirmation is reserved for what cannot be undone, and it names what it will destroy.
+4. **A screen's primary action is never behind a menu.**
+
+## Layout — the rules v1 did not have
 
 **Above `desktop` the app adds a column, never a gutter** (`layout.wide_rule`). Three frame tiers: below `split`, one surface; at `split`, Tasks centre + Talk panel; **at `wide` (1536) and above, a permanent Lists rail joins on the left**. That rail is also the answer to the audit's F5 — a 320px phone drawer holding five rows was being shown on a 1440px screen. **`wide` is 1536 and not 1440 for a measured reason:** 1536 is the narrowest frame where the rail fits without the Tasks list ending up *narrower* than it was one breakpoint below (`rail 240 + list_max 820 + 2×gutter + panel 420`). Set it at 1440 and a user maximising their window watches the list shrink — a regression wearing a feature's clothes. `breakpoints` now declares **eight** widths up to `ultra`; v1 declared four and stopped at `desktop`, which is why 52% of the Tasks pane could be dead at 1920 while every check passed.
 

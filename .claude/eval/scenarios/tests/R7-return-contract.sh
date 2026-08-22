@@ -84,6 +84,34 @@ assert_file_contains "$CONTRACT" 'could NOT check' \
   "the verdict line must carry the gap, not only the pass"
 assert_file_contains "$CONTRACT" 'Common practice' \
   "a decision handed to the owner carries what comparable products do"
+assert_file_contains "$CONTRACT" 'never travels alone' \
+  "every id reaching the owner carries plain words, on every line not just the subject"
+assert_file_contains "$CONTRACT" 'Never an id alone' \
+  "the head opens with the work in plain words, not a bare feature id"
+assert_file_contains "$CONTRACT" 'the RESULT, not the activity' \
+  "the verdict reports what came back, not what was read"
+assert_file_contains "$CONTRACT" 'a number rather than a feeling' \
+  "the head carries a countable line budget, not a qualitative one"
+assert_file_contains "$CONTRACT" 'Interesting is not a zone' \
+  "nothing outside the named zones reaches the head"
+assert_file_contains "$CONTRACT" 'the case, not the category' \
+  "explanations name what happened, not the class of problem"
+assert_file_contains "$CONTRACT" 'a label, not a sentence' \
+  "zone labels may not become narrative headings"
+assert_file_contains "$CONTRACT" 'One fact per line' \
+  "zones are lines, not paragraphs — a wall of text is unreadable in a terminal"
+assert_file_contains "$CONTRACT" 'Bare numbers are not a measurement' \
+  "unlabelled figures are dropped rather than printed"
+assert_file_contains "$CONTRACT" 'Not internal procedure' \
+  "SELF-DECIDED is for calls the owner could overturn, not lens etiquette"
+assert_file_contains "$CONTRACT" 'One line means one line' \
+  "each head entry is one line — the shape without a length cap produced paragraphs"
+assert_file_contains "$CONTRACT" 'not a defence' \
+  "a self-decided call gets a line, not the brief reserved for owner decisions"
+assert_file_contains "$CONTRACT" 'Never ask cold' \
+  "the brief precedes the question rather than hiding in the options"
+assert_file_contains "$CONTRACT" 'expand every code the first time' \
+  "internal vocabulary is expanded before it reaches the owner"
 assert_file_contains "$CONTRACT" 'Do not bundle unrelated decisions' \
   "the contract forbids bundling unrelated decisions into one question"
 

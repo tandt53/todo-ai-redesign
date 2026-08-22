@@ -466,6 +466,54 @@ the correct default — proceeding past an unresolved requirement conflict is ho
 the wasted dispatches happen in the first place. Say so in the header so an
 unattended queue is never a surprise.
 
+## When an artifact changes, its consumers re-review
+
+Not a gate — a rule that applies whenever a revision lands after downstream work
+has already started. A design is revised, and the implementers built against the
+old one; an api-contract shape changes, and three agents call it. Nothing detects
+that on its own: every agent's own work still passes its own checks.
+
+### Who consumes what
+
+| Changed | Consumers |
+|---|---|
+| a mockup, `{design}/{shared_dir}/components.md` | the implementers for the drawn platforms, and the QA agents that build selectors from the testid catalogue |
+| `{specs}/{module}/api-contracts.md` | backend, every client that calls it, qa-api |
+| a feature spec's ACs | every agent named in that spec's `## Links` block |
+| `{specs}/{module}/data-model.md` | backend, architect |
+
+**`## Links` is the authority for who to dispatch**, not memory. It records
+`implemented_in`, `designed_in`, `tested_by.{platform}` precisely so this question
+is answerable. If it is empty on a feature that has downstream work, that is a
+finding about the Links block, not permission to skip the re-review.
+
+### How much re-review the change earns
+
+| Change | Re-review |
+|---|---|
+| something existing **changed or was removed** — a testid renamed, an AC reworded, a field's type or meaning altered, a state deleted | **every consumer.** Their work was correct against the old version and is silently wrong against the new one |
+| something was **added** and nothing existing moved — a new state drawn, a new endpoint, a new AC | **the consumer that would implement it.** The others are unaffected by construction |
+| prose, reasoning or a comment changed and no contract moved | **nobody** |
+
+The distinction that decides it: **could an agent's finished work still pass its
+own tests while being wrong against the new version?** A renamed testid does
+exactly that — the suite is green against a selector that no longer resolves to
+anything a user sees.
+
+### Dispatching it
+
+`phase: review-change`. The briefing names the artifact, the diff, and what that
+agent produced against the old version. It is a **review, not a rebuild**: the
+agent returns findings, and the orchestrator raises revision tasks from them.
+
+Two things worth stating because they are the cheap ways to get this wrong.
+**Dispatch the consumers, not everyone** — an agent with no dependency on the
+changed artifact returns nothing and costs a full dispatch to do it. And **say
+what changed, not that something changed**: an agent handed "the design was
+revised" re-reads the whole design, which is a rebuild wearing a review's name.
+
+---
+
 ## Gate 1.5 — multi-lens design review
 
 Runs after phase 3's design dispatches return and **before** phase 4 dispatches

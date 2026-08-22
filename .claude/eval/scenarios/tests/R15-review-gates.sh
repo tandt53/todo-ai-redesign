@@ -164,6 +164,26 @@ fi
 # design-agent renders its own screens and grades them against its own rubric.
 # Worth doing, and still self-assessment. One lens re-answers and reports only
 # the differences.
+# --- a revision that lands after downstream work has to reach the consumers ---
+#
+# Nothing detects this on its own: after a testid is renamed, every agent's work
+# still passes its own checks, and the suite is green against a selector that no
+# longer resolves to anything a user sees.
+assert_file_contains "$ORCH" 'its consumers re-review' \
+  "ORCHESTRATION dispatches consumers when an artifact they built against changes"
+assert_file_contains "$ORCH" 'is the authority for who to dispatch' \
+  "consumers are read from the Links block rather than from memory"
+assert_file_contains "$ORCH" 'while being wrong against the new version' \
+  "the threshold is stated: a change earns re-review when finished work stays green and wrong"
+assert_file_contains "$ORCH" 'review, not a rebuild' \
+  "the re-review is scoped to the change rather than the whole artifact"
+
+assert_file_contains "$PROTO" 'Length is part of the format' \
+  "the finding format caps claim and consequence at one sentence each"
+assert_file_contains "$PROTO" 'checklist, not prose' \
+  "the checked: list is one line per entry"
+assert_file_contains "$PROTO" 'earn the falsifiability apparatus' \
+  "a LOW finding carries claim and directive only"
 assert_file_contains "$PROTO" 'grades it instead' \
   "the protocol hands design's self-rubric to another lens"
 assert_file_contains "$PROTO" 'no `visual_review:` block' \

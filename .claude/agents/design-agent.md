@@ -367,6 +367,45 @@ unicode-glyph icons) applies to every mockup, whatever the direction.
 - Money, dates and quantities: tabular numerals, consistent locale formatting,
   and the zero case shown explicitly.
 
+### Every screen enumerates its own states, happy and negative
+
+Drawing the states you thought of is not coverage. **Per screen, list the states
+that screen can actually reach**, derived from the ACs and the data rather than
+from a generic checklist, and draw each one. A count from a real feature: the
+spec implied about forty-eight distinct surface states and the design named about
+twenty — the missing ones were not exotic, they were the failure paths nobody
+listed.
+
+For each screen, work outward from three questions:
+
+- **What can arrive empty?** No rows, no results, no permission yet, nothing
+  synced. Empty is the first thing a new user sees.
+- **What can fail?** The read, each write, the network, a permission the OS
+  refuses, a value the server rejects. One failing field and several failing at
+  once are different drawings.
+- **What can be in between?** Loading, saving, retrying, a value the user typed
+  that has not landed yet.
+
+**Name the ones you deliberately do not draw, and why.** A state left out on
+purpose and a state nobody thought of look identical in a mockup, and only one of
+them is a decision. Return the list — the tester lens at Gate 1.5 reads it
+against the ACs, which is the only way anyone can tell the two apart.
+
+### Every navigation edge is drawn, not just described
+
+The information architecture lists edges — from this screen, by this control, to
+that screen, in this many taps. A mockup can satisfy every state rule and still
+leave a user stranded: each screen correct, no way between them.
+
+**Return an edge table**: for every edge in the IA, which mockup state shows the
+control, and which state the user lands on. An edge with no control drawn is the
+finding; so is a control drawn for an edge the IA does not list, because that is
+a route nobody designed.
+
+This is not machine-checkable — the IA's control column is prose — so it is your
+obligation and the tester lens reads it at Gate 1.5. That is also why it is a
+table rather than a claim: "all edges covered" cannot be checked by anyone.
+
 ### Flow before screens
 
 Before laying out any screen, write the journey in DESIGN.md or the mockup
@@ -389,7 +428,8 @@ playwright-cli screenshot --filename /tmp/review-list-default.png
 # ...repeat per state, then Read each png
 ```
 
-Judge each screenshot against six questions, and record the answers in your
+Judge each screenshot against the seven questions below — **the list says six and has
+always had seven; the count is wrong, the list is not** — and record every answer in your
 return under `visual_review:`:
 
 1. Squint test — does the hierarchy survive? Is the primary thing unmistakable?
@@ -407,6 +447,59 @@ Fix what fails, re-screenshot, then return. If no browser is available
 (playwright-cli missing or cannot launch), say so explicitly in `unresolved:` —
 an unreviewed mockup is `PARTIAL`, not silently DONE, because nobody else in the
 pipeline looks at rendered output before the implementer builds from it.
+
+### Accessibility self-check — also mandatory, and it is not the contrast check
+
+`design-check` reads colour pairs out of tokens. **It cannot see a control nobody can
+reach, a name that does not match the label, or a 24px tap target** — those exist only in a
+render, and nothing else in this pipeline looks at one before the implementer builds.
+
+**Run these against every state you screenshot**, in the same browser session. They are
+probes, not opinions — each returns a list, and a non-empty list is a defect.
+
+```js
+// 1 · every interactive element has an accessible name  (WCAG 4.1.2)
+[...document.querySelectorAll('button,a[href],input,select,textarea,[role=button],[tabindex]')]
+  .filter(el => !(el.getAttribute('aria-label') || el.getAttribute('aria-labelledby') ||
+                  el.labels?.length || el.textContent.trim() || el.title))
+  .map(el => el.outerHTML.slice(0, 90))
+
+// 2 · the accessible name CONTAINS the visible label  (WCAG 2.5.3 — voice control
+//     users say what they see; "Submit" on a button reading "Send" is unusable)
+[...document.querySelectorAll('button,a[href],[role=button]')]
+  .filter(el => { const v = el.textContent.trim(), n = el.getAttribute('aria-label');
+                  return v && n && !n.toLowerCase().includes(v.toLowerCase()); })
+  .map(el => ({ seen: el.textContent.trim(), announced: el.getAttribute('aria-label') }))
+
+// 3 · tap targets meet the platform floor  (control.minTarget: web 40, iOS 44, Android 48)
+[...document.querySelectorAll('button,a[href],input,[role=button]')]
+  .map(el => ({ el: el.outerHTML.slice(0,60), r: el.getBoundingClientRect() }))
+  .filter(x => x.r.width && (x.r.width < FLOOR || x.r.height < FLOOR))
+
+// 4 · nothing hidden is still focusable  (a control behind a closed sheet must
+//     leave the tab order, or keyboard users fall into an invisible screen)
+[...document.querySelectorAll('[tabindex]:not([tabindex="-1"]),button,a[href],input')]
+  .filter(el => { const s = getComputedStyle(el);
+                  return (s.display === 'none' || s.visibility === 'hidden' ||
+                          el.closest('[hidden],[aria-hidden="true"]')) && el.tabIndex >= 0; })
+  .map(el => el.outerHTML.slice(0, 90))
+
+// 5 · focus is visible — tab through and screenshot. A focus ring you cannot
+//     find in the PNG is a focus ring that is not there.
+```
+
+**Two more that no probe can answer, so answer them yourself and say so:**
+
+- **Is any state carried by colour alone?** Done, overdue, selected, error, disabled — each
+  needs a second signal (a mark, a weight, a strike, a word). *This is the one that keeps
+  recurring in this project; a mark with no colour available was a real Gate 1 finding.*
+- **Is the tab order the reading order?** Drawing a control visually first and putting it
+  last in the DOM is invisible in a screenshot and obvious to anyone using a keyboard.
+
+**Record every answer in your return under `a11y_review:`**, with the counts. Empty lists get
+written down too — *"probe 3 returned nothing at 390/iOS"* is evidence; silence is not.
+
+**If a probe finds something you decide not to fix, it is `unresolved:`, not omitted.**
 
 ### Hand the human a two-minute review
 

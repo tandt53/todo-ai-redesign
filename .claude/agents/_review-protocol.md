@@ -73,6 +73,11 @@ to say whether they can.
   system cannot produce? Does it contradict a platform rule?
 - **tester lens** — are the states enumerable and reachable? Is there a stable
   way to address each element? Can an assertion about this actually fail?
+  **Read the edge table against the IA**: an edge listed there with no control
+  drawn is a screen the user cannot leave, and it looks like nothing in a mockup.
+  **Read design's per-screen state list against the ACs**: a state the ACs imply
+  and the list does not name is the gap this lens exists to find, and a state the
+  list says was left out on purpose is a decision rather than an omission.
 - **spec lens** — does every AC this design was briefed with have a drawn state,
   and does the design **assert a rule the spec does not contain**? The second
   half is the one nobody else is positioned to ask.
@@ -176,6 +181,20 @@ findings:
     directive: >                 # the concrete change you are asking for
       Add a boolean the response carries, and an AC that constrains it.
 ```
+
+**Length is part of the format.** `claim` and `consequence` are **one sentence
+each** — the block above says so and it is routinely ignored. A finding that needs
+a paragraph to state is usually two findings, or one finding plus reasoning that
+belongs nowhere.
+
+**A LOW finding carries `claim` and `directive` only.** Drop `consequence` and
+`would_not_be_a_finding_if`. Something that changes nothing downstream does not
+earn the falsifiability apparatus; if it does earn it, it is not LOW.
+
+**`checked:` is a checklist, not prose.** One line per entry, no wrapping. Its job
+is to prove the lens was applied and to let a human decide whether to trust the
+gate without re-reading the spec. Twelve entries of three lines each does neither
+better than twelve entries of one.
 
 **Severity means pipeline effect, not how strongly you feel:**
 
