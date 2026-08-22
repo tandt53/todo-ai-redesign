@@ -97,3 +97,20 @@ confirmed the pass and missed the defect. **Coverage is per change, not per pass
 the table is pasted from output rather than summarised. A table shorter than the file list is a
 claim without evidence for the missing rows. See [[the browser claim]] and [[the count entry]] — the
 form is the same each time.
+
+## 2026-08-22 | T-247 → T-248 | a measurement of the thing you changed says nothing about what you moved next to it
+
+**Context:** changing padding, margin or position of one element inside a repeating row.
+
+**Lesson:** a position check that measures only the changed element returns green while its
+neighbours are now misaligned. Measure every element in the same visual column in one pass —
+`cbLeft` and `titleLeft` for **all** row states, plus the headings and inline affordances that
+share the rail. **A table shorter than the element list is a claim with no evidence for the
+missing rows.**
+
+**How it happened here:** T-247 measured the checkbox inset going 0 → 4 and reported success,
+having written *"Not checked: visual review"* in the same return. The 4px came from pushing the
+row's content right, so selected rows sat 4px off from unselected ones and both columns jogged
+down the list. T-248 fixed it by putting the padding on `.row` instead, where the ground fills the
+padding box for every state. A measurement that had included both row states would have caught it
+the first time.

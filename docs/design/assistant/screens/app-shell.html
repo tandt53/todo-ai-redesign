@@ -515,7 +515,7 @@ button,input,textarea{font:inherit; color:inherit}
    flat row is now the default; the grid-with-rail override is deleted. */
 .row{
   display:flex; align-items:center; gap:var(--s3);
-  min-height:var(--h-lg); padding:var(--s2) 0;
+  min-height:var(--h-lg); padding:var(--s2) var(--s2);
 }
 /* TIME COLUMN HIDDEN AT EVERY WIDTH. The time is now .row-due on the right. */
 .row-time{display:none}
@@ -1222,10 +1222,11 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .app[data-selection] .row-trail{display:none!important}
 .app[data-selection] .row-due{display:none}
 .app[data-selection] .inline-new{display:none}
-/* Selected row ground — padding var(--s1) provides the 4px inset that the
-   radius nesting rule requires: checkbox at r-sm (8) inside ground at r-md (12),
-   inset by 4 = 12 − 8. Without it the two radii have no relationship to express. */
-.row.selected{background:var(--accent-tint); border-radius:var(--r-md); padding:var(--s2) var(--s1)}
+/* Selected row ground — same pattern as .row:hover. The row's own padding
+   (var(--s2)) provides the inset; no padding override so cbLeft and titleLeft
+   are identical for selected, unselected and done rows. The ground fills the
+   row's padding box, reaching the content-column edge (aligned with headings). */
+.row.selected{background:var(--accent-tint); border-radius:var(--r-md)}
 /* Bulk action toolbar */
 .bulk-toolbar{
   display:none; position:sticky; bottom:0; z-index:10; background:var(--bg-base);
