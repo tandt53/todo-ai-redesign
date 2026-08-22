@@ -1149,7 +1149,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .search-close:hover{color:var(--text-primary)}
 .search-close:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
 .app[data-search="open"] .search-close{display:grid}
-.app[data-search="open"] .btn-overflow{display:none}
+.app[data-search="open"] .overflow-anchor{display:none}
 .app[data-search="open"] .btn-search{display:none}
 
 /* ── Search no-results empty state ── */
@@ -1161,7 +1161,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .app[data-search="no-results"] .search-close{display:grid}
 .app[data-search="no-results"] .bar-surface-title{display:none}
 .app[data-search="no-results"] .head{display:none}
-.app[data-search="no-results"] .btn-overflow{display:none}
+.app[data-search="no-results"] .overflow-anchor{display:none}
 .app[data-search="no-results"] .btn-search{display:none}
 .app[data-search="no-results"] .list{display:none}
 .app[data-search="no-results"] .inline-new{display:none}
@@ -1169,14 +1169,17 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .app[data-search="filtering"] .search-close{display:grid}
 .app[data-search="filtering"] .bar-surface-title{display:none}
 .app[data-search="filtering"] .head{display:none}
-.app[data-search="filtering"] .btn-overflow{display:none}
+.app[data-search="filtering"] .overflow-anchor{display:none}
 .app[data-search="filtering"] .btn-search{display:none}
 .app[data-search="filtering"] .row.done{display:none}
 .app[data-search="filtering"] .group:last-of-type{display:none}
 
 /* ── OVERFLOW MENU (F-009) ── */
+/* .overflow-anchor wraps the trigger and the menu, so the menu positions
+   relative to the button (right edges aligned, space.1 gap below). */
+.overflow-anchor{position:relative; display:inline-flex}
 .overflow{
-  display:none; position:absolute; top:calc(56px + var(--s1)); right:var(--gutter); z-index:15;
+  display:none; position:absolute; top:100%; right:0; margin-top:var(--s1); z-index:15;
   background:var(--bg-base); border-radius:var(--r-lg); box-shadow:var(--shadow-overlay);
   width:min(280px, calc(100vw - 2 * var(--gutter))); padding:var(--s2) 0;
 }
@@ -1228,7 +1231,10 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .app[data-selection] .row-trail{display:none!important}
 .app[data-selection] .row-due{display:none}
 .app[data-selection] .inline-new{display:none}
-.row.selected{background:var(--accent-tint); border-radius:var(--r-md)}
+/* Selected row ground — padding var(--s1) provides the 4px inset that the
+   radius nesting rule requires: checkbox at r-sm (8) inside ground at r-md (12),
+   inset by 4 = 12 − 8. Without it the two radii have no relationship to express. */
+.row.selected{background:var(--accent-tint); border-radius:var(--r-md); padding:var(--s2) var(--s1)}
 .bulk-toolbar{
   display:none; position:sticky; bottom:0; z-index:10; background:var(--bg-base);
   border-top:var(--b-hairline) solid var(--bg-hairline); padding:var(--s3) var(--gutter);
@@ -1412,12 +1418,10 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           <input class="search-field" data-testid="tasks-search-input" accessibilityIdentifier="tasks-search-input" type="text" placeholder="Search tasks" aria-label="Search tasks" value="">
           <button class="search-close" data-testid="tasks-search-close" accessibilityIdentifier="tasks-search-close" aria-label="Close search"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
           <button class="iconbtn btn-search" data-testid="shell-search-button" accessibilityIdentifier="shell-search-button" aria-label="Search"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button>
+          <span class="overflow-anchor">
           <button class="iconbtn btn-overflow" data-testid="shell-overflow-button" accessibilityIdentifier="shell-overflow-button" aria-label="More"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
-        </div></header>
-      <div class="pos">
-
-        <!-- OVERFLOW MENU (T-225) -->
-        <nav class="overflow" data-testid="overflow-menu" accessibilityIdentifier="overflow-menu" role="menu" aria-label="List actions">
+          <!-- OVERFLOW MENU (T-225, anchored T-247) — right edge aligned to trigger, space.1 gap below -->
+          <nav class="overflow" data-testid="overflow-menu" accessibilityIdentifier="overflow-menu" role="menu" aria-label="List actions">
           <div class="overflow-section"><span class="overflow-section-label">Sort by</span></div>
           <button class="overflow-item active" data-testid="overflow-sort-due" accessibilityIdentifier="overflow-sort-due" role="menuitemradio" aria-checked="true">Due date<span class="overflow-check"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span></button>
           <button class="overflow-item" data-testid="overflow-sort-priority" accessibilityIdentifier="overflow-sort-priority" role="menuitemradio" aria-checked="false">Priority<span class="overflow-check"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span></button>
@@ -1429,7 +1433,10 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           </div>
           <div class="overflow-sep"></div>
           <button class="overflow-item" data-testid="overflow-select" accessibilityIdentifier="overflow-select" role="menuitem">Select</button>
-        </nav>
+          </nav>
+          </span>
+        </div></header>
+      <div class="pos">
 
         <main class="pane pane-tasks">
           <div class="content-col">
@@ -1582,8 +1589,9 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
             <div class="v v-collection-inbox">
       <div class="list">
         <div class="group overdue"><h3>Overdue</h3></div>
-        
+
         <div class="row">
+          <div class="drag-handle" data-testid="tasks-drag-handle" accessibilityIdentifier="tasks-drag-handle" aria-label="Drag to reorder"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg></div>
           <div class="row-time"><span class="wd">Thu</span>5:00 PM</div>
           <div class="row-main">
             <input class="cbx" type="checkbox" aria-label="Complete: Send the weekly report to Hanh">
