@@ -197,7 +197,7 @@ The invariant `open_all === inbox_count` diverges the moment a task is filed. It
 
 ### 4. `F-005 AC-36` — the interpreter's allowlist
 
-AC-36's four permitted fields (`note`, `priority`, `due_at`, `reminder_at`) gain `list_id`. The interpreter's `ContextTask` projection needs `list_id` so the assistant can see where a task is filed. **This is a product decision** — see OQ-2.
+AC-36's four permitted fields (`note`, `priority`, `due_at`, `reminder_at`) gain `list_id`. The interpreter's `ContextTask` projection needs `list_id` so the assistant can see where a task is filed. **(OQ-2 closed, T-230: yes — the assistant may set `list_id`.)**
 
 ### 5. `undo_snapshot` and `turn.diff` widen
 

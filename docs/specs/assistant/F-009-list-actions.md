@@ -123,24 +123,19 @@ flowchart TD
 ## Impact
 
 ### 1. `data-model.md` — `task` gains `sort_order`
+839 rows need migration values from `created_at` order per filing cell. Inert until manual sort is selected.
 
-839 existing rows need migration values from `created_at` order within each filing cell. Inert until manual sort is selected.
-
-### 2. F-005 §1's closed field lists — `sort_order` added
-
-`TASK_PATCH_FIELDS` and `TASK_CREATE_FIELDS` gain `sort_order`. **`DIFF_FIELDS` must not** — a reorder is not an assistant-visible change. `ContextTask` does not need it.
+### 2. F-005 §1's closed field lists
+`TASK_PATCH_FIELDS` and `TASK_CREATE_FIELDS` gain `sort_order`. **`DIFF_FIELDS` must not** — reorder is not assistant-visible. `ContextTask` does not need it.
 
 ### 3. F-001 AC-9 — bulk delete extended to hand path
-
-AC-9's confirmation rule now applies to hand-initiated multi-deletes from select mode, not only voice. The API's confirmation-token mechanism serves both paths; the hand path uses a dialog, not a conversation message.
+Confirmation rule now applies to hand-initiated multi-deletes from select mode. The API's confirmation-token mechanism serves both paths; the hand path uses a dialog, not a conversation message.
 
 ### 4. `groupTasks` respects sort mode
-
 Manual sort in Inbox returns a single group by `sort_order` instead of day-bucketed groups. Personal lists already return ungrouped.
 
 ### 5. Preferences — new concern
-
-No preferences entity exists. Theme is client-side only. These are the first persisted user preferences — storage is routed to architect-agent (OQ-1).
+No preferences entity exists. Theme is client-side only. These are the first persisted user preferences — storage routed to architect-agent (OQ-1).
 
 ## Out of Scope
 

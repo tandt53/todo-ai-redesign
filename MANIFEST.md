@@ -37,6 +37,13 @@ roots:
   # found two defects (BUG-003, BUG-004) that no other tier could reach.
   # It imports src/ and docs/design/ and is never imported BY them.
   sim_harness: .mobile-app/
+  # The repo's test and build configuration. Not a product artifact root — it is
+  # here because the gate that decides WHICH tests run lives in it, and that gate
+  # failed silently: `npm test` ran only `src/assistant/api`, so 16 test files
+  # that could not even import stayed green-looking across two dispatches (T-207).
+  # An agent told to stop a suite hiding itself has to be able to write the script
+  # that hides it. Added 2026-08-22.
+  build_config: package.json
 
 shared_dir: _shared       # folder name for cross-cutting artifacts inside each root
 modules: [assistant]               # business domains in this project (e.g. auth, payments). Grows as features are specced.
