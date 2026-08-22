@@ -93,8 +93,16 @@ States: empty (placeholder "Say or type what needs doing.") · with-text (send a
 ## Message bubbles (conversation surface)
 
 Chat layout is deliberately Zalo-familiar: user turns right-aligned on `bg.ink` in `text.onInk`,
-assistant left-aligned on `bg.base` inside a 1px `bg.hairline`, `radius.bubble` (4 — a spoken block
-is squared, not pilled). Every accent below also carries a text label — never colour-only.
+assistant left-aligned on **`bg.sunken`** at **`radius.md`**. Every accent below also carries a text
+label — never colour-only.
+
+**Revised 2026-08-22 (T-211).** A bubble was a 1px box at `radius.bubble` 4. `radius.bubble` is
+retired; a bubble is a **ground**, not a box (`tokens.json border.box_allowlist`), so the border is
+gone and the ground carries it. The `border.mark` left rule on a bubble that changed something stays
+— a left mark is one line and is not a box — and the corners on that edge square off to meet it.
+**The per-field diff inside an assistant bubble is a ground too**: it was separated from the sentence
+above by a hairline and is now `bg.base` at `radius.sm` inside the sunken bubble, which is one
+painted line fewer per message and reads as a block rather than as a table.
 
 **Newest at bottom, and the rule that makes it true is worth its own sentence because the build
 dropped it.** The conversation container takes `margin-top: auto` inside its scroller — **not**
@@ -172,9 +180,13 @@ Empty conversation state: `font.family.display` line "Say it. I'll write it down
 ## OptionChip
 
 Purpose: tappable answer to a question — tap sends the option's **literal text as a normal turn**
-(AC-10, AC-13); a tap binds explicitly to its question's turn. **Square** (`radius.none`),
-`control.height.sm` with the platform hit floor met by padding, 1px `bg.rule` border,
-`text.primary` label at `font.weight.semibold`.
+(AC-10, AC-13); a tap binds explicitly to its question's turn. **`radius.sm`** (a chip is a control),
+`control.height.sm` with the platform hit floor met by padding, **`bg.sunken` ground and no border**,
+`text.primary` label at `font.weight.semibold`. Pressed state is `text.primary` fill.
+
+**Revised 2026-08-22 (T-211).** The chip was square with a 1px `bg.rule` box. Four chips in a row
+were four boxes, which is `border.density_rule`'s symptom exactly; `border.separation_order` says
+ground first, so the ground took over and the outline now returns only on focus.
 
 **It is deliberately not accent-coloured.** A chip is the *user's* answer, and `accent` means the
 assistant. The chip a user is choosing between should read as a control, not as something the
@@ -194,9 +206,21 @@ A stale/voice undo outside the window renders AC-6's refusal Outcome — the aff
 
 ## TaskRow (+ AI-change marker)
 
-Purpose: the source of truth (F-001 Purpose) — a flat row with no border, no fill and no shadow at
-any state, `control.height.lg` minimum, separated from its neighbour by one `bg.hairline` rule that
-starts at the time rail's spine.
+Purpose: the source of truth (F-001 Purpose) — a flat row with no border and no shadow at any state,
+`control.height.lg` minimum, **separated from its neighbour by space and by nothing else.**
+
+**Revised 2026-08-22 (T-211): the row separator is deleted, not restyled.** `time · checkbox · title`
+is not a table, so `border.when_a_line_earns_it` case 2 does not reach it, and it is what Things 3 and
+Apple Reminders draw between rows: nothing. Measured consequence — at 1920 five full-width hairlines
+turned half-empty rows into stretched rules; `layout.ultra_answer` records the two renders that settled
+it. **Hover and focus-within now paint a `bg.sunken` ground at `radius.md`** — a ground, not a box, and
+the first thing `border.separation_order` reaches for.
+
+**The marks sit beside the open affordance, not inside it** (same revision). Inside, the open button's
+visible text ended in the urgency `!` while its accessible name did not — a WCAG 2.5.3 label-in-name
+mismatch — and the mark's own meaning was never announced at all. Each mark now carries
+`role="img"` and its own name (`High priority`, `2 steps`, `Repeats weekly`), and the open control's
+label is exactly the task's title.
 
 **Anatomy, left to right: the time rail, then the checkbox, then the title, then the trailing
 delete.** The due time leads the row rather than trailing it — see § TimeRail, which is where the
@@ -474,7 +498,7 @@ States: offline · offline-with-queued (count) · replaying · hidden (online).
 
 Purpose: BUG-004 / **owner decision 2026-08-17** — when messages arrive while the user is not at the bottom, **the view does not move**; one control near the Composer says so, and tapping it scrolls to the newest message. **One control, however many messages arrived** — it never multiplies and there is never one per message.
 
-Placement: a pill, horizontally centred, docked just above the Composer (above the OfflineBanner when that is showing). It **overlays** the last line of the conversation rather than reflowing it: an affordance that appears by pushing history upward moves the sentence the user is reading, which is the defect it exists to prevent. `radius.none`, `shadow.overlay` (this is a layer floating over another, which is the one thing that shadow is legal for), `control.height.sm`, `font.size.meta` at `font.weight.semibold`, down-arrow icon at `icon.size.sm`.
+Placement: a pill, horizontally centred, docked just above the Composer (above the OfflineBanner when that is showing). It **overlays** the last line of the conversation rather than reflowing it: an affordance that appears by pushing history upward moves the sentence the user is reading, which is the defect it exists to prevent. `radius.sm` (a control; 2026-08-22, T-211), `shadow.overlay` (this is a layer floating over another, which is the one thing that shadow is legal for), `control.height.sm`, `font.size.meta` at `font.weight.semibold`, down-arrow icon at `icon.size.sm`.
 
 **Why the label carries a state.** The owner was offered a carve-out that would have scrolled a bulk-delete confirmation into view and declined it (decision rule 5), so a destructive question can sit unseen behind this one control while the app waits for an answer. That consistency was chosen knowingly, and its whole cost lands here: this control is the user's only indication that anything is pending. A label reading the same whether the app is idle or blocked on an answer would spend the consistency and return nothing. So the affordance **names its newest reason**: with nothing pending it reports a count; with a question pending off screen it stops reporting and asks, quoting the question's own head and taking the `attention` accent that already means *needs your answer* everywhere else in this catalogue. One control, one position, one action, one tap target — only the words and the accent change.
 
@@ -509,9 +533,10 @@ Variants, v2 (2026-08-21): **primary** (fill `accent`, text `text.onAccent`) · 
 · **secondary** (text `text.primary`, 1px `bg.rule`, no fill — this is what `neutral` became) ·
 **ghost** (text `text.secondary`, no border, no fill) · **danger** (fill `danger`, text
 `text.onAccent` — legal **only inside a confirmation** whose sentence has already named what goes)
-· **danger-quiet** (text `danger`, 1px `danger` border — the action that *asks*). All square
-(`radius.none`), `control.height.md`, `control.padding_x.md`, with the platform hit floor met by
-padding and never by painting a bigger control.
+· **danger-quiet** (text `danger`, 1px `danger` border — the action that *asks*). All at
+**`radius.sm`** (2026-08-22, T-211 — a button is a control, and `radius.assign.sm` is what a control
+takes; they were square), `control.height.md`, `control.padding_x.md`, with the platform hit floor met
+by padding and never by painting a bigger control.
 States: default · hover · focused · pressed (scale 0.96) · disabled (40% opacity, no pointer) · loading (spinner replaces label, width locked).
 
 **Why `neutral` exists, because three variants were not a shortage until F-005** (added 2026-08-19, T-152). Every one of the three carried an assigned meaning through its fill or its text: `primary` and `ghost` were both the accent token, which § Colour rules 1 assigns to *the assistant* and § UndoAffordance fixes as *"the assistant's own act"*; `danger` is red. F-005 AC-43's hand-action undo is an action the user's own hand caused, and the AC forbids the accent for it **wherever it renders** — so it could wear none of the three, and the catalogue had no way to draw an action that means nothing beyond *this is a button*. `neutral` was that: built entirely from neutrals, adding no colour meaning, and reusable anywhere
@@ -952,7 +977,9 @@ app** — the only spinner is the one § Buttons puts inside a button that was p
 | **SK-LISTROW** | LM-LIST | icon square + one bar at 55%, two rows |
 | **SK-DETAIL** | the F-005 task detail (IA § 6, S6) | one bar at 70% at title size, then five field-shaped pairs — a short label bar at 30% over a value bar at 55% — and one step-list block of three SK-ROW-shaped bars. Added 2026-08-19, T-152 |
 
-Fill `bg.sunken` on `bg.base`, `radius.none`, **and no pulse.** v2's motion budget is spent
+Fill `bg.sunken` on `bg.base`, **`radius.xs`** for a bar and `radius.md` for a block that stands in
+for a ground (2026-08-22, T-211 — a skeleton takes the shape of the thing it replaces, and the bubble
+skeleton stopped being a box when the bubble did), **and no pulse.** v2's motion budget is spent
 entirely on the listening rule; a loading state that breathes is a second thing moving without the
 user acting. A skeleton row keeps the real row's silhouette exactly — a bar in the time rail, a
 square where the checkbox goes, a bar where the title goes — so the list does not resize when the
@@ -1822,7 +1849,8 @@ one appear together on the first try.
 
 **Icon: `inbox`, not a tick.** A tick says *saved*, which the user knows — they pressed the button.
 The news is the **destination**, so the icon is the one the destination wears in the Lists menu.
-**no accent at all in v2** — green is retired (§ head), and the notice is a receipt rather than an alarm, so it sits on `bg.sunken` inside a 1px `bg.hairline` and lets its words do the work; per
+**no accent at all in v2** — green is retired (§ head), and the notice is a receipt rather than an alarm, so it sits on `bg.sunken` at `radius.md` **with no box at all** (2026-08-22, T-211 — a banner is a
+ground on `border.box_allowlist`'s reading, not a box) and lets its words do the work; per
 rule 3 the meaning never rests on the colour — the words carry it alone.
 
 ### The two rows
@@ -2531,7 +2559,7 @@ column's spine. Nowhere else in the app does a second face appear.
 | **TR-RAIL-TIME** | the due time | `font.family.numeric` at `font.size.meta` in `text.muted`, right-aligned, `space.4` clear of the spine |
 | **TR-RAIL-ZERO** | a task with no time | an em dash, in the same column, same face, same alignment |
 | **TR-RAIL-DAY** | the weekday | rendered **only** at `wide` and above, preceding the time, in `text.muted`, `space.2` clear of it |
-| **TR-RAIL-SPINE** | the column's edge | 1px `bg.hairline`, full height of the list; every row's separator rule starts on it rather than at the pane edge |
+| **TR-RAIL-SPINE** | the column's edge | 1px `bg.hairline`, full height of the list. **It is now the only rule in the list** — the row separators it used to anchor were deleted on 2026-08-22 (§ TaskRow), which leaves the spine as the one line the eye follows down the column, and that is what the novelty budget was spent on |
 
 **Three widths, from `layout.measure.timerail`.** `compact 72` below `split` · `default 96` from
 `split` · `wide 136` at `wide` and above. **The rail widening and gaining the weekday is what a wide
@@ -2573,7 +2601,8 @@ input fell back to the HTML default `size=20`.
 
 | ID | Element | Rendering |
 |---|---|---|
-| **FLD-FIELD** | the control | `width: 100%` of its form row, `field.height` tall, 1px `bg.rule`, `radius.none`, `font.size.body`, `field.padding_x` inset. Multiline starts at `field.height_multiline_min` and may only grow |
+| **FLD-FIELD** | the control | `width: 100%` of its form row, `field.height` tall and never below the platform's `control.minTarget`, 1px `bg.rule`, **`radius.sm`**, `font.size.body`, `field.padding_x` inset. Multiline starts at `field.height_multiline_min` and may only grow |
+| **FLD-QUIET** | a typed value on a **property sheet** | the same control with **no boundary at rest**. The 1px `bg.rule` box arrives when the value is **empty**, when the pointer is over it, or when it has focus, and the focus ring and `accent` border are unchanged. Added 2026-08-22 (T-211) on the owner's decision; see § PropertyRow for why. **It is legal only where a visible FLD-LABEL sits above it or the control is itself the surface's heading** — a boundary-less field with no label satisfies neither WCAG 1.4.11 nor anybody trying to find where to type |
 | **FLD-LABEL** | its name | always present, always **above** the field, `font.size.meta` at `font.weight.semibold` in `text.secondary`, `field.label_gap` beneath. **A placeholder is never a label** — it disappears exactly when the reader needs it |
 | **FLD-HELP** | the quiet line under it | `font.size.meta` in `text.muted`, `field.help_gap` beneath the field. States a consequence the field cannot ("Dated today, so it sits in Today") |
 | **FLD-ERROR** | the loud one | `font.size.meta` in `color.danger`, same gap, **and the field's border turns `danger` too** |
@@ -2599,6 +2628,72 @@ only accent is the focus ring and the repeat picker's `Save the repeat`.
 
 ---
 
+## PropertyRow — a row showing its value, and the picker it opens (PROP-*)
+
+**Added 2026-08-22 (T-211).** Owner decision:
+`docs/reports/owner-decision-2026-08-22-the-detail-is-a-property-sheet.md`.
+
+**What it is.** *A property is a row showing its current value. Tap it and the picker opens.*
+`Deadline · Fri 21 Aug · 6:00 PM` — tap, the calendar appears. Not a bordered control sitting open on
+the screen waiting to be used.
+
+**Why it exists.** § Field is right for one field and wrong multiplied. `DESIGN.md ## Shape` lists an
+input field as one of the three places a 1px line earns its place; the task detail asked for that line
+ten times across seven rows plus three segmented groups, with note, priority, deadline, reminder,
+repeat and steps still owed and steps growing. **That is the grid the rule exists to remove.** Things 3
+draws no boxes at all; Apple Reminders puts N properties in one container; Notion and Linear keep
+property rows borderless until hover.
+
+| ID | Element | Rendering |
+|---|---|---|
+| **PROP-GROUP** | the container | one `bg.sunken` ground at `radius.md`, `space.2` inset. **Not a box** — and the rows inside it are separated by `space.1` and by nothing else. `border.when_a_line_earns_it` case 2 does not reach them: these are four labelled values read one at a time, not columns an eye scans across |
+| **PROP-ROW** | the row | `control.height.lg` minimum, `radius.sm`, no border, no fill at rest. Hover and focus paint `bg.base` — a ground on a ground |
+| **PROP-LABEL** | its name | `font.size.meta` at `font.weight.semibold` in `text.secondary`. Fixed `7.5rem` column at `480` and above; natural width below, so a phone spends no space on alignment |
+| **PROP-VALUE** | the value | `font.size.body` in `text.primary`, and `font.family.numeric` when it is a date, a time or a count. **Wraps; the row grows.** Unset reads the word `None` in `text.muted` — the zero case is drawn, never blank |
+| **PROP-FLAG** | a state on the value | a word on its own tint at `radius.xs` (`Overdue` in `danger` on `dangerTint`). The value beside it does **not** change colour: one signal per meaning, and no colour repeating down a chain |
+| **PROP-CHEV** | the affordance | a trailing chevron at `icon.size.md` in `text.muted`, `aria-hidden` |
+| **PROP-PICK** | what opens | a **layer that floats**. Web: a popover anchored under its own row, `radius.lg` with `shadow.overlay`. iOS / Android: the platform bottom sheet — `radius.xl` on the **top two** corners, 0 on the bottom two, a grabber, a scrim, and it clears the home indicator / gesture bar. A picker too large to anchor is a **centred dialog with a scrim** on web (§ TaskDetail's repeat) |
+
+### The accessibility contract, because this is a custom control
+
+`design-check` reads colour pairs out of tokens and cannot see any of this. Written out per
+`.claude/skills/design/accessible-components.md`:
+
+| | |
+|---|---|
+| **Element** | a native `<button>`. Not a `div` with a role — a button is focusable, keyboard-operable and announced before anyone writes an attribute |
+| **Role** | `button`, with `aria-haspopup="dialog"` |
+| **Accessible name** | **the row's own text**, computed from its contents and never overridden by an `aria-label`. So the name is `Deadline Fri 21 Aug · 6:00 PM` — what a voice-control user says is exactly what they can see (WCAG 2.5.3), and the current value is announced without a second visit |
+| **Value / state** | `aria-expanded` tracks the picker, on the row, in both directions. A row whose property cannot be set yet is `aria-disabled="true"` and states why in its value (`Needs a deadline`, in `attention`) |
+| **Keys** | `Enter` / `Space` open, from the native button. `Esc` closes. Inside the picker, `Tab` moves between its controls and arrows move within a group |
+| **Focus on open** | moves **into** the picker, to its first control |
+| **Focus on close** | returns to **the row that opened it** — never to `<body>`, never to the top of the surface. Dismissing by `Esc`, by the close control, or by the scrim all land in the same place |
+| **Announcement** | the picker is a `dialog` with an accessible name equal to the property's name |
+
+### The commit moment is NOT settled here, and that is deliberate
+
+**`F-005 AC-2` saves on blur, and blur is written for a field.** A picker row has no blur in that
+sense: it has an **open**, a **choice** and a **dismiss**, and *a dismiss without a choice must not
+write*. Which of those is the commit moment is a **specification** question and is open (T-213,
+spec-agent). Nothing in this drawing may quietly answer it, so **none of the three new pickers carries
+a commit button.** The repeat editor does, and only because `detail-repeat-commit` and
+`detail-repeat-cancel` were already in the published testid catalogue — that commit moment is
+inherited, not decided here.
+
+### Three openers carry no id, and it is a debt rather than an omission
+
+The priority, deadline and reminder rows are drawn **without a `data-testid`**. Their ids are all
+spoken for by controls of a different kind: `detail-priority-control` is a `role="radiogroup"` that a
+shipped assertion reads as one, and `detail-deadline-date` / `detail-reminder-date` are `<input>`s a
+shipped test drives with `fireEvent.change`. Moving any of them onto a row would leave a green
+assertion pointing at something that is no longer the same thing. **The rows are testable through
+`detail-field` + `data-field`**, which is how `src/` already enumerates them (one node per settable
+field, `getAllByTestId('detail-field')`), and the mockup marks one of them as the exemplar per the
+§ ListsMenu convention. If QA needs a direct id on each opener, publishing it here is the first step
+and this pass deliberately published none — the briefing's rule was *no testid invented, none renamed*.
+
+---
+
 ## TaskDetail — the surface that was never drawn (DET-*)
 
 **Added 2026-08-21 (T-204), for `F-005`.** `src/assistant/web/components/TaskDetail.tsx` shipped its
@@ -2608,12 +2703,30 @@ spelling, and the spellings already follow the catalogue's `{surface}-{control}`
 in `task-detail.html`, `-ios.html`, `-android.html`. IA § S6 records the surface as **web-only for
 this phase**; the two phone drawings are the contract parity closes against, not a claim it is built.
 
-**Anatomy.** A `topbar` carrying only the close affordance and the word `Task`; then, in the pane's
-content column: the task's title at `font.size.display`, one `font.family.numeric` meta line
-(`Added Aug 18 · edited 9:40 PM · 3 steps`), a 1px `bg.rule`, then the seven fields as § Field form
-rows, then a rule and the destructive actions. **Above `breakpoints.split` it takes the column the
-task list occupies and the conversation stays rendered beside it** — one application state placed by
-CSS, never two states selected by a measured width (IA § S6).
+**Anatomy, rewritten 2026-08-22 (T-211): this surface is a PROPERTY SHEET, not a form.** Owner
+decision `docs/reports/owner-decision-2026-08-22-the-detail-is-a-property-sheet.md`. Nobody fills this
+screen and submits it — `F-005 AC-2` saves on blur and there is no Save button — so the drawing that
+put ten bordered fields across seven rows plus three segmented groups was answering a question nobody
+asked. **Measured: twelve boxes became two.**
+
+A `topbar` carrying only the close affordance and the word `Task`; then, in the pane's content column:
+
+1. **The name, which IS the heading.** `font.size.display`, and an FLD-QUIET control rather than a
+   heading plus a field holding the same string — the old drawing carried both, which is two places
+   for one fact and one more box. It is a **wrapping, auto-growing multi-line control, not a single-line
+   input**: at 390 the live store's own `Gọi nha sĩ đặt lịch khám răng` clipped inside an input at
+   display size, and § TaskRow's rule is that a title is never truncated to protect a column.
+2. One `font.family.numeric` meta line (`Added Aug 18 · edited 9:40 PM · 3 steps`). **No rule under it**
+   — space separates it from what follows.
+3. **Note**, an FLD-QUIET multiline control under a visible FLD-LABEL.
+4. **The property group**: four § PropertyRow rows — priority, deadline, reminder, repeat — inside one
+   `bg.sunken` ground at `radius.md`, separated from one another by space and by nothing.
+5. **Steps**, a list (§ TaskDetail steps below), not a form.
+6. **The destructive actions**, last, separated by `space.7` of space rather than by a rule.
+
+**Above `breakpoints.split` it takes the column the task list occupies and the conversation stays
+rendered beside it** — one application state placed by CSS, never two states selected by a measured
+width (IA § S6).
 
 **AC-1's account of itself.** All seven fields render inline, whether or not they hold a value, each
 as an explicit `detail-field` node carrying `data-field`. The mockup marks **one** of them with the
@@ -2623,20 +2736,27 @@ as an explicit `detail-field` node carrying `data-field`. The mockup marks **one
 |---|---|---|
 | title | **Name** | `detail-title-input` |
 | note | **Note** | `detail-note-input`, multiline |
-| priority | **Priority** | `detail-priority-control` — a four-segment control, `detail-priority-option` exemplar. `None · Low · Medium · High`; the active segment is `text.primary` fill, **not** accent |
-| deadline | **Deadline** | `detail-deadline-date` · `detail-deadline-time` · `detail-deadline-clear`, then `detail-deadline-shortcut` chips (`Today · Tomorrow · Next week`), then `detail-deadline-collection` — the FLD-HELP line stating which collection this date files it into |
-| reminder | **Reminder** | `detail-reminder-date` · `detail-reminder-time` · `detail-reminder-clear`, with the FLD-HELP line "This is the one that alerts you. The deadline on its own is silent." |
+| priority | **Priority** | a § PropertyRow whose value reads `None · Low · Medium · High`. Its picker holds `detail-priority-control` (`role="radiogroup"`) and the `detail-priority-option` exemplar; the chosen option is **weight plus a tick**, so it survives with no colour at all |
+| deadline | **Deadline** | a § PropertyRow whose value is the date and time in `font.family.numeric`. Its picker holds `detail-deadline-shortcut` chips (`Today · Tomorrow · Next week`), `detail-deadline-date` · `detail-deadline-time`, the `detail-deadline-collection` FLD-HELP line, and `detail-deadline-clear`. **An overdue deadline is a `danger` word on `dangerTint` beside the value, never a red date** — the date stays `text.primary` (§ Colour rules 3 and 4) |
+| reminder | **Reminder** | a § PropertyRow. Its picker holds `detail-reminder-date` · `detail-reminder-time`, `detail-reminder-clear`, and the FLD-HELP line "This is the one that alerts you. The deadline on its own is silent." |
 | steps | **Steps** | `detail-steps` wrapping `detail-step-row` (`detail-step-checkbox`, `detail-step-name`, `detail-step-move`, `detail-step-delete`), then `detail-step-add-input` + `detail-step-add-button`. `detail-steps-refused` when the task cannot take them |
-| repeat | **Repeat** | summary form: `detail-repeat-summary` + `detail-repeat-edit` + `detail-repeat-clear`. Picker form: `detail-repeat-picker` holding `detail-repeat-cadence`, `detail-repeat-interval`, `detail-repeat-weekday`, `detail-repeat-end` (+ `detail-repeat-until` / `detail-repeat-count`), `detail-repeat-preview` (`detail-repeat-preview-date`, `detail-repeat-preview-collection`, `detail-repeat-refusal`), `detail-repeat-commit`, `detail-repeat-cancel`. `detail-repeat-refused` when the task cannot take one |
+| repeat | **Repeat** | a § PropertyRow, and the one whose opener carries an id: the row **is** `detail-repeat-edit` (same element kind, same job — the button that opens the repeat editor) and its value span is `detail-repeat-summary`. On web the editor is a **centred dialog with a scrim**, not an anchored popover: it carries a cadence, an interval, seven weekday toggles, an end rule and a three-date preview, and drawn as a popover it ran off the pane. Picker: `detail-repeat-picker` holding `detail-repeat-cadence`, `detail-repeat-interval`, `detail-repeat-weekday`, `detail-repeat-end` (+ `detail-repeat-until` / `detail-repeat-count`), `detail-repeat-preview` (`detail-repeat-preview-date`, `detail-repeat-preview-collection`, `detail-repeat-refusal`), `detail-repeat-commit`, `detail-repeat-cancel`. `detail-repeat-refused` when the task cannot take one |
 
 **The repeat picker is the one control with preview-then-commit**, because AC-22/23/25 have
 outcomes that must be seen before they happen and a save-on-blur control has nowhere to render a
 refusal. Everything else on this surface saves on leaving the field. **There is no third model.**
+
+**And that sentence is exactly what T-211 could not leave alone.** Once a property is a row that opens
+a picker, "leaving the field" no longer names a moment: there is an open, a choice and a dismiss.
+`§ PropertyRow` states the question and refuses to answer it in the drawing; the answer belongs in
+`F-005 AC-2` (T-213, spec-agent), and until it lands **no picker in this surface may grow a commit
+button** beyond the repeat editor's inherited one.
 The preview is a `border.mark` rule with three dates in the numeric face and the collection each
 lands in; when a rule refuses an occurrence the rule turns `attention` and the refusals read as
 sentences, never as an error.
 
-**Destructive actions sit last, under a rule**, in the `danger` **outlined** variant and never the
+**Destructive actions sit last, separated by `space.7`** (2026-08-22, T-211 — the rule above them
+went the way the others did; space does the work), in the `danger` **outlined** variant and never the
 filled one: filled `danger` is the button that *does* the deleting and is legal only inside a
 confirmation whose sentence has already named what goes. `detail-delete-button` says `Delete task`;
 `detail-delete-series-button` says `Delete every repeat` and renders only for a live series.
@@ -2646,7 +2766,10 @@ confirmation whose sentence has already named what goes. `detail-delete-button` 
 | ID | State | Rendering |
 |---|---|---|
 | **DET-DEFAULT** | a task with values | above |
-| **DET-BLANK** | every field empty | identical structure; the step region renders its own invitation rather than nothing. **There is no empty state for this surface** — under AC-1 an empty field is the ordinary appearance, not a degraded one |
+| **DET-BLANK** | every field empty | identical structure; every property reads `None`, the two typed controls show their FLD-QUIET boundary because they are empty, and the step region renders its own invitation rather than nothing. **There is no empty state for this surface** — under AC-1 an empty field is the ordinary appearance, not a degraded one |
+| **DET-TYPED-AFFORDANCE** | the name and note boundaries forced on | the same surface with FLD-QUIET's boundary shown. It exists **because a hover state cannot be reviewed in a screenshot**: without it, the one thing the owner asked for is invisible to anyone reading a render |
+| **DET-OVERDUE** | the deadline is in the past | PROP-FLAG `Overdue` beside a value that stays `text.primary` |
+| **DET-PRIORITY-PICK**, **DET-DEADLINE-PICK**, **DET-REMINDER-PICK** | one picker open | § PropertyRow PROP-PICK. Web popover, mobile bottom sheet. **No commit control** — see the section above |
 | **DET-LOADING** | the read in flight | § Skeletons SK-DETAIL. It exists because DET-BLANK and a not-yet-read task are otherwise pixel-identical |
 | **DET-FIELD-FAILED** | one field's write failed (AC-2) | `detail-field-failure` **on the field**, the typed value kept, `detail-field-retry` beside it, the field's border `danger`. The surface does not close and never silently reverts. Concurrent failures aggregate into one announcement, not N |
 | **DET-OFFLINE** | AC-2's third state | § OfflineBanner above, and the field states the refusal. **It is not a queue** — no spinner, no pending badge, no timer, no replay on reconnection |

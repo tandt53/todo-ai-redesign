@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Task detail — iOS · v2</title>
 <!--
-  TASK DETAIL (S6) — every field one task has, set by hand · iOS mockup
+  TASK DETAIL (S6) — a property sheet, not a form · iOS mockup
   design-agent T-204 · 2026-08-21 · F-005 · IA § S6
 
   THIS SURFACE HAD NEVER BEEN DRAWN, at any width, on any platform. What shipped
@@ -138,7 +138,11 @@
   --space-9: 96;
 
   --radius-none: 0;
-  --radius-bubble: 4;
+  --radius-xs: 4;
+  --radius-sm: 8;
+  --radius-md: 12;
+  --radius-lg: 16;
+  --radius-xl: 28;
   --radius-pill: 999;
   --radius-circle: 50%;
 
@@ -261,7 +265,11 @@ html{
 
   /* shape */
   --r-none:calc(var(--radius-none) * 1px);
-  --r-bubble:calc(var(--radius-bubble) * 1px);
+  --r-xs:calc(var(--radius-xs) * 1px);
+  --r-sm:calc(var(--radius-sm) * 1px);
+  --r-md:calc(var(--radius-md) * 1px);
+  --r-lg:calc(var(--radius-lg) * 1px);
+  --r-xl:calc(var(--radius-xl) * 1px);
   --r-pill:calc(var(--radius-pill) * 1px);
   --r-circle:var(--radius-circle);
   --b-hairline:calc(var(--border-hairline) * 1px);
@@ -344,7 +352,7 @@ button,input,textarea{font:inherit; color:inherit}
 }
 .dev button{
   appearance:none; cursor:pointer; background:transparent; color:var(--text-secondary);
-  border:var(--b-hairline) solid var(--bg-hairline); border-radius:var(--r-none);
+  border:var(--b-hairline) solid var(--bg-hairline); border-radius:var(--r-xs);
   font-size:var(--fs-label); letter-spacing:.02em; padding:var(--s1) var(--s2); line-height:1.4;
 }
 .dev button:hover{color:var(--text-primary); border-color:var(--bg-rule)}
@@ -364,7 +372,7 @@ button,input,textarea{font:inherit; color:inherit}
    ══════════════════════════════════════════════════════════════════════════ */
 .app{display:flex; flex-direction:column; min-height:820px; background:var(--bg-base)}
 .frame{display:flex; flex:1 1 auto; min-height:0; max-width:var(--frame-max); width:100%; margin:0 auto}
-.col-rail{display:none; flex-direction:column; min-width:0; background:var(--bg-sunken); border-right:var(--b-rule) solid var(--bg-rule)}
+.col-rail{display:none; flex-direction:column; min-width:0; background:var(--bg-sunken)}
 .col-main{display:flex; flex-direction:column; flex:1 1 auto; min-width:0}
 .col-panel{display:none; flex-direction:column; min-width:0; background:var(--bg-base)}
 .app[data-surface="talk"] .col-main{display:none}
@@ -418,7 +426,7 @@ button,input,textarea{font:inherit; color:inherit}
 .iconbtn{
   appearance:none; border:0; background:transparent; cursor:pointer; color:var(--text-primary);
   width:var(--min-target); height:var(--min-target); display:grid; place-items:center; flex:none;
-  border-radius:var(--r-none);
+  border-radius:var(--r-sm);
 }
 .iconbtn:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
 .backlink{
@@ -432,12 +440,12 @@ button,input,textarea{font:inherit; color:inherit}
    control that switches to what you are already looking at is a dead control. */
 .path{
   appearance:none; cursor:pointer; background:transparent; color:var(--text-primary);
-  border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-none);
+  border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-sm);
   height:var(--h-sm); min-height:var(--min-target); padding:0 var(--s3);
   display:inline-flex; align-items:center; gap:var(--s2); font-size:var(--fs-meta); font-weight:var(--w-semibold);
 }
 .path:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
-.path .count{font-family:var(--font-num); color:var(--text-on-accent); background:var(--accent); padding:0 var(--s1); min-width:calc(var(--icon-size-md) * 1px); text-align:center}
+.path .count{font-family:var(--font-num); color:var(--text-on-accent); background:var(--accent); border-radius:var(--r-xs); padding:0 var(--s1); min-width:calc(var(--icon-size-md) * 1px); text-align:center}
 @container (min-width:1024px){ .app[data-surface] .path{display:none} }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -445,7 +453,7 @@ button,input,textarea{font:inherit; color:inherit}
    ══════════════════════════════════════════════════════════════════════════ */
 .btn{
   appearance:none; cursor:pointer; font:inherit; font-size:var(--fs-body); font-weight:var(--w-semibold);
-  height:var(--h-md); min-height:var(--min-target); padding:0 var(--px-md); border-radius:var(--r-none);
+  height:var(--h-md); min-height:var(--min-target); padding:0 var(--px-md); border-radius:var(--r-sm);
   border:var(--b-hairline) solid transparent; display:inline-flex; align-items:center; justify-content:center;
   gap:var(--s2); white-space:nowrap;
   transition:background var(--t-micro) var(--ease), color var(--t-micro) var(--ease);
@@ -479,7 +487,7 @@ button,input,textarea{font:inherit; color:inherit}
 /* ══════════════════════════════════════════════════════════════════════════
    SURFACE HEAD — the collection, its count, and the one rule under them
    ══════════════════════════════════════════════════════════════════════════ */
-.head{padding:var(--s6) 0 var(--s4); border-bottom:var(--b-rule) solid var(--bg-rule); margin-bottom:var(--s2)}
+.head{padding:var(--s6) 0 var(--s5); margin-bottom:var(--s2)}
 .head h1{
   margin:0; font-size:var(--fs-hero); line-height:var(--lh-tight); letter-spacing:var(--ls-hero);
   font-weight:var(--w-bold);
@@ -515,10 +523,18 @@ button,input,textarea{font:inherit; color:inherit}
 .cbx{
   appearance:none; margin:0; width:calc(var(--icon-size-md) * 1px); height:calc(var(--icon-size-md) * 1px); flex:none; cursor:pointer;
   border:var(--b-hairline) solid var(--bg-rule); background:var(--bg-base);
-  border-radius:var(--r-none); display:grid; place-items:center;
+  border-radius:var(--r-xs); display:grid; place-items:center; position:relative;
+}
+/* control.note: the hit floor (web 40 · iOS 44 · Android 48) is met with a HIT
+   AREA, never by painting a bigger control. The painted box stays icon-size-md;
+   this transparent pseudo-element carries the target. A probe that measures the
+   input's own bounding box therefore reads 20px and is reading the paint. */
+.cbx::before{
+  content:""; position:absolute; top:50%; left:50%;
+  width:var(--min-target); height:var(--min-target); transform:translate(-50%,-50%);
 }
 .plat-ios .cbx{border-radius:var(--r-circle)}
-.plat-android .cbx{border-radius:2px; border-width:2px}
+.plat-android .cbx{border-radius:var(--r-xs); border-width:2px}
 .cbx:checked{background:var(--text-primary); border-color:var(--text-primary)}
 .cbx:checked::after{content:""; width:10px; height:6px; border-left:2px solid var(--bg-base); border-bottom:2px solid var(--bg-base); transform:rotate(-45deg) translate(1px,-1px)}
 .cbx:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
@@ -534,7 +550,7 @@ button,input,textarea{font:inherit; color:inherit}
 .row-marks{display:inline-flex; align-items:baseline; gap:var(--s2); margin-left:var(--s2)}
 .mark{font-family:var(--font-num); font-size:var(--fs-body); font-weight:var(--w-bold); color:var(--text-primary); line-height:1.35}
 .mark-quiet{color:var(--text-muted); display:inline-flex; align-self:center}
-.tag{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:var(--font-case-label); font-weight:var(--w-semibold); padding:2px 6px; background:var(--accent-tint); color:var(--accent); white-space:nowrap}
+.tag{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:var(--font-case-label); font-weight:var(--w-semibold); padding:2px 6px; border-radius:var(--r-xs); background:var(--accent-tint); color:var(--accent); white-space:nowrap}
 .tag.edited{background:var(--bg-sunken); color:var(--text-secondary)}
 .row-trail{display:flex; align-items:center; flex:none; gap:var(--s1)}
 .row-del{
@@ -544,9 +560,14 @@ button,input,textarea{font:inherit; color:inherit}
 .row:hover .row-del,.row:focus-within .row-del{opacity:1}
 .plat-ios .row-del,.plat-android .row-del{opacity:1}
 .row-del:hover{color:var(--danger)}
-.row-rule{height:var(--b-hairline); background:var(--bg-hairline); margin-left:var(--rail)}
+/* The row separator is DELETED, not restyled. `time · checkbox · title` is not
+   a table (border.when_a_line_earns_it case 2), and five full-width hairlines at
+   1920 are what made the half-empty row read as a stretched rule rather than as
+   margin (layout.ultra_answer). Separation is space; the row's own ground
+   arrives on hover and on focus-within, at radius.md — a GROUND, not a box. */
+.row:hover,.row:focus-within{background:var(--bg-sunken); border-radius:var(--r-md)}
 .row.done .row-title{color:var(--text-muted); text-decoration:line-through}
-.row.arrived{box-shadow:inset var(--b-mark) 0 0 var(--accent)}
+.row.arrived{box-shadow:inset var(--b-mark) 0 0 var(--accent); border-radius:0 var(--r-md) var(--r-md) 0}
 .rename{display:flex; align-items:center; gap:var(--s2); flex:1 1 auto; min-width:0}
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -554,16 +575,16 @@ button,input,textarea{font:inherit; color:inherit}
    ══════════════════════════════════════════════════════════════════════════ */
 .banner{
   display:flex; align-items:flex-start; gap:var(--s3); padding:var(--s3) var(--s4);
-  border:var(--b-hairline) solid var(--bg-rule); background:var(--bg-base);
+  background:var(--bg-sunken); border-radius:var(--r-md);
   font-size:var(--fs-meta); line-height:var(--lh-meta); margin-top:var(--s4);
 }
 .banner .btxt{flex:1 1 auto; min-width:0; color:var(--text-secondary)}
 .banner .btxt b{display:block; color:var(--text-primary); font-weight:var(--w-semibold); margin-bottom:2px}
-.banner.attention{border-left:var(--b-mark) solid var(--attention)}
+.banner.attention{border-left:var(--b-mark) solid var(--attention); border-radius:0 var(--r-md) var(--r-md) 0}
 .banner.attention .ico{color:var(--attention)}
-.banner.danger{border-left:var(--b-mark) solid var(--danger)}
+.banner.danger{border-left:var(--b-mark) solid var(--danger); border-radius:0 var(--r-md) var(--r-md) 0}
 .banner.danger .ico{color:var(--danger)}
-.banner.quiet{border-color:var(--bg-hairline); background:var(--bg-sunken)}
+.banner.quiet{background:var(--bg-sunken)}
 .banner .ico{color:var(--text-muted); margin-top:2px}
 .dismiss{
   appearance:none; border:0; background:transparent; cursor:pointer; color:var(--text-muted);
@@ -581,7 +602,7 @@ button,input,textarea{font:inherit; color:inherit}
 .cn .cn-head{color:var(--text-primary); font-weight:var(--w-semibold)}
 .cn .cn-value{
   display:block; margin-top:var(--s1); color:var(--text-primary);
-  border-left:var(--b-mark) solid var(--bg-rule); padding-left:var(--s3);
+  background:var(--bg-sunken); border-radius:var(--r-sm); padding:var(--s2) var(--s3);
 }
 .cn .cn-why{display:block; margin-top:var(--s1); color:var(--text-secondary)}
 .cn.failed .cn-head{color:var(--danger)}
@@ -594,11 +615,11 @@ button,input,textarea{font:inherit; color:inherit}
 .empty{padding:var(--s7) 0 var(--s6)}
 .empty h2{margin:0 0 var(--s2); font-size:var(--fs-title); letter-spacing:var(--ls-title); line-height:var(--lh-title); font-weight:var(--w-semibold)}
 .empty p{margin:0 0 var(--s5); color:var(--text-secondary); font-size:var(--fs-body); max-width:44ch}
-.sk{display:block; background:var(--bg-sunken); height:var(--s3)}
+.sk{display:block; background:var(--bg-sunken); border-radius:var(--r-xs); height:var(--s3)}
 .sk-row{display:grid; grid-template-columns:var(--rail) minmax(0,1fr); align-items:center; min-height:var(--h-lg); padding:var(--s2) 0}
 .sk-row .sk-time{justify-self:end; width:var(--h-md); margin-right:var(--s4)}
 .sk-row .sk-main{margin-left:var(--gutter); display:flex; align-items:center; gap:var(--s3)}
-.sk-box{width:calc(var(--icon-size-md) * 1px); height:calc(var(--icon-size-md) * 1px); background:var(--bg-sunken); flex:none}
+.sk-box{width:calc(var(--icon-size-md) * 1px); height:calc(var(--icon-size-md) * 1px); background:var(--bg-sunken); border-radius:var(--r-xs); flex:none}
 .surface-error{padding:var(--s8) 0 var(--s7); max-width:52ch}
 .surface-error h2{margin:0 0 var(--s3); font-size:var(--fs-title); letter-spacing:var(--ls-title); line-height:var(--lh-title); font-weight:var(--w-semibold)}
 .surface-error p{margin:0 0 var(--s5); color:var(--text-secondary)}
@@ -606,7 +627,7 @@ button,input,textarea{font:inherit; color:inherit}
 /* ══════════════════════════════════════════════════════════════════════════
    TALK — conversation, bubbles, composer  (§ Message bubbles, § Composer)
    ══════════════════════════════════════════════════════════════════════════ */
-.talk-head{display:flex; align-items:center; gap:var(--s2); flex:none; height:56px; padding:0 calc(var(--gutter) - var(--s3)); border-bottom:var(--b-hairline) solid var(--bg-hairline)}
+.talk-head{display:flex; align-items:center; gap:var(--s2); flex:none; height:56px; padding:0 calc(var(--gutter) - var(--s3))}
 .plat-ios .talk-head{height:44px}
 .talk-title{font-size:var(--fs-body); font-weight:var(--w-semibold)}
 .talk-scroll{flex:1 1 auto; min-height:0; overflow-y:auto; display:flex; flex-direction:column}
@@ -620,15 +641,15 @@ button,input,textarea{font:inherit; color:inherit}
 .msg{max-width:88%; display:flex; flex-direction:column; gap:var(--s1)}
 .msg.user{align-self:flex-end; align-items:flex-end}
 .msg.bot{align-self:flex-start}
-.bubble{padding:var(--s3) var(--s4); border-radius:var(--r-bubble); font-size:var(--fs-body); line-height:var(--lh-body)}
+.bubble{padding:var(--s3) var(--s4); border-radius:var(--r-md); font-size:var(--fs-body); line-height:var(--lh-body)}
 .msg.user .bubble{background:var(--bg-ink); color:var(--text-on-ink)}
-.msg.bot .bubble{background:var(--bg-base); border:var(--b-hairline) solid var(--bg-hairline); color:var(--text-primary)}
-.msg.bot.applied .bubble{border-left:var(--b-mark) solid var(--accent)}
-.msg.bot.error .bubble{border-left:var(--b-mark) solid var(--danger)}
-.msg.bot.question .bubble{border-left:var(--b-mark) solid var(--attention)}
+.msg.bot .bubble{background:var(--bg-sunken); color:var(--text-primary)}
+.msg.bot.applied .bubble{border-left:var(--b-mark) solid var(--accent); border-radius:0 var(--r-md) var(--r-md) 0}
+.msg.bot.error .bubble{border-left:var(--b-mark) solid var(--danger); border-radius:0 var(--r-md) var(--r-md) 0}
+.msg.bot.question .bubble{border-left:var(--b-mark) solid var(--attention); border-radius:0 var(--r-md) var(--r-md) 0}
 .msg-time{font-family:var(--font-num); font-size:var(--fs-label); color:var(--text-muted); letter-spacing:.04em}
 .bubble-head{font-weight:var(--w-semibold)}
-.diff{margin:var(--s3) 0 0; border-top:var(--b-hairline) solid var(--bg-hairline); padding-top:var(--s3); display:grid; gap:var(--s2)}
+.diff{margin:var(--s3) 0 0; background:var(--bg-base); border-radius:var(--r-sm); padding:var(--s3); display:grid; gap:var(--s2)}
 .diff-row{display:grid; grid-template-columns:calc(var(--layout-measure-timerail-compact) * 1px) minmax(0,1fr); gap:var(--s3); font-size:var(--fs-meta); align-items:baseline}
 .diff-row dt{color:var(--text-muted)}
 .diff-row dd{margin:0}
@@ -645,15 +666,19 @@ button,input,textarea{font:inherit; color:inherit}
 .tasklink:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
 .msg-acts{margin-top:var(--s3); display:flex; flex-wrap:wrap; gap:var(--s2)}
 .qtext{color:var(--attention); font-weight:var(--w-semibold)}
+/* A chip is a CONTROL, and a row of four of them used to be a row of four boxes.
+   border.separation_order: GROUND first. The outline returns only on focus. */
 .chip{
-  appearance:none; cursor:pointer; background:transparent; color:var(--text-primary);
-  border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-none);
+  appearance:none; cursor:pointer; background:var(--bg-sunken); color:var(--text-primary);
+  border:0; border-radius:var(--r-sm);
   height:var(--h-sm); min-height:var(--min-target); padding:0 var(--s3); font-size:var(--fs-meta); font-weight:var(--w-semibold);
 }
+.chip:hover{background:var(--bg-hairline)}
+.chip[aria-pressed="true"]{background:var(--text-primary); color:var(--bg-base)}
 .chip:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
 .boundary{display:flex; align-items:center; gap:var(--s3); color:var(--text-muted); font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:var(--font-case-label); font-weight:var(--w-semibold)}
 .boundary::before,.boundary::after{content:""; height:var(--b-hairline); background:var(--bg-hairline); flex:1 1 auto}
-.sk-bubble{display:flex; flex-direction:column; gap:var(--s2); padding:var(--s3) var(--s4); border:var(--b-hairline) solid var(--bg-hairline); border-radius:var(--r-bubble)}
+.sk-bubble{display:flex; flex-direction:column; gap:var(--s2); padding:var(--s3) var(--s4); background:var(--bg-sunken); border-radius:var(--r-md)}
 
 /* composer + the one continuous animation in the system */
 .composer{flex:none; border-top:var(--b-rule) solid var(--bg-rule); background:var(--bg-base); position:relative}
@@ -664,7 +689,8 @@ button,input,textarea{font:inherit; color:inherit}
 .transcript{padding:var(--s3) var(--gutter) 0; font-size:var(--fs-lead); line-height:1.35; color:var(--text-primary); max-width:var(--list-max); margin:0 auto; width:100%}
 .transcript .pend{color:var(--text-muted)}
 .cinput{
-  flex:1 1 auto; min-width:0; height:var(--field-h); border:0; background:transparent;
+  flex:1 1 auto; min-width:0; height:var(--field-h); min-height:var(--min-target);
+  border:0; background:transparent;
   font-size:var(--fs-body); color:var(--text-primary); padding:0;
 }
 .cinput::placeholder{color:var(--text-muted)}
@@ -688,7 +714,7 @@ button,input,textarea{font:inherit; color:inherit}
 .state-ind{font-size:var(--fs-meta); color:var(--text-secondary); font-weight:var(--w-semibold); white-space:nowrap}
 .nma{
   position:absolute; left:50%; transform:translateX(-50%); top:calc(var(--s7) * -1); z-index:6;
-  background:var(--bg-ink); color:var(--text-on-ink); border:0; border-radius:var(--r-none);
+  background:var(--bg-ink); color:var(--text-on-ink); border:0; border-radius:var(--r-sm);
   height:var(--h-sm); min-height:var(--min-target); padding:0 var(--s4); cursor:pointer;
   font-size:var(--fs-meta); font-weight:var(--w-semibold); box-shadow:var(--shadow-overlay);
   display:inline-flex; align-items:center; gap:var(--s2);
@@ -703,9 +729,10 @@ button,input,textarea{font:inherit; color:inherit}
 .field{
   display:block; width:100%; height:var(--field-h); padding:0 var(--field-px);
   font:inherit; font-size:var(--fs-body); color:var(--text-primary); background:var(--bg-base);
-  border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-none);
+  border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-sm);
+  min-height:var(--min-target);
 }
-textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field-py) var(--field-px); line-height:var(--lh-body); resize:vertical}
+textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field-py) var(--field-px); line-height:var(--lh-body); resize:vertical; border-radius:var(--r-sm)}
 .field::placeholder{color:var(--text-muted)}
 .field:focus{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px; border-color:var(--accent)}
 .field-help{display:block; font-size:var(--fs-meta); color:var(--text-muted); margin-top:var(--field-help-gap)}
@@ -717,7 +744,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .field-inline .field.narrow{flex:0 1 132px}
 
 /* segmented control (priority, theme) */
-.seg{display:inline-flex; border:var(--b-hairline) solid var(--bg-rule); max-width:100%}
+.seg{display:inline-flex; border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-sm); overflow:hidden; max-width:100%}
 .seg button{
   appearance:none; border:0; background:transparent; cursor:pointer; font:inherit;
   font-size:var(--fs-meta); font-weight:var(--w-medium); color:var(--text-secondary);
@@ -729,49 +756,197 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .seg button:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
 
 /* ══════════════════════════════════════════════════════════════════════════
-   TASK DETAIL (S6)
+   TASK DETAIL (S6) — A PROPERTY SHEET, NOT A FORM
+   ══════════════════════════════════════════════════════════════════════════
+   Owner decision 2026-08-22 (docs/reports/owner-decision-2026-08-22-the-detail-
+   is-a-property-sheet.md). NOBODY FILLS THIS SCREEN AND SUBMITS IT: F-005 AC-2
+   saves on blur and there is no Save button. The user opens a task, glances at
+   what it has, and changes one thing.
+
+   A PROPERTY IS A ROW SHOWING ITS CURRENT VALUE. Tap it and the picker opens.
+
+   MEASURED on the drawing this replaces: 10 bordered fields across 7 rows plus
+   3 segmented groups. Here two things keep a box, because you must be able to
+   find where to type — the name and the note — and even those show it only when
+   the value is EMPTY, HOVERED or FOCUSED. Every picked value is a row.
+
+   THE ONE THING THIS DRAWING DOES NOT SETTLE, ON PURPOSE: AC-2's save-on-blur is
+   written for fields. A picker row has no blur in that sense — it has an open, a
+   choice and a dismiss, and a dismiss without a choice must not write. That is a
+   spec question (T-213, spec-agent), and a mockup that quietly implied a commit
+   moment would be a spec written in the wrong file. So: none of the three new
+   pickers carries a commit button. The repeat picker does, and only because
+   `detail-repeat-commit` and `detail-repeat-cancel` are already in the published
+   testid contract — that commit moment is inherited, not decided here.
    ══════════════════════════════════════════════════════════════════════════ */
-.detail-head{padding:var(--s6) 0 var(--s4); border-bottom:var(--b-rule) solid var(--bg-rule)}
-.detail-head h1{
-  margin:0; font-size:var(--fs-display); line-height:var(--lh-title); letter-spacing:var(--ls-display);
-  font-weight:var(--w-semibold); max-width:24ch;
+
+/* ── the name. It IS the heading. The drawing this replaces carried an <h1> and
+   a separate "Name" field holding the same string — two places for one fact,
+   and one more box. ── */
+.detail-head{padding:var(--s6) 0 0}
+.typed-wrap{margin-left:calc(var(--s3) * -1); margin-right:calc(var(--s3) * -1)}
+.tin{
+  display:block; width:100%; margin:0; padding:var(--s2) var(--s3);
+  font:inherit; color:var(--text-primary); background:transparent;
+  border:var(--b-hairline) solid transparent; border-radius:var(--r-sm);
+  transition:border-color var(--t-micro) var(--ease);
+}
+/* THE AFFORDANCE ARRIVES ONLY WHEN IT IS NEEDED. Empty is the case that must
+   never be silent: with no value there is nothing on screen to click. */
+.tin:hover{border-color:var(--bg-hairline)}
+.tin:placeholder-shown{border-color:var(--bg-rule)}
+.tin:focus{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px; border-color:var(--accent)}
+.app[data-typed="shown"] .tin{border-color:var(--bg-rule)}
+.app[data-fail="field"] .name-in{border-color:var(--danger)}
+/* THE NAME WRAPS AND THE CONTROL GROWS. It is a textarea rather than an input
+   for one measured reason: at 390 the store's own Vietnamese title
+   "Gọi nha sĩ đặt lịch khám răng" clipped inside a single-line input at display
+   size, and DESIGN.md's rule is that a title is never truncated to protect a
+   column. Height is set from content by autosize() below, so nothing scrolls. */
+.name-in{
+  font-size:var(--fs-display); line-height:var(--lh-title);
+  letter-spacing:var(--ls-display); font-weight:var(--w-semibold);
+  resize:none; overflow:hidden;
+}
+.note-in{
+  min-height:calc(var(--field-h) * 2); resize:none;
+  font-size:var(--fs-body); line-height:var(--lh-body); color:var(--text-secondary);
 }
 .detail-head .meta{margin:var(--s3) 0 0; font-size:var(--fs-meta); color:var(--text-muted); font-family:var(--font-num)}
-.fields{display:grid; gap:var(--field-row-gap); padding:var(--s6) 0 0; width:100%; max-width:var(--form-max)}
+.fields{display:grid; gap:var(--s5); padding:0 0 var(--s2); width:100%; max-width:var(--form-max)}
+.sect{display:grid; gap:var(--s2)}
 .fail{
   display:flex; align-items:center; gap:var(--s2); flex-wrap:wrap;
   font-size:var(--fs-meta); color:var(--danger); margin-top:var(--field-help-gap);
 }
-.shortcuts{display:flex; flex-wrap:wrap; gap:var(--s2); margin-top:var(--s3)}
-.stepline{display:flex; align-items:center; gap:var(--s3); min-height:var(--h-md); border-bottom:var(--b-hairline) solid var(--bg-hairline); padding:var(--s1) 0}
-.stepline:last-of-type{border-bottom:0}
-.stepname{flex:1 1 auto; min-width:0; font-size:var(--fs-body)}
-.stepline.done .stepname{color:var(--text-muted); text-decoration:line-through}
-.step-add{display:flex; align-items:center; gap:var(--s2); margin-top:var(--s3)}
-.step-add .field{flex:1 1 auto}
-.repeat-summary{display:flex; align-items:center; gap:var(--s3); flex-wrap:wrap; min-height:var(--field-h)}
-.repeat-summary .txt{flex:1 1 auto; min-width:0; font-size:var(--fs-body)}
-.picker{border:var(--b-hairline) solid var(--bg-rule); padding:var(--s4); display:grid; gap:var(--s4)}
-.picker .cad{display:flex; flex-wrap:wrap; gap:var(--s2)}
+
+/* ── THE PROPERTY GROUP. A GROUND at radius.md holding rows that separate by
+   SPACE (border.separation_order: ground, then space, then a line). Case 2 of
+   when_a_line_earns_it does not apply: these are not columns an eye scans
+   across, they are four labelled values read one at a time. ── */
+.props{background:var(--bg-sunken); border-radius:var(--r-md); padding:var(--s2); display:grid; gap:var(--s1)}
+.prop-row{position:relative}
+.prop{
+  appearance:none; display:flex; align-items:center; gap:var(--s3); width:100%;
+  min-height:var(--h-lg); padding:var(--s2) var(--s3); text-align:left; cursor:pointer;
+  background:transparent; border:0; border-radius:var(--r-sm);
+  font:inherit; font-size:var(--fs-body); color:var(--text-primary);
+}
+.prop:hover{background:var(--bg-base)}
+.prop:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
+.prop[aria-disabled="true"]{cursor:not-allowed}
+.prop-label{flex:none; font-size:var(--fs-meta); font-weight:var(--w-semibold); color:var(--text-secondary)}
+@container (min-width:480px){ .prop-label{min-width:7.5rem} }
+.prop-value{flex:1 1 auto; min-width:0; line-height:var(--lh-meta)}
+.prop-value.num{font-family:var(--font-num)}
+.prop-value.unset{color:var(--text-muted)}
+.prop-value.warn{color:var(--attention)}
+/* Overdue is carried by a WORD on a tint, never by turning the date red — the
+   date under it stays text.primary (DESIGN.md ## Colour rules 3 and 4). */
+.prop-flag{
+  flex:none; font-size:var(--fs-label); letter-spacing:var(--ls-label);
+  text-transform:var(--font-case-label); font-weight:var(--w-semibold);
+  padding:2px 6px; border-radius:var(--r-xs); color:var(--danger); background:var(--danger-tint);
+}
+.prop-chev{flex:none; color:var(--text-muted)}
+
+/* ── A PICKER IS A LAYER THAT FLOATS. Web: a popover anchored under its own row,
+   radius.lg with shadow.overlay. iOS / Android: the platform bottom sheet,
+   radius.xl on the TOP TWO corners and 0 on the bottom two. ── */
+.pick{
+  display:none; position:absolute; z-index:30; top:calc(100% + var(--s1)); left:0;
+  width:min(420px, 100%); max-height:min(680px, 84vh); overflow-y:auto;
+  background:var(--bg-base); border:var(--b-hairline) solid var(--bg-hairline);
+  border-radius:var(--r-lg); box-shadow:var(--shadow-overlay); padding:var(--s4);
+  animation:pickin var(--t-std) var(--ease);
+}
+.pick .field-inline .field{flex:1 1 140px}
+.pick .field-inline .field.narrow{flex:0 1 128px}
+/* THE REPEAT EDITOR IS NOT A SMALL POPOVER. It carries a cadence, an interval,
+   seven weekday toggles, an end rule and a three-date preview — a control that
+   size is a dialog, and drawn as an anchored popover it ran off the pane it
+   lives in. On web it centres over the surface with a scrim; the three small
+   pickers stay anchored to their own row. On iOS and Android all four are the
+   platform bottom sheet, which is the rule one block down. */
+.prop-row[data-field="repeat"]{position:static}
+.app[data-pick="repeat"] .pick-scrim{background:var(--bg-scrim)}
+.prop-row[data-field="repeat"] .pick{
+  top:0; left:0; right:0; bottom:0; margin:auto; height:fit-content;
+  width:min(440px, calc(100% - var(--s6)));
+}
+.pick-in{display:grid; gap:var(--s4)}
+@keyframes pickin{from{opacity:0; transform:translateY(-4px)}to{opacity:1; transform:none}}
+.pick-head{display:flex; align-items:center; gap:var(--s3)}
+.pick-head .t-label{flex:1 1 auto}
+.pick-scrim{display:none; position:absolute; inset:0; z-index:29; background:transparent; border:0; padding:0}
+.plat-ios .pick-scrim,.plat-android .pick-scrim{background:var(--bg-scrim)}
+.plat-ios .prop-row,.plat-android .prop-row{position:static}
+.plat-ios .pick,.plat-android .pick,
+.plat-ios .prop-row[data-field="repeat"] .pick,.plat-android .prop-row[data-field="repeat"] .pick{
+  top:auto; bottom:0; left:0; right:0; width:auto; height:auto; margin:0;
+  border:0; border-radius:var(--r-xl) var(--r-xl) 0 0;
+  padding:var(--s3) var(--s5) var(--s6); animation:sheetin var(--t-emph) var(--ease);
+}
+@keyframes sheetin{from{transform:translateY(24px); opacity:0}to{transform:none; opacity:1}}
+/* A bottom sheet gets the platform grabber; an anchored web popover does not. */
+.pick-grab{display:none}
+.plat-ios .pick-grab,.plat-android .pick-grab{display:block; margin:0 auto var(--s2)}
+.opts{display:grid; gap:var(--s1)}
+.opt{
+  appearance:none; display:flex; align-items:center; gap:var(--s3); width:100%;
+  min-height:var(--h-md); padding:0 var(--s3); text-align:left; cursor:pointer;
+  background:transparent; border:0; border-radius:var(--r-sm);
+  font:inherit; font-size:var(--fs-body); color:var(--text-primary);
+}
+.opt:hover{background:var(--bg-sunken)}
+.opt:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
+/* The chosen option is WEIGHT plus a tick, so it survives with no colour at all. */
+.opt[aria-checked="true"]{font-weight:var(--w-semibold)}
+.opt .tick{margin-left:auto; color:var(--accent); visibility:hidden}
+.opt[aria-checked="true"] .tick{visibility:visible}
+.shortcuts{display:flex; flex-wrap:wrap; gap:var(--s2)}
+.pick .cad{display:flex; flex-wrap:wrap; gap:var(--s2)}
 .wk{display:flex; flex-wrap:wrap; gap:var(--s2)}
 .wk button{
-  appearance:none; cursor:pointer; background:transparent; color:var(--text-secondary);
-  border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-none);
+  appearance:none; cursor:pointer; background:var(--bg-sunken); color:var(--text-secondary);
+  border:0; border-radius:var(--r-sm);
   width:var(--min-target); height:var(--min-target); font-size:var(--fs-meta); font-weight:var(--w-semibold);
 }
-.wk button[aria-pressed="true"]{background:var(--text-primary); color:var(--bg-base); border-color:var(--text-primary)}
+.wk button[aria-pressed="true"]{background:var(--text-primary); color:var(--bg-base)}
 .wk button:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
-.preview{border-left:var(--b-mark) solid var(--bg-rule); padding-left:var(--s4); display:grid; gap:var(--s2)}
+.preview{background:var(--bg-sunken); border-radius:var(--r-md); padding:var(--s3) var(--s4); display:grid; gap:var(--s2)}
 .preview .pv{display:flex; gap:var(--s3); font-size:var(--fs-meta); align-items:baseline}
 .preview .pv strong{font-family:var(--font-num); font-weight:var(--w-semibold); color:var(--text-primary)}
 .preview .pv span{color:var(--text-muted)}
-.preview.refused{border-left-color:var(--attention)}
+.preview.refused{background:var(--attention-tint)}
 .preview .refusal{font-size:var(--fs-meta); color:var(--attention)}
-.danger-zone{max-width:var(--form-max); margin-top:var(--s7); padding-top:var(--s5); border-top:var(--b-rule) solid var(--bg-rule); display:flex; flex-wrap:wrap; gap:var(--s3)}
+
+/* ── steps: a LIST, not a form ── */
+.stepline{display:flex; align-items:center; gap:var(--s3); min-height:var(--h-md); padding:var(--s1) var(--s2)}
+.stepline:hover,.stepline:focus-within{background:var(--bg-sunken); border-radius:var(--r-sm)}
+.stepname{flex:1 1 auto; min-width:0; font-size:var(--fs-body)}
+.stepline.done .stepname{color:var(--text-muted); text-decoration:line-through}
+.step-add{display:flex; align-items:center; gap:var(--s2); min-height:var(--h-md); padding:var(--s1) var(--s2)}
+.step-add .plus{color:var(--text-muted); flex:none}
+/* The commit control for a new step arrives with the typing, like the boxes do.
+   A permanent "Add step" button beside a row that already reads "Add a step" is
+   two controls wearing one job (screen-content.md: each element does one job). */
+.step-add .btn{visibility:hidden}
+.step-add:focus-within .btn,.app[data-typed="shown"] .step-add .btn{visibility:visible}
+.step-new{
+  flex:1 1 auto; min-width:0; height:var(--h-md); min-height:var(--min-target); padding:0 var(--s3);
+  font:inherit; font-size:var(--fs-body); color:var(--text-primary);
+  background:transparent; border:var(--b-hairline) solid transparent; border-radius:var(--r-sm);
+}
+.step-new::placeholder{color:var(--text-muted)}
+.step-new:hover{border-color:var(--bg-hairline)}
+.step-new:focus{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px; border-color:var(--accent)}
+
+.danger-zone{max-width:var(--form-max); margin-top:var(--s7); display:flex; flex-wrap:wrap; gap:var(--s3)}
 .terminal{padding:var(--s8) 0; max-width:56ch}
 .terminal h2{margin:0 0 var(--s3); font-size:var(--fs-title); letter-spacing:var(--ls-title); line-height:var(--lh-title); font-weight:var(--w-semibold)}
 .terminal p{margin:0 0 var(--s4); color:var(--text-secondary)}
-.terminal .typed{border-left:var(--b-mark) solid var(--bg-rule); padding-left:var(--s4); margin:0 0 var(--s5)}
+.terminal .typed{background:var(--bg-sunken); border-radius:var(--r-md); padding:var(--s3) var(--s4); margin:0 0 var(--s5)}
 .sk-detail{display:grid; gap:var(--field-row-gap); padding:var(--s6) 0 0; max-width:var(--form-max)}
 .sk-pair{display:grid; gap:var(--s2)}
 
@@ -780,9 +955,9 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
    ══════════════════════════════════════════════════════════════════════════ */
 .rail-in{padding:var(--s5) var(--s4); display:flex; flex-direction:column; gap:var(--s1); height:100%}
 .rail-word{font-size:var(--fs-meta); font-weight:var(--w-bold); letter-spacing:.02em; margin-bottom:var(--s4); color:var(--text-primary)}
-.rail-row{display:flex; align-items:center; gap:var(--s3); min-height:var(--min-target); padding:0 var(--s3); font-size:var(--fs-meta); color:var(--text-secondary); cursor:pointer}
+.rail-row{display:flex; align-items:center; gap:var(--s3); min-height:var(--min-target); padding:0 var(--s3); border-radius:var(--r-sm); font-size:var(--fs-meta); color:var(--text-secondary); cursor:pointer}
 .rail-row .n{margin-left:auto; font-family:var(--font-num); color:var(--text-muted)}
-.rail-row.on{background:var(--bg-base); color:var(--text-primary); font-weight:var(--w-semibold); box-shadow:inset var(--b-mark) 0 0 var(--accent)}
+.rail-row.on{background:var(--bg-base); color:var(--text-primary); font-weight:var(--w-semibold)}
 .rail-break{height:var(--s5)}
 .rail-sub{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:var(--font-case-label); font-weight:var(--w-semibold); color:var(--text-muted); padding:var(--s3) var(--s3) var(--s1)}
 
@@ -796,19 +971,19 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .app[data-menu] .scrim,.app[data-sheet] .scrim{display:block}
 .over{
   position:absolute; top:0; bottom:0; left:0; width:calc(var(--layout-measure-rail) * 1px + var(--s8)); max-width:86%; z-index:21;
-  background:var(--bg-base); border-right:var(--b-rule) solid var(--bg-rule);
+  background:var(--bg-base); border-radius:0 var(--r-lg) var(--r-lg) 0;
   display:none; flex-direction:column; box-shadow:var(--shadow-overlay);
 }
 .app[data-menu] .over{display:flex}
 .over-head{display:flex; align-items:center; gap:var(--s2); height:56px; padding:0 var(--s3); border-bottom:var(--b-hairline) solid var(--bg-hairline); flex:none}
 .over-body{flex:1 1 auto; overflow-y:auto; padding:var(--s3) 0}
-.mrow{display:flex; align-items:center; gap:var(--s3); min-height:var(--min-target); height:var(--h-lg); padding:0 var(--s4); font-size:var(--fs-body); cursor:pointer; color:var(--text-primary)}
+.mrow{display:flex; align-items:center; gap:var(--s3); min-height:var(--min-target); height:var(--h-lg); margin:0 var(--s2); padding:0 var(--s3); border-radius:var(--r-sm); font-size:var(--fs-body); cursor:pointer; color:var(--text-primary)}
 .mrow .n{margin-left:auto; font-family:var(--font-num); font-size:var(--fs-meta); color:var(--text-muted)}
 .mrow.on{font-weight:var(--w-semibold); box-shadow:inset var(--b-mark) 0 0 var(--accent)}
 .over-foot{flex:none; border-top:var(--b-hairline) solid var(--bg-hairline); padding:var(--s2) 0}
 .sheet{
   position:absolute; left:0; right:0; bottom:0; z-index:22; background:var(--bg-base);
-  border-top:var(--b-rule) solid var(--bg-rule); padding:var(--s4) var(--s5) var(--s5);
+  border-radius:var(--r-xl) var(--r-xl) 0 0; padding:var(--s4) var(--s5) var(--s5);
   display:none; box-shadow:var(--shadow-overlay);
 }
 .app[data-sheet] .sheet{display:block}
@@ -822,6 +997,8 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .srow .slab span{display:block; font-size:var(--fs-meta); color:var(--text-secondary)}
 .srow.failed .slab span{color:var(--danger)}
 .sw{width:52px; height:32px; border-radius:var(--r-pill); background:var(--accent); position:relative; flex:none; cursor:pointer; border:0}
+/* control.note again: the switch is painted 52x32 and its hit area is the floor. */
+.sw::before{content:""; position:absolute; top:50%; left:50%; width:var(--min-target); height:var(--min-target); transform:translate(-50%,-50%)}
 .sw::after{content:""; position:absolute; right:3px; top:3px; width:26px; height:26px; border-radius:var(--r-circle); background:var(--color-light-bg-base)}
 .plat-android .sw{border:2px solid var(--accent)}
 
@@ -858,20 +1035,30 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .app[data-fail="none"] .v-fail-none.v-flex{display:flex}
 .app[data-fail="offline"] .v-fail-offline{display:block}
 .app[data-fail="offline"] .v-fail-offline.v-flex{display:flex}
-.app[data-repeat="count"] .v-repeat-count{display:block}
-.app[data-repeat="count"] .v-repeat-count.v-flex{display:flex}
+.app[data-pick="deadline"] .v-pick-deadline{display:block}
+.app[data-pick="deadline"] .v-pick-deadline.v-flex{display:flex}
+.app[data-pick="none"] .v-pick-none{display:block}
+.app[data-pick="none"] .v-pick-none.v-flex{display:flex}
+.app[data-pick="priority"] .v-pick-priority{display:block}
+.app[data-pick="priority"] .v-pick-priority.v-flex{display:flex}
+.app[data-pick="reminder"] .v-pick-reminder{display:block}
+.app[data-pick="reminder"] .v-pick-reminder.v-flex{display:flex}
+.app[data-pick="repeat"] .v-pick-repeat{display:block}
+.app[data-pick="repeat"] .v-pick-repeat.v-flex{display:flex}
+.app[data-rend="count"] .v-rend-count{display:block}
+.app[data-rend="count"] .v-rend-count.v-flex{display:flex}
+.app[data-rend="never"] .v-rend-never{display:block}
+.app[data-rend="never"] .v-rend-never.v-flex{display:flex}
+.app[data-rend="refused"] .v-rend-refused{display:block}
+.app[data-rend="refused"] .v-rend-refused.v-flex{display:flex}
+.app[data-rend="until"] .v-rend-until{display:block}
+.app[data-rend="until"] .v-rend-until.v-flex{display:flex}
 .app[data-repeat="none"] .v-repeat-none{display:block}
 .app[data-repeat="none"] .v-repeat-none.v-flex{display:flex}
-.app[data-repeat="picker"] .v-repeat-picker{display:block}
-.app[data-repeat="picker"] .v-repeat-picker.v-flex{display:flex}
-.app[data-repeat="refused"] .v-repeat-refused{display:block}
-.app[data-repeat="refused"] .v-repeat-refused.v-flex{display:flex}
 .app[data-repeat="summary"] .v-repeat-summary{display:block}
 .app[data-repeat="summary"] .v-repeat-summary.v-flex{display:flex}
 .app[data-repeat="unsupported"] .v-repeat-unsupported{display:block}
 .app[data-repeat="unsupported"] .v-repeat-unsupported.v-flex{display:flex}
-.app[data-repeat="until"] .v-repeat-until{display:block}
-.app[data-repeat="until"] .v-repeat-until.v-flex{display:flex}
 .app[data-series="single"] .v-series-single{display:block}
 .app[data-series="single"] .v-series-single.v-flex{display:flex}
 .app[data-series="yes"] .v-series-yes{display:block}
@@ -884,11 +1071,10 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .app[data-steps="refused"] .v-steps-refused.v-flex{display:flex}
 .app[data-surface="detail"] .v-surface-detail{display:block}
 .app[data-surface="detail"] .v-surface-detail.v-flex{display:flex}
-.rename{display:none}
-.app[data-row="rename"] .rename{display:flex}
-.app[data-row="rename"] .row-editable .row-open{display:none}
-.app[data-row="arrived"] .row-editable{box-shadow:inset var(--b-mark) 0 0 var(--accent)}
-
+.app[data-typed="off"] .v-typed-off{display:block}
+.app[data-typed="off"] .v-typed-off.v-flex{display:flex}
+.app[data-typed="shown"] .v-typed-shown{display:block}
+.app[data-typed="shown"] .v-typed-shown.v-flex{display:flex}
 </style>
 </head>
 <body class="plat-ios">
@@ -898,9 +1084,14 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   <span class="dev-tag">task detail · iOS · v2</span>
   <button data-s="detail-default" onclick="showState('detail-default')">detail-default</button>
   <button data-s="detail-blank" onclick="showState('detail-blank')">detail-blank</button>
+  <button data-s="detail-typed-affordance" onclick="showState('detail-typed-affordance')">detail-typed-affordance</button>
+  <button data-s="detail-overdue" onclick="showState('detail-overdue')">detail-overdue</button>
   <button data-s="detail-loading" onclick="showState('detail-loading')">detail-loading</button>
   <button data-s="detail-field-failed" onclick="showState('detail-field-failed')">detail-field-failed</button>
   <button data-s="detail-offline" onclick="showState('detail-offline')">detail-offline</button>
+  <button data-s="detail-priority-pick" onclick="showState('detail-priority-pick')">detail-priority-pick</button>
+  <button data-s="detail-deadline-pick" onclick="showState('detail-deadline-pick')">detail-deadline-pick</button>
+  <button data-s="detail-reminder-pick" onclick="showState('detail-reminder-pick')">detail-reminder-pick</button>
   <button data-s="detail-repeat" onclick="showState('detail-repeat')">detail-repeat</button>
   <button data-s="detail-repeat-until" onclick="showState('detail-repeat-until')">detail-repeat-until</button>
   <button data-s="detail-repeat-count" onclick="showState('detail-repeat-count')">detail-repeat-count</button>
@@ -911,16 +1102,17 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   <button data-s="detail-error" onclick="showState('detail-error')">detail-error</button>
   <button data-s="detail-deleted" onclick="showState('detail-deleted')">detail-deleted</button>
   <button data-s="phone-detail" onclick="showState('phone-detail')">phone-detail</button>
+  <button data-s="phone-detail-pick" onclick="showState('phone-detail-pick')">phone-detail-pick</button>
   <button onclick="toggleTheme()">light / dark</button>
   <button onclick="setFrame('')">frame: real width</button>
   <button onclick="setFrame('phone')">frame: phone</button>
   <button onclick="setFrame('wide')">frame: wide</button>
-  <p class="dev-note">The detail takes the centre column and the conversation stays beside it (IA § S6: one application state placed by CSS, never two states selected by a measured width). “frame: phone” shows the same surface below the split.</p>
+  <p class="dev-note">The detail is a PROPERTY SHEET: a row shows its current value and tapping it opens the picker. Twelve boxes became two — the name and the note, and even those show a boundary only when empty, hovered or focused. “detail-typed-affordance” forces that boundary on so it can be reviewed without a pointer.</p>
 </div>
 
 <div class="stagewrap"><div class="stage" id="stage">
 
-<div class="app" id="app" data-surface="detail" data-body="fields" data-repeat="summary" data-steps="list" data-fail="none" data-series="single">
+<div class="app" id="app" data-surface="detail" data-body="fields" data-pick="none" data-repeat="summary" data-rend="never" data-steps="list" data-fail="none" data-series="single" data-typed="off">
   <div class="frame">
     <div class="col-main">
       <header class="topbar"><div class="bar-in"><button class="backlink" data-testid="detail-close-button" accessibilityIdentifier="detail-close-button"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Today</button><span class="spacer"></span></div></header>
@@ -932,16 +1124,19 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
               <span class="btxt"><b>You’re offline</b>This task is already on the server, so edits to it are refused rather than queued.</span>
             </div>
             <div class="v v-body-fields">
-              <div class="detail-head">
-                <h1>Gọi nha sĩ đặt lịch khám răng</h1>
-                <p class="meta">Added Aug 18 · edited 9:40 PM · 3 steps</p>
-              </div>
 
+          <!-- THE PROPERTY SHEET. Four picked values are rows; two typed values
+               keep an affordance that arrives when empty, hovered or focused.
+               Three rows open a picker THAT CARRIES NO COMMIT BUTTON — see the
+               stylesheet's TASK DETAIL note and T-213. -->
           <div class="fields" data-testid="detail-fields" accessibilityIdentifier="detail-fields">
 
-            <div class="field-row" data-testid="detail-field" accessibilityIdentifier="detail-field" data-field="title">
-              <label class="field-label" for="d-title">Name</label>
-              <input class="field" id="d-title" data-testid="detail-title-input" accessibilityIdentifier="detail-title-input" value="Gọi nha sĩ đặt lịch khám răng">
+            <div class="detail-head" data-testid="detail-field" accessibilityIdentifier="detail-field" data-field="title">
+              <div class="typed-wrap">
+                <textarea class="tin name-in" id="d-title" data-testid="detail-title-input" accessibilityIdentifier="detail-title-input" rows="1"
+                       aria-label="Task name" placeholder="Name this task">Gọi nha sĩ đặt lịch khám răng</textarea>
+              </div>
+              <p class="meta" id="dMeta">Added Aug 18 · edited 9:40 PM · 3 steps</p>
               <span class="v v-flex v-fail-field fail" data-testid="detail-field-failure" accessibilityIdentifier="detail-field-failure">
                 <svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg> Couldn’t save the name. Your text is still here.
                 <button class="btn btn-sm btn-secondary" data-testid="detail-field-retry" accessibilityIdentifier="detail-field-retry"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>Retry</button>
@@ -951,161 +1146,198 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
               </span>
             </div>
 
-            <div class="field-row" data-field="note">
+            <div class="sect" data-field="note">
               <label class="field-label" for="d-note">Note</label>
-              <textarea class="field" id="d-note" data-testid="detail-note-input" accessibilityIdentifier="detail-note-input" rows="3">Ask about Saturday afternoon slots, and the price of a scale and polish.</textarea>
-            </div>
-
-            <div class="field-row" data-field="priority">
-              <span class="field-label" id="d-prio-l">Priority</span>
-              <span class="seg" data-testid="detail-priority-control" accessibilityIdentifier="detail-priority-control" role="group" aria-labelledby="d-prio-l">
-                <button type="button" data-testid="detail-priority-option" accessibilityIdentifier="detail-priority-option" aria-pressed="false">None</button>
-                <button type="button" aria-pressed="false">Low</button>
-                <button type="button" aria-pressed="false">Medium</button>
-                <button type="button" aria-pressed="true">High</button>
-              </span>
-            </div>
-
-            <div class="field-row" data-field="deadline">
-              <label class="field-label" for="d-dl">Deadline</label>
-              <div class="field-inline">
-                <input class="field" type="date" id="d-dl" data-testid="detail-deadline-date" accessibilityIdentifier="detail-deadline-date" value="2026-08-21">
-                <input class="field narrow" type="time" data-testid="detail-deadline-time" accessibilityIdentifier="detail-deadline-time" value="18:00" aria-label="Deadline time">
-                <button class="btn btn-sm btn-ghost" data-testid="detail-deadline-clear" accessibilityIdentifier="detail-deadline-clear">Clear</button>
+              <div class="typed-wrap">
+                <textarea class="tin note-in" id="d-note" data-testid="detail-note-input" accessibilityIdentifier="detail-note-input" placeholder="Anything worth remembering about this one.">Ask about Saturday afternoon slots, and the price of a scale and polish.</textarea>
               </div>
-              <div class="shortcuts">
-                <button class="chip" data-testid="detail-deadline-shortcut" accessibilityIdentifier="detail-deadline-shortcut">Today</button>
-                <button class="chip">Tomorrow</button>
-                <button class="chip">Next week</button>
-              </div>
-              <span class="field-help" data-testid="detail-deadline-collection" accessibilityIdentifier="detail-deadline-collection">Dated today, so it sits in Today.</span>
             </div>
 
-            <div class="field-row" data-field="reminder">
-              <label class="field-label" for="d-rm">Reminder</label>
-              <div class="field-inline">
-                <input class="field" type="date" id="d-rm" data-testid="detail-reminder-date" accessibilityIdentifier="detail-reminder-date" value="2026-08-21">
-                <input class="field narrow" type="time" data-testid="detail-reminder-time" accessibilityIdentifier="detail-reminder-time" value="17:30" aria-label="Reminder time">
-                <button class="btn btn-sm btn-ghost" data-testid="detail-reminder-clear" accessibilityIdentifier="detail-reminder-clear">Clear</button>
+            <div class="props">
+
+              <div class="prop-row" data-field="priority">
+                <button class="prop" type="button" aria-haspopup="dialog" aria-expanded="false" onclick="openPick('priority')">
+                  <span class="prop-label">Priority</span>
+                  <span class="prop-value" id="vPriority">High</span>
+                  <svg class="ic prop-chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                </button>
+                <div class="v v-pick-priority pick" role="dialog" aria-label="Priority">
+                  <div class="pick-in">
+                    <div class="grabber pick-grab" aria-hidden="true"></div>
+                    <div class="pick-head"><span class="t-label">Priority</span><button class="iconbtn" type="button" aria-label="Close" onclick="closePick()"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+                    <div class="opts" data-testid="detail-priority-control" accessibilityIdentifier="detail-priority-control" role="radiogroup" aria-label="Priority">
+                      <button class="opt" type="button" role="radio" aria-checked="false" data-testid="detail-priority-option" accessibilityIdentifier="detail-priority-option">None<svg class="ic tick" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button>
+                      <button class="opt" type="button" role="radio" aria-checked="false">Low<svg class="ic tick" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button>
+                      <button class="opt" type="button" role="radio" aria-checked="false">Medium<svg class="ic tick" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button>
+                      <button class="opt" type="button" role="radio" aria-checked="true">High<svg class="ic tick" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <span class="field-help">This is the one that alerts you. The deadline on its own is silent.</span>
+
+              <div class="prop-row" data-field="deadline">
+                <button class="prop" type="button" aria-haspopup="dialog" aria-expanded="false" onclick="openPick('deadline')">
+                  <span class="prop-label">Deadline</span>
+                  <span class="prop-value num" id="vDeadline">Fri 21 Aug · 6:00 PM</span>
+                  <span class="prop-flag" id="fDeadline" hidden>Overdue</span>
+                  <svg class="ic prop-chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                </button>
+                <div class="v v-pick-deadline pick" role="dialog" aria-label="Deadline">
+                  <div class="pick-in">
+                    <div class="grabber pick-grab" aria-hidden="true"></div>
+                    <div class="pick-head"><span class="t-label">Deadline</span><button class="iconbtn" type="button" aria-label="Close" onclick="closePick()"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+                    <div class="shortcuts">
+                      <button class="chip" type="button" data-testid="detail-deadline-shortcut" accessibilityIdentifier="detail-deadline-shortcut">Today</button>
+                      <button class="chip" type="button">Tomorrow</button>
+                      <button class="chip" type="button">Next week</button>
+                    </div>
+                    <div class="field-inline">
+                      <input class="field" type="date" id="d-dl" data-testid="detail-deadline-date" accessibilityIdentifier="detail-deadline-date" value="2026-08-21" aria-label="Deadline date">
+                      <input class="field narrow" type="time" data-testid="detail-deadline-time" accessibilityIdentifier="detail-deadline-time" value="18:00" aria-label="Deadline time">
+                    </div>
+                    <span class="field-help" data-testid="detail-deadline-collection" accessibilityIdentifier="detail-deadline-collection">Dated today, so it sits in Today.</span>
+                    <div class="btn-row"><button class="btn btn-sm btn-ghost" type="button" data-testid="detail-deadline-clear" accessibilityIdentifier="detail-deadline-clear">Clear</button></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="prop-row" data-field="reminder">
+                <button class="prop" type="button" aria-haspopup="dialog" aria-expanded="false" onclick="openPick('reminder')">
+                  <span class="prop-label">Reminder</span>
+                  <span class="prop-value num" id="vReminder">Fri 21 Aug · 5:30 PM</span>
+                  <svg class="ic prop-chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                </button>
+                <div class="v v-pick-reminder pick" role="dialog" aria-label="Reminder">
+                  <div class="pick-in">
+                    <div class="grabber pick-grab" aria-hidden="true"></div>
+                    <div class="pick-head"><span class="t-label">Reminder</span><button class="iconbtn" type="button" aria-label="Close" onclick="closePick()"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+                    <div class="field-inline">
+                      <input class="field" type="date" id="d-rm" data-testid="detail-reminder-date" accessibilityIdentifier="detail-reminder-date" value="2026-08-21" aria-label="Reminder date">
+                      <input class="field narrow" type="time" data-testid="detail-reminder-time" accessibilityIdentifier="detail-reminder-time" value="17:30" aria-label="Reminder time">
+                    </div>
+                    <span class="field-help">This is the one that alerts you. The deadline on its own is silent.</span>
+                    <div class="btn-row"><button class="btn btn-sm btn-ghost" type="button" data-testid="detail-reminder-clear" accessibilityIdentifier="detail-reminder-clear">Clear</button></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="prop-row" data-field="repeat">
+                <button class="prop" type="button" data-testid="detail-repeat-edit" accessibilityIdentifier="detail-repeat-edit" aria-haspopup="dialog" aria-expanded="false" onclick="openPick('repeat')">
+                  <span class="prop-label">Repeat</span>
+                  <span class="prop-value" id="vRepeat" data-testid="detail-repeat-summary" accessibilityIdentifier="detail-repeat-summary">Every week on Thursday, until Dec 18</span>
+                  <svg class="ic prop-chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                </button>
+                <p class="v v-repeat-unsupported field-help" data-testid="detail-repeat-refused" accessibilityIdentifier="detail-repeat-refused" style="color:var(--attention); margin:var(--s1) var(--s3) var(--s2)">
+                  A repeat needs a deadline. Set one above and this opens.
+                </p>
+                <div class="v v-pick-repeat pick" data-testid="detail-repeat-picker" accessibilityIdentifier="detail-repeat-picker" role="dialog" aria-label="Repeat">
+                  <div class="pick-in">
+                    <div class="grabber pick-grab" aria-hidden="true"></div>
+                    <div class="pick-head"><span class="t-label">Repeat</span><button class="iconbtn" type="button" aria-label="Close" onclick="closePick()"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+                    <div>
+                      <span class="field-label">How often</span>
+                      <div class="cad">
+                        <button class="chip" type="button" data-testid="detail-repeat-cadence" accessibilityIdentifier="detail-repeat-cadence" aria-pressed="false">Daily</button>
+                        <button class="chip" type="button" aria-pressed="true">Weekly</button>
+                        <button class="chip" type="button" aria-pressed="false">Monthly</button>
+                        <button class="chip" type="button" aria-pressed="false">Yearly</button>
+                      </div>
+                    </div>
+                    <div>
+                      <label class="field-label" for="d-int">Every</label>
+                      <div class="field-inline">
+                        <input class="field narrow" type="number" id="d-int" data-testid="detail-repeat-interval" accessibilityIdentifier="detail-repeat-interval" value="1" min="1">
+                        <span class="t-meta">week(s)</span>
+                      </div>
+                    </div>
+                    <div>
+                      <span class="field-label">On</span>
+                      <div class="wk" role="group" aria-label="Days of the week"><button type="button" data-testid="detail-repeat-weekday" accessibilityIdentifier="detail-repeat-weekday" aria-pressed="false" aria-label="Monday">M</button><button type="button" aria-pressed="false" aria-label="Tuesday">T</button><button type="button" aria-pressed="false" aria-label="Wednesday">W</button><button type="button" aria-pressed="true" aria-label="Thursday">T</button><button type="button" aria-pressed="false" aria-label="Friday">F</button><button type="button" aria-pressed="false" aria-label="Saturday">S</button><button type="button" aria-pressed="false" aria-label="Sunday">S</button></div>
+                    </div>
+                    <div>
+                      <span class="field-label">Ends</span>
+                      <span class="seg" data-testid="detail-repeat-end" accessibilityIdentifier="detail-repeat-end" role="group" aria-label="When the repeat ends">
+                        <button type="button" aria-pressed="true">Never</button>
+                        <button type="button" aria-pressed="false">On a date</button>
+                        <button type="button" aria-pressed="false">After</button>
+                      </span>
+                      <div class="v v-rend-until" style="margin-top:var(--s3)">
+                        <input class="field" type="date" data-testid="detail-repeat-until" accessibilityIdentifier="detail-repeat-until" value="2026-12-18" aria-label="Repeat until">
+                      </div>
+                      <div class="v v-flex v-rend-count field-inline" style="margin-top:var(--s3)">
+                        <input class="field narrow" type="number" data-testid="detail-repeat-count" accessibilityIdentifier="detail-repeat-count" value="12" min="1" aria-label="Number of times">
+                        <span class="t-meta">times</span>
+                      </div>
+                    </div>
+
+                    <div class="preview" data-testid="detail-repeat-preview" accessibilityIdentifier="detail-repeat-preview">
+                      <p class="t-label" style="margin:0">The next three</p>
+                      <p class="pv"><strong data-testid="detail-repeat-preview-date" accessibilityIdentifier="detail-repeat-preview-date">Thu Aug 27</strong> <span data-testid="detail-repeat-preview-collection" accessibilityIdentifier="detail-repeat-preview-collection">Upcoming</span></p>
+                      <p class="pv"><strong>Thu Sep 03</strong> <span>Upcoming</span></p>
+                      <p class="pv"><strong>Thu Sep 10</strong> <span>Upcoming</span></p>
+                    </div>
+
+                    <div class="v v-rend-refused preview refused">
+                      <p class="t-label" style="margin:0; color:var(--attention)">Two of these can’t be made</p>
+                      <p class="refusal" data-testid="detail-repeat-refusal" accessibilityIdentifier="detail-repeat-refusal">Feb 30 does not exist — that month is skipped.</p>
+                      <p class="refusal">The 12th falls before the deadline you set, so it is dropped.</p>
+                    </div>
+
+                    <!-- THE ONE COMMIT MOMENT IN THIS SCREEN, AND IT IS INHERITED.
+                         `detail-repeat-commit` / `detail-repeat-cancel` are already
+                         in the published testid contract, so the repeat editor keeps
+                         its explicit save. The three pickers above carry none, and
+                         whether their dismiss writes is AC-2's question, not this
+                         drawing's (T-213). -->
+                    <div class="btn-row">
+                      <button class="btn btn-primary" type="button" data-testid="detail-repeat-commit" accessibilityIdentifier="detail-repeat-commit">Save the repeat</button>
+                      <button class="btn btn-ghost" type="button" data-testid="detail-repeat-cancel" accessibilityIdentifier="detail-repeat-cancel" onclick="closePick()">Cancel</button>
+                      <button class="btn btn-ghost" type="button" data-testid="detail-repeat-clear" accessibilityIdentifier="detail-repeat-clear">Clear the repeat</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
 
-            <div class="field-row" data-field="steps">
+            <div class="sect" data-field="steps">
               <span class="field-label">Steps</span>
               <div class="v v-steps-list" data-testid="detail-steps" accessibilityIdentifier="detail-steps">
                 <ul style="list-style:none; margin:0; padding:0">
-                  
               <li class="stepline done" data-testid="detail-step-row" accessibilityIdentifier="detail-step-row">
                 <input class="cbx" type="checkbox" checked data-testid="detail-step-checkbox" accessibilityIdentifier="detail-step-checkbox" aria-label="Mark not done: Ring at 9 and ask for Dr Minh">
                 <span class="stepname" data-testid="detail-step-name" accessibilityIdentifier="detail-step-name">Ring at 9 and ask for Dr Minh</span>
-                <button class="iconbtn" data-testid="detail-step-move" accessibilityIdentifier="detail-step-move" aria-label="Move step"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg></button>
-                <button class="iconbtn" data-testid="detail-step-delete" accessibilityIdentifier="detail-step-delete" aria-label="Delete step"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                <button class="iconbtn" type="button" data-testid="detail-step-move" accessibilityIdentifier="detail-step-move" aria-label="Move step"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg></button>
+                <button class="iconbtn" type="button" data-testid="detail-step-delete" accessibilityIdentifier="detail-step-delete" aria-label="Delete step"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
               </li>
-                  
               <li class="stepline">
                 <input class="cbx" type="checkbox" aria-label="Complete: Check the insurance card is still valid">
                 <span class="stepname">Check the insurance card is still valid</span>
-                <button class="iconbtn" aria-label="Move step"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg></button>
-                <button class="iconbtn" aria-label="Delete step"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                <button class="iconbtn" type="button" aria-label="Move step"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg></button>
+                <button class="iconbtn" type="button" aria-label="Delete step"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
               </li>
-                  
               <li class="stepline">
                 <input class="cbx" type="checkbox" aria-label="Complete: Ask what a scale and polish costs">
                 <span class="stepname">Ask what a scale and polish costs</span>
-                <button class="iconbtn" aria-label="Move step"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg></button>
-                <button class="iconbtn" aria-label="Delete step"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                <button class="iconbtn" type="button" aria-label="Move step"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg></button>
+                <button class="iconbtn" type="button" aria-label="Delete step"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
               </li>
                 </ul>
               </div>
-              <p class="v v-steps-empty field-help" style="margin:0">No steps yet. Break the task down if it helps — one line each.</p>
-              <p class="v v-steps-refused field-help" data-testid="detail-steps-refused" accessibilityIdentifier="detail-steps-refused" style="color:var(--attention); margin:0">This task can’t take steps yet, so nothing was added.</p>
+              <p class="v v-steps-empty field-help" style="margin:0 var(--s2)">No steps yet. Break the task down if it helps — one line each.</p>
+              <p class="v v-steps-refused field-help" data-testid="detail-steps-refused" accessibilityIdentifier="detail-steps-refused" style="color:var(--attention); margin:0 var(--s2)">This task can’t take steps yet, so nothing was added.</p>
               <div class="step-add">
-                <input class="field" data-testid="detail-step-add-input" accessibilityIdentifier="detail-step-add-input" placeholder="What is the next step?" aria-label="Add a step">
-                <button class="btn btn-secondary" data-testid="detail-step-add-button" accessibilityIdentifier="detail-step-add-button"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Add step</button>
-              </div>
-            </div>
-
-            <div class="field-row" data-field="repeat">
-              <span class="field-label">Repeat</span>
-
-              <div class="v v-flex v-repeat-summary repeat-summary">
-                <svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>
-                <span class="txt" data-testid="detail-repeat-summary" accessibilityIdentifier="detail-repeat-summary">Every week on Thursday, until Dec 18</span>
-                <button class="btn btn-sm btn-secondary" data-testid="detail-repeat-edit" accessibilityIdentifier="detail-repeat-edit">Edit</button>
-                <button class="btn btn-sm btn-ghost" data-testid="detail-repeat-clear" accessibilityIdentifier="detail-repeat-clear">Clear</button>
-              </div>
-
-              <div class="v v-repeat-none">
-                <button class="btn btn-secondary"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>Set a repeat</button>
-              </div>
-
-              <p class="v v-repeat-unsupported field-help" data-testid="detail-repeat-refused" accessibilityIdentifier="detail-repeat-refused" style="color:var(--attention); margin:0">
-                A repeat needs a deadline. Set one above and this opens.
-              </p>
-
-              <div class="v v-repeat-picker v-repeat-until v-repeat-count v-repeat-refused picker" data-testid="detail-repeat-picker" accessibilityIdentifier="detail-repeat-picker">
-                <div>
-                  <span class="field-label">How often</span>
-                  <div class="cad">
-                    <button class="chip" data-testid="detail-repeat-cadence" accessibilityIdentifier="detail-repeat-cadence" aria-pressed="false">Daily</button>
-                    <button class="chip" aria-pressed="true">Weekly</button>
-                    <button class="chip" aria-pressed="false">Monthly</button>
-                    <button class="chip" aria-pressed="false">Yearly</button>
-                  </div>
-                </div>
-                <div>
-                  <label class="field-label" for="d-int">Every</label>
-                  <div class="field-inline">
-                    <input class="field narrow" type="number" id="d-int" data-testid="detail-repeat-interval" accessibilityIdentifier="detail-repeat-interval" value="1" min="1">
-                    <span class="t-meta">week(s)</span>
-                  </div>
-                </div>
-                <div>
-                  <span class="field-label">On</span>
-                  <div class="wk" role="group" aria-label="Days of the week"><button type="button" data-testid="detail-repeat-weekday" accessibilityIdentifier="detail-repeat-weekday" aria-pressed="false" aria-label="Monday">M</button><button type="button" aria-pressed="false" aria-label="Tuesday">T</button><button type="button" aria-pressed="false" aria-label="Wednesday">W</button><button type="button" aria-pressed="true" aria-label="Thursday">T</button><button type="button" aria-pressed="false" aria-label="Friday">F</button><button type="button" aria-pressed="false" aria-label="Saturday">S</button><button type="button" aria-pressed="false" aria-label="Sunday">S</button></div>
-                </div>
-                <div>
-                  <span class="field-label">Ends</span>
-                  <span class="seg" data-testid="detail-repeat-end" accessibilityIdentifier="detail-repeat-end" role="group" aria-label="When the repeat ends">
-                    <button type="button" aria-pressed="true">Never</button>
-                    <button type="button" aria-pressed="false">On a date</button>
-                    <button type="button" aria-pressed="false">After</button>
-                  </span>
-                  <div class="v v-repeat-until" style="margin-top:var(--s3)">
-                    <input class="field" type="date" data-testid="detail-repeat-until" accessibilityIdentifier="detail-repeat-until" value="2026-12-18" aria-label="Repeat until">
-                  </div>
-                  <div class="v v-repeat-count field-inline" style="margin-top:var(--s3)">
-                    <input class="field narrow" type="number" data-testid="detail-repeat-count" accessibilityIdentifier="detail-repeat-count" value="12" min="1" aria-label="Number of times">
-                    <span class="t-meta">times</span>
-                  </div>
-                </div>
-
-                <div class="preview" data-testid="detail-repeat-preview" accessibilityIdentifier="detail-repeat-preview">
-                  <p class="t-label" style="margin:0">The next three</p>
-                  <p class="pv"><strong data-testid="detail-repeat-preview-date" accessibilityIdentifier="detail-repeat-preview-date">Thu Aug 27</strong> <span data-testid="detail-repeat-preview-collection" accessibilityIdentifier="detail-repeat-preview-collection">Upcoming</span></p>
-                  <p class="pv"><strong>Thu Sep 03</strong> <span>Upcoming</span></p>
-                  <p class="pv"><strong>Thu Sep 10</strong> <span>Upcoming</span></p>
-                </div>
-
-                <div class="v v-repeat-refused preview refused">
-                  <p class="t-label" style="margin:0; color:var(--attention)">Two of these can’t be made</p>
-                  <p class="refusal" data-testid="detail-repeat-refusal" accessibilityIdentifier="detail-repeat-refusal">Feb 30 does not exist — that month is skipped.</p>
-                  <p class="refusal">The 12th falls before the deadline you set, so it is dropped.</p>
-                </div>
-
-                <div class="btn-row">
-                  <button class="btn btn-primary" data-testid="detail-repeat-commit" accessibilityIdentifier="detail-repeat-commit">Save the repeat</button>
-                  <button class="btn btn-ghost" data-testid="detail-repeat-cancel" accessibilityIdentifier="detail-repeat-cancel">Cancel</button>
-                </div>
+                <svg class="ic plus" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                <input class="step-new" data-testid="detail-step-add-input" accessibilityIdentifier="detail-step-add-input" placeholder="Add a step" aria-label="Add a step">
+                <button class="btn btn-sm btn-ghost" type="button" data-testid="detail-step-add-button" accessibilityIdentifier="detail-step-add-button">Add step</button>
               </div>
             </div>
 
           </div>
 
           <div class="danger-zone">
-            <button class="btn btn-danger-quiet" data-testid="detail-delete-button" accessibilityIdentifier="detail-delete-button"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete task</button>
-            <button class="v v-flex v-series-yes btn btn-danger-quiet" data-testid="detail-delete-series-button" accessibilityIdentifier="detail-delete-series-button"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>Delete every repeat</button>
+            <button class="btn btn-danger-quiet" type="button" data-testid="detail-delete-button" accessibilityIdentifier="detail-delete-button"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete task</button>
+            <button class="v v-flex v-series-yes btn btn-danger-quiet" type="button" data-testid="detail-delete-series-button" accessibilityIdentifier="detail-delete-series-button"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>Delete every repeat</button>
           </div>
             </div>
             <div class="v v-body-loading">
@@ -1129,6 +1361,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           </div></div>
           </div>
         </main>
+        <button class="pick-scrim v v-pick-priority v-pick-deadline v-pick-reminder v-pick-repeat" type="button" aria-label="Close the picker" onclick="closePick()"></button>
       </div>
     </div>
 
@@ -1163,126 +1396,273 @@ var STATES = {
   "detail-default": {
     "surface": "detail",
     "body": "fields",
+    "pick": "none",
     "repeat": "summary",
+    "rend": "never",
     "steps": "list",
     "fail": "none",
-    "series": "single"
+    "series": "single",
+    "typed": "off",
+    "vals": "set"
   },
   "detail-blank": {
     "surface": "detail",
     "body": "fields",
+    "pick": "none",
     "repeat": "none",
+    "rend": "never",
     "steps": "empty",
     "fail": "none",
-    "series": "single"
+    "series": "single",
+    "typed": "shown",
+    "vals": "unset",
+    "name": "",
+    "note": "",
+    "meta": "Added just now · by voice"
+  },
+  "detail-typed-affordance": {
+    "surface": "detail",
+    "body": "fields",
+    "pick": "none",
+    "repeat": "summary",
+    "rend": "never",
+    "steps": "list",
+    "fail": "none",
+    "series": "single",
+    "typed": "shown",
+    "vals": "set"
+  },
+  "detail-overdue": {
+    "surface": "detail",
+    "body": "fields",
+    "pick": "none",
+    "repeat": "none",
+    "rend": "never",
+    "steps": "list",
+    "fail": "none",
+    "series": "single",
+    "typed": "off",
+    "vals": "overdue"
   },
   "detail-loading": {
     "surface": "detail",
     "body": "loading",
+    "pick": "none",
     "repeat": "summary",
+    "rend": "never",
     "steps": "list",
     "fail": "none",
-    "series": "single"
+    "series": "single",
+    "typed": "off",
+    "vals": "set"
   },
   "detail-field-failed": {
     "surface": "detail",
     "body": "fields",
+    "pick": "none",
     "repeat": "summary",
+    "rend": "never",
     "steps": "list",
     "fail": "field",
-    "series": "single"
+    "series": "single",
+    "typed": "off",
+    "vals": "set"
   },
   "detail-offline": {
     "surface": "detail",
     "body": "fields",
+    "pick": "none",
     "repeat": "summary",
+    "rend": "never",
     "steps": "list",
     "fail": "offline",
-    "series": "single"
+    "series": "single",
+    "typed": "off",
+    "vals": "set"
+  },
+  "detail-priority-pick": {
+    "surface": "detail",
+    "body": "fields",
+    "pick": "priority",
+    "repeat": "summary",
+    "rend": "never",
+    "steps": "list",
+    "fail": "none",
+    "series": "single",
+    "typed": "off",
+    "vals": "set"
+  },
+  "detail-deadline-pick": {
+    "surface": "detail",
+    "body": "fields",
+    "pick": "deadline",
+    "repeat": "summary",
+    "rend": "never",
+    "steps": "list",
+    "fail": "none",
+    "series": "single",
+    "typed": "off",
+    "vals": "set"
+  },
+  "detail-reminder-pick": {
+    "surface": "detail",
+    "body": "fields",
+    "pick": "reminder",
+    "repeat": "summary",
+    "rend": "never",
+    "steps": "list",
+    "fail": "none",
+    "series": "single",
+    "typed": "off",
+    "vals": "set"
   },
   "detail-repeat": {
     "surface": "detail",
     "body": "fields",
-    "repeat": "picker",
+    "pick": "repeat",
+    "repeat": "summary",
+    "rend": "never",
     "steps": "list",
     "fail": "none",
-    "series": "single"
+    "series": "single",
+    "typed": "off",
+    "vals": "set"
   },
   "detail-repeat-until": {
     "surface": "detail",
     "body": "fields",
-    "repeat": "until",
+    "pick": "repeat",
+    "repeat": "summary",
+    "rend": "until",
     "steps": "list",
     "fail": "none",
-    "series": "single"
+    "series": "single",
+    "typed": "off",
+    "vals": "set"
   },
   "detail-repeat-count": {
     "surface": "detail",
     "body": "fields",
-    "repeat": "count",
+    "pick": "repeat",
+    "repeat": "summary",
+    "rend": "count",
     "steps": "list",
     "fail": "none",
-    "series": "single"
+    "series": "single",
+    "typed": "off",
+    "vals": "set"
   },
   "detail-repeat-refused": {
     "surface": "detail",
     "body": "fields",
-    "repeat": "refused",
+    "pick": "repeat",
+    "repeat": "summary",
+    "rend": "refused",
     "steps": "list",
     "fail": "none",
-    "series": "single"
+    "series": "single",
+    "typed": "off",
+    "vals": "set"
   },
   "detail-repeat-unsupported": {
     "surface": "detail",
     "body": "fields",
+    "pick": "none",
     "repeat": "unsupported",
+    "rend": "never",
     "steps": "list",
     "fail": "none",
-    "series": "single"
+    "series": "single",
+    "typed": "off",
+    "vals": "unset"
   },
   "detail-steps-refused": {
     "surface": "detail",
     "body": "fields",
+    "pick": "none",
     "repeat": "summary",
+    "rend": "never",
     "steps": "refused",
     "fail": "none",
-    "series": "single"
+    "series": "single",
+    "typed": "off",
+    "vals": "set"
   },
   "detail-series": {
     "surface": "detail",
     "body": "fields",
+    "pick": "none",
     "repeat": "summary",
+    "rend": "never",
     "steps": "list",
     "fail": "none",
-    "series": "yes"
+    "series": "yes",
+    "typed": "off",
+    "vals": "set"
   },
   "detail-error": {
     "surface": "detail",
     "body": "error",
+    "pick": "none",
     "repeat": "summary",
+    "rend": "never",
     "steps": "list",
     "fail": "none",
-    "series": "single"
+    "series": "single",
+    "typed": "off",
+    "vals": "set"
   },
   "detail-deleted": {
     "surface": "detail",
     "body": "deleted",
+    "pick": "none",
     "repeat": "summary",
+    "rend": "never",
     "steps": "list",
     "fail": "none",
-    "series": "single"
+    "series": "single",
+    "typed": "off",
+    "vals": "set"
   },
   "phone-detail": {
     "surface": "detail",
     "body": "fields",
+    "pick": "none",
     "repeat": "summary",
+    "rend": "never",
     "steps": "list",
     "fail": "none",
     "series": "single",
+    "typed": "off",
+    "vals": "set",
+    "frame": "phone"
+  },
+  "phone-detail-pick": {
+    "surface": "detail",
+    "body": "fields",
+    "pick": "deadline",
+    "repeat": "summary",
+    "rend": "never",
+    "steps": "list",
+    "fail": "none",
+    "series": "single",
+    "typed": "off",
+    "vals": "set",
     "frame": "phone"
   }
 };
-var KEYS = ["surface","body","repeat","steps","fail","series"];
+var KEYS = ["surface", "body", "pick", "repeat", "rend", "steps", "fail", "series", "typed"];
+
+/* Values a state paints. One place, so a state cannot show a deadline the
+   property row disagrees with. */
+var VALS = {
+  set:     {priority:'High',  deadline:'Fri 21 Aug · 6:00 PM', reminder:'Fri 21 Aug · 5:30 PM', repeat:'Every week on Thursday, until Dec 18'},
+  unset:   {priority:'None',  deadline:'None',                 reminder:'None',                 repeat:'None'},
+  overdue: {priority:'High',  deadline:'Wed 19 Aug · 6:00 PM', reminder:'None',                 repeat:'None'}
+};
+var NAME_DEFAULT = 'Gọi nha sĩ đặt lịch khám răng';
+var NOTE_DEFAULT = 'Ask about Saturday afternoon slots, and the price of a scale and polish.';
+var META_DEFAULT = 'Added Aug 18 · edited 9:40 PM · 3 steps';
 
 function showState(name){
   var cfg = STATES[name]; if(!cfg) return;
@@ -1300,36 +1680,86 @@ function showState(name){
   paint(cfg);
 }
 
-/* One number, one place. The head's count and the PathSwitch badge are the same
-   open-today figure; a state cannot show a summary that disagrees with the bar. */
-function paint(cfg){
-  var TITLE = {today:'Today', upcoming:'Upcoming', inbox:'Inbox', done:'Done'};
-  var COUNT = {
-    today:'<b>4</b> open · <span class="late">2 overdue</span>',
-    upcoming:'<b>3</b> coming up',
-    inbox:'<b>16</b> filed here',
-    done:'<b>4</b> completed'
-  };
-  var t = document.getElementById('colTitle');
-  var c = document.getElementById('colCount');
-  var name = cfg.title || TITLE[cfg.collection] || 'Today';
-  if (t) t.textContent = name;
-  if (c) c.innerHTML = cfg.count !== undefined ? cfg.count : (COUNT[cfg.collection] || '');
-  if (c) c.style.display = (cfg.count === '' ) ? 'none' : '';
-  var si = document.getElementById('stateInd'); if (si && cfg.ind) si.textContent = cfg.ind;
-  var et = document.getElementById('emptyTitle'); if (et && cfg.emptyTitle) et.textContent = cfg.emptyTitle;
-  var eb = document.getElementById('emptyBody'); if (eb && cfg.emptyBody) eb.textContent = cfg.emptyBody;
-  var badge = document.querySelectorAll('.path .count');
-  for (var i=0;i<badge.length;i++){
-    var n = cfg.today === undefined ? 4 : cfg.today;
-    badge[i].textContent = String(n);
-    badge[i].style.display = n === 0 ? 'none' : '';
-  }
+function setValue(id, text, unset, numeric){
+  var el = document.getElementById(id); if(!el) return;
+  el.textContent = text;
+  el.classList.toggle('unset', !!unset);
+  if (numeric) el.classList.toggle('num', !unset);
 }
 
+/* A text control that wraps has to be as tall as its text, or the last line is
+   behind a scrollbar the user never asked for. */
+function autosize(el){
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+function paint(cfg){
+  var v = VALS[cfg.vals || 'set'];
+  setValue('vPriority', v.priority, v.priority === 'None', false);
+  setValue('vDeadline', v.deadline, v.deadline === 'None', true);
+  setValue('vReminder', v.reminder, v.reminder === 'None', true);
+  var unsupported = cfg.repeat === 'unsupported';
+  var rep = unsupported ? 'Needs a deadline' : (cfg.repeat === 'none' ? 'None' : v.repeat);
+  setValue('vRepeat', rep, cfg.repeat === 'none', false);
+  var vr = document.getElementById('vRepeat');
+  if (vr) vr.classList.toggle('warn', unsupported);
+  var rowRepeat = document.querySelector('.prop-row[data-field="repeat"] .prop');
+  if (rowRepeat) rowRepeat.setAttribute('aria-disabled', unsupported ? 'true' : 'false');
+  var flag = document.getElementById('fDeadline');
+  if (flag) flag.hidden = (cfg.vals !== 'overdue');
+  var nm = document.getElementById('d-title');
+  if (nm) nm.value = (cfg.name === undefined ? NAME_DEFAULT : cfg.name);
+  var nt = document.getElementById('d-note');
+  if (nt) nt.value = (cfg.note === undefined ? NOTE_DEFAULT : cfg.note);
+  var mt = document.getElementById('dMeta');
+  if (mt) mt.textContent = cfg.meta || META_DEFAULT;
+  autosize(nm); autosize(nt);
+  syncPick();
+}
+
+/* ── THE PROPERTY ROW IS A CUSTOM CONTROL, so its focus contract is drawn here
+   rather than described. Role: the native <button>. Accessible name: the row's
+   own text, so what a voice-control user says is what they can see
+   ("Deadline Fri 21 Aug 6:00 PM"). Keys: Enter / Space open (native), Esc
+   closes. Open MOVES FOCUS into the picker's first control; close RETURNS IT to
+   the row that opened it, never to <body>. aria-expanded tracks both. ── */
+var lastOpener = null;
+function openPick(field){
+  var row = document.querySelector('.prop-row[data-field="'+field+'"]');
+  if (!row) return;
+  var opener = row.querySelector('.prop');
+  if (opener && opener.getAttribute('aria-disabled') === 'true') return;
+  lastOpener = opener;
+  document.getElementById('app').setAttribute('data-pick', field);
+  syncPick();
+  var first = row.querySelector('.pick button, .pick input, .pick select, .pick textarea');
+  if (first) first.focus();
+}
+function closePick(){
+  document.getElementById('app').setAttribute('data-pick', 'none');
+  syncPick();
+  if (lastOpener) lastOpener.focus();
+}
+function syncPick(){
+  var open = document.getElementById('app').getAttribute('data-pick') || 'none';
+  var rows = document.querySelectorAll('.prop-row');
+  for (var i=0;i<rows.length;i++){
+    var btn = rows[i].querySelector('.prop');
+    if (btn) btn.setAttribute('aria-expanded', rows[i].getAttribute('data-field') === open ? 'true' : 'false');
+  }
+}
+document.addEventListener('input', function(e){
+  if (e.target && e.target.classList && e.target.classList.contains('tin')) autosize(e.target);
+});
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape' && (document.getElementById('app').getAttribute('data-pick') || 'none') !== 'none') closePick();
+});
+
 function toggleTheme(){
-  var h = document.documentElement;
-  h.setAttribute('data-theme', h.getAttribute('data-theme')==='dark' ? 'light' : 'dark');
+  var el = document.documentElement;
+  el.setAttribute('data-theme', el.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
 }
 function setFrame(f){
   var stage = document.getElementById('stage');
