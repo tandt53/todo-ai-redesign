@@ -25,7 +25,6 @@
 | Task ID | Agent | Module | Feature | Subtree | Dispatched |
 |---------|-------|--------|---------|---------|------------|
 | T-233m + T-209 + T-241 | mobile-agent | assistant | — | src/assistant/mobile/, tests/assistant/mobile/ | 2026-08-22 |
-| T-233w + T-208 | web-agent | assistant | — | src/assistant/web/ | 2026-08-22 |
 <!-- Example:
 -->
 | — | — | — | — | — | — |
@@ -52,6 +51,7 @@
 <!-- Recent entries only — archive old results when the file grows. -->
 | Date | Agent | Task | Status | Summary | Next Action |
 |------|-------|------|--------|---------|-------------|
+| 2026-08-22 | web-agent | T-233w + T-208 | PARTIAL | Catalogue pins updated (47→76, 36→40), 5 drawn ids left AHEAD_OF_MOCKUPS, a 24th state added. Web slice 364/366. Two left red ON PURPOSE and correctly: the Talk button cannot retire until the voice FAB exists (0 implementations), and diffFlashHold/diffFlashFade are genuinely gone from tokens.json. | T-253 (design: decide whether the two motion tokens were retired or dropped — 6 docs and 2 clients still name them, and their values reappeared as literals) and T-254 (build the FAB, then retire the button) filed. |
 | 2026-08-22 | design-agent | T-251 | DONE | Adjacent selected grounds separate by 8px (was 0) on all three platforms; row-box gap stays 0, so the paint moved and the layout did not. Ground is now .row::before, shared by hover, focus-within and selected. Re-measured and re-rendered here. design-check 175/0/4, suite 1221/1240. | T-252 filed: a mechanical design-check rule for adjacent painted grounds — the check that would have caught this before the owner did. |
 | 2026-08-22 | spec-agent | T-250 | DONE | F-009 rev 4: AC-9 names the exit control as the design ships it, wording taken from the vocabulary table. Grepped the word — 13 hits, 1 stale, 12 legitimate. Flow diagram node "Mark done" correctly left alone: it names the action outcome, not the control. spec-check exit 0. | F-009 design track is closed: spec, design system, screens, Gate 1.5 and owner signoff all complete. |
 | 2026-08-22 | design-agent | T-249 | DONE | Done row is selectable and still reads as done: one checkbox, checkmark = done, fill colour = selected. All five rows align at cb=8/title=40 (re-measured here against .content-col; the return used a different origin). Complete/Done clash resolved by dropping the word — exit is now an icon labelled "Exit selection", with a vocabulary-table row for the concept. design-check 175/0/4. | T-250 dispatched to update the spec, which still names the exit control "Done". |

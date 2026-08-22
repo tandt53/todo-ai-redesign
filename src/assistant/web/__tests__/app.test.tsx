@@ -94,6 +94,42 @@ const NOT_BUILT: Record<string, string> = {
   // notice, would each be half a component.
   'tasks-save-notice': 'SaveNotice is drawn and unbuilt (components.md § SaveNotice, T-135)',
   'tasks-save-notice-dismiss': 'dismisses a notice that does not render yet (components.md § SaveNotice)',
+  // Voice FAB: the voice-first floating action button is drawn in app-shell.html
+  // but the web build does not render it (Talk surface is embedded, not a FAB).
+  'assistant-voice-fab': 'drawn T-227, web embeds Talk surface rather than a FAB overlay',
+  // ListEditorSheet color swatch: the list editor is not built (IA §7).
+  'list-editor-color-swatch': 'needs `lists` + `tasks.list_id` (IA §7)',
+  // Header rework (T-227/T-244): search and overflow buttons drawn, not built.
+  'shell-search-button': 'drawn T-227/T-244, search not built',
+  'shell-overflow-button': 'drawn T-227/T-244, overflow menu not built',
+  // Search field (§ SearchField, T-244): drawn, not built.
+  'tasks-search-input': '§ SearchField (T-244) — search not built',
+  'tasks-search-close': '§ SearchField (T-244) — search not built',
+  'tasks-no-results': '§ Empty states / Search (T-244) — search not built',
+  // Overflow menu (§ OverflowMenu, T-244): drawn, not built.
+  'overflow-menu': '§ OverflowMenu (T-244) — not built',
+  'overflow-sort-due': '§ OverflowMenu (T-244) — not built',
+  'overflow-sort-priority': '§ OverflowMenu (T-244) — not built',
+  'overflow-sort-manual': '§ OverflowMenu (T-244) — not built',
+  'overflow-hide-completed': '§ OverflowMenu (T-244) — not built',
+  'overflow-select': '§ OverflowMenu (T-244) — enters selection mode, not built',
+  // Selection mode (§ SelectMode, T-244): drawn, not built.
+  'tasks-select-checkbox': '§ SelectMode (T-244) — not built',
+  'tasks-select-count': '§ SelectMode / BulkToolbar (T-244) — not built',
+  'tasks-select-done': '§ SelectMode / BulkToolbar (T-244) — not built',
+  // Bulk operations (§ BulkToolbar, T-244): drawn, not built.
+  'tasks-bulk-toolbar': '§ BulkToolbar (T-244) — not built',
+  'tasks-bulk-complete': '§ BulkToolbar (T-244) — not built',
+  'tasks-bulk-delete': '§ BulkToolbar (T-244) — not built',
+  'tasks-bulk-move': '§ BulkToolbar (T-244) — not built',
+  // Confirmation dialog (§ ConfirmDialog, T-244): drawn, not built.
+  'tasks-confirm-dialog': '§ ConfirmDialog (T-244) — not built',
+  'tasks-confirm-delete': '§ ConfirmDialog (T-244) — not built',
+  'tasks-confirm-cancel': '§ ConfirmDialog (T-244) — not built',
+  // Drag handle (§ TaskRow, T-247): drawn, not built.
+  'tasks-drag-handle': '§ TaskRow (T-247) — drag handle for manual reorder, not built',
+  // Inline add (T-244): drawn, not built.
+  'tasks-inline-add': '§ InlineAdd (T-244) — not built',
 }
 
 /**
@@ -122,11 +158,6 @@ const NOT_BUILT: Record<string, string> = {
  * retyped copy.
  */
 const AHEAD_OF_MOCKUPS: Record<string, string> = {
-  'shell-carried-notices': '§ CarriedNotice (T-152) — the region; drawing owed at phase: screens',
-  'shell-carried-notice': '§ CarriedNotice (T-152) — one notice row exemplar',
-  'shell-carried-notice-retry': '§ CarriedNotice (T-152) — CN-FAILED / CN-OFFLINE Retry',
-  'shell-carried-notice-undo': '§ CarriedNotice (T-152) — CN-UNDO’s Put back',
-  'shell-carried-notice-dismiss': '§ CarriedNotice (T-152) — any row’s trailing dismiss',
   'tasks-row-priority-mark': '§ TaskRow → the row’s mark budget (T-152) — TR-URGENCY',
   'tasks-row-repeat-mark': '§ TaskRow → the row’s mark budget (T-152) — TR-REPEAT',
   'tasks-row-steps-mark': '§ TaskRow → the row’s mark budget (T-152) — TR-STEPS, web only',
@@ -212,6 +243,7 @@ const PROPOSED_IDS: Record<string, string> = {
   'detail-repeat-cancel': 'AC-20',
   'detail-delete-button': 'AC-31',
   'detail-delete-series-button': 'AC-30 — two controls, not one that asks sometimes',
+
 }
 
 /** The ids this build may render that the mockups do not declare. */
@@ -620,6 +652,36 @@ const STATES: { name: string; state: AppState; drive?: (m: Mounted) => void }[] 
     name: 'talk-session-failed',
     state: seed({ tasks: TASKS, sessionLoad: 'failed' }),
   },
+  {
+    // Carried notice: a failed save that the notice region shows.
+    // Without this state the 4 notice-item testids are drawn but never rendered.
+    name: 'shell-notice',
+    state: seed({
+      tasks: TASKS,
+      notices: [
+        {
+          taskId: 'task-1',
+          taskTitle: 'Review Q3 budget draft',
+          fields: [
+            {
+              field: 'due_at',
+              value: '2026-09-01T09:00:00Z',
+              baseline: null,
+              reason: 'failed' as const,
+              superseded: false,
+            },
+          ],
+          ended: null,
+          at: T0,
+        },
+      ],
+      undoOffer: {
+        action: { kind: 'delete-task' as const, taskId: 'task-3', title: 'Team standup' },
+        at: T0,
+        used: false,
+      },
+    }),
+  },
 ]
 
 function byName(n: string): AppState {
@@ -634,7 +696,7 @@ function byName(n: string): AppState {
 
 describe('testid contract (design mockup catalogue)', () => {
   it('renders all 23 mockup states', () => {
-    expect(STATES).toHaveLength(23)
+    expect(STATES).toHaveLength(24)
     for (const { name, state, drive } of STATES) {
       const { container } = mount(state, drive)
       expect(container.querySelector('.app'), name).not.toBeNull()
@@ -646,9 +708,9 @@ describe('testid contract (design mockup catalogue)', () => {
     // Both size guards are here for L-007's reason: a catalogue that silently
     // came back empty, or an exclusion list that silently excused everything,
     // both yield the same green as a working check.
-    expect(catalogue().size).toBe(47)
+    expect(catalogue().size).toBe(76)
     const expected = builtCatalogue()
-    expect(expected.size).toBe(36)
+    expect(expected.size).toBe(40)
 
     const seen = new Set<string>()
     for (const { state, drive } of STATES) {
