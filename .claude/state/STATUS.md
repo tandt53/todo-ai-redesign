@@ -24,6 +24,9 @@
 
 | Task ID | Agent | Module | Feature | Subtree | Dispatched |
 |---------|-------|--------|---------|---------|------------|
+| T-225-L1 | web-agent (dev lens) | assistant | F-009 | review-design, writes nothing | 2026-08-22 |
+| T-225-L2 | qa-web-agent (tester lens) | assistant | F-009 | review-design, writes nothing | 2026-08-22 |
+| T-225-L3 | spec-agent (spec lens) | assistant | F-009 | review-design, writes nothing | 2026-08-22 |
 <!-- Example:
 -->
 | — | — | — | — | — | — |
