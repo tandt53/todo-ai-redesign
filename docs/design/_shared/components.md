@@ -216,6 +216,16 @@ turned half-empty rows into stretched rules; `layout.ultra_answer` records the t
 it. **Hover and focus-within now paint a `bg.sunken` ground at `radius.md`** — a ground, not a box, and
 the first thing `border.separation_order` reaches for.
 
+**Ground inset (T-251): the row's painted ground is a `::before` pseudo, inset vertically by `space.1`
+(4px) from the row box edges.** This produces a `space.2` (8px) gap between adjacent painted grounds —
+hover, focus-within and selected all share the same pseudo. Without the inset, two selected rows (or a
+hovered row beside a focused one) butt directly and read as one fused blob with a pinched waist at the
+join. The horizontal extent is unchanged: the pseudo spans `left:0; right:0`, so it fills the row's
+padding-box width. The row pitch is unaffected — the row box is still `min-height: control.height.lg`
+with `space.2` padding and no margin. **Implementers: use an absolutely-positioned `::before` with
+`top: space.1; bottom: space.1; left:0; right:0; border-radius: radius.md; z-index:-1` inside an
+`isolation: isolate` stacking context on the row.** Never `background` on `.row` itself.
+
 **The marks sit beside the open affordance, not inside it** (same revision). Inside, the open button's
 visible text ended in the urgency `!` while its accessible name did not — a WCAG 2.5.3 label-in-name
 mismatch — and the mark's own meaning was never announced at all. Each mark now carries
@@ -1230,16 +1240,17 @@ remain visible.
 Bulk Complete applied to an already-complete task is normal — no special case, no error. The task
 stays complete. Nothing is disabled on account of doneness.
 
-**Selected row ground:** `accentTint` at `radius.md` — same pattern as the hover ground
-(`bg.sunken` at `radius.md`). **No padding override on the selected state.** The row's own
-`space.2` (8px) horizontal padding provides the inset; the ground fills the row's padding box,
-reaching the content-column edge (aligned with headings above). This means `cbLeft` and
-`titleLeft` are identical across all four row combinations — open, open+selected, done,
-done+selected — selecting a row never shifts its content. Consistent with `DESIGN.md ## Colour
-rules 5`: *"the row's ground means selection."* The selection is carried by **both** the checkbox
-state and the row ground — two signals, so it is not colour-only (`## Colour rules 3`). (T-248:
-the T-247 approach added padding to `.selected` only, which shifted selected rows 4px right —
-the ground now extends outward via the shared row padding instead.)
+**Selected row ground:** `accentTint` at `radius.md` — painted on the same `::before` pseudo as
+the hover ground (see § TaskRow, ground inset). **No padding override on the selected state.**
+The row's own `space.2` (8px) horizontal padding provides the horizontal inset; the `::before`
+pseudo provides the vertical inset (`space.1` top and bottom), so adjacent selected rows show an
+8px gap between their painted grounds instead of fusing into one blob. `cbLeft` and `titleLeft`
+are identical across all four row combinations — open, open+selected, done, done+selected —
+selecting a row never shifts its content. Consistent with `DESIGN.md ## Colour rules 5`:
+*"the row's ground means selection."* The selection is carried by **both** the checkbox state and
+the row ground — two signals, so it is not colour-only (`## Colour rules 3`). (T-248: padding
+moved to `.row`; T-251: ground moved from `background` on `.row` to `::before` pseudo for
+vertical inset.)
 
 **Row trailing:** the delete control is hidden in selection mode. The row has no trailing
 affordance — the bulk actions are in the toolbar, not per-row.

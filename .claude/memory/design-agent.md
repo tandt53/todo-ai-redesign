@@ -141,3 +141,17 @@ someone else's `git status`.
 
 The screenshots themselves were correct and the visual review did happen — this is only about
 where the files went.
+
+## 2026-08-22 | T-251 | the row's ground is a pseudo-element, not a property on the row
+
+**Context:** two row grounds can now be painted at once — selection mode, or focus-within beside
+hover. If the ground fills the row box they touch and fuse into one shape.
+
+**Mechanism:** the ground moved from `background` on `.row` to `background` on `.row::before`,
+inset vertically by `space.1` (4px) top and bottom inside an `isolation: isolate` context with
+`z-index:-1`. Adjacent grounds separate by `space.2` (8px) while the row pitch, the content
+positions and the horizontal extent all stay exactly where they were.
+
+**The trap this leaves for whoever comes next:** any future rule that sets `background` directly
+on `.row`, `.row:hover`, `.row.selected` or similar **bypasses the inset and brings the fused blob
+straight back.** All ground colours belong on `.row.<state>::before`.
