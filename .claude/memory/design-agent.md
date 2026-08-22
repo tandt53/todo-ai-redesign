@@ -114,3 +114,15 @@ row's content right, so selected rows sat 4px off from unselected ones and both 
 down the list. T-248 fixed it by putting the padding on `.row` instead, where the ground fills the
 padding box for every state. A measurement that had included both row states would have caught it
 the first time.
+
+## 2026-08-22 | T-249 | two states on one control position
+
+**Context:** a row must show two facts at once and there is only one control slot, because a
+second control would break the column alignment every other row keeps.
+
+**Lesson:** encode the two states in **different visual channels** — presence of a glyph versus
+fill colour — rather than adding a second control. Here a done row in selection mode uses one
+checkbox: the checkmark says *done*, the fill colour says *selected* (ink when not selected,
+accent when selected), and strikethrough plus the row ground each carry a second signal so
+neither fact is colour-only (`DESIGN.md ## Colour rules` 3). Two controls would have been the
+obvious move and would have cost both the alignment and the "which one do I tap" question.

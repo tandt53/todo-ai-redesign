@@ -24,7 +24,7 @@
 
 | Task ID | Agent | Module | Feature | Subtree | Dispatched |
 |---------|-------|--------|---------|---------|------------|
-| T-249 | design-agent | assistant | F-009 | docs/design/ | 2026-08-22 |
+| T-250 | spec-agent | assistant | F-009 | docs/specs/assistant/ | 2026-08-22 |
 <!-- Example:
 -->
 | — | — | — | — | — | — |
@@ -51,6 +51,7 @@
 <!-- Recent entries only — archive old results when the file grows. -->
 | Date | Agent | Task | Status | Summary | Next Action |
 |------|-------|------|--------|---------|-------------|
+| 2026-08-22 | design-agent | T-249 | DONE | Done row is selectable and still reads as done: one checkbox, checkmark = done, fill colour = selected. All five rows align at cb=8/title=40 (re-measured here against .content-col; the return used a different origin). Complete/Done clash resolved by dropping the word — exit is now an icon labelled "Exit selection", with a vocabulary-table row for the concept. design-check 175/0/4. | T-250 dispatched to update the spec, which still names the exit control "Done". |
 | 2026-08-22 | spec-agent | T-245 | DONE | F-009 rev 3: AC-9 keeps 'on each row' and gains the completed-row clause plus the rejected alternative; AC-11 states uniform bulk-complete as a rule, not a branch; OQ-2 filed for drag-reorder of done tasks, argued both ways and left open. spec-check exit 0, numbering intact. | T-250 filed: AC-9 still names the exit control 'Done', the word design is retiring. Update it from T-249's return. |
 | 2026-08-22 | design-agent | T-248 | DONE | space.2 padding on .row, so the ground fills the padding box in every state. Re-measured here: cb=8, title=40 for all rows, selected and not. Delivers the owner's extra left margin in the same change. design-check 175/0/4, suite 1221/1240. | Owner asked: row content now at 8 while headings and the inline add row stay at 0 — does the split rail read as a deliberate indent? T-245 still blocked on the done-row product call. |
 | 2026-08-22 | design-agent | T-247+T-246 | PARTIAL / DONE | Menu anchored (gap 68→4, overhang 82→0, all 3 platforms) and T-246 complete. But the checkbox inset was added to the CONTENT, so selecting a row shifts its checkbox and title 4px right and the columns jog — the owner's own 'layout ko đẹp' complaint in a new place. Caught by looking at the render; the agent measured inset 0→4 and declared 'Not checked: visual review'. | T-248 dispatched: the 4px must come from the ground extending outward, not the content moving in. |
