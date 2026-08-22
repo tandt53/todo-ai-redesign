@@ -24,9 +24,6 @@
 
 | Task ID | Agent | Module | Feature | Subtree | Dispatched |
 |---------|-------|--------|---------|---------|------------|
-| T-225-L1 | web-agent (dev lens) | assistant | F-009 | review-design, writes nothing | 2026-08-22 |
-| T-225-L2 | qa-web-agent (tester lens) | assistant | F-009 | review-design, writes nothing | 2026-08-22 |
-| T-225-L3 | spec-agent (spec lens) | assistant | F-009 | review-design, writes nothing | 2026-08-22 |
 <!-- Example:
 -->
 | — | — | — | — | — | — |
@@ -38,6 +35,7 @@
 
 | ID | Description | Waiting On | Raised By |
 |----|-------------|-----------|----------|
+| F-009 design signoff | Gate 1.5 passed with 0 HIGH. Implementation cannot start until the owner has looked at renders and answered. Renders sent; four questions outstanding (three from design-agent review_guide, one product call from Gate 1.5 M1). | The owner | orchestrator |
 | design-check render tier | Playwright 1.62.1 expects chromium build 1234; the container ships 1194, so the browser will not launch and layout/state/contrast/overflow checks SKIP while the summary still reads "0 failed". Pass `DESIGN_CHECK_BROWSER=/opt/pw-browsers/chromium-1194/chrome-linux/chrome` — 13 passed becomes 175. | Nothing — workaround is known and works | orchestrator |
 
 ---
@@ -53,6 +51,7 @@
 <!-- Recent entries only — archive old results when the file grows. -->
 | Date | Agent | Task | Status | Summary | Next Action |
 |------|-------|------|--------|---------|-------------|
+| 2026-08-22 | 3 lenses (dev/tester/spec) | Gate 1.5 F-009 | DONE | **0 HIGH from all three — nothing blocks implementation.** 3 MED (two of them the same finding reached independently) + 3 LOW. All 14 briefed ACs have a drawn state. design-check 175/0/4. Report: docs/reports/gate15-lenses/F-009-consolidated.md | T-245 filed and BLOCKED on one owner product call; T-246 filed for the testid gap plus the three LOWs. Owner design signoff is the remaining gate and it blocks every implementer. |
 | 2026-08-22 | design-agent | T-225 | DONE | phase: screens. 10 states x 3 shell mockups, 19 testids, 14 ACs. design-check 175/0/4; 54 states/53 renderings; suite 1221/1240 unchanged. The 1920 row gap is measured at 395px inside an 820px row. | Gate 1.5 dispatched (dev + tester + spec). Owner design signoff follows and blocks every implementer. |
 | 2026-08-22 | design-agent | T-244 | DONE | phase: system. Six component sections published for F-009 (SearchField, Search empty state, OverflowMenu, SelectionMode, BulkActionToolbar, ConfirmDialog), 13 ACs covered, 20 new testids, 4 drifted shell ids reconciled with reasons. No tokens added, no screens drawn. design-check 175/0/4; suite 1221/1240 unchanged. | T-225 (screens) unblocked. T-233's a11y cluster now has an exact work-list and is a src/ fix, not a docs one. |
 | 2026-08-22 | mobile-agent | T-242 | DONE | Frozen-date-vs-moving-clock fixed in two lines; fixtures.ts untouched. Suite 1220/1240 → 1221/1240, 19 failures. Date independence re-verified by the orchestrator at 23 Aug, 25 Aug and Mar 2027 — 41/41 each. Agent also threaded `now` through tasksSurfaceView, which the briefing had flagged as the likely second half of the defect. | Owner decisions A and B both closed. T-233 holds the remaining 19, most waiting on T-225. |

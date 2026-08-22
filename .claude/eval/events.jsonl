@@ -222,3 +222,4 @@
 {"ts":"2026-08-22T10:53:43.704Z","event":"agent_return","task":null,"agent":"qa-web-agent","status":"UNKNOWN","artifacts":[],"evidence_conflict":null,"session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
 {"ts":"2026-08-22T10:54:02.024Z","event":"agent_return","task":null,"agent":"spec-agent","status":"UNKNOWN","artifacts":[],"evidence_conflict":null,"session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
 {"ts":"2026-08-22T10:54:35.791Z","event":"session_stop","session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
+{"ts":"2026-08-22T10:55:22.124Z","event":"session_stop","session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
