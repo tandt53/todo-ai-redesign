@@ -24,6 +24,7 @@
 
 | Task ID | Agent | Module | Feature | Subtree | Dispatched |
 |---------|-------|--------|---------|---------|------------|
+| T-244 | design-agent | assistant | F-009 | docs/design/_shared/ | 2026-08-22 |
 <!-- Example:
 -->
 | — | — | — | — | — | — |
@@ -35,7 +36,7 @@
 
 | ID | Description | Waiting On | Raised By |
 |----|-------------|-----------|----------|
-| T-225 | Search + overflow menu design. Deferred by the owner, not stalled — it lands Gate 1.5 and then design_signoff, which blocks every implementer until the owner looks at renders. Dispatching before they are ready produces inventory, not progress. | The owner saying go | orchestrator |
+| design-check render tier | Playwright 1.62.1 expects chromium build 1234; the container ships 1194, so the browser will not launch and layout/state/contrast/overflow checks SKIP while the summary still reads "0 failed". Pass `DESIGN_CHECK_BROWSER=/opt/pw-browsers/chromium-1194/chrome-linux/chrome` — 13 passed becomes 175. | Nothing — workaround is known and works | orchestrator |
 
 ---
 
