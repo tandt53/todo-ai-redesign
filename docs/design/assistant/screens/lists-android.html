@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lists operations — F-008 · Android</title>
+<!--
+  LISTS OPERATIONS — F-008 lists · Android mockup · design-agent T-231 · 2026-08-22
+
+  Same operations as the web version. Platform differences:
+  - Roboto font (system-ui)
+  - Body size 16px, meta 14px (M3 bodyMedium per tokens.json)
+  - Hit-area floor 48dp
+  - Context menu: Material 3 popup menu (dropdown from overflow button)
+  - Delete confirmation: M3 dialog with text buttons, destructive on the right
+  - contentDescription attributes on interactive elements
+
+  See lists.html header for design decisions D1–D5.
+-->
+<style>
+:root {
+  --bg-base:#FFFFFF; --bg-sunken:#F2F2F4; --bg-raised:#FFFFFF;
+  --bg-ink:#111318; --bg-hairline:#DCDCE1; --bg-rule:#94949E;
+  --bg-scrim:rgba(17,19,24,0.32);
+  --text-primary:#111318; --text-secondary:#54545E; --text-muted:#646470;
+  --text-on-ink:#FFFFFF; --text-on-accent:#FFFFFF;
+  --accent:#002FA7; --accent-tint:#E6EAF6;
+  --danger:#C8102E; --danger-tint:#FBE9EC;
+  --attention:#9A4C00; --attention-tint:#FBEFE2;
+  --focus-ring:#002FA7;
+  --font-ui:Roboto,system-ui,-apple-system,sans-serif;
+  --font-num:ui-monospace,'Roboto Mono',Consolas,monospace;
+  --fs-label:11px; --fs-meta:14px; --fs-body:16px; --fs-lead:20px; --fs-title:24px;
+  --w-regular:400; --w-medium:500; --w-semibold:600; --w-bold:700;
+  --lh-tight:1.15; --lh-title:1.25; --lh-body:1.5; --lh-meta:1.4;
+  --ls-label:0.08em; --ls-title:-0.015em; --ls-body:0;
+  --s0:0; --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px; --s8:64px;
+  --r-none:0; --r-xs:4px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:28px; --r-pill:999px; --r-circle:50%;
+  --b-hairline:1px; --b-focus:2px; --b-mark:2px;
+  --shadow-overlay:0 12px 32px -12px rgba(17,19,24,0.28);
+  --h-sm:36px; --h-md:44px; --h-lg:52px; --min-target:48px;
+  --icon-stroke:1.5;
+  --font-case-label:uppercase;
+}
+[data-theme="dark"]{
+  --bg-base:#0E0E11; --bg-sunken:#17171C; --bg-raised:#17171C;
+  --bg-ink:#F4F4F6; --bg-hairline:#2E2E38; --bg-rule:#63636F;
+  --bg-scrim:rgba(0,0,0,0.56);
+  --text-primary:#F4F4F6; --text-secondary:#A8A8B4; --text-muted:#9296A3;
+  --text-on-ink:#0E0E11; --text-on-accent:#0E0E11;
+  --accent:#8AA6FF; --accent-tint:#1A2140;
+  --danger:#FF7183; --danger-tint:#2C1519;
+  --attention:#FFB020; --attention-tint:#2B2010;
+  --focus-ring:#8AA6FF;
+  --shadow-overlay:0 12px 32px -12px rgba(0,0,0,0.64);
+}
+
+*,*::before,*::after{box-sizing:border-box; margin:0; padding:0}
+body{font-family:var(--font-ui); font-size:var(--fs-body); line-height:var(--lh-body);
+  color:var(--text-primary); background:var(--bg-sunken); -webkit-font-smoothing:antialiased}
+button{font:inherit; color:inherit; cursor:pointer; border:0; background:none}
+input{font:inherit; color:inherit}
+
+.dev{position:fixed; top:0; left:0; right:0; z-index:100; background:#111; color:#ddd;
+  padding:8px 12px; display:flex; flex-wrap:wrap; gap:4px; font-size:12px; font-family:monospace}
+.dev button{background:#333; color:#ddd; padding:3px 8px; border-radius:4px; font-size:11px; font-family:monospace}
+.dev button.on{background:var(--accent); color:#fff}
+.dev p{width:100%; font-size:11px; color:#888; margin-top:4px}
+
+.stagewrap{padding-top:60px; min-height:100vh; display:flex; justify-content:center}
+.stage{position:relative; width:412px; height:892px;
+  background:var(--bg-sunken); border-radius:var(--r-md); overflow:hidden; margin:var(--s5)}
+
+.scrim{position:absolute; inset:0; background:var(--bg-scrim); z-index:20}
+.over{
+  position:absolute; top:0; bottom:0; left:0; width:320px; max-width:86%; z-index:21;
+  background:var(--bg-base); border-radius:0 var(--r-lg) var(--r-lg) 0;
+  display:flex; flex-direction:column; box-shadow:var(--shadow-overlay);
+}
+.over-head{display:flex; align-items:center; gap:var(--s2); height:56px; padding:0 var(--s3);
+  border-bottom:var(--b-hairline) solid var(--bg-hairline); flex:none}
+.over-body{flex:1 1 auto; overflow-y:auto; padding:var(--s3) 0; position:relative}
+.over-foot{flex:none; border-top:var(--b-hairline) solid var(--bg-hairline); padding:var(--s2) 0}
+.bar-title{font-size:var(--fs-lead); font-weight:var(--w-semibold); letter-spacing:var(--ls-title); flex:1 1 auto}
+.spacer{flex:1 1 auto}
+
+.iconbtn{display:inline-flex; align-items:center; justify-content:center;
+  width:var(--min-target); height:var(--min-target); border-radius:var(--r-sm); flex:none}
+.ic{stroke-width:var(--icon-stroke)}
+
+.mrow{display:flex; align-items:center; gap:var(--s3); min-height:var(--min-target); height:var(--h-lg);
+  margin:0 var(--s2); padding:0 var(--s3); border-radius:var(--r-sm);
+  font-size:var(--fs-body); cursor:pointer; color:var(--text-primary)}
+.mrow .n{margin-left:auto; font-family:var(--font-num); font-size:var(--fs-meta); color:var(--text-muted)}
+.mrow.on{font-weight:var(--w-semibold); box-shadow:inset var(--b-mark) 0 0 var(--accent)}
+.rail-break{height:var(--b-hairline); background:var(--bg-hairline); margin:var(--s2) var(--s4)}
+.rail-sub{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:var(--font-case-label);
+  font-weight:var(--w-semibold); color:var(--text-muted); padding:var(--s3) var(--s3) var(--s1)}
+
+.ldot{width:10px; height:10px; border-radius:var(--r-circle); flex:none}
+.lrow{position:relative}
+.lrow .overflow{opacity:1; margin-left:auto; flex:none;
+  display:inline-flex; align-items:center; justify-content:center;
+  width:var(--min-target); height:var(--min-target); border-radius:var(--r-sm)}
+.lrow .n{margin-left:0}
+
+/* ══════ M3 POPUP MENU (dropdown) ══════ */
+.ctx-menu{
+  position:absolute; right:var(--s2); z-index:30;
+  background:var(--bg-base); border-radius:var(--r-lg); box-shadow:var(--shadow-overlay);
+  min-width:200px; padding:var(--s1) 0; display:none;
+}
+.ctx-item{display:flex; align-items:center; gap:var(--s3); width:100%;
+  padding:var(--s3) var(--s4); font-size:var(--fs-body); line-height:var(--lh-body);
+  text-align:left; cursor:pointer; color:var(--text-primary);
+  min-height:var(--min-target)}
+.ctx-item:hover{background:var(--bg-sunken)}
+.ctx-item.danger{color:var(--danger)}
+.ctx-item.disabled{opacity:0.4; cursor:not-allowed; pointer-events:none}
+.ctx-sep{height:var(--b-hairline); background:var(--bg-hairline); margin:var(--s1) var(--s4)}
+
+/* ══════ M3 DIALOG (delete confirmation) ══════ */
+.m3-dialog-scrim{position:absolute; inset:0; z-index:40; background:var(--bg-scrim);
+  display:none; align-items:center; justify-content:center; padding:var(--s5)}
+.m3-dialog{background:var(--bg-base); border-radius:var(--r-xl); padding:var(--s5);
+  max-width:320px; width:100%; box-shadow:var(--shadow-overlay)}
+.m3-dialog h2{font-size:var(--fs-lead); font-weight:var(--w-semibold);
+  line-height:var(--lh-title); margin-bottom:var(--s3)}
+.m3-dialog p{font-size:var(--fs-body); line-height:var(--lh-body);
+  color:var(--text-secondary); margin-bottom:var(--s5)}
+.m3-dialog .btn-row{display:flex; justify-content:flex-end; gap:var(--s2)}
+.m3-dialog .btn-text{height:var(--min-target); padding:0 var(--s3); border-radius:var(--r-sm);
+  font-size:var(--fs-meta); font-weight:var(--w-semibold); display:inline-flex; align-items:center;
+  text-transform:uppercase; letter-spacing:0.04em}
+.m3-dialog .btn-text.danger{color:var(--danger)}
+.m3-dialog .btn-text.neutral{color:var(--text-primary)}
+
+/* ══════ INLINE RENAME ══════ */
+.rename-form{display:none; padding:var(--s2) var(--s4) var(--s3)}
+.rename-form .field-row{margin-bottom:var(--s3)}
+.rename-form label{display:block; font-size:var(--fs-meta); font-weight:var(--w-semibold);
+  color:var(--text-secondary); margin-bottom:6px}
+.rename-form .field{display:block; width:100%; height:var(--h-md); padding:0 12px;
+  border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-sm);
+  font-size:var(--fs-body); background:var(--bg-base); color:var(--text-primary)}
+.rename-form .field:focus{outline:none; border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent)}
+.rename-form .field-error{display:block; font-size:var(--fs-meta); color:var(--danger);
+  margin-top:6px; line-height:var(--lh-meta)}
+.rename-form .btn-row{display:flex; gap:var(--s2)}
+
+/* ══════ INLINE RECOLOUR ══════ */
+.recolour-panel{display:none; padding:var(--s2) var(--s4) var(--s3)}
+.recolour-panel .rlabel{font-size:var(--fs-meta); font-weight:var(--w-semibold);
+  color:var(--text-secondary); margin-bottom:var(--s2); display:block}
+.swatches{display:flex; gap:var(--s2); flex-wrap:nowrap}
+.swatch{
+  appearance:none; border:0; cursor:pointer; width:var(--h-sm); height:var(--h-sm);
+  min-width:var(--min-target); min-height:var(--min-target);
+  border-radius:var(--r-circle); position:relative;
+}
+.swatch.on::after{content:""; position:absolute; inset:3px; border:2px solid var(--bg-base); border-radius:var(--r-circle)}
+
+/* ══════ BUTTONS ══════ */
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:var(--s2);
+  height:var(--h-md); padding:0 20px; border-radius:var(--r-sm); font-size:var(--fs-body);
+  font-weight:var(--w-semibold); cursor:pointer; border:0; line-height:1; white-space:nowrap}
+.btn-sm{height:var(--h-sm); padding:0 var(--s3); font-size:var(--fs-meta)}
+.btn-primary{background:var(--accent); color:var(--text-on-accent)}
+.btn-ghost{background:transparent; color:var(--text-primary)}
+
+/* ══════ GESTURE BAR ══════ */
+.gesturebar{height:3px; width:108px; border-radius:var(--r-pill); background:var(--text-primary);
+  opacity:.55; margin:var(--s3) auto var(--s2); position:absolute; bottom:0; left:50%; transform:translateX(-50%)}
+
+/* ══════ VIEW SWITCHING ══════ */
+.v{display:none}
+
+[data-state="default"] .v-default{display:block}
+[data-state="default"] .v-default.vflex{display:flex}
+
+[data-state="menu-nonempty"] .v-default{display:block}
+[data-state="menu-nonempty"] .v-default.vflex{display:flex}
+[data-state="menu-nonempty"] .ctx-menu.for-work{display:block}
+
+[data-state="menu-empty-list"] .v-default{display:block}
+[data-state="menu-empty-list"] .v-default.vflex{display:flex}
+[data-state="menu-empty-list"] .ctx-menu.for-groceries{display:block}
+
+[data-state="rename"] .v-rename{display:block}
+[data-state="rename"] .v-rename.vflex{display:flex}
+[data-state="rename"] .rename-form.for-work{display:block}
+[data-state="rename"] .lrow.work-row{display:none}
+
+[data-state="rename-taken"] .v-rename-taken{display:block}
+[data-state="rename-taken"] .v-rename-taken.vflex{display:flex}
+[data-state="rename-taken"] .rename-form.for-work-taken{display:block}
+[data-state="rename-taken"] .lrow.work-row{display:none}
+
+[data-state="recolour"] .v-default{display:block}
+[data-state="recolour"] .v-default.vflex{display:flex}
+[data-state="recolour"] .recolour-panel.for-work{display:block}
+
+[data-state="delete-confirm"] .v-default{display:block}
+[data-state="delete-confirm"] .v-default.vflex{display:flex}
+[data-state="delete-confirm"] .m3-dialog-scrim{display:flex}
+
+[data-state="reorder-done"] .v-reorder{display:block}
+[data-state="reorder-done"] .v-reorder.vflex{display:flex}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms !important; transition-duration:.001ms !important}
+}
+</style>
+</head>
+<body>
+
+<div class="dev">
+  <button data-s="default" onclick="showState('default')">default</button>
+  <button data-s="menu-nonempty" onclick="showState('menu-nonempty')">menu (5 tasks)</button>
+  <button data-s="menu-empty-list" onclick="showState('menu-empty-list')">menu (0 tasks)</button>
+  <button data-s="rename" onclick="showState('rename')">rename</button>
+  <button data-s="rename-taken" onclick="showState('rename-taken')">rename-taken</button>
+  <button data-s="recolour" onclick="showState('recolour')">recolour</button>
+  <button data-s="delete-confirm" onclick="showState('delete-confirm')">delete-confirm</button>
+  <button data-s="reorder-done" onclick="showState('reorder-done')">reorder-done</button>
+  <button onclick="toggleTheme()">light / dark</button>
+  <p>Lists operations — F-008 · Android. M3 popup menu and dialog. 48dp hit areas. Roboto at 16px body, 14px meta.</p>
+</div>
+
+<div class="stagewrap"><div class="stage" id="stage">
+<div class="scrim"></div>
+
+<aside class="over" id="drawer" data-state="default" aria-label="Lists">
+  <div class="over-head">
+    <span class="bar-title">Lists</span><span class="spacer"></span>
+    <button class="iconbtn" contentDescription="menu-close-button" aria-label="Close"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+  </div>
+
+  <div class="over-body">
+    <div class="mrow on" contentDescription="menu-collection-row"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>Today<span class="n">4</span></div>
+    <div class="mrow"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18"/><path d="M3 10h18"/></svg>Upcoming</div>
+    <div class="mrow"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Done<span class="n">4</span></div>
+    <div class="rail-break"></div>
+    <div class="mrow"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>Inbox<span class="n">16</span></div>
+
+    <div class="v v-default v-rename v-rename-taken"><p class="rail-sub">Your lists</p></div>
+
+    <!-- Work row -->
+    <div class="mrow lrow work-row v v-default" contentDescription="menu-list-row" style="position:relative">
+      <span class="ldot" style="background:#002FA7" aria-hidden="true"></span>
+      Work<span class="n">5</span>
+      <button class="overflow" contentDescription="list-row-overflow-button" aria-label="More options for Work"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+
+      <!-- M3 popup menu for Work -->
+      <nav class="ctx-menu for-work" role="menu" aria-label="Work list actions" contentDescription="list-action-menu">
+        <button class="ctx-item" role="menuitem" contentDescription="list-action-rename"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>Rename</button>
+        <button class="ctx-item" role="menuitem" contentDescription="list-action-recolour"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12" r="2.5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10a2 2 0 0 0 2-2v-1a2 2 0 0 1 2-2h1a2 2 0 0 0 2-2c0-5.5-4.5-10-10-10z"/></svg>Change colour</button>
+        <div class="ctx-sep"></div>
+        <button class="ctx-item disabled" role="menuitem" aria-disabled="true" contentDescription="list-action-move-up"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>Move up</button>
+        <button class="ctx-item" role="menuitem" contentDescription="list-action-move-down"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>Move down</button>
+        <div class="ctx-sep"></div>
+        <button class="ctx-item danger" role="menuitem" contentDescription="list-action-delete"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete</button>
+      </nav>
+    </div>
+
+    <!-- Rename form for Work -->
+    <div class="rename-form for-work v v-rename">
+      <div class="field-row">
+        <label for="rename-and">List name</label>
+        <input class="field" id="rename-and" contentDescription="list-rename-input" value="Work">
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-sm btn-primary" contentDescription="list-rename-save-button">Save</button>
+        <button class="btn btn-sm btn-ghost" contentDescription="list-rename-cancel-button">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Rename form with error -->
+    <div class="rename-form for-work-taken v v-rename-taken">
+      <div class="field-row">
+        <label for="rename-and-err">List name</label>
+        <input class="field" id="rename-and-err" value="Home" style="border-color:var(--danger)">
+        <span class="field-error">A list called Home already exists.</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-sm btn-primary" contentDescription="list-rename-save-button">Save</button>
+        <button class="btn btn-sm btn-ghost" contentDescription="list-rename-cancel-button">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Home row -->
+    <div class="mrow lrow v v-default v-rename v-rename-taken" style="position:relative">
+      <span class="ldot" style="background:#1A7A2E" aria-hidden="true"></span>
+      Home<span class="n">2</span>
+      <button class="overflow" contentDescription="list-row-overflow-button" aria-label="More options for Home"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+    </div>
+
+    <!-- Recolour panel for Work -->
+    <div class="recolour-panel for-work">
+      <span class="rlabel">Colour for Work</span>
+      <div class="swatches" role="radiogroup" aria-label="List colour" contentDescription="list-recolour-swatch-group">
+        <button type="button" class="swatch" contentDescription="list-recolour-swatch" role="radio" aria-checked="false" aria-label="Grey" style="background:#94949E"></button>
+        <button type="button" class="swatch on" contentDescription="list-recolour-swatch" role="radio" aria-checked="true" aria-label="Blue" style="background:#002FA7"></button>
+        <button type="button" class="swatch" contentDescription="list-recolour-swatch" role="radio" aria-checked="false" aria-label="Red" style="background:#C8102E"></button>
+        <button type="button" class="swatch" contentDescription="list-recolour-swatch" role="radio" aria-checked="false" aria-label="Amber" style="background:#9A4C00"></button>
+        <button type="button" class="swatch" contentDescription="list-recolour-swatch" role="radio" aria-checked="false" aria-label="Green" style="background:#1A7A2E"></button>
+        <button type="button" class="swatch" contentDescription="list-recolour-swatch" role="radio" aria-checked="false" aria-label="Purple" style="background:#7C3AED"></button>
+        <button type="button" class="swatch" contentDescription="list-recolour-swatch" role="radio" aria-checked="false" aria-label="Teal" style="background:#0E7490"></button>
+      </div>
+    </div>
+
+    <!-- Groceries row (0 tasks) -->
+    <div class="mrow lrow v v-default v-rename v-rename-taken" style="position:relative">
+      <span class="ldot" style="background:#9A4C00" aria-hidden="true"></span>
+      Groceries
+      <button class="overflow" contentDescription="list-row-overflow-button" aria-label="More options for Groceries"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+
+      <!-- M3 popup menu for Groceries -->
+      <nav class="ctx-menu for-groceries" role="menu" aria-label="Groceries list actions" contentDescription="list-action-menu">
+        <button class="ctx-item" role="menuitem" contentDescription="list-action-rename"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>Rename</button>
+        <button class="ctx-item" role="menuitem" contentDescription="list-action-recolour"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12" r="2.5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10a2 2 0 0 0 2-2v-1a2 2 0 0 1 2-2h1a2 2 0 0 0 2-2c0-5.5-4.5-10-10-10z"/></svg>Change colour</button>
+        <div class="ctx-sep"></div>
+        <button class="ctx-item" role="menuitem" contentDescription="list-action-move-up"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>Move up</button>
+        <button class="ctx-item disabled" role="menuitem" aria-disabled="true" contentDescription="list-action-move-down"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>Move down</button>
+        <div class="ctx-sep"></div>
+        <button class="ctx-item danger" role="menuitem" contentDescription="list-action-delete"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete</button>
+      </nav>
+    </div>
+
+    <!-- Reordered list -->
+    <div class="v v-reorder"><p class="rail-sub">Your lists</p></div>
+    <div class="mrow lrow v v-reorder"><span class="ldot" style="background:#1A7A2E" aria-hidden="true"></span>Home<span class="n">2</span><button class="overflow" aria-label="More options for Home"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button></div>
+    <div class="mrow lrow v v-reorder"><span class="ldot" style="background:#002FA7" aria-hidden="true"></span>Work<span class="n">5</span><button class="overflow" aria-label="More options for Work"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button></div>
+    <div class="mrow lrow v v-reorder"><span class="ldot" style="background:#9A4C00" aria-hidden="true"></span>Groceries<button class="overflow" aria-label="More options for Groceries"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button></div>
+  </div><!-- .over-body -->
+
+  <div class="over-foot">
+    <div class="mrow" contentDescription="menu-new-list-button"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New list</div>
+    <div class="mrow" contentDescription="menu-settings-row"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>Settings</div>
+  </div>
+
+  <div class="gesturebar"></div>
+</aside>
+
+<!-- M3 DIALOG for delete confirmation (over entire screen) -->
+<div class="m3-dialog-scrim" contentDescription="list-delete-dialog">
+  <div class="m3-dialog" role="alertdialog" aria-modal="true" aria-labelledby="del-title-and">
+    <h2 id="del-title-and">Delete Work?</h2>
+    <p>Move 5 tasks to Inbox and delete Work? The tasks are not deleted.</p>
+    <div class="btn-row">
+      <button class="btn-text neutral" contentDescription="list-delete-cancel-button">Cancel</button>
+      <button class="btn-text danger" contentDescription="list-delete-confirm-button">Delete</button>
+    </div>
+  </div>
+</div>
+
+</div></div>
+
+<script>
+function showState(name){
+  var d = document.getElementById('drawer');
+  if(d) d.setAttribute('data-state', name);
+  var btns = document.querySelectorAll('.dev button[data-s]');
+  for(var i=0;i<btns.length;i++) btns[i].classList.toggle('on', btns[i].getAttribute('data-s')===name);
+}
+function toggleTheme(){
+  var h = document.documentElement;
+  h.setAttribute('data-theme', h.getAttribute('data-theme')==='dark'?'light':'dark');
+}
+showState('default');
+</script>
+</body>
+</html>

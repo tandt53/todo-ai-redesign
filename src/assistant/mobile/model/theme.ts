@@ -17,20 +17,59 @@ export const tokens = tokensJson
 
 export type ThemeName = 'dark' | 'light'
 
+// tokens.json v2 renamed colours and retired two accents ($meta.accents):
+//   primary → accent, primaryTint → accentTint
+//   question → attention, questionTint → attentionTint
+//   success, voice, diff → RETIRED (accent set closed at three)
+//
+// This translation layer keeps the old keys alive so styles.ts and consumers
+// compile without a full-codebase rename, and does NOT crash on chained access
+// (c.diff.add, c.voice.listening) because it supplies the objects.
 export function palette(theme: ThemeName = tokens.$meta.default_theme as ThemeName) {
-  return theme === 'light' ? tokens.color.light : tokens.color.dark
+  const raw = theme === 'light' ? tokens.color.light : tokens.color.dark
+  return {
+    ...raw,
+    // renamed
+    primary: raw.accent,
+    primaryTint: raw.accentTint,
+    question: raw.attention,
+    questionTint: raw.attentionTint,
+    // retired — mapped to closest surviving accent so the UI does not crash.
+    // Each mapping is a DECISION recorded in the return summary.
+    success: raw.accent,                              // green → accent blue
+    voice: { listening: raw.accent, thinking: raw.accent },
+    diff: {
+      add: raw.accent,
+      addTint: raw.accentTint,
+      remove: raw.danger,
+      removeTint: raw.dangerTint,
+    },
+  }
 }
 
-export const spacing = tokens.spacing
+// tokens.json renamed `spacing` → `space` with numeric indices (0–9, 4-based).
+// This object preserves the named keys the mobile code already uses so the
+// translation is in one place rather than 50.
+export const spacing = {
+  xs:  tokens.space['1'],          // 4
+  sm:  tokens.space['2'],          // 8
+  md:  tokens.space['4'],          // 16
+  lg:  tokens.space['5'],          // 24
+  xxl: tokens.space['7'],          // 48
+  gutter_mobile: tokens.space['4'], // 16 — per space_note
+}
+// tokens.json v2 simplified the radius scale. `bubble` and `taskRow` are both
+// grounds → `md`.  `sheet` → `xl` (per radius.assign: "THE TOP TWO CORNERS of
+// a bottom sheet"). Named keys preserved for the same reason as `spacing`.
 export const radius = {
   sm: tokens.radius.sm,
   md: tokens.radius.md,
-  bubble: tokens.radius.bubble,
-  sheet: tokens.radius.sheet,
+  bubble: tokens.radius.md,    // retired — "a message bubble is a ground and takes md"
+  sheet: tokens.radius.xl,     // bottom-sheet top corners
   pill: tokens.radius.pill,
   /** tokens.radius.orb is the CSS "50%"; in RN a circle is half the side, so
    * the caller passes its own size — see `orbRadius`. */
-  taskRow: tokens.radius.taskRow,
+  taskRow: tokens.radius.md,   // task row ground
 }
 
 /** RN has no percentage border radius: a circle is side / 2. */
@@ -38,16 +77,50 @@ export function orbRadius(side: number): number {
   return side / 2
 }
 
+// CSS generics (`ui-monospace`, `system-ui`, `monospace`, …) are valid in a
+// browser but not as RN family names. Skip them when extracting the first
+// entry from a CSS font stack.
+const CSS_GENERICS = new Set([
+  'ui-monospace', 'monospace', 'system-ui', 'sans-serif', 'serif', 'cursive', 'fantasy',
+])
+
+function firstNamedFace(cssStack: string, fallback: string): string {
+  for (const raw of cssStack.split(',')) {
+    const name = raw.replace(/'/g, '').trim()
+    if (name && !CSS_GENERICS.has(name)) return name
+  }
+  return fallback
+}
+
 export const font = {
   family: {
-    // RN wants a single family name, not a CSS stack; the stack's first entry
-    // is the intended face and the rest are web fallbacks.
-    display: tokens.font.family.display.split(',')[0]?.replace(/'/g, '').trim() ?? 'Space Grotesk',
-    body: tokens.font.family.body.split(',')[0]?.replace(/'/g, '').trim() ?? 'Be Vietnam Pro',
+    // tokens.json collapsed display+body into ONE `ui` family (Inter) —
+    // hierarchy is size/weight/case, not a second voice.  `numeric` is the
+    // tabular face, legal only on times, dates, counts, durations and ids.
+    ui: firstNamedFace(tokens.font.family.ui, 'Inter'),
+    numeric: firstNamedFace(tokens.font.family.numeric, 'monospace'),
   },
-  size: tokens.font.size,
-  weight: tokens.font.weight,
-  lineHeight: tokens.font.lineHeight,
+  size: {
+    ...tokens.font.size,
+    // `stateLabel` — section heading / voice indicator — mapped to `lead` (20).
+    stateLabel: tokens.font.size.lead,
+  },
+  weight: {
+    ...tokens.font.weight,
+    // v2 uses standard CSS names; the old semantic aliases are preserved here
+    // so styles.ts reads without a full rename. The `as '600'` casts in
+    // styles.ts already document the intended value.
+    display: tokens.font.weight.bold,     // 700
+    title: tokens.font.weight.semibold,   // 600
+    emphasis: tokens.font.weight.semibold, // 600
+    label: tokens.font.weight.bold,       // 700
+  },
+  lineHeight: {
+    ...tokens.font.lineHeight,
+    // `display` was a separate lineHeight key; v2 merged it into the
+    // tight/title/body/meta set. Display headings use `title` (1.25).
+    display: tokens.font.lineHeight.title,
+  },
 }
 
 /** Body line-height 1.5 is a hard floor declared by `tokens.json` font.note —
@@ -55,31 +128,18 @@ export const font = {
  * states its original stacked-diacritic rationale; that is design's to revisit,
  * not this file's to restate). RN takes line height in absolute units, so it is
  * computed from the size rather than declared. */
-export function lineHeightFor(size: number, kind: keyof typeof tokens.font.lineHeight = 'body'): number {
-  return Math.round(size * tokens.font.lineHeight[kind])
+export function lineHeightFor(size: number, kind: keyof typeof font.lineHeight = 'body'): number {
+  return Math.round(size * font.lineHeight[kind])
 }
 
 export const motion = tokens.motion
 
-/** The aurora gradient — the ONE place it is legal is the voice surface
- * (DESIGN.md colour rule 4; tokens.gradient.voice.scope). */
-export const voiceGradient = tokens.gradient.voice
-
-/** Glow shadows are voice-surface only (tokens.shadow.note); list rows carry
- * no shadow at all. RN shadows are props, not a CSS string. */
-export const shadow = {
-  listening: {
-    shadowColor: tokens.color.dark.voice.listening,
-    shadowOpacity: 0.35,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 0 },
-  },
-  thinking: {
-    shadowColor: tokens.color.dark.voice.thinking,
-    shadowOpacity: 0.35,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 0 },
-  },
-} as const
+// The aurora gradient and its glow shadows are RETIRED — tokens.json's motion
+// rule: "the 2400ms aurora loop and a spring curve; both are retired with the
+// gradient." `tokens.gradient` no longer exists, and `color.*.voice` was removed
+// alongside it. The voice surface now uses the accent colour directly.
+//
+// `voiceGradient` and `shadow` used to be exported here. Consumers
+// (VoiceSurface.tsx) are updated to not depend on them.
 
 export const haptics = tokens.haptic

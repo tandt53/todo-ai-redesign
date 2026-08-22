@@ -73,14 +73,14 @@ export function makeStyles(c: Palette) {
       justifyContent: 'center',
     },
     wordmark: {
-      fontFamily: font.family.display,
+      fontFamily: font.family.ui,
       fontSize: font.size.title,
       fontWeight: String(font.weight.title) as '600',
       color: c.text.primary,
     },
     topDate: {
       marginLeft: 'auto',
-      fontFamily: font.family.body,
+      fontFamily: font.family.numeric,
       fontSize: font.size.meta,
       color: c.text.muted,
     },
@@ -93,7 +93,7 @@ export function makeStyles(c: Palette) {
       backgroundColor: c.bg.raised,
     },
     offlineText: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.meta,
       lineHeight: lineHeightFor(font.size.meta, 'meta'),
       color: c.question,
@@ -110,12 +110,12 @@ export function makeStyles(c: Palette) {
       paddingVertical: spacing.sm,
     },
     listTitle: {
-      fontFamily: font.family.display,
+      fontFamily: font.family.ui,
       fontSize: font.size.stateLabel,
       fontWeight: String(font.weight.title) as '600',
       color: c.text.primary,
     },
-    listCount: { fontFamily: font.family.body, fontSize: font.size.meta, color: c.text.muted },
+    listCount: { fontFamily: font.family.numeric, fontSize: font.size.meta, color: c.text.muted },
     addButton: {
       marginLeft: 'auto',
       paddingVertical: spacing.xs,
@@ -123,7 +123,7 @@ export function makeStyles(c: Palette) {
       borderRadius: radius.pill,
     },
     addButtonText: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.meta,
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.primary,
@@ -132,7 +132,7 @@ export function makeStyles(c: Palette) {
       paddingHorizontal: spacing.gutter_mobile,
       paddingTop: spacing.md,
       paddingBottom: spacing.xs,
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.label,
       fontWeight: String(font.weight.label) as '700',
       letterSpacing: 0.6,
@@ -159,14 +159,14 @@ export function makeStyles(c: Palette) {
     },
     checkboxDone: { borderColor: c.success },
     taskTitle: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.body,
       lineHeight: lineHeightFor(font.size.body),
       color: c.text.primary,
     },
     taskTitleDone: { textDecorationLine: 'line-through', color: c.text.muted },
     taskMeta: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.meta,
       lineHeight: lineHeightFor(font.size.meta, 'meta'),
       color: c.text.muted,
@@ -193,7 +193,7 @@ export function makeStyles(c: Palette) {
      * design's *shape, weight, name*. No colour (§ Colour rules 5).
      */
     urgencyMark: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.meta,
       lineHeight: lineHeightFor(font.size.meta, 'meta'),
       fontWeight: String(font.weight.emphasis) as '600',
@@ -203,7 +203,7 @@ export function makeStyles(c: Palette) {
       alignSelf: 'flex-start',
       paddingHorizontal: spacing.xs,
       borderRadius: radius.sm,
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.label,
       fontWeight: String(font.weight.label) as '700',
       textTransform: 'uppercase',
@@ -217,14 +217,14 @@ export function makeStyles(c: Palette) {
     convContent: { padding: spacing.gutter_mobile, gap: spacing.md },
     invite: { paddingVertical: spacing.xxl, gap: spacing.sm },
     inviteTitle: {
-      fontFamily: font.family.display,
+      fontFamily: font.family.ui,
       fontSize: font.size.display,
       lineHeight: lineHeightFor(font.size.display, 'display'),
       fontWeight: String(font.weight.display) as '700',
       color: c.text.primary,
     },
     inviteBody: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.body,
       lineHeight: lineHeightFor(font.size.body),
       color: c.text.secondary,
@@ -243,7 +243,7 @@ export function makeStyles(c: Palette) {
     bubbleError: { borderLeftWidth: 3, borderLeftColor: c.danger },
     bubbleUndone: { opacity: 0.7 },
     bubbleHead: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.body,
       lineHeight: lineHeightFor(font.size.body),
       fontWeight: String(font.weight.emphasis) as '600',
@@ -251,20 +251,20 @@ export function makeStyles(c: Palette) {
     },
     bubbleHeadError: { color: c.danger },
     bubbleText: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.body,
       lineHeight: lineHeightFor(font.size.body),
       color: c.text.primary,
     },
     msgMeta: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.meta,
       lineHeight: lineHeightFor(font.size.meta, 'meta'),
       color: c.text.muted,
     },
     diffRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.xs },
     diffTask: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.body,
       lineHeight: lineHeightFor(font.size.body),
       color: c.text.primary,
@@ -275,7 +275,7 @@ export function makeStyles(c: Palette) {
       backgroundColor: c.diff.removeTint,
       color: c.diff.remove,
       textDecorationLine: 'line-through',
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.meta,
       overflow: 'hidden',
     },
@@ -284,12 +284,12 @@ export function makeStyles(c: Palette) {
       borderRadius: radius.sm,
       backgroundColor: c.diff.addTint,
       color: c.diff.add,
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.meta,
       overflow: 'hidden',
     },
     miniLabel: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.label,
       fontWeight: String(font.weight.label) as '700',
       textTransform: 'uppercase',
@@ -306,7 +306,7 @@ export function makeStyles(c: Palette) {
     chipDanger: { borderColor: c.danger },
     chipDisabled: { borderColor: c.bg.hairline },
     chipText: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.body,
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.primary,
@@ -321,7 +321,7 @@ export function makeStyles(c: Palette) {
       borderRadius: radius.pill,
     },
     undoButtonText: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.body,
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.primary,
@@ -343,7 +343,7 @@ export function makeStyles(c: Palette) {
     },
     selfCenter: { alignSelf: 'center' },
     primaryButtonText: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.body,
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.text.onAccent,
@@ -355,7 +355,7 @@ export function makeStyles(c: Palette) {
       borderTopColor: c.bg.hairline,
     },
     boundaryText: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.meta,
       lineHeight: lineHeightFor(font.size.meta, 'meta'),
       color: c.text.muted,
@@ -366,7 +366,7 @@ export function makeStyles(c: Palette) {
       gap: spacing.xs,
     },
     queuedNoticeText: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.meta,
       color: c.question,
     },
@@ -410,7 +410,7 @@ export function makeStyles(c: Palette) {
     nmPillWaiting: { backgroundColor: c.questionTint, borderColor: c.question },
     nmLabel: {
       flexShrink: 1,
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.body,
       lineHeight: lineHeightFor(font.size.body),
       fontWeight: String(font.weight.emphasis) as '600',
@@ -433,7 +433,7 @@ export function makeStyles(c: Palette) {
       minHeight: 44,
     },
     stateWord: {
-      fontFamily: font.family.display,
+      fontFamily: font.family.ui,
       fontSize: font.size.stateLabel,
       fontWeight: String(font.weight.title) as '600',
       color: c.text.primary,
@@ -447,7 +447,7 @@ export function makeStyles(c: Palette) {
       borderColor: c.bg.hairline,
     },
     cancelButtonText: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.meta,
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.primary,
@@ -476,7 +476,7 @@ export function makeStyles(c: Palette) {
       borderColor: c.bg.hairline,
       backgroundColor: c.bg.base,
       paddingHorizontal: spacing.lg,
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.body,
       color: c.text.primary,
     },
@@ -493,7 +493,7 @@ export function makeStyles(c: Palette) {
     micListening: { borderColor: c.voice.listening },
     micThinking: { borderColor: c.voice.thinking },
     micDimmed: { opacity: 0.4 },
-    micGlyph: { fontFamily: font.family.body, fontSize: font.size.title, color: c.text.primary },
+    micGlyph: { fontFamily: font.family.ui, fontSize: font.size.title, color: c.text.primary },
     send: {
       ...sendBox,
       borderRadius: orbRadius(sendBox.width),
@@ -503,7 +503,7 @@ export function makeStyles(c: Palette) {
     },
     sendDisabled: { opacity: 0.4 },
     sendGlyph: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.body,
       color: c.text.onAccent,
     },
@@ -522,7 +522,7 @@ export function makeStyles(c: Palette) {
       borderRadius: radius.pill,
     },
     pathLabel: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.body,
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.text.primary,
@@ -535,7 +535,7 @@ export function makeStyles(c: Palette) {
       backgroundColor: c.primaryTint,
       overflow: 'hidden',
       textAlign: 'center',
-      fontFamily: font.family.body,
+      fontFamily: font.family.numeric,
       fontSize: font.size.meta,
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.primary,
@@ -544,7 +544,7 @@ export function makeStyles(c: Palette) {
       paddingHorizontal: spacing.gutter_mobile,
       paddingTop: spacing.sm,
       paddingBottom: spacing.md,
-      fontFamily: font.family.display,
+      fontFamily: font.family.ui,
       fontSize: font.size.display,
       lineHeight: lineHeightFor(font.size.display, 'display'),
       fontWeight: String(font.weight.title) as '600',
@@ -560,14 +560,14 @@ export function makeStyles(c: Palette) {
       padding: spacing.gutter_mobile,
     },
     surfaceErrorTitle: {
-      fontFamily: font.family.display,
+      fontFamily: font.family.ui,
       fontSize: font.size.title,
       fontWeight: String(font.weight.title) as '600',
       color: c.text.primary,
       textAlign: 'center',
     },
     surfaceErrorBody: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.body,
       lineHeight: lineHeightFor(font.size.body),
       color: c.text.secondary,
@@ -583,7 +583,7 @@ export function makeStyles(c: Palette) {
       borderRadius: radius.pill,
     },
     ghostButtonText: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.body,
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.primary,
@@ -603,7 +603,7 @@ export function makeStyles(c: Palette) {
     },
     retryBannerText: {
       flexShrink: 1,
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.meta,
       lineHeight: lineHeightFor(font.size.meta, 'meta'),
       color: c.text.primary,
@@ -636,14 +636,14 @@ export function makeStyles(c: Palette) {
     },
     cnBody: { flex: 1, gap: spacing.xs },
     cnSentence: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.body,
       lineHeight: lineHeightFor(font.size.body),
       color: c.text.primary,
     },
     cnBlock: { gap: spacing.xs },
     cnFieldLabel: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.meta,
       lineHeight: lineHeightFor(font.size.meta, 'meta'),
       color: c.text.muted,
@@ -656,13 +656,13 @@ export function makeStyles(c: Palette) {
     // while the label above it is `text.muted`, which is the opposite of the usual
     // emphasis and is design's point.
     cnValue: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.body,
       lineHeight: lineHeightFor(font.size.body),
       color: c.text.primary,
     },
     cnSuperseded: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.meta,
       lineHeight: lineHeightFor(font.size.meta, 'meta'),
       color: c.text.muted,
@@ -679,7 +679,7 @@ export function makeStyles(c: Palette) {
       borderRadius: radius.pill,
     },
     cnGhostButtonText: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.body,
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.primary,
@@ -700,7 +700,7 @@ export function makeStyles(c: Palette) {
       backgroundColor: c.bg.base,
     },
     cnNeutralButtonText: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.body,
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.text.primary,
@@ -709,19 +709,19 @@ export function makeStyles(c: Palette) {
     // § Empty states — Tasks
     emptyState: { padding: spacing.gutter_mobile, gap: spacing.sm, alignItems: 'flex-start' },
     emptyHead: {
-      fontFamily: font.family.display,
+      fontFamily: font.family.ui,
       fontSize: font.size.title,
       fontWeight: String(font.weight.title) as '600',
       color: c.text.primary,
     },
     emptyBody: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.body,
       lineHeight: lineHeightFor(font.size.body),
       color: c.text.secondary,
     },
     secondDoor: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.meta,
       color: c.text.muted,
     },
@@ -756,7 +756,7 @@ export function makeStyles(c: Palette) {
     },
     // § MessageTaskLink — underline in `text.muted`, no colour change
     taskLink: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.body,
       color: c.text.primary,
       textDecorationLine: 'underline',
@@ -778,7 +778,7 @@ export function makeStyles(c: Palette) {
       borderWidth: 1,
       borderColor: c.primary,
       backgroundColor: c.bg.raised,
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.body,
       color: c.text.primary,
     },
@@ -830,14 +830,14 @@ export function makeStyles(c: Palette) {
     // column reading as arithmetic now that Inbox's count contains Today's.
     menuFilingGroup: { marginTop: spacing.lg },
     menuRowText: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.body,
       color: c.text.primary,
     },
     menuRowTextActive: { color: c.primary },
     menuCount: {
       marginLeft: 'auto',
-      fontFamily: font.family.body,
+      fontFamily: font.family.numeric,
       fontSize: font.size.meta,
       color: c.text.muted,
     },
@@ -853,12 +853,12 @@ export function makeStyles(c: Palette) {
       borderBottomColor: c.bg.hairline,
     },
     settingsLabel: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.body,
       color: c.text.primary,
     },
     settingsSub: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.meta,
       color: c.text.muted,
     },
@@ -879,7 +879,7 @@ export function makeStyles(c: Palette) {
     },
     segmentButtonOn: { backgroundColor: c.primaryTint },
     segmentText: {
-      fontFamily: font.family.body,
+      fontFamily: font.family.ui,
       fontSize: font.size.meta,
       color: c.text.secondary,
     },

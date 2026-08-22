@@ -7,7 +7,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "vitest run src/assistant/api",
+    "test": "vitest run",
     "test:web": "vitest run src/assistant/web",
     "test:all": "vitest run",
     "typecheck": "tsc --noEmit",

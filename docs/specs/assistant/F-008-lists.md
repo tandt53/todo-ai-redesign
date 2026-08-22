@@ -168,7 +168,7 @@ no code change to the predicate.
 ### Undo
 
 - [ ] **AC-25** (api) — Filing a task by voice (AC-18, AC-19) is an ordinary applying turn. It produces an `undo_snapshot`, occupies the undo window, and is undoable per F-001 AC-5/AC-6. Undoing it restores the previous `list_id`.
-- [ ] **AC-26** (api) — Creating a list by voice (AC-17) is an applying turn that creates a new entity. Undoing it removes the list row and unfiles any tasks filed into it in the interim (sets their `list_id` to null). <!-- OPEN QUESTION OQ-1: should undo of list-create also undo the filing that happened in the same turn? Or only the list row? See ## Open Questions -->
+- [ ] **AC-26** (api) — Creating a list by voice (AC-17) is an applying turn that creates a new entity. Undoing it removes the list row **and** unfiles all tasks whose `list_id` pointed to it (sets their `list_id` to null), regardless of how they were filed — matching AC-7's delete semantics. (OQ-1 closed: option (a), T-230.)
 
 ## API Touch Points
 
@@ -221,11 +221,11 @@ Deleting a list unfiles its tasks (AC-7). Restoring a previously-filed task retu
 - Smart lists / saved filters
 - Colour icon (the owner decided: colour dot, not icon)
 - Voice rename, recolour or delete a list (AC-20 — hand-only)
-- Moving multiple tasks to a list in one gesture (batch move)
+- ~~Moving multiple tasks to a list in one gesture (batch move)~~ — **now specced in F-009 AC-13** (bulk move to list via multi-select)
 - Default list for new tasks (hand-created tasks go to Inbox; IA §7 §9 deferred)
 
 ## Open Questions
 
-- **OQ-1** — When a voice-created list is undone (AC-26), what happens to tasks that were filed into it between the create and the undo? The two options: (a) they are unfiled back to Inbox regardless of how they got there, or (b) only the list row is removed and the tasks' `list_id` becomes a dangling reference that the read path treats as Inbox. Option (a) is simpler and matches AC-7's delete semantics. Recommend (a).
-- **OQ-2** — Should the assistant be permitted to set `list_id` on a task (filing by voice), adding it to `F-005 AC-36`'s allowlist? The design draws voice filing (*"add milk to the shopping list"*), the briefing describes it, and AC-18/AC-19 spec it. But the interpreter's fixture table has no rows for it today, and expanding AC-36's set is a product decision. Recommend yes, since the owner's decision that prompted this feature names voice filing as a use case. **If no, AC-17–AC-22 and AC-25–AC-26 are deferred.**
-- **OQ-3** — The `Collection` type is a string union today. Adding dynamic list ids means either widening the type to `string` or using a branded type. This is an architecture decision, not a product one — routed to architect-agent.
+- ~~**OQ-1**~~ — **Closed (T-230): option (a).** Undoing a voice-created list unfiles its tasks back to Inbox. The alternative (dangling `list_id` read as Inbox) is a silent inconsistency; option (a) matches AC-7's delete semantics, so one rule covers both undo and delete. AC-26 amended in place.
+- ~~**OQ-2**~~ — **Closed (T-230): yes.** The assistant may set `list_id`, adding it to `F-005 AC-36`'s allowlist. F-008's own permissions table already grants *move a task to a named list by voice*; answering no would leave the spec contradicting itself. A misfiled task costs one move to fix, and the per-turn undo already covers it.
+- **OQ-3** — The `Collection` type is a string union today. Adding dynamic list ids means either widening the type to `string` or using a branded type. **Architecture decision — routed to architect-agent** (not a product question).
