@@ -24,6 +24,8 @@
 
 | Task ID | Agent | Module | Feature | Subtree | Dispatched |
 |---------|-------|--------|---------|---------|------------|
+| T-243 | spec-agent | assistant | F-009 | docs/specs/assistant/ | 2026-08-22 |
+| T-242 | mobile-agent | assistant | — | src/assistant/mobile/__tests__/ | 2026-08-22 |
 <!-- Example:
 -->
 | — | — | — | — | — | — |
@@ -35,7 +37,7 @@
 
 | ID | Description | Waiting On | Raised By |
 |----|-------------|-----------|----------|
-| — | — | — | — |
+| T-225 | Search + overflow menu design. Deferred by the owner, not stalled — it lands Gate 1.5 and then design_signoff, which blocks every implementer until the owner looks at renders. Dispatching before they are ready produces inventory, not progress. | The owner saying go | orchestrator |
 
 ---
 
