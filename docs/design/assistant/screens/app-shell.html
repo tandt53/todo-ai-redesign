@@ -7,33 +7,23 @@
 <!--
   APP SHELL — S1 Talk · S2 Tasks · the frame · WEB mockup · design-agent T-204 · 2026-08-21
 
-  REDRAWN TO VISUAL LANGUAGE v2 (Swiss). Colour, type, spacing, shape and layout
-  are all new; NOT ONE ELEMENT ID CHANGED. The catalogue is the v1 31 plus
-  § CarriedNotice's five = 36, byte-identical across the three platform files.
+  REVISED T-227 (2026-08-22): ONE ROW LAYOUT EVERYWHERE.
+   · The time-rail column is removed at every width. The base .row rule is flex,
+     not grid-with-rail. Due date is .row-due, right-aligned in the row.
+   · The spine (.list::before) is removed — it marked the rail and has nothing
+     to separate without it.
+   · Header: Talk and Add task buttons removed. Search and overflow (⋯) added.
+     Add task is the inline row; Talk is the panel (split+) or FAB (below split).
+   · Inline add row: no longer indented by the rail width at split+.
+   · New state: tasks-long-list — shows the inline add row below the fold.
 
-  THREE THINGS THE AUDIT OF 2026-08-21 FOUND, FIXED HERE AT THEIR SOURCE:
-   · the Tasks column stopped at 720 and left 780px dead at 1920. Now every
-     frame column centres exactly one content column (layout.content_column_rule)
-     and above the desktop breakpoint the app adds a COLUMN — the Lists rail —
-     rather than a gutter (layout.wide_rule). Try "frame: wide" above.
-   · the conversation floated at the top of the panel, 618px above the composer.
-     Newest at bottom, with `margin-top:auto` on the first message and NOT
-     `align-items:flex-end`, which clips the top of an overflowing scroller.
-     The v1 mockup got this right and the app dropped it; the rule is written
-     into the sheet next to a paragraph saying why, so it is not dropped again.
-   · the priority mark shipped as !/!!/!!! hard against the task's own title.
-     One "!", high only, at least space.2 clear (tokens.json layout.gap_rule).
+  REDRAWN TO VISUAL LANGUAGE v2 (Swiss) in T-204. Colour, type, spacing, shape
+  and layout from tokens.json. NOT ONE ELEMENT ID CHANGED from v1's 36 except
+  two ADDED: shell-search-button, shell-overflow-button.
 
-  WHAT IS DELIBERATELY NOT REDESIGNED HERE. The Lists menu, Settings and the
-  New-list sheet are TRANCHE 2. They are carried across at v2 token values with
-  their v1 structure, because the 52 published ids are one contract and a mockup
-  that drops twelve of them turns three suites red for no design reason.
-
-  A control drawn with NO id, and it is a debt rather than an omission: the row's
-  open affordance (S2 → S6) ships in src as `tasks-row-open` and the row's three
-  marks ship as `tasks-row-*-mark`, but neither is in a11y.ts's catalogue, so
-  putting them here would fail the "names nothing the client declares" check.
-  They are drawn, unlabelled, and owed.
+  WHAT IS DELIBERATELY NOT DESIGNED HERE: Search field states and the overflow
+  menu contents — those are T-225. The controls are drawn; what is behind them
+  is not.
 
   Self-contained: no network, no server, no build. Open by double-click.
   Design system: docs/design/_shared/DESIGN.md · tokens: tokens.json ·
@@ -395,16 +385,14 @@ button,input,textarea{font:inherit; color:inherit}
     display:flex; flex:0 0 var(--panel-max);
     border-radius:var(--r-md);
   }
-  .app[data-surface]{--gutter:calc(var(--layout-grid-gutter) * 1px); --rail:calc(var(--layout-measure-timerail-default) * 1px)}
+  .app[data-surface]{--gutter:calc(var(--layout-grid-gutter) * 1px)}
 }
 /* tokens.json breakpoints.wide — above desktop the app adds a COLUMN, never a
    gutter. The Lists rail arrives here and at no narrower width, because 1536 is
    where it fits without the task list getting narrower than it was at 1440. */
 @container (min-width:1536px){
   .app[data-surface] .col-rail{display:flex; flex:0 0 var(--lists-rail); border-radius:var(--r-md)}
-  .app[data-surface]{--rail:calc(var(--layout-measure-timerail-wide) * 1px)}
   .app[data-surface] .hide-wide{display:none}
-  .app[data-surface] .row-time .wd{display:inline}
 }
 
 /* ONE CENTRING, AND IT IS AT THE CONTENT COLUMN (layout.content_column_rule).
@@ -509,25 +497,22 @@ button,input,textarea{font:inherit; color:inherit}
    TIME RAIL + TASK ROW  (§ TimeRail, § TaskRow)
    ══════════════════════════════════════════════════════════════════════════ */
 .list{position:relative}
-.list::before{
-  content:""; position:absolute; top:0; bottom:0; width:var(--b-hairline);
-  background:var(--bg-hairline); left:var(--rail);
-}
-.group{padding:var(--s5) 0 var(--s2) calc(var(--rail) + var(--gutter))}
+/* SPINE REMOVED (T-227). The spine marked the time-rail column. With the rail
+   gone at all widths, the spine has nothing to separate and nothing to mark. */
+.group{padding:var(--s5) 0 var(--s2) 0}
 .group:first-child{padding-top:var(--s4)}
 .group h3{margin:0; font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:var(--font-case-label); font-weight:var(--w-semibold); color:var(--text-muted)}
 .group.overdue h3{color:var(--danger)}
+/* ROW: FLAT LAYOUT AT EVERY WIDTH (T-227). The base rule is flex, not grid with
+   a rail column. The owner decided: one row layout everywhere. The mobile's
+   flat row is now the default; the grid-with-rail override is deleted. */
 .row{
-  display:grid; grid-template-columns:var(--rail) minmax(0,1fr) auto;
-  align-items:center; min-height:var(--h-lg); padding:var(--s2) 0;
+  display:flex; align-items:center; gap:var(--s3);
+  min-height:var(--h-lg); padding:var(--s2) 0;
 }
-.row-time{
-  font-family:var(--font-num); font-size:var(--fs-meta); color:var(--text-muted);
-  align-self:stretch; display:flex; align-items:center; justify-content:flex-end;
-  gap:var(--s2); padding-right:var(--s4); white-space:nowrap;
-}
-.row-time .wd{display:none; color:var(--text-muted)}
-.row-main{padding-left:var(--gutter); min-width:0; display:flex; align-items:center; gap:var(--s3)}
+/* TIME COLUMN HIDDEN AT EVERY WIDTH. The time is now .row-due on the right. */
+.row-time{display:none}
+.row-main{padding-left:0; flex:1 1 auto; min-width:0; display:flex; align-items:center; gap:var(--s3)}
 .cbx{
   appearance:none; margin:0; width:calc(var(--icon-size-md) * 1px); height:calc(var(--icon-size-md) * 1px); flex:none; cursor:pointer;
   border:var(--b-hairline) solid var(--bg-rule); background:var(--bg-base);
@@ -634,9 +619,9 @@ button,input,textarea{font:inherit; color:inherit}
 .empty h2{margin:0 0 var(--s2); font-size:var(--fs-title); letter-spacing:var(--ls-title); line-height:var(--lh-title); font-weight:var(--w-semibold)}
 .empty p{margin:0 0 var(--s5); color:var(--text-secondary); font-size:var(--fs-body); max-width:44ch}
 .sk{display:block; background:var(--bg-sunken); border-radius:var(--r-xs); height:var(--s3)}
-.sk-row{display:grid; grid-template-columns:var(--rail) minmax(0,1fr); align-items:center; min-height:var(--h-lg); padding:var(--s2) 0}
-.sk-row .sk-time{justify-self:end; width:var(--h-md); margin-right:var(--s4)}
-.sk-row .sk-main{margin-left:var(--gutter); display:flex; align-items:center; gap:var(--s3)}
+.sk-row{display:flex; align-items:center; gap:var(--s3); min-height:var(--h-lg); padding:var(--s2) 0}
+.sk-row .sk-time{display:none}
+.sk-row .sk-main{flex:1 1 auto; min-width:0; display:flex; align-items:center; gap:var(--s3)}
 .sk-box{width:calc(var(--icon-size-md) * 1px); height:calc(var(--icon-size-md) * 1px); background:var(--bg-sunken); border-radius:var(--r-xs); flex:none}
 .surface-error{padding:var(--s8) 0 var(--s7); max-width:52ch}
 .surface-error h2{margin:0 0 var(--s3); font-size:var(--fs-title); letter-spacing:var(--ls-title); line-height:var(--lh-title); font-weight:var(--w-semibold)}
@@ -937,6 +922,8 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .app[data-collection="today"] .v-collection-today.v-flex{display:flex}
 .app[data-collection="upcoming"] .v-collection-upcoming{display:block}
 .app[data-collection="upcoming"] .v-collection-upcoming.v-flex{display:flex}
+.app[data-collection="long"] .v-collection-long{display:block}
+.app[data-collection="long"] .v-collection-long.v-flex{display:flex}
 .app[data-menu="empty"] .v-menu-empty{display:block}
 .app[data-menu="empty"] .v-menu-empty.v-flex{display:flex}
 .app[data-menu="failed"] .v-menu-failed{display:block}
@@ -1022,35 +1009,20 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
    The rail STAYS at tablet and desktop.
    ══════════════════════════════════════════════════════════════════════════ */
 
-/* ── row-due hidden by default — the time rail shows the time at wider widths ── */
-.row-due{display:none}
+/* ROW-DUE VISIBLE AT ALL WIDTHS (T-227). Right-aligned in the row. */
+.row-due{
+  font-family:var(--font-num); font-size:var(--fs-meta);
+  color:var(--text-muted); white-space:nowrap; flex:none; margin-left:auto;
+}
 
-/* ── Hide time rail and spine below split ── */
-.list::before{/* spine shown by default */}
+/* ── Below-split: mobile-specific layout (T-227 simplified) ── */
 @container (max-width:1023px){
-  .list::before{display:none}
-  .row-time{display:none}
-  .sk-row{grid-template-columns:minmax(0,1fr)}
-  .sk-row .sk-time{display:none}
-  .row{
-    display:flex; align-items:center; gap:var(--s3);
-    min-height:var(--h-lg); padding:var(--s2) var(--gutter);
-    position:relative; overflow:hidden;
-  }
-  .row-main{padding-left:0; flex:1 1 auto}
+  .row{padding:var(--s2) var(--gutter); position:relative; overflow:hidden}
   .group{padding-left:var(--gutter)}
-  /* Show due date below split */
-  .row-due{
-    display:inline; font-family:var(--font-num); font-size:var(--fs-meta);
-    color:var(--text-muted); white-space:nowrap; flex:none; margin-left:var(--s2);
-  }
   /* Swipe-to-delete replaces always-visible delete button */
   .row-trail{display:none}
   /* List padding to clear floating button */
   .pane-tasks{padding-bottom:calc(var(--h-lg) + var(--s7) + var(--s4))}
-  /* Header: hide Talk and Add buttons below split */
-  .bar-talk-btn{display:none}
-  .bar-add-btn{display:none}
 }
 
 
@@ -1070,9 +1042,10 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .row.row-swiped .swipe-action{transform:translateX(0)}
 
 /* ── Inline new-task row — visible at all widths ── */
+/* ── Inline new-task row — visible at all widths, no rail indent (T-227) ── */
 .inline-new{
   display:flex; align-items:center; gap:var(--s3);
-  min-height:var(--h-lg); padding:var(--s1) var(--gutter);
+  min-height:var(--h-lg); padding:var(--s1) 0;
   color:var(--text-muted); cursor:pointer;
 }
 .inline-new .plus{
@@ -1082,9 +1055,8 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .inline-new span.inline-label{font-size:var(--fs-body); color:var(--text-muted)}
 .inline-new:hover .inline-label{color:var(--text-secondary)}
 .inline-new:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
-/* At wider widths with the time rail, indent to align with the task titles */
-@container (min-width:1024px){
-  .inline-new{padding-left:calc(var(--rail) + var(--gutter))}
+@container (max-width:1023px){
+  .inline-new{padding:var(--s1) var(--gutter)}
 }
 
 /* ── Floating voice button — below split only ── */
@@ -1109,11 +1081,10 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   .row.row-swiped .row-inner{transform:none}
 }
 
-/* ── Surface title in header ── */
-.bar-surface-title{display:none}
-@container (max-width:1023px){
-  .bar-surface-title{display:inline; font-weight:var(--w-semibold); font-size:var(--fs-body)}
-}
+/* ── Surface title in header — visible at all widths (T-227). At wide the
+   Lists rail also shows the current collection; the topbar title confirms it
+   and is the only title visible when the user has scrolled past the head. ── */
+.bar-surface-title{font-weight:var(--w-semibold); font-size:var(--fs-body)}
 
 /* ── Search field (inline, expands from icon) ── */
 .search-field{
@@ -1179,6 +1150,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   <button data-s="phone-tasks-arrived" onclick="showState('phone-tasks-arrived')">phone-arrived</button>
   <button data-s="phone-tasks-empty" onclick="showState('phone-tasks-empty')">phone-empty</button>
   <button data-s="wide-tasks" onclick="showState('wide-tasks')">wide-tasks</button>
+  <button data-s="tasks-long-list" onclick="showState('tasks-long-list')">long-list</button>
   <button onclick="toggleTheme()">light / dark</button>
   <button onclick="setFrame('')">frame: real width</button>
   <button onclick="setFrame('phone')">frame: phone</button>
@@ -1243,12 +1215,16 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
       </aside>
     <div class="col-main">
 
+        <!-- HEADER (T-227): hamburger (below wide) · title · spacer · Search · overflow.
+             Talk and Add task REMOVED from the header. Add is the inline row; Talk
+             is the panel (split+) or the FAB (below split). Search and overflow are
+             drawn as controls here; what is BEHIND them is T-225. -->
         <header class="topbar"><div class="bar-in">
           <button class="iconbtn hide-wide" data-testid="shell-lists-menu-button" aria-label="Lists"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
-                    <span class="bar-surface-title" id="barTitle">Today</span>
-<span class="spacer"></span>
-          <button class="path" data-testid="shell-talk-button"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg>Talk</button>
-          <button class="btn btn-sm btn-primary" data-testid="assistant-add-task-button"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Add task</button>
+          <span class="bar-surface-title" id="barTitle">Today</span>
+          <span class="spacer"></span>
+          <button class="iconbtn" data-testid="shell-search-button" aria-label="Search"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button>
+          <button class="iconbtn" data-testid="shell-overflow-button" aria-label="More"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
         </div></header>
       <div class="pos">
 
@@ -1510,6 +1486,128 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           </div>
           <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
           <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+      </div></div>
+            <!-- LONG LIST — 12 rows so the inline add sits below the fold at every
+                 viewport height. Drawn to answer the briefing's question: once the
+                 header Add task button is gone, is the inline row still reachable? -->
+            <div class="v v-collection-long">
+      <div class="list">
+        <div class="group overdue"><h3>Overdue</h3></div>
+        <div class="row">
+          <div class="row-time">—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Send the weekly report to Hanh">
+            <button class="row-open" aria-label="Open Send the weekly report to Hanh"><span class="row-title">Send the weekly report to Hanh</span></button>
+            <span class="row-due">Thu 5:00 PM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <div class="row">
+          <div class="row-time">—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Gọi nha sĩ đặt lịch khám răng">
+            <button class="row-open" aria-label="Open Gọi nha sĩ đặt lịch khám răng"><span class="row-title">Gọi nha sĩ đặt lịch khám răng</span></button><span class="row-marks"><span class="mark" role="img" aria-label="High priority" title="High priority">!</span></span>
+            <span class="row-due">Wed 9:00 AM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <div class="group"><h3>Today</h3></div>
+        <div class="row">
+          <div class="row-time">—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Pay the electricity bill">
+            <button class="row-open" aria-label="Open Pay the electricity bill"><span class="row-title">Pay the electricity bill</span></button>
+            <span class="row-due">Fri 6:00 PM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <div class="row">
+          <div class="row-time">—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Buy milk">
+            <button class="row-open" aria-label="Open Buy milk"><span class="row-title">Buy milk</span></button>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <div class="row">
+          <div class="row-time">—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Review the contract with Minh">
+            <button class="row-open" aria-label="Open Review the contract with Minh"><span class="row-title">Review the contract with Minh</span></button>
+            <span class="row-due">Fri 3:00 PM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <div class="row">
+          <div class="row-time">—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Pick up the dry cleaning">
+            <button class="row-open" aria-label="Open Pick up the dry cleaning"><span class="row-title">Pick up the dry cleaning</span></button>
+            <span class="row-due">Fri 5:30 PM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <div class="group"><h3>Tomorrow</h3></div>
+        <div class="row">
+          <div class="row-time">—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Team meeting">
+            <button class="row-open" aria-label="Open Team meeting"><span class="row-title">Team meeting</span></button>
+            <span class="row-due">Sat 2:00 PM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <div class="row">
+          <div class="row-time">—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Take Bao to swimming class">
+            <button class="row-open" aria-label="Open Take Bao to swimming class"><span class="row-title">Take Bao to swimming class</span></button>
+            <span class="row-due">Sat 10:00 AM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <div class="group"><h3>Next week</h3></div>
+        <div class="row">
+          <div class="row-time">—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Call the insurance about the claim">
+            <button class="row-open" aria-label="Open Call the insurance about the claim"><span class="row-title">Call the insurance about the claim</span></button>
+            <span class="row-due">Mon 9:00 AM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <div class="row">
+          <div class="row-time">—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Return the library books">
+            <button class="row-open" aria-label="Open Return the library books"><span class="row-title">Return the library books</span></button>
+            <span class="row-due">Mon 5:00 PM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <div class="row">
+          <div class="row-time">—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Schedule the car service">
+            <button class="row-open" aria-label="Open Schedule the car service"><span class="row-title">Schedule the car service</span></button>
+            <span class="row-due">Tue 10:00 AM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <div class="row">
+          <div class="row-time">—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Order new running shoes">
+            <button class="row-open" aria-label="Open Order new running shoes"><span class="row-title">Order new running shoes</span></button>
+            <span class="row-due">Wed 12:00 PM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <!-- Inline new-task row — below the fold on a standard-height viewport -->
+        <div class="inline-new" role="button" tabindex="0" aria-label="Add a task">
+          <span class="plus"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
+          <span class="inline-label">Add a task</span>
         </div>
       </div></div>
 
@@ -2099,6 +2197,16 @@ var STATES = {
     "row": "normal",
     "surface": "tasks",
     "frame": "wide"
+  },
+  "tasks-long-list": {
+    "collection": "long",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "title": "Upcoming",
+    "count": "<b>12</b> open · <span class=\"late\">2 overdue</span>"
   }
 };
 var KEYS = ["surface","collection","tasks","talk","mic","banner","row","carried","menu","settings","sheet"];

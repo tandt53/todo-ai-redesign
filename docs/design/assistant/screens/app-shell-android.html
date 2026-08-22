@@ -1239,12 +1239,13 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
       </aside>
     <div class="col-main">
 
+        <!-- HEADER (T-227): hamburger (below wide) · title · spacer · Search · overflow -->
         <header class="topbar"><div class="bar-in">
           <button class="iconbtn hide-wide" data-testid="shell-lists-menu-button" resource-id="shell-lists-menu-button" aria-label="Lists"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
-                    <span class="bar-surface-title" id="barTitle">Today</span>
-<span class="spacer"></span>
-          <button class="path" data-testid="shell-talk-button" resource-id="shell-talk-button"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg>Talk</button>
-          
+          <span class="bar-surface-title" id="barTitle">Today</span>
+          <span class="spacer"></span>
+          <button class="iconbtn" data-testid="shell-search-button" resource-id="shell-search-button" aria-label="Search"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button>
+          <button class="iconbtn" data-testid="shell-overflow-button" resource-id="shell-overflow-button" aria-label="More"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
         </div></header>
       <div class="pos">
 
@@ -1551,7 +1552,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
             </div>
           </div>
         </main>
-<button class="fab bar-add-btn" data-testid="assistant-add-task-button" resource-id="assistant-add-task-button" aria-label="Add task"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
+<!-- Add task FAB removed (T-227) — inline add row is the primary affordance -->
 
         <!-- Floating voice button — below split only (Android: Material elevation) -->
         <button class="voice-fab" data-testid="assistant-voice-fab" resource-id="assistant-voice-fab" aria-label="Start listening"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></button>

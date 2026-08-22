@@ -72,6 +72,18 @@ timezone:          string | null # IANA tz, optional interpretation context.
                                  # `X-Timezone`, kept so existing clients do not
                                  # break. It is redundant with the header and it
                                  # is NEVER the source a date computation reads.
+open_task_id:      uuid | null   # F-005 AC-51: optional; the task whose detail
+                                 # the client currently has open. Per-turn
+                                 # interpretation context — a reference-resolution
+                                 # hint, NOT a scope filter (AC-50). Untrusted:
+                                 # the server verifies ownership under the account
+                                 # scope of ADR-005; a deleted or unowned id is
+                                 # treated as absent (no error, no side effect).
+                                 # Unlike `timezone`, this is the ONLY channel for
+                                 # this signal — not a second reporting path. It
+                                 # belongs here alongside `answer_to_turn_id`
+                                 # (per-turn context that directly affects
+                                 # processing), not in a header.
 ```
 
 ### Processing rules (contract-level)
@@ -89,9 +101,11 @@ timezone:          string | null # IANA tz, optional interpretation context.
    status `pending` (still in the queue) → `409 IN_FLIGHT`.
    A same-id request whose `transcript`, `source`, or `answer_to_turn_id`
    differs from the recorded one is not a replay but an id reuse →
-   `409 CLIENT_TURN_ID_REUSED`, nothing executes. `session_id` and `timezone`
-   are excluded from the comparison — a post-close replay legitimately
-   carries a different session (pinned by TC-25).
+   `409 CLIENT_TURN_ID_REUSED`, nothing executes. `session_id`, `timezone`
+   and `open_task_id` are excluded from the comparison — a post-close replay
+   legitimately carries a different session, and a replay with a different
+   detail open must re-serve the recorded outcome without re-resolving
+   (F-005 AC-51; pinned by TC-25).
 3. **Voice-undo guard** (ADR-006). If the normalized transcript is exactly an
    undo phrase (`"undo"` — the whole closed list since ADR-006's amendment
    of 2026-08-17), the turn is **not** interpreted and **no turn row is
@@ -105,9 +119,10 @@ timezone:          string | null # IANA tz, optional interpretation context.
    UNDO_REFUSED` outcome is recorded under it, and a same-id retry re-serves
    the recorded refusal without re-evaluating — it never undoes a turn
    applied in between (pinned by TC-24).
-4. **Persist before interpreting.** `transcript_raw` is stored (turn row,
-   status `pending`, appended to session history) before the Interpreter is
-   called — a failed turn never loses the user's words (AC-23).
+4. **Persist before interpreting.** `transcript_raw` and `open_task_id`
+   (F-005 AC-51) are stored (turn row, status `pending`, appended to session
+   history) before the Interpreter is called — a failed turn never loses the
+   user's words (AC-23), and the binding is recorded for audit and dedupe.
 5. **Snapshot freshness (OQ 7).** The interpretation context (the user's
    current tasks) is read **fresh inside this turn's serial-queue slot**, in
    the same transaction scope as the apply. No client-supplied task or draft
