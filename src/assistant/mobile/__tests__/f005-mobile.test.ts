@@ -25,6 +25,7 @@ import { expectedShellIds, SHELL_A11Y_IDS } from '../model/a11y.ts'
 import { initialShellState } from '../model/shell.ts'
 import { tasksSurfaceView } from '../model/tasks-view.ts'
 import { A11Y_IDS } from '../model/a11y.ts'
+import { carriedRowFor } from '../model/carried.ts'
 import { FakeServer, T0, mobileHarness, settle, task, todayTask } from './_helpers.ts'
 
 const NOW = new Date(T0)
@@ -521,7 +522,7 @@ describe('AC-2 — a refused or failed value survives on the phone, with a retry
     const h = await mobileHarness({ online: false })
     h.server.always('GET /tasks', 200, { tasks: [task({ id: 'task-1', title: 'Buy milk' })] })
     await h.controller.init()
-    h.controller.dispatch2({ type: 'tasks', tasks: [task({ id: 'task-1', title: 'Buy milk' })] })
+    h.controller.injectAction({ type: 'tasks', tasks: [task({ id: 'task-1', title: 'Buy milk' })] })
 
     await h.controller.editTask('task-1', 'Buy oat milk')
 
@@ -545,8 +546,8 @@ describe('AC-2 — a refused or failed value survives on the phone, with a retry
     // `pushLocalTasks` genuinely replays it.
     const h = await mobileHarness({ online: false })
     await h.controller.init()
-    const local = task({ id: 'local-1', title: 'Buy milk', local: true })
-    h.controller.dispatch2({ type: 'tasks', tasks: [local] })
+    const local = { ...task({ id: 'local-1', title: 'Buy milk' }), local: true as const }
+    h.controller.injectAction({ type: 'tasks', tasks: [local] })
 
     await h.controller.editTask('local-1', 'Buy oat milk')
 
@@ -575,12 +576,12 @@ describe("AC-33's 4.1.3 on the phone — every refusal and status message is ANN
   it('the offline refusal is spoken — the outage case AC-33 names', async () => {
     const h = await mobileHarness({ online: false })
     await h.controller.init()
-    h.controller.dispatch2({ type: 'tasks', tasks: [task({ id: 'task-1', title: 'Buy milk' })] })
-    h.announcer.spoken.length = 0
+    h.controller.injectAction({ type: 'tasks', tasks: [task({ id: 'task-1', title: 'Buy milk' })] })
+    h.announcer.clear()
 
     await h.controller.editTask('task-1', 'Buy oat milk')
 
-    expect(h.announcer.spoken.map((s) => s.text).join(' ')).toContain("You're offline")
+    expect(h.announcer.announcements.map((s) => s.text).join(' ')).toContain("You're offline")
   })
 
   it('the passed-reminder surfacing is spoken', async () => {
@@ -589,25 +590,25 @@ describe("AC-33's 4.1.3 on the phone — every refusal and status message is ANN
       tasks: [task({ id: 'task-r1', reminder_at: '2026-08-16T13:04:00.000Z' })],
     })
     await h.controller.init()
-    expect(h.announcer.spoken.length).toBeGreaterThan(0)
+    expect(h.announcer.announcements.length).toBeGreaterThan(0)
   })
 
   it('an empty-title refusal is spoken', async () => {
     const h = await mobileHarness()
     await h.controller.init()
-    h.controller.dispatch2({ type: 'tasks', tasks: [task({ id: 'task-1', title: 'Buy milk' })] })
-    h.announcer.spoken.length = 0
+    h.controller.injectAction({ type: 'tasks', tasks: [task({ id: 'task-1', title: 'Buy milk' })] })
+    h.announcer.clear()
     await h.controller.editTask('task-1', '   ')
-    expect(h.announcer.spoken.length).toBeGreaterThan(0)
+    expect(h.announcer.announcements.length).toBeGreaterThan(0)
   })
 
   it('polite, never assertive — the family waits, so interrupting would claim a false urgency', async () => {
     const h = await mobileHarness({ online: false })
     await h.controller.init()
-    h.controller.dispatch2({ type: 'tasks', tasks: [task({ id: 'task-1', title: 'Buy milk' })] })
-    h.announcer.spoken.length = 0
+    h.controller.injectAction({ type: 'tasks', tasks: [task({ id: 'task-1', title: 'Buy milk' })] })
+    h.announcer.clear()
     await h.controller.editTask('task-1', 'Buy oat milk')
-    expect(h.announcer.spoken.every((s) => s.assertive !== true)).toBe(true)
+    expect(h.announcer.announcements.every((s) => s.assertive !== true)).toBe(true)
   })
 
   it('the same sentence twice is TWO announcements — a second failure must be heard', async () => {
@@ -615,11 +616,11 @@ describe("AC-33's 4.1.3 on the phone — every refusal and status message is ANN
     // which is why the drain tracks the sequence rather than the string.
     const h = await mobileHarness({ online: false })
     await h.controller.init()
-    h.controller.dispatch2({ type: 'tasks', tasks: [task({ id: 'task-1', title: 'Buy milk' })] })
-    h.announcer.spoken.length = 0
+    h.controller.injectAction({ type: 'tasks', tasks: [task({ id: 'task-1', title: 'Buy milk' })] })
+    h.announcer.clear()
     await h.controller.editTask('task-1', 'Buy oat milk')
-    const first = h.announcer.spoken.length
+    const first = h.announcer.announcements.length
     await h.controller.editTask('task-1', 'Buy soy milk')
-    expect(h.announcer.spoken.length).toBeGreaterThan(first)
+    expect(h.announcer.announcements.length).toBeGreaterThan(first)
   })
 })

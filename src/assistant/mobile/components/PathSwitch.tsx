@@ -31,7 +31,9 @@ export function PathSwitch({
   onPress: () => void
 }) {
   const { styles, colors } = useStyles()
-  const id = view.row === 'PS-TASKS' ? SHELL_A11Y_IDS.pathTasks : SHELL_A11Y_IDS.pathTalk
+  // T-227: the Talk path switch button is retired; its replacement is the voice
+  // FAB (`assistant-voice-fab`). When PS-TALK is requested, the FAB id is used.
+  const id = view.row === 'PS-TASKS' ? SHELL_A11Y_IDS.pathTasks : SHELL_A11Y_IDS.voiceFab
   const { hitSlop } = touchProps(id, platform)
   const Icon = view.row === 'PS-TASKS' ? List : Mic
   return (

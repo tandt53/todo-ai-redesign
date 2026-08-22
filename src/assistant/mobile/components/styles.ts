@@ -215,7 +215,10 @@ export function makeStyles(c: Palette) {
     // decoration. Added values read in text.primary at semibold.
     // Design: .new{font-weight:var(--w-semibold); color:var(--text-primary)}
     badgeNew: { color: c.text.primary, fontWeight: String(font.weight.semibold) as '600' },
-    badgeEdited: { color: c.accent, backgroundColor: c.accentTint },
+    // Mockup: `.tag.edited{background:var(--bg-sunken); color:var(--text-secondary)}`.
+    // EDITED is not the assistant speaking, so accent violates colour rule 1
+    // ("one signal per meaning").
+    badgeEdited: { color: c.text.secondary, backgroundColor: c.bg.sunken },
 
     // ---- conversation ----
     convPane: { flex: 1 },
@@ -274,13 +277,14 @@ export function makeStyles(c: Palette) {
       lineHeight: lineHeightFor(font.size.body),
       color: c.text.primary,
     },
-    // Rule 1: danger = "this is lost or losing"; rule 3: strike-through carries
-    // state alongside colour. Checked against both rules per briefing.
+    // DESIGN.md colour rule 6: "added values now read in text.primary at semibold
+    // **against the old value struck through in text.muted**". Both mockups agree:
+    // `.old{color:var(--text-muted); text-decoration:line-through}` with no
+    // background. An old diff value is muted and struck through, not red.
     chipOld: {
       paddingHorizontal: spacing.xs,
       borderRadius: radius.sm,
-      backgroundColor: c.dangerTint,
-      color: c.danger,
+      color: c.text.muted,
       textDecorationLine: 'line-through',
       fontFamily: font.family.ui,
       fontSize: font.size.meta,

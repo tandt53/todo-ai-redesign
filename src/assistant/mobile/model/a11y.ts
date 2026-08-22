@@ -92,26 +92,34 @@ export const ALL_A11Y_IDS: readonly ConversationA11yId[] = Object.values(A11Y_ID
 /**
  * `docs/design/assistant/screens/app-shell-ios.html` (`accessibilityIdentifier`),
  * `-android.html` (`resource-id`) and `app-shell.html` (`data-testid`) declare
- * **31** ids, byte-identical across the three. Seven of them are controls that
- * already existed and simply render on a different surface now — they keep
- * their ids and stay in `A11Y_IDS` above ("They are not renamed",
- * components.md § Testid catalogue — app shell). The **24** genuinely new
- * controls are here.
+ * the shell ids. Six controls from the conversation catalogue are carried over
+ * and keep their ids in `A11Y_IDS` above ("They are not renamed",
+ * components.md § Testid catalogue — app shell). The genuinely new controls
+ * are here.
  *
  * Split rather than merged for a reason that is not tidiness: `ALL_A11Y_IDS` is
  * compared to the conversation mockup **in both directions** by two suites, one
  * of which this agent does not own. A merged catalogue would turn every one of
  * those comparisons into a failure the moment the shell landed.
+ *
+ * **T-227 retirements.** `shell-talk-button` was removed when the Talk path
+ * changed from a bottom-bar tab to the voice FAB (`assistant-voice-fab`).
+ * `menu-list-row` is not in the mobile mockups' platform-specific attributes
+ * (`accessibilityIdentifier` / `resource-id`); it appears only as `data-testid`
+ * and is web-only for now.
  */
 export const SHELL_A11Y_IDS = {
   // PathSwitch — below-split-only controls (components.md § AppFrame). A phone
   // is always below the split, so on mobile they are unconditional.
   pathTasks: 'shell-tasks-button',
-  pathTalk: 'shell-talk-button',
   listsMenuButton: 'shell-lists-menu-button',
+  // T-227: the voice FAB replaces the Talk path switch button
+  voiceFab: 'assistant-voice-fab',
+  // Tasks header (T-227): Search and overflow replaced Talk and Add task
+  shellSearchButton: 'shell-search-button',
+  shellOverflowButton: 'shell-overflow-button',
   // S3 Lists menu
   menuCollectionRow: 'menu-collection-row',
-  menuListRow: 'menu-list-row',
   menuNewListButton: 'menu-new-list-button',
   menuSettingsRow: 'menu-settings-row',
   menuRetryButton: 'menu-retry-button',
@@ -125,6 +133,7 @@ export const SHELL_A11Y_IDS = {
   listEditorNameInput: 'list-editor-name-input',
   listEditorCreateButton: 'list-editor-create-button',
   listEditorCancelButton: 'list-editor-cancel-button',
+  listEditorColorSwatch: 'list-editor-color-swatch',
   // S1 Talk
   talkSessionRetryButton: 'talk-session-retry-button',
   talkTaskLink: 'talk-task-link',
@@ -133,69 +142,73 @@ export const SHELL_A11Y_IDS = {
   tasksEmptyAddButton: 'tasks-empty-add-button',
   tasksRenameInput: 'tasks-rename-input',
   tasksDeleteButton: 'tasks-delete-button',
+  tasksInlineAdd: 'tasks-inline-add',
+  tasksDragHandle: 'tasks-drag-handle',
   // SaveNotice — the receipt for a task that did not stay (components.md
   // § SaveNotice, T-135). Drawn in all three shell mockups; both ids are
   // recorded in `SHELL_IDS_BLOCKED` below because the component is designed
   // and not built.
   tasksSaveNotice: 'tasks-save-notice',
   tasksSaveNoticeDismiss: 'tasks-save-notice-dismiss',
-  // ── § CarriedNotice (T-152) — five ids, TRANSCRIBED not invented ───────────
-  //
-  // F-005 AC-47's notice family. All five are published `(web, mobile)` in
-  // `components.md § CarriedNotice → Testids and states`, and design records that
-  // they *"close the debt `## Impact` §8(d) records as the mobile ids for
-  // AC-42/AC-43's undo offer, which is an element that does not exist"*.
-  //
-  // **This is why they are new rather than owed to F-003.** F-003's catalogue is
-  // closed and structurally asserted, and AC-9's and AC-39's mobile bounds needed
-  // nothing from it — they are accessible-name assertions on the existing
-  // `taskRow`. AC-43's offer is different: it is an **element that does not
-  // exist**, so it is owed an id, and design published it rather than leaving it
-  // to be invented here (platform mobile.md § F-005, last bullet).
-  //
-  // `tasksSaveNotice` above stays BLOCKED and that is not an inconsistency:
-  // § SaveNotice is a **sibling** of this family, not this family widened —
-  // design decided that explicitly, and the deciding reason is lifetime (rule 3
-  // clears § SaveNotice on *"leaving the surface"*, which is precisely what AC-47
-  // forbids, and below the split `PathSwitch` is one tap and primary navigation).
+  // § CarriedNotice (T-152) — five ids, now drawn in all three shell mockups.
   carriedNotices: 'shell-carried-notices',
   carriedNotice: 'shell-carried-notice',
   carriedNoticeRetry: 'shell-carried-notice-retry',
   carriedNoticeUndo: 'shell-carried-notice-undo',
   carriedNoticeDismiss: 'shell-carried-notice-dismiss',
+  // § SearchField (T-244) — inline search on the Tasks surface
+  tasksSearchInput: 'tasks-search-input',
+  tasksSearchClose: 'tasks-search-close',
+  tasksNoResults: 'tasks-no-results',
+  // § OverflowMenu (T-244) — the floating menu and its items
+  overflowMenu: 'overflow-menu',
+  overflowSortDue: 'overflow-sort-due',
+  overflowSortPriority: 'overflow-sort-priority',
+  overflowSortManual: 'overflow-sort-manual',
+  overflowHideCompleted: 'overflow-hide-completed',
+  overflowSelect: 'overflow-select',
+  // § SelectionMode + § BulkActionToolbar (T-244)
+  tasksSelectCheckbox: 'tasks-select-checkbox',
+  tasksBulkToolbar: 'tasks-bulk-toolbar',
+  tasksSelectCount: 'tasks-select-count',
+  tasksBulkComplete: 'tasks-bulk-complete',
+  tasksBulkDelete: 'tasks-bulk-delete',
+  tasksBulkMove: 'tasks-bulk-move',
+  tasksSelectDone: 'tasks-select-done',
+  // § ConfirmDialog (T-244)
+  tasksConfirmDialog: 'tasks-confirm-dialog',
+  tasksConfirmDelete: 'tasks-confirm-delete',
+  tasksConfirmCancel: 'tasks-confirm-cancel',
+  // T-209: controls drawn in the mockups without ids because the client had
+  // not declared them. Now declared; design adds the testid attributes at the
+  // next drawing pass. Until then they sit in SHELL_IDS_AWAITING_MOCKUP.
+  tasksRowOpen: 'tasks-row-open',
+  tasksRowPriorityMark: 'tasks-row-priority-mark',
+  tasksRowRepeatMark: 'tasks-row-repeat-mark',
+  tasksRowStepsMark: 'tasks-row-steps-mark',
 } as const
 
 /**
- * Shell ids design has **published in the `components.md` testid table but not yet
- * drawn into the three shell mockups**, each with what is owed and by whom.
+ * Shell ids design has **published or acknowledged but not yet drawn with
+ * testid attributes into the shell mockups**, each with what is owed.
  *
- * This is not a loophole in the anti-invention rule — it is the second half of it.
- * The rule the mockup comparison enforces is *the client invents no id*, and the
- * catalogue's upstream is normally the drawing. For § CarriedNotice it is the
- * **published table**: design added the five ids and the component's whole
- * specification on 2026-08-19 and recorded, in the same pass, that *"F-005's
- * `phase: screens` dispatch must extend the three shell mockups, not only draw the
- * detail — this family renders on Talk and Settings, which only `app-shell*.html`
- * draw"*, and that *"the `src/` catalogue assertions go red on the five new ids by
- * design; the fix belongs to whoever owns `src/`"*.
- *
- * So an id here is still traceable to design, in writing, with a row-by-row
- * specification — it is just traceable to the table rather than to the drawing. An
- * id in **neither** is invented and still fails. The entries are removed when
- * `phase: screens` extends the mockups, at which point the mockup comparison
+ * The anti-invention rule still holds: an id in **neither** the mockup
+ * attributes nor this map is invented and fails. The entries are removed when
+ * the mockups gain the testid attributes, at which point the mockup comparison
  * covers them and a stale entry here fails on its own (asserted below).
+ *
+ * The previous five CarriedNotice entries were removed: all five now appear in
+ * all three shell mockups' platform-specific attributes.
  */
 export const SHELL_IDS_AWAITING_MOCKUP: Record<string, string> = {
-  [SHELL_A11Y_IDS.carriedNotices]:
-    'components.md § CarriedNotice → Testids and states publishes it (web, mobile); the three shell mockups are extended at phase: screens (design, § CarriedNotice item 4)',
-  [SHELL_A11Y_IDS.carriedNotice]:
-    'as above — the notice row exemplar; its six row states are enumerated for the drawing pass as carried-failed … carried-undone',
-  [SHELL_A11Y_IDS.carriedNoticeRetry]:
-    'as above — one per field block, so a row with two failed fields carries two (AC-2: each field keeps its own retry)',
-  [SHELL_A11Y_IDS.carriedNoticeUndo]:
-    "as above — CN-UNDO's `Put back`, the new § Buttons `neutral` variant",
-  [SHELL_A11Y_IDS.carriedNoticeDismiss]:
-    "as above — any row's trailing Dismiss, icon-only with the accessible name `Dismiss`",
+  [SHELL_A11Y_IDS.tasksRowOpen]:
+    'T-209 — the row open affordance (S2 to S6) ships in src as tasks-row-open; both mobile mockups acknowledge it in their header comment as drawn-but-unlabelled and owed',
+  [SHELL_A11Y_IDS.tasksRowPriorityMark]:
+    'T-209 — components.md § TaskRow publishes tasks-row-priority-mark (web); the mobile mockups draw the control without a testid attribute because the client had not declared it',
+  [SHELL_A11Y_IDS.tasksRowRepeatMark]:
+    'T-209 — components.md § TaskRow publishes tasks-row-repeat-mark (web); same reason as priority-mark above',
+  [SHELL_A11Y_IDS.tasksRowStepsMark]:
+    'T-209 — components.md § TaskRow publishes tasks-row-steps-mark (web); same reason as priority-mark above',
 }
 
 export type ShellA11yId = (typeof SHELL_A11Y_IDS)[keyof typeof SHELL_A11Y_IDS]
@@ -217,8 +230,6 @@ export type A11yId = ConversationA11yId | ShellA11yId
  * is the difference between a scope boundary and an oversight.
  */
 export const SHELL_IDS_BLOCKED: Partial<Record<ShellA11yId, string>> = {
-  [SHELL_A11Y_IDS.menuListRow]:
-    'personal lists — no `lists` table and no `tasks.list_id` (IA §7)',
   [SHELL_A11Y_IDS.menuNewListButton]:
     'creates a personal list — needs `lists` (IA §7)',
   [SHELL_A11Y_IDS.menuRetryButton]:
@@ -229,6 +240,8 @@ export const SHELL_IDS_BLOCKED: Partial<Record<ShellA11yId, string>> = {
     'S5 New list sheet — needs `lists` (components.md § ListEditorSheet)',
   [SHELL_A11Y_IDS.listEditorCancelButton]:
     'S5 New list sheet — needs `lists` (components.md § ListEditorSheet)',
+  [SHELL_A11Y_IDS.listEditorColorSwatch]:
+    'S5 New list sheet colour picker — needs `lists` (components.md § ListEditorSheet)',
   [SHELL_A11Y_IDS.settingsTalkbackSwitch]:
     'F-002 talk-back is specced and unbuilt; "a switch that toggles nothing is worse than an absent one" (components.md § SettingsRow)',
   [SHELL_A11Y_IDS.settingsRowRetry]:
@@ -237,6 +250,61 @@ export const SHELL_IDS_BLOCKED: Partial<Record<ShellA11yId, string>> = {
     'SaveNotice is designed and not built — drawn by T-135 (components.md § SaveNotice), with no implementation task dispatched for it yet',
   [SHELL_A11Y_IDS.tasksSaveNoticeDismiss]:
     'the dismiss control of a notice that does not render yet; it lands with SaveNotice itself (components.md § SaveNotice)',
+  // ── T-227 / T-244 / T-247 / T-249 — drawn controls not yet built on mobile ──
+  [SHELL_A11Y_IDS.shellSearchButton]:
+    'T-227/T-244 — Search icon button in the Tasks header; drawn, not yet built',
+  [SHELL_A11Y_IDS.shellOverflowButton]:
+    'T-227/T-244 — Overflow icon button in the Tasks header; drawn, not yet built',
+  [SHELL_A11Y_IDS.tasksInlineAdd]:
+    'T-227 — the inline add row replacing the header Add task button; drawn, not yet built',
+  [SHELL_A11Y_IDS.tasksDragHandle]:
+    'T-247 — drag handle for manual reorder, visible only in manual sort; drawn, not yet built',
+  [SHELL_A11Y_IDS.tasksSearchInput]:
+    'T-244 — § SearchField inline search text field; drawn, not yet built',
+  [SHELL_A11Y_IDS.tasksSearchClose]:
+    'T-244 — § SearchField close control; drawn, not yet built',
+  [SHELL_A11Y_IDS.tasksNoResults]:
+    'T-244 — § Empty states Search no-results container; drawn, not yet built',
+  [SHELL_A11Y_IDS.overflowMenu]:
+    'T-244 — § OverflowMenu floating menu layer; drawn, not yet built',
+  [SHELL_A11Y_IDS.overflowSortDue]:
+    'T-244 — § OverflowMenu sort: Due date; drawn, not yet built',
+  [SHELL_A11Y_IDS.overflowSortPriority]:
+    'T-244 — § OverflowMenu sort: Priority; drawn, not yet built',
+  [SHELL_A11Y_IDS.overflowSortManual]:
+    'T-244 — § OverflowMenu sort: Manual; drawn, not yet built',
+  [SHELL_A11Y_IDS.overflowHideCompleted]:
+    'T-244 — § OverflowMenu toggle: Hide/Show completed; drawn, not yet built',
+  [SHELL_A11Y_IDS.overflowSelect]:
+    'T-244 — § OverflowMenu action: enter multi-select mode; drawn, not yet built',
+  [SHELL_A11Y_IDS.tasksSelectCheckbox]:
+    'T-244 — § SelectionMode selection checkbox exemplar; drawn, not yet built',
+  [SHELL_A11Y_IDS.tasksBulkToolbar]:
+    'T-244 — § BulkActionToolbar container; drawn, not yet built',
+  [SHELL_A11Y_IDS.tasksSelectCount]:
+    'T-244 — § BulkActionToolbar selected-count display; drawn, not yet built',
+  [SHELL_A11Y_IDS.tasksBulkComplete]:
+    'T-244 — § BulkActionToolbar bulk complete button; drawn, not yet built',
+  [SHELL_A11Y_IDS.tasksBulkDelete]:
+    'T-244 — § BulkActionToolbar bulk delete button; drawn, not yet built',
+  [SHELL_A11Y_IDS.tasksBulkMove]:
+    'T-244 — § BulkActionToolbar bulk move-to-list button; drawn, not yet built',
+  [SHELL_A11Y_IDS.tasksSelectDone]:
+    'T-244/T-249 — § BulkActionToolbar exit button; drawn, not yet built',
+  [SHELL_A11Y_IDS.tasksConfirmDialog]:
+    'T-244 — § ConfirmDialog confirmation dialog; drawn, not yet built',
+  [SHELL_A11Y_IDS.tasksConfirmDelete]:
+    'T-244 — § ConfirmDialog destructive confirm button; drawn, not yet built',
+  [SHELL_A11Y_IDS.tasksConfirmCancel]:
+    'T-244 — § ConfirmDialog cancel button; drawn, not yet built',
+  [SHELL_A11Y_IDS.tasksRowOpen]:
+    'T-209 — row open affordance; control is drawn without a testid, awaiting mockup attribute',
+  [SHELL_A11Y_IDS.tasksRowPriorityMark]:
+    'T-209 — row priority mark; control is drawn without a testid, awaiting mockup attribute',
+  [SHELL_A11Y_IDS.tasksRowRepeatMark]:
+    'T-209 — row repeat mark; control is drawn without a testid, awaiting mockup attribute',
+  [SHELL_A11Y_IDS.tasksRowStepsMark]:
+    'T-209 — row steps mark; control is drawn without a testid, awaiting mockup attribute',
 }
 
 /**
@@ -423,7 +491,6 @@ export function expectedShellIds(
     return ids
   }
 
-  ids.add(SHELL_A11Y_IDS.pathTalk)
   ids.add(SHELL_A11Y_IDS.listsMenuButton)
   const tasks = tasksSurfaceView(state, shell.collection)
   if (tasks.banner === 'retry' || tasks.view === 'error') {
