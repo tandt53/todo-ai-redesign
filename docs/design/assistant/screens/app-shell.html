@@ -857,8 +857,14 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .swatches{display:flex; gap:var(--s2); flex-wrap:nowrap}
 .swatch{
   appearance:none; border:0; cursor:pointer; width:var(--h-sm); height:var(--h-sm);
-  min-width:var(--min-target); min-height:var(--min-target);
   border-radius:var(--r-circle); position:relative;
+}
+/* control.note: the hit floor (web 40) is met with a transparent pseudo, never
+   by painting a bigger circle. The swatch stays h-sm × h-sm (36×36); this
+   pseudo carries the target — same pattern as .cbx::before. */
+.swatch::before{
+  content:""; position:absolute; top:50%; left:50%;
+  width:var(--min-target); height:var(--min-target); transform:translate(-50%,-50%);
 }
 .swatch:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
 .swatch.on::after{content:""; position:absolute; inset:3px; border:2px solid var(--bg-base); border-radius:var(--r-circle)}
