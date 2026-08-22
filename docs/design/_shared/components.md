@@ -1107,6 +1107,11 @@ in `app-shell.html` (`.search-field`, `data-search="open"`) — this section pub
 anywhere on the Tasks surface. `Escape` closes search. The field is a standard `<input>` in the tab
 order; no custom keyboard handling beyond the shortcut.
 
+**Completed tasks in search results (AC-2 interaction).** When `hide_completed` is true, completed
+tasks are excluded from search results. When false, they appear. The mockup hides done rows
+unconditionally (a demonstration shortcut), but **the implementer must follow the
+`hide_completed` preference** — the mockup is not the rule for this behaviour, this sentence is.
+
 States: **closed** (default — field hidden, surface title visible) · **open-empty** (field visible,
 focused, no query, full list) · **open-filtering** (query typed, list narrowing live) ·
 **open-no-results** (query typed, zero matches → § Empty states — Search below) · **focused**
@@ -1137,8 +1142,11 @@ empty state appears in the list area below the header while the search field rem
 ## OverflowMenu — the three-kind floating layer (F-009 AC-4, AC-5, AC-7, AC-8, AC-9, AC-14)
 
 Purpose: a single floating menu holding **three different kinds of item at once** — a single-choice
-group, a persisting toggle, and a plain action. Opens from `shell-overflow-button`, anchored below it
-and right-aligned. Closes on selection, on tap outside, or on `Escape`.
+group, a persisting toggle, and a plain action. Opens from `shell-overflow-button`, **anchored to
+the trigger**: right edges aligned, `space.1` (4px) gap below. The button and menu share a
+`position:relative` wrapper (`.overflow-anchor`) so the menu positions against the button, not
+against the pane — T-247 fix for the measured 68px gap and 82px overhang the owner flagged.
+Closes on selection, on tap outside, or on `Escape`.
 
 **Shape:** `radius.lg` (16), `shadow.overlay`, `bg.base` ground. Menu width: `min(280px, 100vw − 2×gutter)`.
 Scrim: none — the menu closes on outside tap, but no dimming; this is a lightweight popover, not a
@@ -1195,9 +1203,12 @@ size (20px, `radius.sm`), same hit area (`control.minTarget`). Unchecked: 1px `b
 control, not the completion control** — tapping it selects the row, it does not complete the task.
 The existing `assistant-task-checkbox` is hidden during selection mode.
 
-**Selected row ground:** `accentTint` at `radius.md` — consistent with `DESIGN.md ## Colour rules 5`,
-which says *"the row's ground means selection."* The selection is carried by **both** the checkbox
-state and the row ground — two signals, so it is not colour-only (`## Colour rules 3`).
+**Selected row ground:** `accentTint` at `radius.md`, with `space.1` (4px) horizontal padding —
+consistent with `DESIGN.md ## Colour rules 5`, which says *"the row's ground means selection."*
+The 4px inset satisfies `radius.nesting_rule`: checkbox at `r-sm` (8) inside ground at `r-md`
+(12), inset by 4 = 12 − 8. The selection is carried by **both** the checkbox state and the row
+ground — two signals, so it is not colour-only (`## Colour rules 3`). (T-247: padding added per
+owner feedback — the flush checkbox at inset 0 made the two radii read as arbitrary.)
 
 **Row trailing:** the delete control is hidden in selection mode. The row has no trailing
 affordance — the bulk actions are in the toolbar, not per-row.
@@ -1277,7 +1288,16 @@ message** (AC-12 is explicit).
 - Buttons: *"Delete {n} tasks"* (`danger` variant) and *"Cancel"* (`secondary` variant). The
   destructive button names the count and the word *delete* — it never says "Confirm" or "OK".
 
-**Focus:** the dialog traps focus. `Cancel` is auto-focused (safe default). `Escape` cancels.
+**Focus:** the dialog traps focus. **`Cancel` receives initial focus** — this is the safe default
+for a destructive action (the user must move to the destructive button deliberately). Not stated
+in AC-12 but recorded here as the design's decision so the implementer does not guess. `Escape`
+cancels.
+
+**Single-task bypass (AC-12).** When exactly one task is selected, tapping *Delete* in the toolbar
+deletes immediately with undo (per F-005 AC-42) — **no dialog appears**. The dialog gates only
+`n > 1`. This state is not drawn as a separate mockup because the visible result is identical to
+a single task delete from the row: the row disappears and the undo bar appears. The difference is
+in the trigger (toolbar, not row control) and the bypass decision, both recorded here.
 
 States: **closed** (default — no dialog) · **open** (dialog visible, scrim active, `Cancel`
 focused) · **deleting** (*"Delete {n} tasks"* shows loading treatment, width locked; `Cancel`
@@ -1360,6 +1380,7 @@ Genuinely new controls, and only those, take new ids:
 | `tasks-confirm-dialog` | § ConfirmDialog — the confirmation dialog (added T-244) |
 | `tasks-confirm-delete` | § ConfirmDialog — destructive confirm button (added T-244) |
 | `tasks-confirm-cancel` | § ConfirmDialog — cancel button (added T-244) |
+| `tasks-drag-handle` | § TaskRow — drag handle for manual reorder, visible only in manual sort (added T-247) |
 
 **`shell-talk-button` is retired by T-227** — the PathSwitch Talk button was removed when the Talk
 path changed from a bottom-bar tab to the voice FAB (below split) and the permanent panel (at
@@ -1377,13 +1398,11 @@ No content-width floor is published for any control above. § Touch's floors are
 shipped control; none of these has shipped, and publishing a floor measured only in Chromium
 would put a number into a table whose whole value is that its numbers are checkable.
 
-**The counts (updated T-244 — F-009 components and T-227 drift reconciliation).** This table now has
-**49** new-control rows (was 29; +22 for F-009 components and the two T-227 header buttons, −1 for
-retired `shell-talk-button`, −1 for retired `assistant-add-task-button` which moved from the
-carried-over list to explicitly retired). The carried-over list is now **6** (was 7; minus
-`assistant-add-task-button`). **`src/assistant/mobile/model/a11y.ts SHELL_A11Y_IDS`** holds 29 and
-needs updating: add `shell-search-button`, `shell-overflow-button` and the 20 F-009 ids; retire
-`shell-talk-button`. This is L-008's mechanism working in the direction drift actually travels — the
+**The counts (updated T-247 — drag-handle testid).** This table now has
+**50** new-control rows (was 49; +1 for `tasks-drag-handle`). The carried-over list is still **6**.
+**`src/assistant/mobile/model/a11y.ts SHELL_A11Y_IDS`** holds 29 and
+needs updating: add `shell-search-button`, `shell-overflow-button`, `tasks-drag-handle` and the
+20 F-009 ids; retire `shell-talk-button`. This is L-008's mechanism working in the direction drift actually travels — the
 suite fails because the **upstream** artifact moved — and the fix belongs to whoever owns `src/`, not
 to this file. All new ids are `(web, mobile)` like the components they belong to, so the
 one-catalogue-three-spellings invariant holds.
