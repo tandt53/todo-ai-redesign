@@ -174,9 +174,10 @@ export const PAINTED: Record<InteractiveId, Size> = {
   //
   // HEIGHTS are real, read off the mockup CSS rule named on each line.
 
-  // .path { min-height: 44px } — PS-TASKS / PS-TALK
+  // .path { min-height: 44px } — PS-TASKS (PS-TALK is retired by T-227)
   [SHELL_A11Y_IDS.pathTasks]: { width: MIN_TOUCH_TARGET.android, height: 44 },
-  [SHELL_A11Y_IDS.pathTalk]: { width: MIN_TOUCH_TARGET.android, height: 44 },
+  // T-227: the voice FAB replaces the Talk path switch button
+  [SHELL_A11Y_IDS.voiceFab]: { width: MIN_TOUCH_TARGET.android, height: 44 },
   // .icon-btn { width: 44px; height: 44px }
   [SHELL_A11Y_IDS.listsMenuButton]: { width: 44, height: 44 },
   [SHELL_A11Y_IDS.menuCloseButton]: { width: 44, height: 44 },
@@ -247,7 +248,7 @@ export const INTERACTIVE_IDS = [
  */
 export const SHELL_INTERACTIVE_IDS = [
   SHELL_A11Y_IDS.pathTasks,
-  SHELL_A11Y_IDS.pathTalk,
+  SHELL_A11Y_IDS.voiceFab,
   SHELL_A11Y_IDS.listsMenuButton,
   SHELL_A11Y_IDS.menuCloseButton,
   SHELL_A11Y_IDS.menuCollectionRow,

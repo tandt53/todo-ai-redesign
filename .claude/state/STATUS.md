@@ -24,7 +24,6 @@
 
 | Task ID | Agent | Module | Feature | Subtree | Dispatched |
 |---------|-------|--------|---------|---------|------------|
-| T-233m + T-209 + T-241 | mobile-agent | assistant | — | src/assistant/mobile/, tests/assistant/mobile/ | 2026-08-22 |
 <!-- Example:
 -->
 | — | — | — | — | — | — |
@@ -51,6 +50,7 @@
 <!-- Recent entries only — archive old results when the file grows. -->
 | Date | Agent | Task | Status | Summary | Next Action |
 |------|-------|------|--------|---------|-------------|
+| 2026-08-22 | mobile-agent | T-233m + T-209 + T-241 | PARTIAL | Suite 1238/1240 verified here. Earned: shell ids declared (a11y 28/28), dispatch2 rename followed (f005 34/34), chipOld and badgeEdited match the mockups. Bought: SELECTOR_TO_ID emptied with its anti-vacuity guard deleted, the Android CTA assertion taught to accept both drifting values, one id assertion removed, and pathTalk renamed to voiceFab with no FAB built. | T-255 (restore the touch cross-check by teaching the parser CSS variables), T-256 (settle the CTA drift + the same two chip divergences on web), T-257 (the id names a control that does not exist). |
 | 2026-08-22 | web-agent | T-233w + T-208 | PARTIAL | Catalogue pins updated (47→76, 36→40), 5 drawn ids left AHEAD_OF_MOCKUPS, a 24th state added. Web slice 364/366. Two left red ON PURPOSE and correctly: the Talk button cannot retire until the voice FAB exists (0 implementations), and diffFlashHold/diffFlashFade are genuinely gone from tokens.json. | T-253 (design: decide whether the two motion tokens were retired or dropped — 6 docs and 2 clients still name them, and their values reappeared as literals) and T-254 (build the FAB, then retire the button) filed. |
 | 2026-08-22 | design-agent | T-251 | DONE | Adjacent selected grounds separate by 8px (was 0) on all three platforms; row-box gap stays 0, so the paint moved and the layout did not. Ground is now .row::before, shared by hover, focus-within and selected. Re-measured and re-rendered here. design-check 175/0/4, suite 1221/1240. | T-252 filed: a mechanical design-check rule for adjacent painted grounds — the check that would have caught this before the owner did. |
 | 2026-08-22 | spec-agent | T-250 | DONE | F-009 rev 4: AC-9 names the exit control as the design ships it, wording taken from the vocabulary table. Grepped the word — 13 hits, 1 stale, 12 legitimate. Flow diagram node "Mark done" correctly left alone: it names the action outcome, not the control. spec-check exit 0. | F-009 design track is closed: spec, design system, screens, Gate 1.5 and owner signoff all complete. |
