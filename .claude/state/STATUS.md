@@ -24,7 +24,6 @@
 
 | Task ID | Agent | Module | Feature | Subtree | Dispatched |
 |---------|-------|--------|---------|---------|------------|
-| T-251 | design-agent | assistant | F-009 | docs/design/assistant/screens/ | 2026-08-22 |
 <!-- Example:
 -->
 | — | — | — | — | — | — |
@@ -51,6 +50,7 @@
 <!-- Recent entries only — archive old results when the file grows. -->
 | Date | Agent | Task | Status | Summary | Next Action |
 |------|-------|------|--------|---------|-------------|
+| 2026-08-22 | design-agent | T-251 | DONE | Adjacent selected grounds separate by 8px (was 0) on all three platforms; row-box gap stays 0, so the paint moved and the layout did not. Ground is now .row::before, shared by hover, focus-within and selected. Re-measured and re-rendered here. design-check 175/0/4, suite 1221/1240. | T-252 filed: a mechanical design-check rule for adjacent painted grounds — the check that would have caught this before the owner did. |
 | 2026-08-22 | spec-agent | T-250 | DONE | F-009 rev 4: AC-9 names the exit control as the design ships it, wording taken from the vocabulary table. Grepped the word — 13 hits, 1 stale, 12 legitimate. Flow diagram node "Mark done" correctly left alone: it names the action outcome, not the control. spec-check exit 0. | F-009 design track is closed: spec, design system, screens, Gate 1.5 and owner signoff all complete. |
 | 2026-08-22 | design-agent | T-249 | DONE | Done row is selectable and still reads as done: one checkbox, checkmark = done, fill colour = selected. All five rows align at cb=8/title=40 (re-measured here against .content-col; the return used a different origin). Complete/Done clash resolved by dropping the word — exit is now an icon labelled "Exit selection", with a vocabulary-table row for the concept. design-check 175/0/4. | T-250 dispatched to update the spec, which still names the exit control "Done". |
 | 2026-08-22 | spec-agent | T-245 | DONE | F-009 rev 3: AC-9 keeps 'on each row' and gains the completed-row clause plus the rejected alternative; AC-11 states uniform bulk-complete as a rule, not a branch; OQ-2 filed for drag-reorder of done tasks, argued both ways and left open. spec-check exit 0, numbering intact. | T-250 filed: AC-9 still names the exit control 'Done', the word design is retiring. Update it from T-249's return. |
