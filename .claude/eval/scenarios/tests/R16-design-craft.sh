@@ -28,17 +28,30 @@ assert_file_exists "$TPL"   "DESIGN.md template present"
 # Aesthetic direction is delegated to two vendored skills; the agent must point
 # at them and they must exist with their load-bearing sections intact.
 SKILL_FD="$CLAUDE_ROOT/skills/design/frontend-design.md"
-SKILL_AN="$CLAUDE_ROOT/skills/design/aesthetic-anchors.md"
+SKILL_SC="$CLAUDE_ROOT/skills/design/screen-content.md"
 assert_file_exists "$SKILL_FD" "vendored frontend-design skill present"
-assert_file_exists "$SKILL_AN" "vendored aesthetic-anchors skill present"
+assert_file_exists "$SKILL_SC" "screen-content skill present"
 assert_file_contains "$AGENT" 'skills/design/frontend-design.md' \
   "design-agent reads the frontend-design skill"
-assert_file_contains "$AGENT" 'skills/design/aesthetic-anchors.md' \
-  "design-agent reads the aesthetic-anchors skill"
+assert_file_contains "$AGENT" 'skills/design/screen-content.md' \
+  "design-agent reads the screen-content skill"
 assert_file_contains "$SKILL_FD" 'Ground it in the subject' \
   "frontend-design skill keeps subject-grounding"
-assert_file_contains "$SKILL_AN" 'Content is not design' \
-  "anchors skill keeps the content-discipline section"
+assert_file_contains "$SKILL_SC" 'Fabrication posing as real data' \
+  "screen-content keeps the no-fabricated-data rule"
+
+# --- no catalogue of design movements ---
+# A named movement carries implications the brief never stated (Swiss => 1px
+# rules, no shadows). The agent must derive direction from the product instead,
+# so no agent or skill file may offer movements as a menu to pick from.
+assert_file_contains "$AGENT" 'never picked from a catalogue' \
+  "direction is derived from the product, not chosen from a list"
+assert_file_contains "$AGENT" 'Do not name a design movement and commit to it' \
+  "committing to a named movement is barred outright"
+mv_files="$(ls "$CLAUDE_ROOT"/skills/design/*.md 2>/dev/null | grep -v 'frontend-design.md')"
+# shellcheck disable=SC2086
+assert_grep_zero '[Bb]rutalis|[Rr]etro-[Ff]uturis|[Aa]urora [Mm]aximalis|[Cc]haotic [Mm]aximalis' \
+  "no design skill offers movements as a menu" $mv_files
 assert_file_contains "$AGENT" 'audience override' \
   "the audience override exists — product UI answers to the audience's daily apps"
 assert_file_contains "$AGENT" 'audience wins' \
@@ -76,6 +89,20 @@ assert_file_contains "$TPL" '## Identity' \
   "DESIGN.md template requires an Identity section"
 assert_file_contains "$TPL" 'novelty budget' \
   "template asks where the novelty budget is spent"
+
+assert_file_contains "$AGENT" 'skills/design/motion.md' \
+  "design-agent reads the motion skill when something moves"
+assert_file_contains "$AGENT" 'skills/design/accessible-components.md' \
+  "design-agent reads the component-accessibility skill for dialogs, menus and tabs"
+SKILLS="$CLAUDE_ROOT/skills/design"
+assert_file_contains "$SKILLS/motion.md" 'explain a change' \
+  "motion is tied to a state change rather than treated as decoration"
+assert_file_contains "$SKILLS/motion.md" 'not a missing one' \
+  "reduced motion replaces the feedback rather than removing it"
+assert_file_contains "$SKILLS/accessible-components.md" 'use the native element' \
+  "the skill reaches for HTML before ARIA"
+assert_file_contains "$SKILLS/accessible-components.md" 'Focus is a design decision' \
+  "focus movement on open and close is designed, not left to the implementer"
 
 assert_file_contains "$AGENT" 'Return an edge table' \
   "every navigation edge is drawn and evidenced, not asserted as covered"

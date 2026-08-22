@@ -401,6 +401,15 @@ run_case R17 "silence starts counting as design approval" \
 # R16 — design craft. The scenario's claim is that the aesthetic direction is
 # delegated to the vendored skills rather than restated in prose, so the case
 # breaks the delegation and requires the scenario to notice.
+run_case R16 "the motion skill stops being read" \
+  "sed -i.bak 's|skills/design/motion.md|skills/design/motion-removed.md|' $A/design-agent.md"
+
+run_case R16 "motion stops being tied to a state change" \
+  "sed -i.bak 's/explain a change/add polish/' .claude/skills/design/motion.md"
+
+run_case R16 "accessibility reaches for ARIA before HTML" \
+  "sed -i.bak 's/use the native element/add the attributes/' .claude/skills/design/accessible-components.md"
+
 run_case R16 "screens stop enumerating the states they can reach" \
   "sed -i.bak 's/enumerates its own states/covers the usual states/' $A/design-agent.md"
 
@@ -409,6 +418,17 @@ run_case R16 "a state left out on purpose stops being named" \
 
 run_case R16 "design-agent stops delegating aesthetics to the vendored skills" \
   "sed -i.bak 's|.claude/skills/|.claude/skills-removed/|g' $A/design-agent.md"
+
+# The catalogue rule. A named movement (Swiss, Brutalist) carries implications
+# the brief never stated; these three break each half of the guard.
+run_case R16 "direction may be picked from a catalogue again" \
+  "sed -i.bak 's/never picked from a catalogue/or picked from a catalogue/' $A/design-agent.md"
+
+run_case R16 "committing to a named design movement stops being barred" \
+  "sed -i.bak 's/Do not name a design movement and commit to it/Name a design movement and commit to it/' $A/design-agent.md"
+
+run_case R16 "a movement catalogue is re-added to the design skills" \
+  "printf '\\n## 3. Brutalist\\n\\nPure primaries, system fonts, hard offset shadows.\\n' >> .claude/skills/design/screen-content.md"
 
 echo
 echo "─── ${PROVEN} proven fallible, ${UNPROVEN} unproven ───"

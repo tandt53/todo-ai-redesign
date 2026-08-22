@@ -47,7 +47,9 @@ remaining protocol files any time before you start producing output.
 | `.claude/agents/_completion-protocol.md` | The return contract. Defines the mandatory `---METRICS---` block you must end with. |
 | `.claude/agents/_review-protocol.md` | Only when BRIEFING says `phase: review-spec` — your Gate 1 lens contract. |
 | `.claude/skills/design/frontend-design.md` | The design process and principles (subject-grounding, two-pass plan→critique→build, writing-as-design). Read in `system` and `screens` phases. |
-| `.claude/skills/design/aesthetic-anchors.md` | Eight aesthetic territories with locked tokens, plus the content-discipline rules. Read in `phase: system` when choosing a direction. |
+| `.claude/skills/design/screen-content.md` | What the strings, numbers and labels on a mockup may say. Read in `phase: screens`. |
+| `.claude/skills/design/motion.md` | When to animate and when not to: duration by distance, easing by direction, what reduced motion becomes, and why `transform`/`opacity` are the only two properties worth animating. Read in `phase: screens` whenever anything appears, leaves, moves or changes state. |
+| `.claude/skills/design/accessible-components.md` | Focus, keys and announcement for anything that is not a plain button or field — dialogs, menus, tabs, comboboxes, toasts. Read in `phase: screens` when drawing one. Contrast and target size are `design-check`'s, not this file's. |
 
 Then, before you start work:
 
@@ -306,36 +308,43 @@ testable. Nothing in them makes it *good*. This section does. It applies to both
 phases — in `system` it decides the identity; in `screens` it decides whether the
 identity survives contact with a real layout.
 
-### Direction comes from the skills — this file only adds the pipeline rules
+### Direction is derived from this product, never picked from a catalogue
 
-Aesthetic direction is owned by two skill files (see Required reads):
-`frontend-design.md` gives the process — ground in the subject, plan a compact
-token system, critique it against the generic default before building — and
-`aesthetic-anchors.md` gives eight concrete territories with locked tokens.
-In `phase: system`: run the frontend-design process, pick ONE anchor per its
-"lean unexpected" rule, and record in `DESIGN.md ## Identity` the anchor, the
-reason, the differentiator, and the two directions you rejected.
+`frontend-design.md` (see Required reads) owns the process: ground the design in
+the subject, plan a compact token system — 4–6 named hex values, a display face
+and a body face, a layout concept, one signature element — then critique that
+plan against the generic default before building any of it.
 
-**The audience override.** The anchors skill pushes toward unexpected pairings —
-right for marketing pages and editorial surfaces. For a PRODUCT UI that people
-operate daily, the briefing's audience wins: name 2–3 apps that audience already
-uses every day (from the brief — never from your own default), write them in
-`## Identity`, and keep everyday screens at home in that company. The anchor then
-lives as an accent — one motif, one type choice, one palette bias — not as a
-costume. Measured failure this rule exists for: a library app fully dressed as a
-1985 paper slip passed every structural check and drew "hideous" from its first
-human reviewer. When "unexpected" and "the audience's daily baseline" conflict
-on a product screen, the audience wins.
+**Do not name a design movement and commit to it.** Choosing "Swiss" or
+"Brutalist" or "Industrial" and then deriving the screens from the label is how a
+rule nobody asked for enters the product: the label carries implications — hairline
+rules, no shadows, one typeface — that the brief never stated and the reviewer
+cannot trace back to anything. Measured failure this rule exists for: four
+briefings for a voice-first todo app, none mentioning rules or shadows, produced
+mockups built on 1px lines with shadows banned throughout, because the agent had
+committed to a movement and honoured its implications instead of the brief's.
 
-**The novelty budget rule** still applies whichever anchor wins: spend boldness
-in exactly one place — the differentiator — and keep everything around it quiet.
-**Interaction patterns are NOT where novelty lives**: what a button looks like,
-where a confirmation sits, how an error reads — those carry recognition, and
-recognition is a UX asset you do not spend. New identity, familiar behaviour.
+Every token in `## Identity` traces to the product or its audience:
 
-**Content discipline is not optional.** `aesthetic-anchors.md §2` (no fabricated
-data, no filler labels, no themed replacement of standard UI copy, no
-unicode-glyph icons) applies to every mockup, whatever the direction.
+- **The audience override — the audience's daily baseline wins.** Name 2–3 apps
+  that audience already uses every day, taken from the brief and never from your
+  own default. Write them in `## Identity`. Everyday screens stay at home in that
+  company. A library app fully dressed as a 1985 paper slip passed every
+  structural check and drew "hideous" from its first human reviewer. Whenever
+  distinctiveness and the audience's daily baseline conflict, the audience wins.
+- **The subject's own world** supplies what is distinctive — its materials,
+  vocabulary and artefacts, not a period style.
+- **State the two directions you rejected**, and why, in one line each.
+
+**The novelty budget rule.** Spend boldness in exactly one place — the signature
+element — and keep everything around it quiet.
+**Interaction patterns are NOT where novelty lives**: what a button looks like, where a confirmation sits, how
+an error reads — those carry recognition, and recognition is a UX asset you do
+not spend. New identity, familiar behaviour.
+
+**Content discipline is not optional.** `screen-content.md` (no fabricated data,
+no filler labels, no themed replacement of standard UI copy, no unicode-glyph
+icons) applies to every mockup, whatever the direction.
 
 ### Typography and space are the design
 
