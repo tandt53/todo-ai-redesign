@@ -572,6 +572,7 @@ Standard copy for standard actions: "Undo", "Retry", "Send", "Cancel" — no the
 | **reversing a delete or a reorder the user performed by hand** (F-005 AC-43) | **put back** | undo, revert, restore, undelete, take back, bring back, recover |
 | the date a task must be done by (F-005 AC-10) | **deadline** | due date, due, when, target, by-date |
 | a task inside a task (F-005 AC-14 … AC-18) | **step** | subtask, sub-task, child, checklist item, item |
+| leaving selection mode (F-009 AC-9, T-249) | (✕ icon) accessible name **exit selection** | Done (clash with Complete and with the task state), Cancel (would promise undo of actions already applied), Close, Finish |
 
 **The three rows added 2026-08-19 (T-152), and the first one needs its reasoning beside it.** `put back` is not a synonym for `undo` sneaking past the row above it — it is the row above's rule being *obeyed*: **undo** is bound to reversing the last applied **turn**, F-005 AC-43 defines a different mechanism (reversing a delete or a reorder the user's own hand performed), and one word per concept means the second mechanism gets its own word rather than sharing one. `§ SaveNotice` refused to carry an `Undo` action for exactly this reason, in writing, and that refusal stands. Note `take back` is forbidden **as a synonym for undo** and `put back` is close to it in shape — the difference is the whole point of the two rows, so they are read together: *undo* reverses what the assistant did, *put back* returns what your hand removed. The word has precedent outside this catalogue (Apple Photos' *Put Back* for recovering a deleted photo), which is what keeps it standard copy for a standard action rather than a themed replacement. It renders in `§ CarriedNotice` as CN-UNDO, in the `secondary` variant above, never in the accent.
 
@@ -1191,28 +1192,54 @@ manual-disabled** (in Today/Upcoming/Done — the Manual option is visually disa
 
 ## SelectionMode on TaskRow (F-009 AC-9, AC-10)
 
-Purpose: a mode overlay on the existing § TaskRow. When active, **every row shows a selection
-checkbox** and a row tap toggles selection instead of opening the task.
+Purpose: a mode overlay on the existing § TaskRow. When active, **every row — including done
+rows — shows a selection checkbox** and a row tap toggles selection instead of opening the task.
+(Owner override 2026-08-22: *"Task đã xong thì hiển thị checkbox đã check, có thể chọn được."*)
 
-**Entering:** the user taps *Select* in the overflow menu. **Exiting:** the *Done* button on the
+**Entering:** the user taps *Select* in the overflow menu. **Exiting:** the ✕ icon button on the
 § BulkActionToolbar, or deselecting all tasks.
 
-**Selection checkbox:** replaces the completion checkbox in the row's leading position. Same box
-size (20px, `radius.sm`), same hit area (`control.minTarget`). Unchecked: 1px `bg.rule` border,
-`bg.base` fill. Checked: `accent` fill, white `check` glyph. **The checkbox is the selection
-control, not the completion control** — tapping it selects the row, it does not complete the task.
-The existing `assistant-task-checkbox` is hidden during selection mode.
+**Selection checkbox — open rows:** replaces the completion checkbox in the row's leading
+position. Same box size (20px, `radius.sm`), same hit area (`control.minTarget`). Unchecked: 1px
+`bg.rule` border, `bg.base` fill. Checked: `accent` fill, white `check` glyph. The existing
+`assistant-task-checkbox` is hidden during selection mode.
+
+**Selection checkbox — done rows (T-249).** The same `select-cbx` appears in the same leading
+position. **One checkbox carries two facts: "this task is done" AND "is it selected?"** The visual
+encoding:
+
+| Row state | Checkbox fill | Checkmark | Row ground |
+|---|---|---|---|
+| open, not selected | `bg.base` (empty border) | none | `bg.base` |
+| open, selected | `accent` | white | `accentTint` |
+| done, not selected | `text.primary` (dark fill) | white | `bg.base` |
+| done, selected | `accent` | white | `accentTint` |
+
+**Why this holds.** The checkmark means "done" — it is always present on done rows and never on
+open unselected rows. The fill colour means "selected or not" — `accent` is selected, everything
+else is not. Neither is colour-only: done is also carried by strikethrough + muted text
+(`## Colour rules 3`); selected is also carried by the `accentTint` row ground. The reader never
+learns a special case; the convention is: **accent = selected, checkmark = done**.
+
+**Rejected: two checkboxes per row** (a selection checkbox AND the completion checkbox side by
+side). This would break `cbLeft`/`titleLeft` alignment unless every row had two checkboxes,
+which doubles the controls and confuses "which do I tap?". **Rejected: hiding done state in
+selection mode** (the previous design). The owner explicitly asked for the checked checkbox to
+remain visible.
+
+Bulk Complete applied to an already-complete task is normal — no special case, no error. The task
+stays complete. Nothing is disabled on account of doneness.
 
 **Selected row ground:** `accentTint` at `radius.md` — same pattern as the hover ground
 (`bg.sunken` at `radius.md`). **No padding override on the selected state.** The row's own
 `space.2` (8px) horizontal padding provides the inset; the ground fills the row's padding box,
 reaching the content-column edge (aligned with headings above). This means `cbLeft` and
-`titleLeft` are identical for selected, unselected and done rows — selecting a row never shifts
-its content. Consistent with `DESIGN.md ## Colour rules 5`: *"the row's ground means
-selection."* The selection is carried by **both** the checkbox state and the row ground — two
-signals, so it is not colour-only (`## Colour rules 3`). (T-248: the T-247 approach added
-padding to `.selected` only, which shifted selected rows 4px right — the ground now extends
-outward via the shared row padding instead.)
+`titleLeft` are identical across all four row combinations — open, open+selected, done,
+done+selected — selecting a row never shifts its content. Consistent with `DESIGN.md ## Colour
+rules 5`: *"the row's ground means selection."* The selection is carried by **both** the checkbox
+state and the row ground — two signals, so it is not colour-only (`## Colour rules 3`). (T-248:
+the T-247 approach added padding to `.selected` only, which shifted selected rows 4px right —
+the ground now extends outward via the shared row padding instead.)
 
 **Row trailing:** the delete control is hidden in selection mode. The row has no trailing
 affordance — the bulk actions are in the toolbar, not per-row.
@@ -1221,8 +1248,9 @@ affordance — the bulk actions are in the toolbar, not per-row.
 § BulkActionToolbar.
 
 States: **unselected** (checkbox unchecked, `bg.base` ground) · **selected** (checkbox checked,
-`accentTint` ground) · **no-selection** (entering mode — all rows unselected, toolbar actions
-disabled).
+`accentTint` ground) · **done-unselected** (checkbox shows dark fill + checkmark, `bg.base`
+ground) · **done-selected** (checkbox shows accent fill + checkmark, `accentTint` ground) ·
+**no-selection** (entering mode — all rows unselected, toolbar actions disabled).
 
 | Testid | Control |
 |---|---|
@@ -1231,13 +1259,13 @@ disabled).
 ## BulkActionToolbar (F-009 AC-9, AC-10, AC-11, AC-13)
 
 Purpose: a bottom-pinned toolbar that appears in selection mode. Shows the selected count and the
-three bulk actions. Exits selection mode via the *Done* button.
+three bulk actions. Exits selection mode via the ✕ icon button.
 
 **Shape:** pinned to the viewport bottom, full width, `bg.base` ground, `space.3` padding,
 `bg.hairline` top border (decorative separation, not structural — `border.when_a_line_earns_it`
 does not reach it, but the toolbar boundary needs a visual edge above scrolling content).
 
-**Layout, left to right:** selected count → spacer → bulk action buttons → *Done* button.
+**Layout, left to right:** selected count → spacer → bulk action buttons → ✕ exit button.
 
 **Selected count:** *"{n} selected"* in `font.size.body` `font.weight.semibold`, e.g. *"3 selected"*.
 The count is always visible while the toolbar is on screen. Zero count: *"0 selected"* — drawn
@@ -1250,10 +1278,19 @@ explicitly, never absent.
 
 **Disabled state (AC-10).** When zero tasks are selected, all three action buttons are disabled:
 **40% opacity and no border** — both signals, per `DESIGN.md ## Colour rules 3`. A disabled button
-does not respond to hover, tap, or keyboard activation. The *Done* button is **never** disabled.
+does not respond to hover, tap, or keyboard activation. The ✕ exit button is **never** disabled.
 
-**Done button:** `ghost` variant at `control.height.md`, label *"Done"*, right-aligned. Always
-enabled — exits selection mode regardless of selection count.
+**Exit button (T-249).** Lucide `x` icon at `icon.size.md`, `text.secondary`, no label. Accessible
+name: *"Exit selection"*. Hit area: `control.minTarget`. Right-aligned. Always enabled — exits
+selection mode regardless of selection count. **Why ✕ rather than text:** the previous label
+*"Done"* clashed with the *"Complete"* action beside it — both words mean "finished" in English,
+and `Done` was already spoken for twice in this product (the task state `.row.done` /
+"Mark not done", and the sidebar collection "Done"). The owner flagged the clash. An ✕ icon
+resolves it entirely: it is universally understood as "dismiss this surface" (Google Photos,
+Google Keep), visually separates the exit from the three action buttons, and introduces no new
+word that could drift. **Rejected: "Cancel"** — leaving selection mode does not undo bulk actions
+already applied, so Cancel would promise something false. **Rejected: "Close"** — ambiguous;
+could mean closing the toolbar rather than exiting the mode.
 
 States: **no-selection** (toolbar visible, all actions disabled, count reads "0 selected") ·
 **some-selected** (actions enabled, count reads "{n} selected") · **action-in-progress** (an
@@ -1267,7 +1304,7 @@ other actions disabled).
 | `tasks-bulk-complete` | bulk complete button |
 | `tasks-bulk-delete` | bulk delete button |
 | `tasks-bulk-move` | bulk move-to-list button |
-| `tasks-select-done` | Done button (exits select mode) |
+| `tasks-select-done` | ✕ exit button (exits select mode, accessible name "Exit selection") |
 
 ## ConfirmDialog — bulk delete confirmation (F-009 AC-12)
 
@@ -1380,7 +1417,7 @@ Genuinely new controls, and only those, take new ids:
 | `tasks-bulk-complete` | § BulkActionToolbar — bulk complete button (added T-244) |
 | `tasks-bulk-delete` | § BulkActionToolbar — bulk delete button (added T-244) |
 | `tasks-bulk-move` | § BulkActionToolbar — bulk move-to-list button (added T-244) |
-| `tasks-select-done` | § BulkActionToolbar — Done button, exits select mode (added T-244) |
+| `tasks-select-done` | § BulkActionToolbar — ✕ exit button, exits select mode (added T-244, renamed T-249) |
 | `tasks-confirm-dialog` | § ConfirmDialog — the confirmation dialog (added T-244) |
 | `tasks-confirm-delete` | § ConfirmDialog — destructive confirm button (added T-244) |
 | `tasks-confirm-cancel` | § ConfirmDialog — cancel button (added T-244) |

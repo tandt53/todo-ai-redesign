@@ -1217,6 +1217,9 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .select-cbx:checked{background:var(--accent); border-color:var(--accent)}
 .select-cbx:checked::after{content:""; width:10px; height:6px; border-left:2px solid var(--text-on-accent); border-bottom:2px solid var(--text-on-accent); transform:rotate(-45deg) translate(1px,-1px)}
 .select-cbx:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
+/* Done row in selection mode — completion state as default visual */
+.row.done .select-cbx:not(:checked){background:var(--text-primary); border-color:var(--text-primary)}
+.row.done .select-cbx::after{content:""; width:10px; height:6px; border-left:2px solid var(--bg-base); border-bottom:2px solid var(--bg-base); transform:rotate(-45deg) translate(1px,-1px)}
 .app[data-selection] .select-cbx{display:grid}
 .app[data-selection] .cbx{display:none}
 .app[data-selection] .row-open{pointer-events:none}
@@ -1250,13 +1253,13 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .bulk-btn:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
 .bulk-btn[disabled]{opacity:.4; cursor:not-allowed; border-color:transparent}
 .bulk-btn[disabled]:hover{background:transparent}
-.bulk-done{
-  appearance:none; cursor:pointer; font:inherit; font-size:var(--fs-body); font-weight:var(--w-semibold);
-  height:var(--h-md); min-height:var(--min-target); padding:0 var(--s3);
-  background:transparent; color:var(--text-secondary); border:0; border-radius:var(--r-sm);
+.bulk-exit{
+  appearance:none; cursor:pointer; border:0; background:transparent; color:var(--text-secondary);
+  width:var(--min-target); height:var(--min-target); display:grid; place-items:center;
+  border-radius:var(--r-sm); flex:none;
 }
-.bulk-done:hover{color:var(--text-primary); background:var(--bg-sunken)}
-.bulk-done:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
+.bulk-exit:hover{color:var(--text-primary); background:var(--bg-sunken)}
+.bulk-exit:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
 
 /* ── CONFIRM DIALOG ── */
 .confirm-scrim{display:none; position:fixed; inset:0; background:var(--bg-scrim); z-index:30}
@@ -1523,6 +1526,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
         <div class="row done">
           <div class="row-time"><span class="wd">Fri</span>9:30 AM</div>
           <div class="row-main">
+            <input class="select-cbx" type="checkbox" aria-label="Select: Change the tyres">
             <input class="cbx" type="checkbox" checked aria-label="Mark not done: Change the tyres">
             <button class="row-open" aria-label="Open Change the tyres"><span class="row-title">Change the tyres</span></button>
             <span class="row-due">Fri 9:30 AM</span>
@@ -1663,6 +1667,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
         <div class="row done">
           <div class="row-time"><span class="wd">Fri</span>9:30 AM</div>
           <div class="row-main">
+            <input class="select-cbx" type="checkbox" aria-label="Select: Change the tyres">
             <input class="cbx" type="checkbox" checked aria-label="Mark not done: Change the tyres">
             <button class="row-open" aria-label="Open Change the tyres"><span class="row-title">Change the tyres</span></button>
             <span class="row-due">Fri 9:30 AM</span>
@@ -1674,6 +1679,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
         <div class="row done">
           <div class="row-time"><span class="wd">Thu</span>4:15 PM</div>
           <div class="row-main">
+            <input class="select-cbx" type="checkbox" aria-label="Select: Order the cake">
             <input class="cbx" type="checkbox" checked aria-label="Mark not done: Order the cake">
             <button class="row-open" aria-label="Open Order the cake"><span class="row-title">Order the cake</span></button>
             <span class="row-due">Thu 4:15 PM</span>
@@ -1685,6 +1691,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
         <div class="row done">
           <div class="row-time"><span class="wd">Wed</span>11:00 AM</div>
           <div class="row-main">
+            <input class="select-cbx" type="checkbox" aria-label="Select: Send the visa photos">
             <input class="cbx" type="checkbox" checked aria-label="Mark not done: Send the visa photos">
             <button class="row-open" aria-label="Open Send the visa photos"><span class="row-title">Send the visa photos</span></button>
             <span class="row-due">Wed 11:00 AM</span>
@@ -1696,6 +1703,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
         <div class="row done">
           <div class="row-time"><span class="wd"></span>—</div>
           <div class="row-main">
+            <input class="select-cbx" type="checkbox" aria-label="Select: Cancel the gym trial">
             <input class="cbx" type="checkbox" checked aria-label="Mark not done: Cancel the gym trial">
             <button class="row-open" aria-label="Open Cancel the gym trial"><span class="row-title">Cancel the gym trial</span></button>
           </div>
@@ -1757,7 +1765,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
               <button class="bulk-btn" data-testid="tasks-bulk-delete" resource-id="tasks-bulk-delete" disabled aria-label="Delete selected"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete</button>
               <button class="bulk-btn" data-testid="tasks-bulk-move" resource-id="tasks-bulk-move" disabled aria-label="Move to list"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9L9.1 3.1A2 2 0 0 0 7.4 2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2Z"/></svg>Move to list</button>
             </div>
-            <button class="bulk-done" data-testid="tasks-select-done" resource-id="tasks-select-done">Done</button>
+            <button class="bulk-exit" data-testid="tasks-select-done" resource-id="tasks-select-done" aria-label="Exit selection"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
           </div>
         </div>
 
@@ -2499,16 +2507,19 @@ function paint(cfg){
     if (sc > 0) bulkBtns[j].removeAttribute('disabled');
     else bulkBtns[j].setAttribute('disabled','');
   }
-  var rows = document.querySelectorAll('.v-collection-today .row:not(.done)');
+  var rows = document.querySelectorAll('.v-collection-today .row');
   var selCbxs = document.querySelectorAll('.v-collection-today .select-cbx');
   if (cfg.selection === 'some') {
-    for (var r=0;r<rows.length && r<3;r++) {
-      rows[r].classList.add('selected');
-      if (selCbxs[r]) selCbxs[r].checked = true;
-    }
-    for (var r2=3;r2<rows.length;r2++) {
-      rows[r2].classList.remove('selected');
-      if (selCbxs[r2]) selCbxs[r2].checked = false;
+    for (var r=0;r<rows.length;r++) {
+      var isDone = rows[r].classList.contains('done');
+      var selectThis = (r < 2) || isDone;
+      if (selectThis) {
+        rows[r].classList.add('selected');
+        if (selCbxs[r]) selCbxs[r].checked = true;
+      } else {
+        rows[r].classList.remove('selected');
+        if (selCbxs[r]) selCbxs[r].checked = false;
+      }
     }
   } else {
     for (var r3=0;r3<rows.length;r3++) {
