@@ -24,7 +24,6 @@
 
 | Task ID | Agent | Module | Feature | Subtree | Dispatched |
 |---------|-------|--------|---------|---------|------------|
-| T-238 | design-agent | assistant | F-008 | docs/design/assistant/explorations/ | 2026-08-22 |
 | T-227 | design-agent | assistant | — | docs/design/ | 2026-08-22 |
 <!-- Example:
 -->
