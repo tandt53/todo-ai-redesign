@@ -788,16 +788,27 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .tin{
   display:block; width:100%; margin:0; padding:var(--s2) var(--s3);
   font:inherit; color:var(--text-primary); background:transparent;
-  border:var(--b-hairline) solid transparent; border-radius:var(--r-sm);
-  transition:border-color var(--t-micro) var(--ease);
+  border:0; border-radius:var(--r-sm);
+  transition:background-color var(--t-micro) var(--ease);
 }
-/* THE AFFORDANCE ARRIVES ONLY WHEN IT IS NEEDED. Empty is the case that must
-   never be silent: with no value there is nothing on screen to click. */
-.tin:hover{border-color:var(--bg-hairline)}
-.tin:placeholder-shown{border-color:var(--bg-rule)}
-.tin:focus{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px; border-color:var(--accent)}
-.app[data-typed="shown"] .tin{border-color:var(--bg-rule)}
-.app[data-fail="field"] .name-in{border-color:var(--danger)}
+/* A GROUND, NOT A BOX. Owner decision 2026-08-22: "nếu hiển thị nền khác cho dễ
+   nhận biết, ta có thể bỏ border đi." It is also border.separation_order read
+   literally — GROUND first, then space, then a line — and the typed field was
+   the last place on this surface still reaching past it.
+   THE AFFORDANCE STILL ARRIVES ONLY WHEN IT IS NEEDED. Empty is the case that
+   must never be silent: with no value there is nothing on screen to click.
+   FOCUS IS THE ONE PLACE A BOUNDARY IS NOT OPTIONAL. bg.sunken on bg.base is
+   1.12:1 and could not carry an indicator at any thickness, so focus keeps the
+   2px accent ring — 9.56:1 against the ground it sits on — and 2.4.7 is met by
+   the ring, never by the ground. The ground says "type here"; the ring says
+   "you are here". Two jobs, two signals. */
+.tin:hover{background:var(--bg-sunken)}
+.tin:placeholder-shown{background:var(--bg-sunken)}
+.tin:focus{background:var(--bg-sunken); outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
+.app[data-typed="shown"] .tin{background:var(--bg-sunken)}
+/* A refused save is a WORD on a ground, never a red edge: the message under the
+   field carries the meaning and the tint only locates it. */
+.app[data-fail="field"] .name-in{background:var(--danger-tint)}
 /* THE NAME WRAPS AND THE CONTROL GROWS. It is a textarea rather than an input
    for one measured reason: at 390 the store's own Vietnamese title
    "Gọi nha sĩ đặt lịch khám răng" clipped inside a single-line input at display
@@ -904,6 +915,72 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .opt[aria-checked="true"]{font-weight:var(--w-semibold)}
 .opt .tick{margin-left:auto; color:var(--accent); visibility:hidden}
 .opt[aria-checked="true"] .tick{visibility:visible}
+/* ══════════════════════════════════════════════════════════════════════════
+   ANDROID · A DATE IS THE M3 DATE PICKER, A TIME IS THE M3 TIME INPUT. What
+   stood here was `<input type="date">` and `<input type="time">` — the browser's
+   own calendar and clock glyphs inside a Material bottom sheet, the same
+   borrowed-clothes mistake DESIGN.md ## Platform names for the FAB.
+   DOCKED, NOT MODAL: M3's modal date picker carries Cancel / OK, and this
+   surface may not draw a commit moment — which of open / choose / dismiss
+   writes is AC-2's question (T-213). The docked variant has no action row, so
+   it is both the M3 pattern and the honest one here.
+   SELECTED IS AN INK FILL, NOT THE PRIMARY COLOUR. M3 fills the chosen day with
+   `primary`; on this surface the accent means THE ASSISTANT and a date the user
+   picked is their own hand, so the chosen day takes the ink fill the weekday
+   toggles in the repeat editor already use — plus weight, so it survives with
+   no colour at all.
+   ══════════════════════════════════════════════════════════════════════════ */
+.m3cal{display:grid; gap:var(--s2)}
+.m3cal-head{display:flex; align-items:center; gap:var(--s2)}
+.m3cal-head .m{flex:1 1 auto; font-size:var(--fs-body); font-weight:var(--w-medium); color:var(--text-primary)}
+.m3dow{display:grid; grid-template-columns:repeat(7,1fr)}
+.m3dow span{
+  text-align:center; font-size:var(--fs-label); letter-spacing:var(--ls-label);
+  text-transform:var(--font-case-label); font-weight:var(--w-semibold); color:var(--text-secondary);
+}
+.m3grid{display:grid; grid-template-columns:repeat(7,1fr)}
+.m3day{
+  appearance:none; border:0; background:transparent; cursor:pointer; font:inherit;
+  font-family:var(--font-num); font-size:var(--fs-meta); color:var(--text-primary);
+  aspect-ratio:1; min-height:var(--min-target); border-radius:var(--r-circle); padding:0;
+}
+.m3day.out{color:var(--text-muted)}
+.m3day:hover{background:var(--bg-sunken)}
+.m3day[aria-selected="true"]{background:var(--text-primary); color:var(--bg-base); font-weight:var(--w-bold)}
+.m3day:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
+/* M3 TIME INPUT — two filled numeral fields and a vertical AM/PM selector. The
+   fields are GROUNDS (bg.sunken), so the only box here is the selector, whose
+   outline IS the control: border.box_allowlist case 1, the same shape the
+   segmented control already uses. */
+.m3time{display:flex; align-items:center; gap:var(--s2)}
+.m3time .num{
+  flex:0 0 auto; width:80px; height:72px; text-align:center; border:0;
+  background:var(--bg-sunken); border-radius:var(--r-sm);
+  font:inherit; font-family:var(--font-num); font-size:var(--fs-title); color:var(--text-primary);
+}
+.m3time .num:focus{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
+.m3time .sep{align-self:center; font-family:var(--font-num); font-size:var(--fs-title); color:var(--text-primary)}
+/* Two rows of control.minTarget.android, not two halves of the numeral field's
+   height: MEASURED at 48x34.5 and 48x35.5 when this column matched the fields,
+   which is under Android's 48dp floor on the axis nobody looks at. */
+.m3ampm{
+  display:flex; flex-direction:column; margin-left:var(--s2);
+  height:calc(var(--min-target) * 2);
+  border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-sm); overflow:hidden;
+}
+.m3ampm button{
+  appearance:none; border:0; background:transparent; cursor:pointer; font:inherit;
+  font-size:var(--fs-meta); font-weight:var(--w-medium); color:var(--text-secondary);
+  min-width:var(--min-target); min-height:var(--min-target); flex:1 1 0; padding:0 var(--s3);
+}
+.m3ampm button + button{border-top:var(--b-hairline) solid var(--bg-rule)}
+.m3ampm button[aria-pressed="true"]{background:var(--text-primary); color:var(--bg-base); font-weight:var(--w-semibold)}
+.m3ampm button:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
+/* M3 DATE INPUT — the text variant of the picker, for a date that is one field
+   among several. A field is on the box allowlist; the trailing icon is what
+   makes it a date picker rather than a text box. */
+.m3dateinput{display:flex; align-items:center; gap:var(--s2)}
+.m3dateinput .field{flex:1 1 auto}
 .shortcuts{display:flex; flex-wrap:wrap; gap:var(--s2)}
 .pick .cad{display:flex; flex-wrap:wrap; gap:var(--s2)}
 .wk{display:flex; flex-wrap:wrap; gap:var(--s2)}
@@ -928,19 +1005,29 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .stepline.done .stepname{color:var(--text-muted); text-decoration:line-through}
 .step-add{display:flex; align-items:center; gap:var(--s2); min-height:var(--h-md); padding:var(--s1) var(--s2)}
 .step-add .plus{color:var(--text-muted); flex:none}
-/* The commit control for a new step arrives with the typing, like the boxes do.
-   A permanent "Add step" button beside a row that already reads "Add a step" is
-   two controls wearing one job (screen-content.md: each element does one job). */
+/* ONE AFFORDANCE FOR ONE ACTION. "Add a step" is the row; "Add step" is the
+   COMMIT for a step already being typed, and it is never on screen at rest.
+   The rule was already written here and one state broke it: detail-blank forced
+   data-typed="shown", which revealed the commit button beside an empty row, so
+   the phone's emptiest state carried two ways to start one action. detail-blank
+   no longer needs that override — after the ground change an empty field paints
+   itself through :placeholder-shown — and the only state that reveals the
+   button now also carries a draft in the input, so the button always has
+   something to commit. */
 .step-add .btn{visibility:hidden}
-.step-add:focus-within .btn,.app[data-typed="shown"] .step-add .btn{visibility:visible}
+/* EXACTLY WHEN THERE IS SOMETHING TO COMMIT — not merely when the row has focus.
+   Focus-within revealed the button beside an empty input, which is the same
+   defect one step smaller: a commit control with nothing to commit. */
+.step-add .step-new:not(:placeholder-shown) + .btn{visibility:visible}
 .step-new{
   flex:1 1 auto; min-width:0; height:var(--h-md); min-height:var(--min-target); padding:0 var(--s3);
   font:inherit; font-size:var(--fs-body); color:var(--text-primary);
-  background:transparent; border:var(--b-hairline) solid transparent; border-radius:var(--r-sm);
+  background:transparent; border:0; border-radius:var(--r-sm);
+  transition:background-color var(--t-micro) var(--ease);
 }
 .step-new::placeholder{color:var(--text-muted)}
-.step-new:hover{border-color:var(--bg-hairline)}
-.step-new:focus{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px; border-color:var(--accent)}
+.step-new:hover{background:var(--bg-sunken)}
+.step-new:focus{background:var(--bg-sunken); outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
 
 .danger-zone{max-width:var(--form-max); margin-top:var(--s7); display:flex; flex-wrap:wrap; gap:var(--s3)}
 .terminal{padding:var(--s8) 0; max-width:56ch}
@@ -1107,7 +1194,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   <button onclick="setFrame('')">frame: real width</button>
   <button onclick="setFrame('phone')">frame: phone</button>
   <button onclick="setFrame('wide')">frame: wide</button>
-  <p class="dev-note">The detail is a PROPERTY SHEET: a row shows its current value and tapping it opens the picker. Twelve boxes became two — the name and the note, and even those show a boundary only when empty, hovered or focused. “detail-typed-affordance” forces that boundary on so it can be reviewed without a pointer.</p>
+  <p class="dev-note">The detail is a PROPERTY SHEET: a row shows its current value and tapping it opens the picker. Twelve boxes became none. The name and the note show a GROUND when the value is empty, or you hover, or you are typing; the only boundary left on either is the focus ring, which is the one thing a ground cannot carry. “detail-typed-affordance” forces that ground on so it can be reviewed without a pointer, and carries a half-typed step so the commit button beside it has something to commit.</p>
 </div>
 
 <div class="stagewrap"><div class="stage" id="stage">
@@ -1191,9 +1278,30 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
                       <button class="chip" type="button">Tomorrow</button>
                       <button class="chip" type="button">Next week</button>
                     </div>
-                    <div class="field-inline">
-                      <input class="field" type="date" id="d-dl" data-testid="detail-deadline-date" resource-id="detail-deadline-date" value="2026-08-21" aria-label="Deadline date">
-                      <input class="field narrow" type="time" data-testid="detail-deadline-time" resource-id="detail-deadline-time" value="18:00" aria-label="Deadline time">
+                    <div class="m3cal">
+                      <div class="m3cal-head">
+                        <span class="m">August 2026</span>
+                        <button class="iconbtn" type="button" aria-label="Previous month"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+                        <button class="iconbtn" type="button" aria-label="Next month"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+                      </div>
+                      <div class="m3dow" aria-hidden="true"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+                      <div role="grid" aria-label="Deadline date" data-testid="detail-deadline-date" resource-id="detail-deadline-date">
+                        <div class="m3grid" role="row"><div role="gridcell"><button class="m3day out" type="button" tabindex="-1" aria-label="27 July 2026" onkeydown="calKey(event)">27</button></div><div role="gridcell"><button class="m3day out" type="button" tabindex="-1" aria-label="28 July 2026" onkeydown="calKey(event)">28</button></div><div role="gridcell"><button class="m3day out" type="button" tabindex="-1" aria-label="29 July 2026" onkeydown="calKey(event)">29</button></div><div role="gridcell"><button class="m3day out" type="button" tabindex="-1" aria-label="30 July 2026" onkeydown="calKey(event)">30</button></div><div role="gridcell"><button class="m3day out" type="button" tabindex="-1" aria-label="31 July 2026" onkeydown="calKey(event)">31</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="1 August 2026" onkeydown="calKey(event)">1</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="2 August 2026" onkeydown="calKey(event)">2</button></div></div>
+                        <div class="m3grid" role="row"><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="3 August 2026" onkeydown="calKey(event)">3</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="4 August 2026" onkeydown="calKey(event)">4</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="5 August 2026" onkeydown="calKey(event)">5</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="6 August 2026" onkeydown="calKey(event)">6</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="7 August 2026" onkeydown="calKey(event)">7</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="8 August 2026" onkeydown="calKey(event)">8</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="9 August 2026" onkeydown="calKey(event)">9</button></div></div>
+                        <div class="m3grid" role="row"><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="10 August 2026" onkeydown="calKey(event)">10</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="11 August 2026" onkeydown="calKey(event)">11</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="12 August 2026" onkeydown="calKey(event)">12</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="13 August 2026" onkeydown="calKey(event)">13</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="14 August 2026" onkeydown="calKey(event)">14</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="15 August 2026" onkeydown="calKey(event)">15</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="16 August 2026" onkeydown="calKey(event)">16</button></div></div>
+                        <div class="m3grid" role="row"><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="17 August 2026" onkeydown="calKey(event)">17</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="18 August 2026" onkeydown="calKey(event)">18</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="19 August 2026" onkeydown="calKey(event)">19</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="20 August 2026" onkeydown="calKey(event)">20</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="0" aria-selected="true" aria-label="21 August 2026" onkeydown="calKey(event)">21</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="22 August 2026" onkeydown="calKey(event)">22</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="23 August 2026" onkeydown="calKey(event)">23</button></div></div>
+                        <div class="m3grid" role="row"><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="24 August 2026" onkeydown="calKey(event)">24</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="25 August 2026" onkeydown="calKey(event)">25</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="26 August 2026" onkeydown="calKey(event)">26</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="27 August 2026" onkeydown="calKey(event)">27</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="28 August 2026" onkeydown="calKey(event)">28</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="29 August 2026" onkeydown="calKey(event)">29</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="30 August 2026" onkeydown="calKey(event)">30</button></div></div>
+                        <div class="m3grid" role="row"><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="31 August 2026" onkeydown="calKey(event)">31</button></div><div role="gridcell"><button class="m3day out" type="button" tabindex="-1" aria-label="1 September 2026" onkeydown="calKey(event)">1</button></div><div role="gridcell"><button class="m3day out" type="button" tabindex="-1" aria-label="2 September 2026" onkeydown="calKey(event)">2</button></div><div role="gridcell"><button class="m3day out" type="button" tabindex="-1" aria-label="3 September 2026" onkeydown="calKey(event)">3</button></div><div role="gridcell"><button class="m3day out" type="button" tabindex="-1" aria-label="4 September 2026" onkeydown="calKey(event)">4</button></div><div role="gridcell"><button class="m3day out" type="button" tabindex="-1" aria-label="5 September 2026" onkeydown="calKey(event)">5</button></div><div role="gridcell"><button class="m3day out" type="button" tabindex="-1" aria-label="6 September 2026" onkeydown="calKey(event)">6</button></div></div>
+                      </div>
+                    </div>
+                    <div class="m3time" role="group" aria-label="Deadline time" data-testid="detail-deadline-time" resource-id="detail-deadline-time">
+                      <input class="num" inputmode="numeric" value="06" aria-label="Hour">
+                      <span class="sep" aria-hidden="true">:</span>
+                      <input class="num" inputmode="numeric" value="00" aria-label="Minute">
+                      <span class="m3ampm" role="group" aria-label="Before or after noon">
+                        <button type="button" aria-pressed="false">AM</button>
+                        <button type="button" aria-pressed="true">PM</button>
+                      </span>
                     </div>
                     <span class="field-help" data-testid="detail-deadline-collection" resource-id="detail-deadline-collection">Dated today, so it sits in Today.</span>
                     <div class="btn-row"><button class="btn btn-sm btn-ghost" type="button" data-testid="detail-deadline-clear" resource-id="detail-deadline-clear">Clear</button></div>
@@ -1211,9 +1319,30 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
                   <div class="pick-in">
                     <div class="grabber pick-grab" aria-hidden="true"></div>
                     <div class="pick-head"><span class="t-label">Reminder</span><button class="iconbtn" type="button" aria-label="Close" onclick="closePick()"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
-                    <div class="field-inline">
-                      <input class="field" type="date" id="d-rm" data-testid="detail-reminder-date" resource-id="detail-reminder-date" value="2026-08-21" aria-label="Reminder date">
-                      <input class="field narrow" type="time" data-testid="detail-reminder-time" resource-id="detail-reminder-time" value="17:30" aria-label="Reminder time">
+                    <div class="m3cal">
+                      <div class="m3cal-head">
+                        <span class="m">August 2026</span>
+                        <button class="iconbtn" type="button" aria-label="Previous month"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+                        <button class="iconbtn" type="button" aria-label="Next month"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+                      </div>
+                      <div class="m3dow" aria-hidden="true"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+                      <div role="grid" aria-label="Reminder date" data-testid="detail-reminder-date" resource-id="detail-reminder-date">
+                        <div class="m3grid" role="row"><div role="gridcell"><button class="m3day out" type="button" tabindex="-1" aria-label="27 July 2026" onkeydown="calKey(event)">27</button></div><div role="gridcell"><button class="m3day out" type="button" tabindex="-1" aria-label="28 July 2026" onkeydown="calKey(event)">28</button></div><div role="gridcell"><button class="m3day out" type="button" tabindex="-1" aria-label="29 July 2026" onkeydown="calKey(event)">29</button></div><div role="gridcell"><button class="m3day out" type="button" tabindex="-1" aria-label="30 July 2026" onkeydown="calKey(event)">30</button></div><div role="gridcell"><button class="m3day out" type="button" tabindex="-1" aria-label="31 July 2026" onkeydown="calKey(event)">31</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="1 August 2026" onkeydown="calKey(event)">1</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="2 August 2026" onkeydown="calKey(event)">2</button></div></div>
+                        <div class="m3grid" role="row"><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="3 August 2026" onkeydown="calKey(event)">3</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="4 August 2026" onkeydown="calKey(event)">4</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="5 August 2026" onkeydown="calKey(event)">5</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="6 August 2026" onkeydown="calKey(event)">6</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="7 August 2026" onkeydown="calKey(event)">7</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="8 August 2026" onkeydown="calKey(event)">8</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="9 August 2026" onkeydown="calKey(event)">9</button></div></div>
+                        <div class="m3grid" role="row"><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="10 August 2026" onkeydown="calKey(event)">10</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="11 August 2026" onkeydown="calKey(event)">11</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="12 August 2026" onkeydown="calKey(event)">12</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="13 August 2026" onkeydown="calKey(event)">13</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="14 August 2026" onkeydown="calKey(event)">14</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="15 August 2026" onkeydown="calKey(event)">15</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="16 August 2026" onkeydown="calKey(event)">16</button></div></div>
+                        <div class="m3grid" role="row"><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="17 August 2026" onkeydown="calKey(event)">17</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="18 August 2026" onkeydown="calKey(event)">18</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="19 August 2026" onkeydown="calKey(event)">19</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="20 August 2026" onkeydown="calKey(event)">20</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="0" aria-selected="true" aria-label="21 August 2026" onkeydown="calKey(event)">21</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="22 August 2026" onkeydown="calKey(event)">22</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="23 August 2026" onkeydown="calKey(event)">23</button></div></div>
+                        <div class="m3grid" role="row"><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="24 August 2026" onkeydown="calKey(event)">24</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="25 August 2026" onkeydown="calKey(event)">25</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="26 August 2026" onkeydown="calKey(event)">26</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="27 August 2026" onkeydown="calKey(event)">27</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="28 August 2026" onkeydown="calKey(event)">28</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="29 August 2026" onkeydown="calKey(event)">29</button></div><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="30 August 2026" onkeydown="calKey(event)">30</button></div></div>
+                        <div class="m3grid" role="row"><div role="gridcell"><button class="m3day" type="button" tabindex="-1" aria-selected="false" aria-label="31 August 2026" onkeydown="calKey(event)">31</button></div><div role="gridcell"><button class="m3day out" type="button" tabindex="-1" aria-label="1 September 2026" onkeydown="calKey(event)">1</button></div><div role="gridcell"><button class="m3day out" type="button" tabindex="-1" aria-label="2 September 2026" onkeydown="calKey(event)">2</button></div><div role="gridcell"><button class="m3day out" type="button" tabindex="-1" aria-label="3 September 2026" onkeydown="calKey(event)">3</button></div><div role="gridcell"><button class="m3day out" type="button" tabindex="-1" aria-label="4 September 2026" onkeydown="calKey(event)">4</button></div><div role="gridcell"><button class="m3day out" type="button" tabindex="-1" aria-label="5 September 2026" onkeydown="calKey(event)">5</button></div><div role="gridcell"><button class="m3day out" type="button" tabindex="-1" aria-label="6 September 2026" onkeydown="calKey(event)">6</button></div></div>
+                      </div>
+                    </div>
+                    <div class="m3time" role="group" aria-label="Reminder time" data-testid="detail-reminder-time" resource-id="detail-reminder-time">
+                      <input class="num" inputmode="numeric" value="05" aria-label="Hour">
+                      <span class="sep" aria-hidden="true">:</span>
+                      <input class="num" inputmode="numeric" value="30" aria-label="Minute">
+                      <span class="m3ampm" role="group" aria-label="Before or after noon">
+                        <button type="button" aria-pressed="false">AM</button>
+                        <button type="button" aria-pressed="true">PM</button>
+                      </span>
                     </div>
                     <span class="field-help">This is the one that alerts you. The deadline on its own is silent.</span>
                     <div class="btn-row"><button class="btn btn-sm btn-ghost" type="button" data-testid="detail-reminder-clear" resource-id="detail-reminder-clear">Clear</button></div>
@@ -1262,7 +1391,10 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
                         <button type="button" aria-pressed="false">After</button>
                       </span>
                       <div class="v v-rend-until" style="margin-top:var(--s3)">
-                        <input class="field" type="date" data-testid="detail-repeat-until" resource-id="detail-repeat-until" value="2026-12-18" aria-label="Repeat until">
+                        <span class="m3dateinput">
+                          <input class="field" type="text" inputmode="numeric" data-testid="detail-repeat-until" resource-id="detail-repeat-until" value="18/12/2026" aria-label="Repeat until, day slash month slash year">
+                          <button class="iconbtn" type="button" aria-label="Pick the end date on a calendar" aria-haspopup="dialog" aria-expanded="false"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></svg></button>
+                        </span>
                       </div>
                       <div class="v v-flex v-rend-count field-inline" style="margin-top:var(--s3)">
                         <input class="field narrow" type="number" data-testid="detail-repeat-count" resource-id="detail-repeat-count" value="12" min="1" aria-label="Number of times">
@@ -1328,7 +1460,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
               <p class="v v-steps-refused field-help" data-testid="detail-steps-refused" resource-id="detail-steps-refused" style="color:var(--attention); margin:0 var(--s2)">This task can’t take steps yet, so nothing was added.</p>
               <div class="step-add">
                 <svg class="ic plus" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-                <input class="step-new" data-testid="detail-step-add-input" resource-id="detail-step-add-input" placeholder="Add a step" aria-label="Add a step">
+                <input class="step-new" id="d-step" data-testid="detail-step-add-input" resource-id="detail-step-add-input" placeholder="Add a step" aria-label="Add a step">
                 <button class="btn btn-sm btn-ghost" type="button" data-testid="detail-step-add-button" resource-id="detail-step-add-button">Add step</button>
               </div>
             </div>
@@ -1414,7 +1546,7 @@ var STATES = {
     "steps": "empty",
     "fail": "none",
     "series": "single",
-    "typed": "shown",
+    "typed": "off",
     "vals": "unset",
     "name": "",
     "note": "",
@@ -1430,7 +1562,8 @@ var STATES = {
     "fail": "none",
     "series": "single",
     "typed": "shown",
-    "vals": "set"
+    "vals": "set",
+    "stepdraft": "Take the old x-rays with me"
   },
   "detail-overdue": {
     "surface": "detail",
@@ -1715,6 +1848,11 @@ function paint(cfg){
   if (nt) nt.value = (cfg.note === undefined ? NOTE_DEFAULT : cfg.note);
   var mt = document.getElementById('dMeta');
   if (mt) mt.textContent = cfg.meta || META_DEFAULT;
+  /* The commit button only exists while a step is being typed, so the state
+     that shows it has to carry the draft too — otherwise the drawing shows a
+     commit with nothing to commit, which is the duplicate it just removed. */
+  var sd = document.getElementById('d-step');
+  if (sd) sd.value = cfg.stepdraft || '';
   autosize(nm); autosize(nt);
   syncPick();
 }
@@ -1756,6 +1894,26 @@ document.addEventListener('input', function(e){
 document.addEventListener('keydown', function(e){
   if (e.key === 'Escape' && (document.getElementById('app').getAttribute('data-pick') || 'none') !== 'none') closePick();
 });
+
+/* THE CALENDAR IS A GRID, so it owes the grid keyboard path: arrows move a
+   ROVING TABINDEX between days, Tab enters and leaves the whole calendar in one
+   press. Without this a keyboard user tabs through thirty-five buttons to reach
+   the time — which is how a picker drawn correctly still ships unusable. */
+function calKey(e){
+  var map = {ArrowRight:1, ArrowLeft:-1, ArrowDown:7, ArrowUp:-7};
+  var d = map[e.key];
+  if (!d) return;
+  var grid = e.currentTarget.closest('[role="grid"]');
+  if (!grid) return;
+  e.preventDefault();
+  var days = grid.querySelectorAll('.m3day');
+  var i = Array.prototype.indexOf.call(days, e.currentTarget);
+  var n = i + d;
+  if (n < 0 || n > days.length - 1) return;
+  days[i].setAttribute('tabindex', '-1');
+  days[n].setAttribute('tabindex', '0');
+  days[n].focus();
+}
 
 function toggleTheme(){
   var el = document.documentElement;

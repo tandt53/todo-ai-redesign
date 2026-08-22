@@ -9,6 +9,9 @@
   Tranche 1 of 3: the app shell, Talk, Tasks and the task detail, on web / iOS /
   Android. The Lists menu, Settings and New list are tranche 2; the trash is
   tranche 3. Self-contained: no server, no network, no build. Open by double-click.
+  Revised 2026-08-22 (T-215) after the owner signed the core screens off: the
+  typed field takes a GROUND instead of a border, "Add a step" is drawn once,
+  and the iOS and Android date pickers stop borrowing the browser's.
 -->
 <style>
 :root{
@@ -948,7 +951,11 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   <div>
     <h2>The task detail is a property sheet, not a form</h2>
     <p>Open <b>Task detail</b>. Nobody fills this screen and submits it — it saves as you go and there is no Save button. So a property is <b>a row showing its current value</b>: <i>Deadline · Fri 21 Aug · 6:00 PM</i>. Tap it and the picker opens.</p>
-    <p>The drawing this replaces carried <b>10 bordered fields across 7 rows plus 3 segmented groups</b>, with note, priority, deadline, reminder, repeat and steps still owed. Twelve boxes are now two — the name and the note, and even those show a boundary only when the value is empty, or you hover, or you are typing. Try <b>detail-blank</b> and <b>detail-typed-affordance</b> inside the frame.
+    <p>The drawing this replaces carried <b>10 bordered fields across 7 rows plus 3 segmented groups</b>, with note, priority, deadline, reminder, repeat and steps still owed. <b>Twelve boxes are now none.</b> The name and the note show a <b>ground</b> when the value is empty, or you hover, or you are typing — the owner's own alternative to the boundary they replaced. The one boundary left on either is the focus ring, which is the single thing a ground cannot carry: <code>bg.sunken</code> on <code>bg.base</code> is <b>1.12:1</b>. Try <b>detail-blank</b> and <b>detail-typed-affordance</b> inside the frame, and press Tab.</p>
+  </div>
+  <div>
+    <h2>A date is a wheel on iOS and a calendar on Android</h2>
+    <p>Pick <b>Task detail</b>, then <b>iOS</b>, then <b>detail-deadline-pick</b>. The sheet used to hold a browser <code>date</code> and <code>time</code> field — Chrome's calendar and clock glyphs, inside a UISheet. It is now a <b>UIDatePicker wheel</b>; on <b>Android</b> the same state is the <b>M3 date picker</b> and the <b>M3 time input</b>. Neither carries an OK button, because which of open, choose and dismiss writes the value is still a question for the spec.</p>
   </div>
 </section>
 

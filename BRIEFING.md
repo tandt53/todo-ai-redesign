@@ -1,96 +1,87 @@
-# BRIEFING — T-211
+# BRIEFING — T-215
 
-- **Task ID:** T-211 · **Agent:** design-agent · **phase:** `screens` · 2026-08-22
-- **Description:** Redraw the nine mockups against the softened language
+- **Task ID:** T-215 · **Agent:** design-agent · **phase:** `screens` · 2026-08-22
+- **Description:** Ground instead of border on typed fields, plus two defects in the same renders
 
-## What changed under you
+## The owner signed off your screens and answered all three questions
 
-You revised the system yesterday: **radius back on a six-step scale**, **the 1px rule demoted**
-to three earned cases with space and ground primary, and **1920 answered by turning the row
-rules off** after the two-column tier lost its own render.
+Record: `docs/reports/design-signoff-core-screens.md`.
 
-**The nine mockups are still v2-square.** `design-check` is **127 / 10**, and all ten are one
-retired token (`--radius-bubble`) still declared in them. Redrawing clears it.
+**Q1 — do you know where to tap to change the deadline?** *"Biết."* The property row reads.
 
-## The owner made one decision that changes a screen's shape, not its paint
+**Q3 — two pickers, or a tray that stays open?** *"2 picker."* **Settled: each property opens
+its own picker and it closes on choosing.** Do not build a tray. *(It also removes a question
+that would have reached AC-2 sideways — a tray walking between properties has no obvious
+commit moment at all.)*
 
-They looked at the specimen on a phone and said the form uses too many borders, *and asked what
-happens when the task detail carries many fields of different kinds.*
+**Q2 is the one with work in it**, and the owner did not just approve — they supplied a better
+option:
 
-**Measured on your own drawing: 10 bordered fields across 7 rows plus 3 segmented groups**, with
-note · priority · deadline · reminder · repeat · steps still owed and steps growing.
+> *"Đủ rồi. Nếu hiển thị nền khác cho dễ nhận biết, ta có thể bỏ border đi."*
 
-**That is where your border rule contradicts itself.** *An input field is one of the three
-places a line earns its place* — true for one field, and multiplied by this screen it is exactly
-the grid the rule exists to remove.
+## Change 1 · a typed field gets a GROUND, not a border
 
-**The deeper thing, and the owner's answer:** nobody fills this screen and submits it. AC-2
-saves on blur; there is no Save button. **It is a property sheet.**
+**This is your own `border.separation_order`** — space, then ground, then type weight, and only
+then a line. The rule was already written; the field was the one place still reaching past it.
 
-> **A property is a row showing its current value. Tap it and the picker opens.**
-> *Deadline · Fri 6:00 PM* — tap, the calendar appears.
+**It pays where it costs most.** `detail-blank` at 390 draws a boundary on **both** the name and
+the note, precisely because they are empty — the state with the most boxes in the whole screen.
+A ground says *type here* without four edges.
 
-| | |
-|---|---|
-| typed — name, note | keep an affordance; **it may appear only when empty, hovered or focused** |
-| picked — priority, deadline, reminder, repeat | **a row, no box** |
-| steps | a list |
+**Keep the affordance honest:** it must still be obvious the thing is editable when empty,
+hovered and focused. **Focus is the one place a visible boundary is not optional** — 2.4.7 needs
+a focus indicator, and the ground alone will not carry it.
 
-**Twelve boxes become two. Draw it; do not re-litigate it.** The owner took the cost: two
-changes in a row means two pickers.
+**Check the contrast of the new ground against the page** — `bg.sunken` on `bg.base` is a real
+pair and it is on the published list.
 
-**Full record:** `docs/reports/owner-decision-2026-08-22-the-detail-is-a-property-sheet.md`.
+## Change 2 · "Add a step" is drawn twice
 
-## One thing you must NAME and must NOT settle
+On the phone, `detail-blank` shows a `+ Add a step` row **and** an `Add step` button. **One
+action, two affordances**, on a screen whose owner's standing brief is *simple, soft, easy, as
+few actions as possible.*
 
-**AC-2's save-on-blur is written for fields. A picker row has no blur in that sense** — it has
-an open, a choice and a dismiss, **and a dismiss without a choice must not write.**
+**Neither the visual review nor the a11y probes caught it and neither could** — a duplicate
+affordance is valid in every mechanical sense. Pick one and delete the other; check the other
+platforms for the same thing.
 
-**Say so in your return. Do not answer it in the drawing.** It is T-213, spec-agent's. A mockup
-that quietly implies a commit moment is a spec written in the wrong file.
+## Change 3 · the iOS sheet is wearing web's clothes
 
-## Scope
+`task-detail-ios-detail-deadline-pick-390.png` holds **browser-default `date` and `time`
+inputs**, Chrome's calendar and clock glyphs and all, inside an iOS bottom sheet. **On iOS that
+control is a wheel.**
 
-**Nine mockups** — app shell · Talk · task detail, each web / iOS / Android — **and the
-all-in-one page**. Same four surfaces as before; the lists menu, settings, new list and the
-trash are still tranches 2 and 3.
+Your own platform table says *putting a FAB on iOS is wearing another platform's clothes.*
+**This is the same mistake in the other direction.** Draw the platform's own control — and
+**check Android too**, where the answer is a Material date picker, not the same web input.
 
-**Also finish what tranche 1 left:** `components.md` still has five sections marked stale at
-their own heads (§ ListsMenu · § SettingsRow · § ListEditorSheet · § Drawer · § Spoken frames)
-— **leave those for tranche 2**, but the sections this redraw touches must match what you draw,
-including the new property-row pattern, which `§ TaskDetail` and `§ Field · Label · FormRow`
-do not yet describe.
+## Scope — bounded, do not widen
 
-## Both self-checks apply, and the second is new
+Nine mockups where they are affected, `index.html`, and the `components.md` sections these
+three changes touch (`§ Field · Label · FormRow`, `§ PropertyRow`, and the platform table if
+change 3 moves it).
 
-**`### Self-review with eyes`** — as always.
+**Do not** draw the lists menu, settings, new list or the trash. **Do not** revisit the picker
+model, the property-sheet decision, radius, or the 1920 layout — all settled.
 
-**`### Accessibility self-check`** — added to your agent file on 2026-08-22 at the owner's
-request, and **this is the first dispatch that runs it.** Four browser probes plus two questions
-you answer yourself. **Record every answer under `a11y_review:`, empty lists included.**
+## One thing you reported that is NOT yours to fix here
 
-**It matters more than usual here:** a property row that opens a picker is a **custom control**.
-It needs a role, a name, a keyboard path, and a focus return when the picker closes — none of
-which a bordered `<input>` needed you to think about.
+`border.budget_boxes: 5` is unreachable by construction. **You do not own `tokens.json` in
+`phase: screens` and that has not changed** — it is T-214. If change 1 moves the count, say so;
+do not edit the token.
 
-## Read these
+## Both self-checks again
 
-1. `docs/design/_shared/specimen.html` — the softened system, rendered. The screens are held to it.
-2. `tokens.json` — the radius scale, `border.when_a_line_earns_it`, `layout.ultra_answer`, and
-   **`layout.two_column_tested_and_rejected`, so you do not re-propose it.**
-3. `docs/reports/owner-decision-2026-08-22-the-detail-is-a-property-sheet.md`
-4. The running app, `http://localhost:5173/?qaUser=design-audit-1787320423`.
-
-## Write to
-
-`docs/design/assistant/screens/` (nine mockups + `index.html`) and `docs/design/_shared/components.md`.
+**Visual review** and the **accessibility self-check**. Change 1 touches focus visibility and
+change 3 touches a control's role and keyboard path, so probes 1, 2 and 5 are the live ones.
+**Record `a11y_review:` with counts, empty lists included.**
 
 ## Success criteria
 
-- **`design-check` green.** Ten failures go to zero, or each survivor is named with its reason.
-- The task detail is a **property sheet**: rows for picked values, boxes only where something is
-  typed. **Count the painted lines in your return and compare to the 13 you measured before.**
-- **No testid invented, none renamed.**
-- `a11y_review:` present, with the picker row's role, name, keyboard path and focus return.
-- The AC-2 commit-moment question is **named and left open.**
-- `index.html` rebuilt and opening by double-click.
+- `design-check` still green, or each failure named.
+- **`detail-blank` at 390 has no field boxes**, and the field is still obviously editable —
+  say how you verified that in a screenshot rather than in the CSS.
+- Focus remains visible on both typed fields, on every platform.
+- One "Add a step" affordance, across all three platforms.
+- iOS and Android pickers use their own controls.
+- No testid invented, none renamed. `index.html` rebuilt.

@@ -788,16 +788,27 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .tin{
   display:block; width:100%; margin:0; padding:var(--s2) var(--s3);
   font:inherit; color:var(--text-primary); background:transparent;
-  border:var(--b-hairline) solid transparent; border-radius:var(--r-sm);
-  transition:border-color var(--t-micro) var(--ease);
+  border:0; border-radius:var(--r-sm);
+  transition:background-color var(--t-micro) var(--ease);
 }
-/* THE AFFORDANCE ARRIVES ONLY WHEN IT IS NEEDED. Empty is the case that must
-   never be silent: with no value there is nothing on screen to click. */
-.tin:hover{border-color:var(--bg-hairline)}
-.tin:placeholder-shown{border-color:var(--bg-rule)}
-.tin:focus{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px; border-color:var(--accent)}
-.app[data-typed="shown"] .tin{border-color:var(--bg-rule)}
-.app[data-fail="field"] .name-in{border-color:var(--danger)}
+/* A GROUND, NOT A BOX. Owner decision 2026-08-22: "nếu hiển thị nền khác cho dễ
+   nhận biết, ta có thể bỏ border đi." It is also border.separation_order read
+   literally — GROUND first, then space, then a line — and the typed field was
+   the last place on this surface still reaching past it.
+   THE AFFORDANCE STILL ARRIVES ONLY WHEN IT IS NEEDED. Empty is the case that
+   must never be silent: with no value there is nothing on screen to click.
+   FOCUS IS THE ONE PLACE A BOUNDARY IS NOT OPTIONAL. bg.sunken on bg.base is
+   1.12:1 and could not carry an indicator at any thickness, so focus keeps the
+   2px accent ring — 9.56:1 against the ground it sits on — and 2.4.7 is met by
+   the ring, never by the ground. The ground says "type here"; the ring says
+   "you are here". Two jobs, two signals. */
+.tin:hover{background:var(--bg-sunken)}
+.tin:placeholder-shown{background:var(--bg-sunken)}
+.tin:focus{background:var(--bg-sunken); outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
+.app[data-typed="shown"] .tin{background:var(--bg-sunken)}
+/* A refused save is a WORD on a ground, never a red edge: the message under the
+   field carries the meaning and the tint only locates it. */
+.app[data-fail="field"] .name-in{background:var(--danger-tint)}
 /* THE NAME WRAPS AND THE CONTROL GROWS. It is a textarea rather than an input
    for one measured reason: at 390 the store's own Vietnamese title
    "Gọi nha sĩ đặt lịch khám răng" clipped inside a single-line input at display
@@ -928,19 +939,29 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .stepline.done .stepname{color:var(--text-muted); text-decoration:line-through}
 .step-add{display:flex; align-items:center; gap:var(--s2); min-height:var(--h-md); padding:var(--s1) var(--s2)}
 .step-add .plus{color:var(--text-muted); flex:none}
-/* The commit control for a new step arrives with the typing, like the boxes do.
-   A permanent "Add step" button beside a row that already reads "Add a step" is
-   two controls wearing one job (screen-content.md: each element does one job). */
+/* ONE AFFORDANCE FOR ONE ACTION. "Add a step" is the row; "Add step" is the
+   COMMIT for a step already being typed, and it is never on screen at rest.
+   The rule was already written here and one state broke it: detail-blank forced
+   data-typed="shown", which revealed the commit button beside an empty row, so
+   the phone's emptiest state carried two ways to start one action. detail-blank
+   no longer needs that override — after the ground change an empty field paints
+   itself through :placeholder-shown — and the only state that reveals the
+   button now also carries a draft in the input, so the button always has
+   something to commit. */
 .step-add .btn{visibility:hidden}
-.step-add:focus-within .btn,.app[data-typed="shown"] .step-add .btn{visibility:visible}
+/* EXACTLY WHEN THERE IS SOMETHING TO COMMIT — not merely when the row has focus.
+   Focus-within revealed the button beside an empty input, which is the same
+   defect one step smaller: a commit control with nothing to commit. */
+.step-add .step-new:not(:placeholder-shown) + .btn{visibility:visible}
 .step-new{
   flex:1 1 auto; min-width:0; height:var(--h-md); min-height:var(--min-target); padding:0 var(--s3);
   font:inherit; font-size:var(--fs-body); color:var(--text-primary);
-  background:transparent; border:var(--b-hairline) solid transparent; border-radius:var(--r-sm);
+  background:transparent; border:0; border-radius:var(--r-sm);
+  transition:background-color var(--t-micro) var(--ease);
 }
 .step-new::placeholder{color:var(--text-muted)}
-.step-new:hover{border-color:var(--bg-hairline)}
-.step-new:focus{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px; border-color:var(--accent)}
+.step-new:hover{background:var(--bg-sunken)}
+.step-new:focus{background:var(--bg-sunken); outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
 
 .danger-zone{max-width:var(--form-max); margin-top:var(--s7); display:flex; flex-wrap:wrap; gap:var(--s3)}
 .terminal{padding:var(--s8) 0; max-width:56ch}
@@ -1107,7 +1128,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   <button onclick="setFrame('')">frame: real width</button>
   <button onclick="setFrame('phone')">frame: phone</button>
   <button onclick="setFrame('wide')">frame: wide</button>
-  <p class="dev-note">The detail is a PROPERTY SHEET: a row shows its current value and tapping it opens the picker. Twelve boxes became two — the name and the note, and even those show a boundary only when empty, hovered or focused. “detail-typed-affordance” forces that boundary on so it can be reviewed without a pointer.</p>
+  <p class="dev-note">The detail is a PROPERTY SHEET: a row shows its current value and tapping it opens the picker. Twelve boxes became none. The name and the note show a GROUND when the value is empty, or you hover, or you are typing; the only boundary left on either is the focus ring, which is the one thing a ground cannot carry. “detail-typed-affordance” forces that ground on so it can be reviewed without a pointer, and carries a half-typed step so the commit button beside it has something to commit.</p>
 </div>
 
 <div class="stagewrap"><div class="stage" id="stage">
@@ -1328,7 +1349,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
               <p class="v v-steps-refused field-help" data-testid="detail-steps-refused" style="color:var(--attention); margin:0 var(--s2)">This task can’t take steps yet, so nothing was added.</p>
               <div class="step-add">
                 <svg class="ic plus" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-                <input class="step-new" data-testid="detail-step-add-input" placeholder="Add a step" aria-label="Add a step">
+                <input class="step-new" id="d-step" data-testid="detail-step-add-input" placeholder="Add a step" aria-label="Add a step">
                 <button class="btn btn-sm btn-ghost" type="button" data-testid="detail-step-add-button">Add step</button>
               </div>
             </div>
@@ -1414,7 +1435,7 @@ var STATES = {
     "steps": "empty",
     "fail": "none",
     "series": "single",
-    "typed": "shown",
+    "typed": "off",
     "vals": "unset",
     "name": "",
     "note": "",
@@ -1430,7 +1451,8 @@ var STATES = {
     "fail": "none",
     "series": "single",
     "typed": "shown",
-    "vals": "set"
+    "vals": "set",
+    "stepdraft": "Take the old x-rays with me"
   },
   "detail-overdue": {
     "surface": "detail",
@@ -1715,6 +1737,11 @@ function paint(cfg){
   if (nt) nt.value = (cfg.note === undefined ? NOTE_DEFAULT : cfg.note);
   var mt = document.getElementById('dMeta');
   if (mt) mt.textContent = cfg.meta || META_DEFAULT;
+  /* The commit button only exists while a step is being typed, so the state
+     that shows it has to carry the draft too — otherwise the drawing shows a
+     commit with nothing to commit, which is the duplicate it just removed. */
+  var sd = document.getElementById('d-step');
+  if (sd) sd.value = cfg.stepdraft || '';
   autosize(nm); autosize(nt);
   syncPick();
 }

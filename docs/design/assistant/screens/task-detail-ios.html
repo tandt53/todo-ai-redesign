@@ -788,16 +788,27 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .tin{
   display:block; width:100%; margin:0; padding:var(--s2) var(--s3);
   font:inherit; color:var(--text-primary); background:transparent;
-  border:var(--b-hairline) solid transparent; border-radius:var(--r-sm);
-  transition:border-color var(--t-micro) var(--ease);
+  border:0; border-radius:var(--r-sm);
+  transition:background-color var(--t-micro) var(--ease);
 }
-/* THE AFFORDANCE ARRIVES ONLY WHEN IT IS NEEDED. Empty is the case that must
-   never be silent: with no value there is nothing on screen to click. */
-.tin:hover{border-color:var(--bg-hairline)}
-.tin:placeholder-shown{border-color:var(--bg-rule)}
-.tin:focus{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px; border-color:var(--accent)}
-.app[data-typed="shown"] .tin{border-color:var(--bg-rule)}
-.app[data-fail="field"] .name-in{border-color:var(--danger)}
+/* A GROUND, NOT A BOX. Owner decision 2026-08-22: "nếu hiển thị nền khác cho dễ
+   nhận biết, ta có thể bỏ border đi." It is also border.separation_order read
+   literally — GROUND first, then space, then a line — and the typed field was
+   the last place on this surface still reaching past it.
+   THE AFFORDANCE STILL ARRIVES ONLY WHEN IT IS NEEDED. Empty is the case that
+   must never be silent: with no value there is nothing on screen to click.
+   FOCUS IS THE ONE PLACE A BOUNDARY IS NOT OPTIONAL. bg.sunken on bg.base is
+   1.12:1 and could not carry an indicator at any thickness, so focus keeps the
+   2px accent ring — 9.56:1 against the ground it sits on — and 2.4.7 is met by
+   the ring, never by the ground. The ground says "type here"; the ring says
+   "you are here". Two jobs, two signals. */
+.tin:hover{background:var(--bg-sunken)}
+.tin:placeholder-shown{background:var(--bg-sunken)}
+.tin:focus{background:var(--bg-sunken); outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
+.app[data-typed="shown"] .tin{background:var(--bg-sunken)}
+/* A refused save is a WORD on a ground, never a red edge: the message under the
+   field carries the meaning and the tint only locates it. */
+.app[data-fail="field"] .name-in{background:var(--danger-tint)}
 /* THE NAME WRAPS AND THE CONTROL GROWS. It is a textarea rather than an input
    for one measured reason: at 390 the store's own Vietnamese title
    "Gọi nha sĩ đặt lịch khám răng" clipped inside a single-line input at display
@@ -904,6 +915,47 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .opt[aria-checked="true"]{font-weight:var(--w-semibold)}
 .opt .tick{margin-left:auto; color:var(--accent); visibility:hidden}
 .opt[aria-checked="true"] .tick{visibility:visible}
+/* ══════════════════════════════════════════════════════════════════════════
+   iOS · A DATE IS A WHEEL. What stood here was `<input type="date">` and
+   `<input type="time">` — Chrome's calendar and clock glyphs, inside an iOS
+   bottom sheet. DESIGN.md ## Platform says putting a FAB on iOS is wearing
+   another platform's clothes; a browser date field in a UISheet is the same
+   mistake pointing the other way.
+   UIDatePicker .wheels: a column per component, five rows visible, the chosen
+   value in a centre band. The band is bg.sunken — a GROUND, the same tool the
+   typed field above now uses — and the chosen row also carries WEIGHT and full
+   text.primary, so the selection survives with no colour at all.
+   NO COMMIT BUTTON, for the same reason the rest of this sheet has none: which
+   of open / choose / dismiss writes is AC-2's question (T-213), and a drawing
+   may not answer it quietly.
+   ══════════════════════════════════════════════════════════════════════════ */
+.wheels{position:relative; display:flex; align-items:stretch; gap:var(--s2); padding:var(--s2) 0}
+.wheel-band{
+  position:absolute; left:0; right:0; top:50%; height:36px; transform:translateY(-50%);
+  background:var(--bg-sunken); border-radius:var(--r-sm); pointer-events:none;
+}
+.wheel-time{display:flex; gap:0; flex:0 0 auto; align-items:stretch}
+.wheel{position:relative; height:180px; overflow:hidden; border-radius:var(--r-sm); flex:1 1 auto; min-width:0}
+.wheel-time .wheel{flex:0 0 auto; min-width:var(--min-target)}
+.wheel:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
+.wheel ul{list-style:none; margin:0; padding:0; transform:translateY(var(--wheel-shift, 0px)); transition:transform var(--t-micro) var(--ease)}
+.wheel li{
+  height:36px; line-height:36px; text-align:center; white-space:nowrap;
+  font-size:var(--fs-body); font-family:var(--font-num); color:var(--text-muted);
+}
+.wheel li.on{color:var(--text-primary); font-weight:var(--w-semibold)}
+.wheel.w-mer li{font-family:var(--font-ui)}
+/* THE COMPACT DATE inside a form row — iOS shows a filled rounded date, not a
+   wheel, when the date is one field among several. bg.sunken, never the accent:
+   on this surface the accent means the assistant, and a repeat end date is the
+   user's own hand. */
+.ios-date{
+  appearance:none; border:0; cursor:pointer; font:inherit; font-family:var(--font-num);
+  font-weight:var(--w-medium); font-size:var(--fs-body); color:var(--text-primary);
+  background:var(--bg-sunken); border-radius:var(--r-sm);
+  height:var(--h-md); min-height:var(--min-target); padding:0 var(--s4);
+}
+.ios-date:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
 .shortcuts{display:flex; flex-wrap:wrap; gap:var(--s2)}
 .pick .cad{display:flex; flex-wrap:wrap; gap:var(--s2)}
 .wk{display:flex; flex-wrap:wrap; gap:var(--s2)}
@@ -928,19 +980,29 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .stepline.done .stepname{color:var(--text-muted); text-decoration:line-through}
 .step-add{display:flex; align-items:center; gap:var(--s2); min-height:var(--h-md); padding:var(--s1) var(--s2)}
 .step-add .plus{color:var(--text-muted); flex:none}
-/* The commit control for a new step arrives with the typing, like the boxes do.
-   A permanent "Add step" button beside a row that already reads "Add a step" is
-   two controls wearing one job (screen-content.md: each element does one job). */
+/* ONE AFFORDANCE FOR ONE ACTION. "Add a step" is the row; "Add step" is the
+   COMMIT for a step already being typed, and it is never on screen at rest.
+   The rule was already written here and one state broke it: detail-blank forced
+   data-typed="shown", which revealed the commit button beside an empty row, so
+   the phone's emptiest state carried two ways to start one action. detail-blank
+   no longer needs that override — after the ground change an empty field paints
+   itself through :placeholder-shown — and the only state that reveals the
+   button now also carries a draft in the input, so the button always has
+   something to commit. */
 .step-add .btn{visibility:hidden}
-.step-add:focus-within .btn,.app[data-typed="shown"] .step-add .btn{visibility:visible}
+/* EXACTLY WHEN THERE IS SOMETHING TO COMMIT — not merely when the row has focus.
+   Focus-within revealed the button beside an empty input, which is the same
+   defect one step smaller: a commit control with nothing to commit. */
+.step-add .step-new:not(:placeholder-shown) + .btn{visibility:visible}
 .step-new{
   flex:1 1 auto; min-width:0; height:var(--h-md); min-height:var(--min-target); padding:0 var(--s3);
   font:inherit; font-size:var(--fs-body); color:var(--text-primary);
-  background:transparent; border:var(--b-hairline) solid transparent; border-radius:var(--r-sm);
+  background:transparent; border:0; border-radius:var(--r-sm);
+  transition:background-color var(--t-micro) var(--ease);
 }
 .step-new::placeholder{color:var(--text-muted)}
-.step-new:hover{border-color:var(--bg-hairline)}
-.step-new:focus{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px; border-color:var(--accent)}
+.step-new:hover{background:var(--bg-sunken)}
+.step-new:focus{background:var(--bg-sunken); outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
 
 .danger-zone{max-width:var(--form-max); margin-top:var(--s7); display:flex; flex-wrap:wrap; gap:var(--s3)}
 .terminal{padding:var(--s8) 0; max-width:56ch}
@@ -1107,7 +1169,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   <button onclick="setFrame('')">frame: real width</button>
   <button onclick="setFrame('phone')">frame: phone</button>
   <button onclick="setFrame('wide')">frame: wide</button>
-  <p class="dev-note">The detail is a PROPERTY SHEET: a row shows its current value and tapping it opens the picker. Twelve boxes became two — the name and the note, and even those show a boundary only when empty, hovered or focused. “detail-typed-affordance” forces that boundary on so it can be reviewed without a pointer.</p>
+  <p class="dev-note">The detail is a PROPERTY SHEET: a row shows its current value and tapping it opens the picker. Twelve boxes became none. The name and the note show a GROUND when the value is empty, or you hover, or you are typing; the only boundary left on either is the focus ring, which is the one thing a ground cannot carry. “detail-typed-affordance” forces that ground on so it can be reviewed without a pointer, and carries a half-typed step so the commit button beside it has something to commit.</p>
 </div>
 
 <div class="stagewrap"><div class="stage" id="stage">
@@ -1191,9 +1253,14 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
                       <button class="chip" type="button">Tomorrow</button>
                       <button class="chip" type="button">Next week</button>
                     </div>
-                    <div class="field-inline">
-                      <input class="field" type="date" id="d-dl" data-testid="detail-deadline-date" accessibilityIdentifier="detail-deadline-date" value="2026-08-21" aria-label="Deadline date">
-                      <input class="field narrow" type="time" data-testid="detail-deadline-time" accessibilityIdentifier="detail-deadline-time" value="18:00" aria-label="Deadline time">
+                    <div class="wheels" role="group" aria-label="Deadline">
+                      <div class="wheel-band" aria-hidden="true"></div>
+                      <div class="wheel w-date" role="spinbutton" tabindex="0" aria-label="Deadline date" aria-valuetext="Fri 21 Aug" data-testid="detail-deadline-date" accessibilityIdentifier="detail-deadline-date" onkeydown="wheelKey(event)"><ul><li>Wed 19 Aug</li><li>Thu 20 Aug</li><li class="on">Fri 21 Aug</li><li>Sat 22 Aug</li><li>Sun 23 Aug</li></ul></div>
+                      <div class="wheel-time" role="group" aria-label="Deadline time" data-testid="detail-deadline-time" accessibilityIdentifier="detail-deadline-time">
+                        <div class="wheel w-hr" role="spinbutton" tabindex="0" aria-label="Hour" aria-valuetext="6" onkeydown="wheelKey(event)"><ul><li>4</li><li>5</li><li class="on">6</li><li>7</li><li>8</li></ul></div>
+                        <div class="wheel w-min" role="spinbutton" tabindex="0" aria-label="Minute" aria-valuetext="00" onkeydown="wheelKey(event)"><ul><li>58</li><li>59</li><li class="on">00</li><li>01</li><li>02</li></ul></div>
+                        <div class="wheel w-mer" role="spinbutton" tabindex="0" aria-label="Before or after noon" aria-valuetext="PM" onkeydown="wheelKey(event)"><ul><li>&nbsp;</li><li>AM</li><li class="on">PM</li><li>&nbsp;</li><li>&nbsp;</li></ul></div>
+                      </div>
                     </div>
                     <span class="field-help" data-testid="detail-deadline-collection" accessibilityIdentifier="detail-deadline-collection">Dated today, so it sits in Today.</span>
                     <div class="btn-row"><button class="btn btn-sm btn-ghost" type="button" data-testid="detail-deadline-clear" accessibilityIdentifier="detail-deadline-clear">Clear</button></div>
@@ -1211,9 +1278,14 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
                   <div class="pick-in">
                     <div class="grabber pick-grab" aria-hidden="true"></div>
                     <div class="pick-head"><span class="t-label">Reminder</span><button class="iconbtn" type="button" aria-label="Close" onclick="closePick()"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
-                    <div class="field-inline">
-                      <input class="field" type="date" id="d-rm" data-testid="detail-reminder-date" accessibilityIdentifier="detail-reminder-date" value="2026-08-21" aria-label="Reminder date">
-                      <input class="field narrow" type="time" data-testid="detail-reminder-time" accessibilityIdentifier="detail-reminder-time" value="17:30" aria-label="Reminder time">
+                    <div class="wheels" role="group" aria-label="Reminder">
+                      <div class="wheel-band" aria-hidden="true"></div>
+                      <div class="wheel w-date" role="spinbutton" tabindex="0" aria-label="Reminder date" aria-valuetext="Fri 21 Aug" data-testid="detail-reminder-date" accessibilityIdentifier="detail-reminder-date" onkeydown="wheelKey(event)"><ul><li>Wed 19 Aug</li><li>Thu 20 Aug</li><li class="on">Fri 21 Aug</li><li>Sat 22 Aug</li><li>Sun 23 Aug</li></ul></div>
+                      <div class="wheel-time" role="group" aria-label="Reminder time" data-testid="detail-reminder-time" accessibilityIdentifier="detail-reminder-time">
+                        <div class="wheel w-hr" role="spinbutton" tabindex="0" aria-label="Hour" aria-valuetext="5" onkeydown="wheelKey(event)"><ul><li>3</li><li>4</li><li class="on">5</li><li>6</li><li>7</li></ul></div>
+                        <div class="wheel w-min" role="spinbutton" tabindex="0" aria-label="Minute" aria-valuetext="30" onkeydown="wheelKey(event)"><ul><li>28</li><li>29</li><li class="on">30</li><li>31</li><li>32</li></ul></div>
+                        <div class="wheel w-mer" role="spinbutton" tabindex="0" aria-label="Before or after noon" aria-valuetext="PM" onkeydown="wheelKey(event)"><ul><li>&nbsp;</li><li>AM</li><li class="on">PM</li><li>&nbsp;</li><li>&nbsp;</li></ul></div>
+                      </div>
                     </div>
                     <span class="field-help">This is the one that alerts you. The deadline on its own is silent.</span>
                     <div class="btn-row"><button class="btn btn-sm btn-ghost" type="button" data-testid="detail-reminder-clear" accessibilityIdentifier="detail-reminder-clear">Clear</button></div>
@@ -1262,7 +1334,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
                         <button type="button" aria-pressed="false">After</button>
                       </span>
                       <div class="v v-rend-until" style="margin-top:var(--s3)">
-                        <input class="field" type="date" data-testid="detail-repeat-until" accessibilityIdentifier="detail-repeat-until" value="2026-12-18" aria-label="Repeat until">
+                        <button class="ios-date" type="button" data-testid="detail-repeat-until" accessibilityIdentifier="detail-repeat-until" aria-haspopup="dialog" aria-expanded="false" aria-label="Repeat until 18 Dec 2026">18 Dec 2026</button>
                       </div>
                       <div class="v v-flex v-rend-count field-inline" style="margin-top:var(--s3)">
                         <input class="field narrow" type="number" data-testid="detail-repeat-count" accessibilityIdentifier="detail-repeat-count" value="12" min="1" aria-label="Number of times">
@@ -1328,7 +1400,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
               <p class="v v-steps-refused field-help" data-testid="detail-steps-refused" accessibilityIdentifier="detail-steps-refused" style="color:var(--attention); margin:0 var(--s2)">This task can’t take steps yet, so nothing was added.</p>
               <div class="step-add">
                 <svg class="ic plus" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-                <input class="step-new" data-testid="detail-step-add-input" accessibilityIdentifier="detail-step-add-input" placeholder="Add a step" aria-label="Add a step">
+                <input class="step-new" id="d-step" data-testid="detail-step-add-input" accessibilityIdentifier="detail-step-add-input" placeholder="Add a step" aria-label="Add a step">
                 <button class="btn btn-sm btn-ghost" type="button" data-testid="detail-step-add-button" accessibilityIdentifier="detail-step-add-button">Add step</button>
               </div>
             </div>
@@ -1414,7 +1486,7 @@ var STATES = {
     "steps": "empty",
     "fail": "none",
     "series": "single",
-    "typed": "shown",
+    "typed": "off",
     "vals": "unset",
     "name": "",
     "note": "",
@@ -1430,7 +1502,8 @@ var STATES = {
     "fail": "none",
     "series": "single",
     "typed": "shown",
-    "vals": "set"
+    "vals": "set",
+    "stepdraft": "Take the old x-rays with me"
   },
   "detail-overdue": {
     "surface": "detail",
@@ -1715,6 +1788,11 @@ function paint(cfg){
   if (nt) nt.value = (cfg.note === undefined ? NOTE_DEFAULT : cfg.note);
   var mt = document.getElementById('dMeta');
   if (mt) mt.textContent = cfg.meta || META_DEFAULT;
+  /* The commit button only exists while a step is being typed, so the state
+     that shows it has to carry the draft too — otherwise the drawing shows a
+     commit with nothing to commit, which is the duplicate it just removed. */
+  var sd = document.getElementById('d-step');
+  if (sd) sd.value = cfg.stepdraft || '';
   autosize(nm); autosize(nt);
   syncPick();
 }
@@ -1756,6 +1834,26 @@ document.addEventListener('input', function(e){
 document.addEventListener('keydown', function(e){
   if (e.key === 'Escape' && (document.getElementById('app').getAttribute('data-pick') || 'none') !== 'none') closePick();
 });
+
+/* A WHEEL IS AN ADJUSTABLE, so it owes a keyboard path and a spoken value.
+   role="spinbutton" is what VoiceOver reads as an adjustable — swipe up / down
+   there is Arrow Up / Down here — and aria-valuetext carries the value, because
+   "Fri 21 Aug" is not a number. Without this the control would be focusable and
+   dead, which is a worse trade than the browser input it replaces. */
+function wheelKey(e){
+  var d = e.key === 'ArrowDown' ? 1 : (e.key === 'ArrowUp' ? -1 : 0);
+  if (!d) return;
+  e.preventDefault();
+  var w = e.currentTarget, items = w.querySelectorAll('li'), i = 0;
+  for (var k = 0; k < items.length; k++) if (items[k].classList.contains('on')) i = k;
+  var n = i + d;
+  if (n < 0 || n > items.length - 1) return;
+  if (!items[n].textContent.trim()) return;   /* a blank row is the end of the range */
+  items[i].classList.remove('on');
+  items[n].classList.add('on');
+  w.style.setProperty('--wheel-shift', ((2 - n) * 36) + 'px');
+  w.setAttribute('aria-valuetext', items[n].textContent.trim());
+}
 
 function toggleTheme(){
   var el = document.documentElement;

@@ -2602,7 +2602,7 @@ input fell back to the HTML default `size=20`.
 | ID | Element | Rendering |
 |---|---|---|
 | **FLD-FIELD** | the control | `width: 100%` of its form row, `field.height` tall and never below the platform's `control.minTarget`, 1px `bg.rule`, **`radius.sm`**, `font.size.body`, `field.padding_x` inset. Multiline starts at `field.height_multiline_min` and may only grow |
-| **FLD-QUIET** | a typed value on a **property sheet** | the same control with **no boundary at rest**. The 1px `bg.rule` box arrives when the value is **empty**, when the pointer is over it, or when it has focus, and the focus ring and `accent` border are unchanged. Added 2026-08-22 (T-211) on the owner's decision; see § PropertyRow for why. **It is legal only where a visible FLD-LABEL sits above it or the control is itself the surface's heading** — a boundary-less field with no label satisfies neither WCAG 1.4.11 nor anybody trying to find where to type |
+| **FLD-QUIET** | a typed value on a **property sheet** | the same control with **no boundary in any state, and a GROUND instead**. `bg.sunken` behind the text arrives when the value is **empty**, when the pointer is over it, or when it has focus; at rest with a value it is transparent. **Focus keeps the 2px `focusRing` and is the only boundary this control ever draws.** Revised 2026-08-22 (T-215) from the 1px box T-211 shipped, on the owner's own alternative — *"nếu hiển thị nền khác cho dễ nhận biết, ta có thể bỏ border đi"* — which is `border.separation_order` read literally: ground, then space, then a line. **The ground is not the 1.4.11 carrier and must never be treated as one:** `bg.sunken` on `bg.base` measures **1.12:1**, so what identifies the control is the FLD-LABEL above it (or, for the surface's heading, the placeholder and position), and what marks engagement is the ring at 9.56:1 on that ground. **Legal only where a visible FLD-LABEL sits above it or the control is itself the surface's heading.** A failed save paints `dangerTint` instead of `bg.sunken`, under the FLD-ERROR message — never a red edge |
 | **FLD-LABEL** | its name | always present, always **above** the field, `font.size.meta` at `font.weight.semibold` in `text.secondary`, `field.label_gap` beneath. **A placeholder is never a label** — it disappears exactly when the reader needs it |
 | **FLD-HELP** | the quiet line under it | `font.size.meta` in `text.muted`, `field.help_gap` beneath the field. States a consequence the field cannot ("Dated today, so it sits in Today") |
 | **FLD-ERROR** | the loud one | `font.size.meta` in `color.danger`, same gap, **and the field's border turns `danger` too** |
@@ -2611,7 +2611,9 @@ input fell back to the HTML default `size=20`.
 
 **States:** default · focus (`border.focus` `focusRing` inset **and** the border to `accent`) ·
 error · disabled (opacity **and** the border drops to `bg.hairline` — state never travels on
-opacity alone) · read-only.
+opacity alone) · read-only. **FLD-QUIET has no border to turn**, so it carries each of these on the
+ground instead: focus is the ring alone, error is `dangerTint`, disabled is the ground dropped to
+nothing with the value in `text.muted`.
 
 **Two signals are allowed here and nowhere else.** § Colour rules 1 forbids a meaning carried by two
 things; a form error is the documented exception, because an error the reader misses costs them the
@@ -2653,6 +2655,34 @@ property rows borderless until hover.
 | **PROP-FLAG** | a state on the value | a word on its own tint at `radius.xs` (`Overdue` in `danger` on `dangerTint`). The value beside it does **not** change colour: one signal per meaning, and no colour repeating down a chain |
 | **PROP-CHEV** | the affordance | a trailing chevron at `icon.size.md` in `text.muted`, `aria-hidden` |
 | **PROP-PICK** | what opens | a **layer that floats**. Web: a popover anchored under its own row, `radius.lg` with `shadow.overlay`. iOS / Android: the platform bottom sheet — `radius.xl` on the **top two** corners, 0 on the bottom two, a grabber, a scrim, and it clears the home indicator / gesture bar. A picker too large to anchor is a **centred dialog with a scrim** on web (§ TaskDetail's repeat) |
+| **PROP-PICK-DATE** | the date and time control **inside** it, and it is not the same control on all three | see the table below. Added 2026-08-22 (T-215): the sheet was drawn with a browser-default `<input type="date">` on every platform, which is `DESIGN.md ## Platform`'s FAB mistake pointing the other way |
+
+### The date and time control is the eighth place the platforms diverge
+
+`DESIGN.md ## Platform` lists seven forced divergences. This is the eighth, and it belongs on that
+list — recorded here because `phase: screens` does not write `DESIGN.md`.
+
+| | Web | iOS | Android |
+|---|---|---|---|
+| Date | `<input type="date">` inside FLD-GROUP — the browser's own control is the platform's own control here | **`UIDatePicker` wheels.** A column per component, five rows visible, the chosen value in a `bg.sunken` band and set in `font.weight.semibold`, so the selection survives with no colour | **M3 date picker, docked.** Month header with previous / next, a `M T W T F S S` header row, and a `role="grid"` of days at `control.minTarget.android` |
+| Time | `<input type="time">` | the same wheel assembly — hour, minute, AM/PM columns | **M3 time input.** Two `bg.sunken` numeral fields at `font.size.title` and a vertical AM/PM selector, each half a full `control.minTarget.android` tall |
+| A date that is **one field among several** (the repeat's end date) | the same `<input type="date">` | the **iOS compact date**: a `bg.sunken` pill carrying the date, `aria-haspopup="dialog"` | the **M3 date input**: an outlined field with a trailing calendar icon button |
+| Commit | none | none | **none — docked, not modal.** M3's modal date picker carries Cancel / OK and this surface may not draw a commit moment (T-213) |
+
+**Neither wheel nor grid is the accent's.** M3 fills the chosen day with `primary`; here the chosen
+day takes the ink fill the repeat editor's weekday toggles already use, because on this surface
+`accent` means *the assistant* and a date the user picked is their own hand.
+
+**Both owe a keyboard path, and it is drawn rather than described.** The wheel is
+`role="spinbutton"` with `aria-valuetext` — VoiceOver's adjustable, Arrow Up / Down here — because
+`Fri 21 Aug` is not a number. The calendar is a `role="grid"` with a **roving tabindex**: arrows move
+between days, and Tab enters and leaves the whole calendar in one press. **Measured** on
+`task-detail-android.html` at 390, state `detail-deadline-pick`: 35 day buttons, **1 tab stop**.
+
+**Cost, measured and accepted.** The M3 calendar makes the Android deadline and reminder sheets
+taller than the `680px` sheet cap — 788px of content — so those two sheets scroll and `Clear` sits
+below the fold at rest. It stays reachable by scroll and by Tab. The alternative was painting day
+cells under Android's 48dp floor, which is worse.
 
 ### The accessibility contract, because this is a custom control
 
@@ -2739,7 +2769,7 @@ as an explicit `detail-field` node carrying `data-field`. The mockup marks **one
 | priority | **Priority** | a § PropertyRow whose value reads `None · Low · Medium · High`. Its picker holds `detail-priority-control` (`role="radiogroup"`) and the `detail-priority-option` exemplar; the chosen option is **weight plus a tick**, so it survives with no colour at all |
 | deadline | **Deadline** | a § PropertyRow whose value is the date and time in `font.family.numeric`. Its picker holds `detail-deadline-shortcut` chips (`Today · Tomorrow · Next week`), `detail-deadline-date` · `detail-deadline-time`, the `detail-deadline-collection` FLD-HELP line, and `detail-deadline-clear`. **An overdue deadline is a `danger` word on `dangerTint` beside the value, never a red date** — the date stays `text.primary` (§ Colour rules 3 and 4) |
 | reminder | **Reminder** | a § PropertyRow. Its picker holds `detail-reminder-date` · `detail-reminder-time`, `detail-reminder-clear`, and the FLD-HELP line "This is the one that alerts you. The deadline on its own is silent." |
-| steps | **Steps** | `detail-steps` wrapping `detail-step-row` (`detail-step-checkbox`, `detail-step-name`, `detail-step-move`, `detail-step-delete`), then `detail-step-add-input` + `detail-step-add-button`. `detail-steps-refused` when the task cannot take them |
+| steps | **Steps** | `detail-steps` wrapping `detail-step-row` (`detail-step-checkbox`, `detail-step-name`, `detail-step-move`, `detail-step-delete`), then `detail-step-add-input` + `detail-step-add-button`. **`detail-step-add-input` is the only way to START a step; `detail-step-add-button` is the COMMIT for one already typed and is not on screen until the input holds text.** Both ids stay published and bound — the two are one action in two moments, not two ways in. Corrected 2026-08-22 (T-215): `detail-blank` forced the demo attribute that reveals the commit, so the phone's emptiest state drew `+ Add a step` and `Add step` side by side with nothing typed. `detail-steps-refused` when the task cannot take them |
 | repeat | **Repeat** | a § PropertyRow, and the one whose opener carries an id: the row **is** `detail-repeat-edit` (same element kind, same job — the button that opens the repeat editor) and its value span is `detail-repeat-summary`. On web the editor is a **centred dialog with a scrim**, not an anchored popover: it carries a cadence, an interval, seven weekday toggles, an end rule and a three-date preview, and drawn as a popover it ran off the pane. Picker: `detail-repeat-picker` holding `detail-repeat-cadence`, `detail-repeat-interval`, `detail-repeat-weekday`, `detail-repeat-end` (+ `detail-repeat-until` / `detail-repeat-count`), `detail-repeat-preview` (`detail-repeat-preview-date`, `detail-repeat-preview-collection`, `detail-repeat-refusal`), `detail-repeat-commit`, `detail-repeat-cancel`. `detail-repeat-refused` when the task cannot take one |
 
 **The repeat picker is the one control with preview-then-commit**, because AC-22/23/25 have
