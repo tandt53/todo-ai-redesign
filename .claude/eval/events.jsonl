@@ -191,3 +191,9 @@
 {"ts":"2026-08-22T08:15:56.043Z","event":"session_stop","session":"96714da3-5f4d-4c4d-98b8-72def06d7ea0"}
 {"ts":"2026-08-22T08:20:31.455Z","event":"agent_return","task":null,"agent":"design-agent","status":"UNKNOWN","artifacts":[],"evidence_conflict":null,"session":"96714da3-5f4d-4c4d-98b8-72def06d7ea0"}
 {"ts":"2026-08-22T08:20:44.961Z","event":"session_stop","session":"96714da3-5f4d-4c4d-98b8-72def06d7ea0"}
+{"ts":"2026-08-22T08:30:44.555Z","event":"session_stop","session":"96714da3-5f4d-4c4d-98b8-72def06d7ea0"}
+{"ts":"2026-08-22T08:32:09.718Z","event":"session_stop","session":"96714da3-5f4d-4c4d-98b8-72def06d7ea0"}
+{"ts":"2026-08-22T08:35:23.732Z","event":"session_stop","session":"96714da3-5f4d-4c4d-98b8-72def06d7ea0"}
+{"ts":"2026-08-22T08:40:01.045Z","event":"session_stop","session":"96714da3-5f4d-4c4d-98b8-72def06d7ea0"}
+{"ts":"2026-08-22T08:41:28.252Z","event":"session_stop","session":"96714da3-5f4d-4c4d-98b8-72def06d7ea0"}
+{"ts":"2026-08-22T08:43:21.157Z","event":"session_stop","session":"96714da3-5f4d-4c4d-98b8-72def06d7ea0"}
