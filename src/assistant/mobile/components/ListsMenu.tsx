@@ -103,7 +103,7 @@ export function ListsMenu({
             style={styles.iconButton}
             onPress={onClose}
           >
-            <X size={tokens.icon.size.md} color={colors.primary} strokeWidth={tokens.icon.stroke} />
+            <X size={tokens.icon.size.md} color={colors.accent} strokeWidth={tokens.icon.stroke} />
           </Pressable>
         </View>
 
@@ -129,7 +129,7 @@ export function ListsMenu({
                 >
                   <Icon
                     size={tokens.icon.size.md}
-                    color={active ? colors.primary : colors.text.primary}
+                    color={active ? colors.accent : colors.text.primary}
                     strokeWidth={tokens.icon.stroke}
                   />
                   <Text style={[styles.menuRowText, active ? styles.menuRowTextActive : null]}>

@@ -103,7 +103,7 @@ export function Composer({
           ) : (
             <Mic
               size={tokens.icon.size.md}
-              color={listening ? colors.voice.listening : colors.text.primary}
+              color={listening ? colors.accent : colors.text.primary}
               strokeWidth={tokens.icon.stroke}
             />
           )}

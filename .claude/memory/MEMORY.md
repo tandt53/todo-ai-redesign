@@ -52,3 +52,23 @@ explicitly. And when two answers land together, check whether one is a
 read finds both — but only if *compose* is read as "does A enable or forbid B",
 not merely "do A and B disagree".
 
+
+## 2026-08-22 | T-232 | colour-token migration
+Type: pattern · Tags: tokens, theme, migration, visual-drift
+
+When `tokens.json` retires a colour key, the compatibility shim that keeps the old
+name alive so the codebase compiles will also **silently change what renders**, and
+no test catches it — the shim's own comment (*"mapped to closest surviving accent"*)
+disguises a design decision as a compatibility choice.
+
+**Delete the shim and update every call site in the same task.** Where a call site's
+colour changes, the comment must name the design rule that decided it, not the
+mapping that produced it.
+
+**Second lesson, from the same task's briefing rather than its code:** when the
+design system answers a retired key *directly*, cite that answer. The T-232 briefing
+sent the agent to check `diff.remove` against rules 1 and 3 — both of which pass —
+when rule 6 already named the pair outright (`text.muted`, struck through). The agent
+checked what it was pointed at and the wrong colour survived. **A briefing that names
+the wrong rule is worse than one that names no rule**, because it converts an open
+question into a closed one.
