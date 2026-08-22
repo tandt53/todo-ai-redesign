@@ -2238,9 +2238,11 @@ function paint(cfg){
     done:'<b>4</b> completed'
   };
   var t = document.getElementById('colTitle');
+  var bt = document.getElementById('barTitle');
   var c = document.getElementById('colCount');
   var name = cfg.title || TITLE[cfg.collection] || 'Today';
   if (t) t.textContent = name;
+  if (bt) bt.textContent = name;
   if (c) c.innerHTML = cfg.count !== undefined ? cfg.count : (COUNT[cfg.collection] || '');
   if (c) c.style.display = (cfg.count === '' ) ? 'none' : '';
   var si = document.getElementById('stateInd'); if (si && cfg.ind) si.textContent = cfg.ind;
