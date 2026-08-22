@@ -16,6 +16,8 @@ assistant_turn            0..1 ─ 1     question       (embedded object)
 assistant_turn            0..1 ─ 1     undo_snapshot  (embedded, applying turns only)
 assistant_turn            0..1 ─ 1     undo_result    (embedded, undone turns only)
 user                      1 ──── *     task
+user                      1 ──── *     list (personal lists)            ← F-008: the filing axis containers
+task                      * ──── 0..1  list (via list_id)               ← F-008: null = Inbox (unfiled)
 account                   1 ──── 1     user (keyed by user_id)          ← F-005/ADR-010: the row ADR-005 has been reasoning about since 2026-08-16
 task                      1 ──── *     task (steps, via parent_id)      ← F-005 AC-18: exactly one level
 task                      * ──── 1     series (via series_id)           ← F-005 AC-25: a key, not an entity
@@ -154,6 +156,13 @@ only inside historical records.
 | **Live** — what a non-deleted row may hold | the write vocabulary, plus a small number of pre-existing rows still carrying `today` | nothing; the value is inert and drains as those rows are next written |
 | **Record** — what `turn.undo_snapshot`, `question.ask_snapshot`, `turn.post_apply` and `turn.diff.old/new` may hold | all four | never narrowed. These are **past states**; rewriting them so an enum reads tidily would make the app report a diff the user never saw |
 
+**`blocked` / `in-progress` / `waiting` were considered and rejected by the
+owner (2026-08-22).** A workflow status exists to hand work between people, and a
+single-user app has no counterparty: `in-progress` nobody ever sets back only
+rots, and `waiting` — the one candidate with real value — has nobody to change it.
+The write vocabulary is closed at three members and no new member is added
+without a product decision recorded in `F-001 ## Out of Scope`.
+
 **A stored `'today'` is inert, and that is why the member is retained rather
 than deleted.** After ADR-009 nothing branches on it: a row carrying it is not
 done, so it is unfiled and therefore appears in Inbox, and it carries no date, so
@@ -174,7 +183,7 @@ neither — it is the gate that removes a task from both.
 | | Cells | Kind | Surfaces today |
 |---|---|---|---|
 | **Date axis** | Today · Upcoming · `undated` | views computed from `due_at` | Today and Upcoming have rows; `undated` has none |
-| **Filing axis** | Inbox · each personal list | containers — a property of the task | Inbox only; `lists` does not exist |
+| **Filing axis** | Inbox · each personal list | containers — a property of the task | Inbox + user-created lists (F-008) |
 | **The gate** | Done | the one genuine status | its own row |
 
 | Collection | Membership | Axis |
@@ -221,41 +230,37 @@ narrow later.
 
 **Inbox means "filed nowhere."** Not *"no date"* — that was its meaning for part
 of 2026-08-18 only, and it is not what the word means in any app the audience
-uses. `lists` and `tasks.list_id` do not exist
-(`docs/design/_shared/information-architecture.md` §7), so no task can be filed, so
-**every open task is unfiled and Inbox is every open task today.** When personal
-lists ship, Inbox narrows by itself: no second rule change, no re-litigation.
+uses. **`lists` and `tasks.list_id` now exist (F-008).** A task can be filed
+into one personal list or remain in Inbox. Inbox narrows as tasks are filed:
+no rule change, no re-litigation — the predicate was written for this moment.
 Measured before it was taken — 7 of 737 live rows change bucket, all of them
 *into* Inbox, none out of anything (ADR-009 § Amendment 2 § 4).
 
 A task with no date is never in Today — open or ticked. It is in Inbox until it
 is filed, and after that it is in its list.
 
-### `isFiled` — the predicate, and why there is no `list_id` field
+### `isFiled` — the predicate, and `list_id` (F-008)
 
-**No `list_id` ships.** No entity field, no schema, no wire change, no migration
-— verified absent from all 790 rows in the store. What ships is one named
-predicate, whose answer today is `false` for every task **because the filing axis
-has exactly one door and this app has not built it**:
+**`list_id` ships with F-008.** Before F-008, no `list_id` existed — verified
+absent from all 790 rows in the store. The predicate was written in advance
+of this moment and its answer was `false` for every task. Now that `list`
+and `task.list_id` exist, it answers `true` for filed tasks:
 
 ```ts
-isFiled(t)  = listIdOf(t) !== null      // → false for every task, today
+isFiled(t)  = listIdOf(t) !== null      // → true for filed tasks (F-008)
 inbox(t)    = t.status !== 'done' && !isFiled(t)
 ```
 
 Written this way rather than as the shorter `inbox(t) = t.status !== 'done'` for
 two reasons that are not style. The predicate on screen then **reads as the
-definition**, so Inbox narrows by itself when lists land; and it is **not
+definition**, so Inbox narrowed by itself when lists landed; and it is **not
 token-identical to `open_all`'s membership test**, which is the guard
-INV-INBOX-FILING below depends on. A `list_id` column that is always null was
-rejected as the dead promise ADR-009 § 2 already refused once — it cannot stay
-off the wire, it pre-commits UC-41's shape, and it changes nothing observable
-(ADR-009 § Amendment 2 § 3).
+INV-INBOX-FILING below depends on.
 
-**`isFiled` must be answerable `true` in a test today.** A predicate whose only
-reachable answer is `false` cannot be exercised, and the invariant below would be
-*unproven* rather than passing. The seam's mechanism is the implementer's call;
-its existence is not.
+**`isFiled` is now answerable `true` in production** (F-008). The seam in
+`tasks.ts` that was built for this moment reads `task.list_id` through
+`listIdOf`. No code change to the predicate is needed — the field's presence
+activates it.
 
 ### INV-INBOX-FILING — the equality that must never become a definition
 
@@ -337,6 +342,47 @@ and `inCollection` must therefore **not** be written as a single classification
 that returns exactly one answer. That shape was correct while the model was one
 partition and it is false now: the store holds 7 live tasks that are in Today and
 in Inbox simultaneously.
+
+## list (new entity — F-008)
+
+A personal list is a named container on the filing axis. A user creates lists
+to organise tasks beyond the single Inbox. The entity is specced in
+`F-008-lists.md`; this section is the representation.
+
+| Field | Type | Required | Constraints | Notes |
+|---|---|---|---|---|
+| id | uuid | yes | server-generated | |
+| user_id | uuid | yes | FK, account scope | |
+| name | string | yes | 1–100 chars, trimmed, whitespace-only rejected; unique per `(user_id, lower(name))` | F-008 AC-1, AC-3 |
+| color | int | yes | 0–6, index into `tokens.json listColor.palette`; default 0 (Grey) | F-008 AC-2 |
+| position | int | yes | sparse, gaps of 1024; assigned on create, rewritten on manual reorder | F-008 AC-10 |
+| created_at | iso8601 | yes | | |
+| updated_at | iso8601 | yes | | |
+
+Index: `(user_id, position)` — menu render order; unique `(user_id,
+lower(name))` — duplicate-name guard.
+
+**Limit: 50 lists per user** (F-008 AC-23). High enough for normal use, low
+enough to bound the menu scan. Enforced at create time.
+
+**No soft delete.** Deleting a list is permanent and immediate (F-008 AC-9).
+The list entity has no `deleted_at` field and does not participate in F-006's
+trash. Deleting a non-empty list unfiles its tasks (sets `list_id = null`) —
+see F-008 AC-7.
+
+### task.list_id (new field — F-008)
+
+| Field | Type | Required | Constraints | Notes |
+|---|---|---|---|---|
+| list_id | uuid \| null | no | FK `list.id`; null = Inbox (unfiled). A step (`parent_id` non-null) may not carry a `list_id` — refused with `400 INVALID_INPUT` (F-008 AC-13). When a list is deleted, every task with that `list_id` is set to `null` in the same transaction | F-008 AC-10, AC-11, AC-12 |
+
+**Existing rows.** 0 of the current rows carry a `list_id`. No migration;
+`null` means Inbox, which is what every task is today. The `isFiled` seam in
+`tasks.ts` activates without a code change.
+
+Index: `(user_id, list_id)` — count and membership queries.
+
+---
 
 ## Client-side stores (client contracts — not server entities)
 
