@@ -126,3 +126,18 @@ checkbox: the checkmark says *done*, the fill colour says *selected* (ink when n
 accent when selected), and strikethrough plus the row ground each carry a second signal so
 neither fact is colour-only (`DESIGN.md ## Colour rules` 3). Two controls would have been the
 obvious move and would have cost both the alignment and the "which one do I tap" question.
+
+## 2026-08-22 | T-249 | a screenshot script wrote 12 files into a directory called `undefined/`
+
+**What happened:** the visual-review script built its output path from a variable that resolved
+to `undefined`, so twelve PNGs landed in `<repo>/undefined/` — inside the working tree, untracked,
+and picked up by the next `git status` as debris to explain.
+
+**Lesson:** write throwaway verification artifacts to an **absolute path outside the repo**, and
+**assert the output directory exists and is what you expect before writing to it**. A path built
+by string interpolation fails silently and still succeeds at writing — `undefined/` is a real
+directory once something creates it, so nothing errors and the mistake only surfaces later, in
+someone else's `git status`.
+
+The screenshots themselves were correct and the visual review did happen — this is only about
+where the files went.
