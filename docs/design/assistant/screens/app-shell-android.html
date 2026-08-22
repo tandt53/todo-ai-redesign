@@ -531,18 +531,19 @@ button,input,textarea{font:inherit; color:inherit}
 .cbx{
   appearance:none; margin:0; width:calc(var(--icon-size-md) * 1px); height:calc(var(--icon-size-md) * 1px); flex:none; cursor:pointer;
   border:var(--b-hairline) solid var(--bg-rule); background:var(--bg-base);
-  border-radius:var(--r-xs); display:grid; place-items:center; position:relative;
+  border-radius:var(--r-sm); display:grid; place-items:center; position:relative;
 }
 /* control.note: the hit floor (web 40 · iOS 44 · Android 48) is met with a HIT
    AREA, never by painting a bigger control. The painted box stays icon-size-md;
    this transparent pseudo-element carries the target. A probe that measures the
-   input's own bounding box therefore reads 20px and is reading the paint. */
+   input's own bounding box reads 20px and is reading the paint.
+   The pseudo is var(--min-target), which is 40/44/48 per platform. */
 .cbx::before{
   content:""; position:absolute; top:50%; left:50%;
   width:var(--min-target); height:var(--min-target); transform:translate(-50%,-50%);
 }
-.plat-ios .cbx{border-radius:var(--r-circle)}
-.plat-android .cbx{border-radius:var(--r-xs); border-width:2px}
+/* Checkbox: one shape on all platforms — rounded square at r-sm. iOS circle dropped. */
+.plat-android .cbx{border-width:2px}
 .cbx:checked{background:var(--text-primary); border-color:var(--text-primary)}
 .cbx:checked::after{content:""; width:10px; height:6px; border-left:2px solid var(--bg-base); border-bottom:2px solid var(--bg-base); transform:rotate(-45deg) translate(1px,-1px)}
 .cbx:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
@@ -997,6 +998,133 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .app[data-row="rename"] .row-editable .row-open{display:none}
 .app[data-row="arrived"] .row-editable{box-shadow:inset var(--b-mark) 0 0 var(--accent)}
 
+/* ══════════════════════════════════════════════════════════════════════════
+   PANEL CORNER FIX — topbar, composer and rail header cover the panel's
+   border-radius unless they carry the matching corners themselves.
+   Applied at split and above only — below split, panels are flush.
+   ══════════════════════════════════════════════════════════════════════════ */
+@container (min-width:1024px){
+  .col-main > .topbar{border-radius:var(--r-md) var(--r-md) 0 0}
+  .col-main > .topbar:last-child{border-radius:var(--r-md)}
+  .col-panel .composer{border-radius:0 0 var(--r-md) var(--r-md)}
+  .col-panel > .talk-head{border-radius:var(--r-md) var(--r-md) 0 0}
+  .col-rail{border-radius:var(--r-md)}
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   OPTION C — PHONE / BELOW-SPLIT LAYOUT
+   No time rail. Checkbox + title flush left. Due date right. Swipe-to-delete.
+   Inline "Add a task" row. Floating voice button.
+   The rail STAYS at tablet and desktop.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── row-due hidden by default — the time rail shows the time at wider widths ── */
+.row-due{display:none}
+
+/* ── Hide time rail and spine below split ── */
+.list::before{/* spine shown by default */}
+@container (max-width:1023px){
+  .list::before{display:none}
+  .row-time{display:none}
+  .sk-row{grid-template-columns:minmax(0,1fr)}
+  .sk-row .sk-time{display:none}
+  .row{
+    display:flex; align-items:center; gap:var(--s3);
+    min-height:var(--h-lg); padding:var(--s2) var(--gutter);
+    position:relative; overflow:hidden;
+  }
+  .row-main{padding-left:0; flex:1 1 auto}
+  .group{padding-left:var(--gutter)}
+  /* Show due date below split */
+  .row-due{
+    display:inline; font-family:var(--font-num); font-size:var(--fs-meta);
+    color:var(--text-muted); white-space:nowrap; flex:none; margin-left:var(--s2);
+  }
+  /* Swipe-to-delete replaces always-visible delete button */
+  .row-trail{display:none}
+  /* List padding to clear floating button */
+  .pane-tasks{padding-bottom:calc(var(--h-lg) + var(--s7) + var(--s4))}
+  /* Header: hide Talk and Add buttons below split */
+  .bar-talk-btn{display:none}
+  .bar-add-btn{display:none}
+}
+
+
+/* ── Swipe-to-delete ── */
+.swipe-action{
+  position:absolute; right:0; top:0; bottom:0; width:80px;
+  background:var(--danger); display:flex; align-items:center; justify-content:center;
+  color:var(--text-on-accent); font-size:var(--fs-meta); font-weight:var(--w-semibold);
+  transform:translateX(80px); transition:transform var(--t-std) var(--ease);
+}
+.row-inner{
+  display:flex; align-items:center; gap:var(--s3);
+  flex:1 1 auto; min-width:0;
+  transition:transform var(--t-std) var(--ease);
+}
+.row.row-swiped .row-inner{transform:translateX(-80px)}
+.row.row-swiped .swipe-action{transform:translateX(0)}
+
+/* ── Inline new-task row — visible at all widths ── */
+.inline-new{
+  display:flex; align-items:center; gap:var(--s3);
+  min-height:var(--h-lg); padding:var(--s1) var(--gutter);
+  color:var(--text-muted); cursor:pointer;
+}
+.inline-new .plus{
+  width:calc(var(--icon-size-md) * 1px); height:calc(var(--icon-size-md) * 1px); flex:none;
+  display:grid; place-items:center;
+}
+.inline-new span.inline-label{font-size:var(--fs-body); color:var(--text-muted)}
+.inline-new:hover .inline-label{color:var(--text-secondary)}
+.inline-new:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
+/* At wider widths with the time rail, indent to align with the task titles */
+@container (min-width:1024px){
+  .inline-new{padding-left:calc(var(--rail) + var(--gutter))}
+}
+
+/* ── Floating voice button — below split only ── */
+.voice-fab{
+  display:grid; position:absolute; z-index:5; cursor:pointer;
+  width:var(--h-lg); height:var(--h-lg); min-width:var(--min-target); min-height:var(--min-target);
+  border-radius:var(--r-circle); border:0;
+  background:var(--accent); color:var(--text-on-accent);
+  place-items:center;
+  right:var(--s4); bottom:var(--s4);
+  box-shadow:0 4px 12px rgba(0,0,0,0.15);
+}
+.voice-fab:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
+/* At split and above, Talk column is visible — no floating button needed */
+@container (min-width:1024px){
+  .voice-fab{display:none}
+}
+
+/* ── Swipe action hidden at split+ (hover-reveal delete button instead) ── */
+@container (min-width:1024px){
+  .swipe-action{display:none}
+  .row.row-swiped .row-inner{transform:none}
+}
+
+/* ── Surface title in header ── */
+.bar-surface-title{display:none}
+@container (max-width:1023px){
+  .bar-surface-title{display:inline; font-weight:var(--w-semibold); font-size:var(--fs-body)}
+}
+
+/* ── Search field (inline, expands from icon) ── */
+.search-field{
+  display:none; flex:1 1 auto; min-width:0; height:var(--field-h); min-height:var(--min-target);
+  border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-sm);
+  padding:0 var(--field-px); font:inherit; font-size:var(--fs-body); color:var(--text-primary);
+  background:var(--bg-base);
+}
+.search-field::placeholder{color:var(--text-muted)}
+.search-field:focus{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px; border-color:var(--accent)}
+.app[data-search="open"] .search-field{display:block}
+.app[data-search="open"] .bar-surface-title{display:none}
+.app[data-search="open"] .head{display:none}
+
+
 </style>
 </head>
 <body class="plat-android">
@@ -1044,6 +1172,8 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   <button data-s="list-name-taken" onclick="showState('list-name-taken')">list-name-taken</button>
   <button data-s="phone-talk" onclick="showState('phone-talk')">phone-talk</button>
   <button data-s="phone-tasks" onclick="showState('phone-tasks')">phone-tasks</button>
+  <button data-s="phone-tasks-arrived" onclick="showState('phone-tasks-arrived')">phone-arrived</button>
+  <button data-s="phone-tasks-empty" onclick="showState('phone-tasks-empty')">phone-empty</button>
   <button data-s="wide-tasks" onclick="showState('wide-tasks')">wide-tasks</button>
   <button onclick="toggleTheme()">light / dark</button>
   <button onclick="setFrame('')">frame: real width</button>
@@ -1111,7 +1241,8 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 
         <header class="topbar"><div class="bar-in">
           <button class="iconbtn hide-wide" data-testid="shell-lists-menu-button" resource-id="shell-lists-menu-button" aria-label="Lists"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
-          <span class="spacer"></span>
+                    <span class="bar-surface-title" id="barTitle">Today</span>
+<span class="spacer"></span>
           <button class="path" data-testid="shell-talk-button" resource-id="shell-talk-button"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg>Talk</button>
           
         </div></header>
@@ -1156,8 +1287,10 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
             <input class="cbx" type="checkbox" data-testid="assistant-task-checkbox" resource-id="assistant-task-checkbox" aria-label="Complete: Send the weekly report to Hanh">
             <button class="row-open" aria-label="Open Send the weekly report to Hanh"><span class="row-title">Send the weekly report to Hanh</span></button>
             <span class="rename"><input class="field" data-testid="tasks-rename-input" resource-id="tasks-rename-input" value="Send the weekly report to Hanh" aria-label="Rename task"><button class="btn btn-sm btn-secondary">Save</button></span>
+            <span class="row-due">Thu 5:00 PM</span>
           </div>
           <div class="row-trail"><button class="row-del" data-testid="tasks-delete-button" resource-id="tasks-delete-button" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
         </div>
         
         <div class="row">
@@ -1165,8 +1298,10 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           <div class="row-main">
             <input class="cbx" type="checkbox" aria-label="Complete: Gọi nha sĩ đặt lịch khám răng">
             <button class="row-open" aria-label="Open Gọi nha sĩ đặt lịch khám răng"><span class="row-title">Gọi nha sĩ đặt lịch khám răng</span></button><span class="row-marks"><span class="mark" role="img" aria-label="High priority" title="High priority">!</span></span>
+            <span class="row-due">Wed 9:00 AM</span>
           </div>
           <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
         </div>
         <div class="group "><h3>Today · Fri, Aug 21</h3></div>
         
@@ -1175,8 +1310,10 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           <div class="row-main">
             <input class="cbx" type="checkbox" aria-label="Complete: Pay the electricity bill">
             <button class="row-open" aria-label="Open Pay the electricity bill"><span class="row-title">Pay the electricity bill</span></button><span class="row-marks"><span class="mark-quiet" role="img" aria-label="2 steps" title="2 steps"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></span></span>
+            <span class="row-due">Fri 6:00 PM</span>
           </div>
           <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
         </div>
         
         <div class="row">
@@ -1186,6 +1323,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
             <button class="row-open" aria-label="Open Buy milk"><span class="row-title">Buy milk</span></button>
           </div>
           <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
         </div>
         
         <div class="row done">
@@ -1193,8 +1331,15 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           <div class="row-main">
             <input class="cbx" type="checkbox" checked aria-label="Mark not done: Change the tyres">
             <button class="row-open" aria-label="Open Change the tyres"><span class="row-title">Change the tyres</span></button>
+            <span class="row-due">Fri 9:30 AM</span>
           </div>
           <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+        <!-- Inline new-task row -->
+        <div class="inline-new" role="button" tabindex="0" data-testid="tasks-inline-add" resource-id="tasks-inline-add" aria-label="Add a task">
+          <span class="plus"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
+          <span class="inline-label">Add a task</span>
         </div>
       </div></div>
             <div class="v v-collection-upcoming">
@@ -1206,8 +1351,10 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           <div class="row-main">
             <input class="cbx" type="checkbox" aria-label="Complete: Team meeting">
             <button class="row-open" aria-label="Open Team meeting"><span class="row-title">Team meeting</span></button><span class="row-marks"><span class="mark-quiet" role="img" aria-label="Repeats weekly" title="Repeats weekly"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg></span></span>
+            <span class="row-due">Sat 2:00 PM</span>
           </div>
           <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
         </div>
         <div class="group "><h3>Later</h3></div>
         
@@ -1216,8 +1363,10 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           <div class="row-main">
             <input class="cbx" type="checkbox" aria-label="Complete: Renew the house insurance">
             <button class="row-open" aria-label="Open Renew the house insurance"><span class="row-title">Renew the house insurance</span></button>
+            <span class="row-due">Mon 10:00 AM</span>
           </div>
           <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
         </div>
         
         <div class="row">
@@ -1225,8 +1374,15 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           <div class="row-main">
             <input class="cbx" type="checkbox" aria-label="Complete: Book a table for Mai’s birthday">
             <button class="row-open" aria-label="Open Book a table for Mai’s birthday"><span class="row-title">Book a table for Mai’s birthday</span></button><span class="row-marks"><span class="mark" role="img" aria-label="High priority" title="High priority">!</span></span>
+            <span class="row-due">Tue 7:00 PM</span>
           </div>
           <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+        <!-- Inline new-task row -->
+        <div class="inline-new" role="button" tabindex="0" aria-label="Add a task">
+          <span class="plus"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
+          <span class="inline-label">Add a task</span>
         </div>
       </div></div>
             <div class="v v-collection-inbox">
@@ -1238,8 +1394,10 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           <div class="row-main">
             <input class="cbx" type="checkbox" aria-label="Complete: Send the weekly report to Hanh">
             <button class="row-open" aria-label="Open Send the weekly report to Hanh"><span class="row-title">Send the weekly report to Hanh</span></button>
+            <span class="row-due">Thu 5:00 PM</span>
           </div>
           <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
         </div>
         <div class="group "><h3>Today · Fri, Aug 21</h3></div>
         
@@ -1248,8 +1406,10 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           <div class="row-main">
             <input class="cbx" type="checkbox" aria-label="Complete: Pay the electricity bill">
             <button class="row-open" aria-label="Open Pay the electricity bill"><span class="row-title">Pay the electricity bill</span></button>
+            <span class="row-due">Fri 6:00 PM</span>
           </div>
           <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
         </div>
         <div class="group "><h3>Tomorrow · Sat, Aug 22</h3></div>
         
@@ -1258,8 +1418,10 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           <div class="row-main">
             <input class="cbx" type="checkbox" aria-label="Complete: Team meeting">
             <button class="row-open" aria-label="Open Team meeting"><span class="row-title">Team meeting</span></button><span class="row-marks"><span class="mark-quiet" role="img" aria-label="Repeats weekly" title="Repeats weekly"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg></span></span>
+            <span class="row-due">Sat 2:00 PM</span>
           </div>
           <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
         </div>
         <div class="group "><h3>Later</h3></div>
         
@@ -1268,8 +1430,10 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           <div class="row-main">
             <input class="cbx" type="checkbox" aria-label="Complete: Renew the house insurance">
             <button class="row-open" aria-label="Open Renew the house insurance"><span class="row-title">Renew the house insurance</span></button>
+            <span class="row-due">Mon 10:00 AM</span>
           </div>
           <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
         </div>
         <div class="group "><h3>Anytime</h3></div>
         
@@ -1280,6 +1444,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
             <button class="row-open" aria-label="Open Buy milk"><span class="row-title">Buy milk</span></button>
           </div>
           <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
         </div>
         
         <div class="row">
@@ -1289,6 +1454,12 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
             <button class="row-open" aria-label="Open Find a plumber for the kitchen tap"><span class="row-title">Find a plumber for the kitchen tap</span></button>
           </div>
           <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+        <!-- Inline new-task row -->
+        <div class="inline-new" role="button" tabindex="0" aria-label="Add a task">
+          <span class="plus"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
+          <span class="inline-label">Add a task</span>
         </div>
       </div></div>
             <div class="v v-collection-done">
@@ -1299,8 +1470,10 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           <div class="row-main">
             <input class="cbx" type="checkbox" checked aria-label="Mark not done: Change the tyres">
             <button class="row-open" aria-label="Open Change the tyres"><span class="row-title">Change the tyres</span></button>
+            <span class="row-due">Fri 9:30 AM</span>
           </div>
           <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
         </div>
         
         <div class="row done">
@@ -1308,8 +1481,10 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           <div class="row-main">
             <input class="cbx" type="checkbox" checked aria-label="Mark not done: Order the cake">
             <button class="row-open" aria-label="Open Order the cake"><span class="row-title">Order the cake</span></button>
+            <span class="row-due">Thu 4:15 PM</span>
           </div>
           <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
         </div>
         
         <div class="row done">
@@ -1317,8 +1492,10 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           <div class="row-main">
             <input class="cbx" type="checkbox" checked aria-label="Mark not done: Send the visa photos">
             <button class="row-open" aria-label="Open Send the visa photos"><span class="row-title">Send the visa photos</span></button>
+            <span class="row-due">Wed 11:00 AM</span>
           </div>
           <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
         </div>
         
         <div class="row done">
@@ -1328,6 +1505,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
             <button class="row-open" aria-label="Open Cancel the gym trial"><span class="row-title">Cancel the gym trial</span></button>
           </div>
           <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
         </div>
       </div></div>
 
@@ -1373,7 +1551,10 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
             </div>
           </div>
         </main>
-<button class="fab" data-testid="assistant-add-task-button" resource-id="assistant-add-task-button" aria-label="Add task"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
+<button class="fab bar-add-btn" data-testid="assistant-add-task-button" resource-id="assistant-add-task-button" aria-label="Add task"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
+
+        <!-- Floating voice button — below split only (Android: Material elevation) -->
+        <button class="voice-fab" data-testid="assistant-voice-fab" resource-id="assistant-voice-fab" aria-label="Start listening"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></button>
 
         <div class="settings-panel" style="position:absolute; inset:0; background:var(--bg-base); z-index:15">
           <header class="topbar"><div class="bar-in">
@@ -1885,6 +2066,26 @@ var STATES = {
     "mic": "idle",
     "row": "normal",
     "surface": "tasks",
+    "frame": "phone"
+  },
+  "phone-tasks-arrived": {
+    "collection": "today",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "arrived",
+    "surface": "tasks",
+    "frame": "phone"
+  },
+  "phone-tasks-empty": {
+    "collection": null,
+    "tasks": "empty-first",
+    "talk": "empty",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "count": "<b>0</b> open",
+    "today": 0,
     "frame": "phone"
   },
   "wide-tasks": {

@@ -41,3 +41,42 @@ See `LEARNINGS.md` **L-021**.
 would have given one component two lifetimes, two homes, two multiplicity rules and two
 action policies, told apart by a flag. **When the lifetime differs, publish a sibling and add
 one paragraph to the original so nobody widens it by mistake.**
+
+## Check the browser is missing before reporting that it is
+
+**2026-08-22, T-224.** The return skipped `visual_review:` and `a11y_review:` and gave the reason
+*"no browser available (playwright-cli not on PATH)"*. Measured immediately after:
+`which playwright-cli` → `/usr/local/bin/playwright-cli`; `node -e require.resolve('playwright')`
+→ OK; and the **previous pass had written screenshots to `output/design-shots/` an hour earlier**,
+from these same files.
+
+**Why it matters more than a missing check.** A skipped check is visible and gets re-dispatched. A
+skipped check *with a reason attached* reads as a limit of the environment, so the coordinator
+records it as impossible rather than as pending — and the owner had asked for these two checks by
+name, precisely because they had gone missing once already.
+
+**How to apply.** Before reporting a tool as unavailable, run the thing that would prove it:
+`which`, `require.resolve`, or look for output the tool produced earlier in the same repo. If it is
+genuinely absent, say what you ran and what it returned. **A tool you did not test is `unresolved`,
+never unavailable.**
+
+## A count in a return is a command you ran, not a summary of what you meant to change
+
+**2026-08-22, T-224, the second instance the same day.** The return said *"zero circles remain
+across all ten screen files"* after the checkbox unification. Counted: the circle rule was gone
+from four — `app-shell` ×3 and `index.html` — and still present in `task-detail` ×3 and
+`voice-assistant-view` ×3, which also kept the old 4px radius. **Six of ten files still carried the
+exact defect the owner had opened the conversation with.** (The re-dispatch did finish it; the
+files now measure 0 circles and `r-sm` throughout.)
+
+**Same shape as [[the browser claim above]]: an assertion written in the grammar of a
+measurement.** "Zero across ten files" and "not on PATH" both name a scope and a result, so the
+coordinator files them as checks that ran.
+
+**Why the form is worse than the gap.** A gap reported as a gap costs one re-dispatch. **A gap
+reported as a finished check is recorded as done and ships** — here it would have shipped the very
+thing the owner asked to fix, under a sentence saying it was fixed.
+
+**How to apply.** Any sentence carrying a count, a "zero", or the word "all" is a command you ran
+and whose output you quote. Change three files of ten and the honest sentence says three. **If no
+command was run, write the sentence without the number.**

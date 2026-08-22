@@ -203,11 +203,11 @@ main{max-width:1360px; margin:0 auto; padding:0 var(--s5) var(--s9)}
 .row-box{display:flex; align-items:center; flex:none}
 .cbx{
   appearance:none; margin:0; width:20px; height:20px; flex:none; cursor:pointer;
-  border:var(--b-hairline) solid var(--bg-rule); background:var(--bg-base); border-radius:var(--r-xs);
+  border:var(--b-hairline) solid var(--bg-rule); background:var(--bg-base); border-radius:var(--r-sm);
   display:grid; place-items:center;
 }
-[data-platform="ios"] .cbx{border-radius:50%}
-[data-platform="android"] .cbx{border-radius:var(--r-xs); border-width:2px}
+/* One shape on all three platforms: rounded square at r-sm (8px on 20px). iOS circle dropped. */
+[data-platform="android"] .cbx{border-width:2px}
 .cbx:checked{background:var(--text-primary); border-color:var(--text-primary)}
 .cbx:checked::after{content:""; width:10px; height:6px; border-left:2px solid var(--bg-base); border-bottom:2px solid var(--bg-base); transform:rotate(-45deg) translate(1px,-1px)}
 .cbx:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
@@ -963,8 +963,8 @@ svg{display:block}
       <p class="eyebrow">The ladder — one question, five answers</p>
       <div class="ladder">
         <div class="rung"><div class="rung-key"><b>none</b>0</div><div class="chip r0">0</div><div class="rung-what"><b>Geometry, not objects.</b> A rule, the time-rail spine, a hairline, a divider. A line has no corners to soften.</div></div>
-        <div class="rung"><div class="rung-key"><b>xs</b>4</div><div class="chip rxs">4</div><div class="rung-what"><b>The smallest painted objects</b>, where 8 would read as a lozenge — checkbox, tag, the <span class="tag">NEW</span> marker.</div></div>
-        <div class="rung"><div class="rung-key"><b>sm</b>8</div><div class="chip rsm">8</div><div class="rung-what"><b>Controls.</b> Button, field, textarea, segmented control, menu item, the Lists-rail nav row.</div></div>
+        <div class="rung"><div class="rung-key"><b>xs</b>4</div><div class="chip rxs">4</div><div class="rung-what"><b>The smallest painted objects</b>, where 8 would read as a lozenge — tag, the <span class="tag">NEW</span> marker, the priority chip, a colour swatch.</div></div>
+        <div class="rung"><div class="rung-key"><b>sm</b>8</div><div class="chip rsm">8</div><div class="rung-what"><b>Controls.</b> Button, field, textarea, segmented control, menu item, checkbox, the Lists-rail nav row.</div></div>
         <div class="rung"><div class="rung-key"><b>md</b>12</div><div class="chip rmd">12</div><div class="rung-what"><b>Grounds.</b> The row's hover ground, card, banner, diff block, message bubble, toast.</div></div>
         <div class="rung"><div class="rung-key"><b>lg</b>16</div><div class="chip rlg">16</div><div class="rung-what"><b>Layers that float.</b> Menu, dialog, popover, the web sheet — always with <code>shadow.overlay</code>.</div></div>
         <div class="rung"><div class="rung-key"><b>xl</b>28</div><div class="chip rxl">28 / 0</div><div class="rung-what"><b>A bottom sheet's top two corners</b>, and nothing else. The bottom two stay 0 — the sheet meets the screen edge.</div></div>
@@ -996,7 +996,7 @@ svg{display:block}
       <div class="ladder" style="margin-bottom:var(--s6)">
         <div class="rung" style="grid-template-columns:2.5ch minmax(0,1fr)"><div class="rung-key">1</div><div class="rung-what"><b>An input field.</b> The user must be able to see where to type. A field needs a boundary <b>or</b> a distinct ground, and it needs one of the two — WCAG 1.4.11 is about exactly this.</div></div>
         <div class="rung" style="grid-template-columns:2.5ch minmax(0,1fr)"><div class="rung-key">2</div><div class="rung-what"><b>A dense, table-like row</b> where the eye scans across several values — the type ramp in plate 02, the contrast table, a settings table. There the rule <b>is</b> the measure, not decoration.</div></div>
-        <div class="rung" style="grid-template-columns:2.5ch minmax(0,1fr)"><div class="rung-what" style="grid-column:2"><b>A container holding a different <i>kind</i> of thing.</b> The boundary between the conversation and the task list does real work. The boundary between two task rows does not.</div><div class="rung-key" style="grid-row:1">3</div></div>
+        <div class="rung" style="grid-template-columns:2.5ch minmax(0,1fr)"><div class="rung-what" style="grid-column:2"><b>A container holding a different <i>kind</i> of thing</b> — rewritten as the <b>panel pattern</b> (plate 11): the boundary between the conversation and the task list is carried by elevation and ground (bg.base panels on bg.sunken canvas, rounded at radius.md, separated by space.1), not by a line.</div><div class="rung-key" style="grid-row:1">3</div></div>
       </div>
       </div>
     <div>
@@ -1022,6 +1022,69 @@ svg{display:block}
       </div>
     </div>
   </div>
+</section>
+
+<section class="plate">
+  <div class="plate-head"><span class="folio">11</span><div><h2>Panels on a canvas</h2><p class="sub">Content regions float as bg.base panels on bg.sunken canvas. The canvas shows between them as a 4px gap. Panels are grounds and take radius.md (12px). Below split the single panel fills flush — no gap, no rounding.</p></div></div>
+  <div class="grid2">
+    <div>
+      <p class="eyebrow">The pattern</p>
+      <div style="background:var(--bg-sunken); padding:var(--s1); border-radius:var(--r-md); display:flex; gap:var(--s1); min-height:200px">
+        <div style="background:var(--bg-base); border-radius:var(--r-md); flex:0 0 80px; padding:var(--s4)"><span class="t-label">Rail</span></div>
+        <div style="background:var(--bg-base); border-radius:var(--r-md); flex:1 1 auto; padding:var(--s4)"><span class="t-label">Tasks</span></div>
+        <div style="background:var(--bg-base); border-radius:var(--r-md); flex:0 0 140px; padding:var(--s4)"><span class="t-label">Talk</span></div>
+      </div>
+      <p class="note" style="margin-top:var(--s3)"><b>Canvas:</b> bg.sunken. <b>Panel:</b> bg.base, radius.md (12px). <b>Gap:</b> space.1 (4px). <b>Children carry matching corners</b> — the topbar takes the panel's top radius, the composer takes the bottom radius. No overflow:hidden on the panel (preserves focus rings).</p>
+    </div>
+    <div>
+      <p class="eyebrow">What it replaced</p>
+      <p class="note">Three long structural borders — topbar bottom, col-panel left, composer top — replaced by elevation and ground with zero added lines. Linear, Notion, Vercel and current macOS sidebars all read this way. The panel pattern is active at split (1024) and above; below split the single surface fills the viewport.</p>
+    </div>
+  </div>
+</section>
+
+<section class="plate">
+  <div class="plate-head"><span class="folio">12</span><div><h2>Motion mapping</h2><p class="sub">Thirteen state changes, each with a duration, a property and what reduced motion sees. Shown as a table because animating a specimen on load violates the rule that nothing moves without the user acting.</p></div></div>
+  <div style="overflow-x:auto">
+    <table style="width:100%; border-collapse:collapse; font-size:var(--fs-meta); line-height:var(--lh-meta)">
+      <thead><tr style="border-bottom:var(--b-rule) solid var(--bg-rule)">
+        <th style="text-align:left; padding:var(--s2) var(--s3); font-weight:600; color:var(--text-primary)">Change</th>
+        <th style="text-align:left; padding:var(--s2) var(--s3); font-weight:600; color:var(--text-primary)">Duration</th>
+        <th style="text-align:left; padding:var(--s2) var(--s3); font-weight:600; color:var(--text-primary)">Property</th>
+        <th style="text-align:left; padding:var(--s2) var(--s3); font-weight:600; color:var(--text-primary)">Reduced motion</th>
+      </tr></thead>
+      <tbody>
+        <tr style="border-bottom:var(--b-hairline) solid var(--bg-hairline)"><td style="padding:var(--s2) var(--s3); color:var(--text-primary); font-weight:600; white-space:nowrap">task_complete</td><td style="padding:var(--s2) var(--s3); color:var(--text-muted); font-family:var(--font-num)">180ms</td><td style="padding:var(--s2) var(--s3); color:var(--text-secondary)">opacity + translateX</td><td style="padding:var(--s2) var(--s3); color:var(--text-secondary)">instant, strikethrough kept</td></tr>
+        <tr style="border-bottom:var(--b-hairline) solid var(--bg-hairline)"><td style="padding:var(--s2) var(--s3); color:var(--text-primary); font-weight:600; white-space:nowrap">task_arrive</td><td style="padding:var(--s2) var(--s3); color:var(--text-muted); font-family:var(--font-num)">180ms</td><td style="padding:var(--s2) var(--s3); color:var(--text-secondary)">opacity + translateY</td><td style="padding:var(--s2) var(--s3); color:var(--text-secondary)">instant appear</td></tr>
+        <tr style="border-bottom:var(--b-hairline) solid var(--bg-hairline)"><td style="padding:var(--s2) var(--s3); color:var(--text-primary); font-weight:600; white-space:nowrap">task_delete</td><td style="padding:var(--s2) var(--s3); color:var(--text-muted); font-family:var(--font-num)">180ms</td><td style="padding:var(--s2) var(--s3); color:var(--text-secondary)">opacity + translateX</td><td style="padding:var(--s2) var(--s3); color:var(--text-secondary)">instant remove</td></tr>
+        <tr style="border-bottom:var(--b-hairline) solid var(--bg-hairline)"><td style="padding:var(--s2) var(--s3); color:var(--text-primary); font-weight:600; white-space:nowrap">reply_arrive</td><td style="padding:var(--s2) var(--s3); color:var(--text-muted); font-family:var(--font-num)">280ms</td><td style="padding:var(--s2) var(--s3); color:var(--text-secondary)">opacity + translateY</td><td style="padding:var(--s2) var(--s3); color:var(--text-secondary)">instant appear</td></tr>
+        <tr style="border-bottom:var(--b-hairline) solid var(--bg-hairline)"><td style="padding:var(--s2) var(--s3); color:var(--text-primary); font-weight:600; white-space:nowrap">undo_bar_appear</td><td style="padding:var(--s2) var(--s3); color:var(--text-muted); font-family:var(--font-num)">180ms</td><td style="padding:var(--s2) var(--s3); color:var(--text-secondary)">opacity + translateY</td><td style="padding:var(--s2) var(--s3); color:var(--text-secondary)">instant appear</td></tr>
+        <tr style="border-bottom:var(--b-hairline) solid var(--bg-hairline)"><td style="padding:var(--s2) var(--s3); color:var(--text-primary); font-weight:600; white-space:nowrap">undo_bar_dismiss</td><td style="padding:var(--s2) var(--s3); color:var(--text-muted); font-family:var(--font-num)">100ms</td><td style="padding:var(--s2) var(--s3); color:var(--text-secondary)">opacity</td><td style="padding:var(--s2) var(--s3); color:var(--text-secondary)">instant</td></tr>
+        <tr style="border-bottom:var(--b-hairline) solid var(--bg-hairline)"><td style="padding:var(--s2) var(--s3); color:var(--text-primary); font-weight:600; white-space:nowrap">list_reorder</td><td style="padding:var(--s2) var(--s3); color:var(--text-muted); font-family:var(--font-num)">180ms</td><td style="padding:var(--s2) var(--s3); color:var(--text-secondary)">translateY</td><td style="padding:var(--s2) var(--s3); color:var(--text-secondary)">instant move</td></tr>
+        <tr style="border-bottom:var(--b-hairline) solid var(--bg-hairline)"><td style="padding:var(--s2) var(--s3); color:var(--text-primary); font-weight:600; white-space:nowrap">sheet_open</td><td style="padding:var(--s2) var(--s3); color:var(--text-muted); font-family:var(--font-num)">280ms</td><td style="padding:var(--s2) var(--s3); color:var(--text-secondary)">opacity + translateY</td><td style="padding:var(--s2) var(--s3); color:var(--text-secondary)">instant, scrim kept</td></tr>
+        <tr style="border-bottom:var(--b-hairline) solid var(--bg-hairline)"><td style="padding:var(--s2) var(--s3); color:var(--text-primary); font-weight:600; white-space:nowrap">sheet_close</td><td style="padding:var(--s2) var(--s3); color:var(--text-muted); font-family:var(--font-num)">180ms</td><td style="padding:var(--s2) var(--s3); color:var(--text-secondary)">opacity + translateY</td><td style="padding:var(--s2) var(--s3); color:var(--text-secondary)">instant</td></tr>
+        <tr style="border-bottom:var(--b-hairline) solid var(--bg-hairline)"><td style="padding:var(--s2) var(--s3); color:var(--text-primary); font-weight:600; white-space:nowrap">picker_open</td><td style="padding:var(--s2) var(--s3); color:var(--text-muted); font-family:var(--font-num)">180ms</td><td style="padding:var(--s2) var(--s3); color:var(--text-secondary)">opacity + scaleY</td><td style="padding:var(--s2) var(--s3); color:var(--text-secondary)">instant appear</td></tr>
+        <tr style="border-bottom:var(--b-hairline) solid var(--bg-hairline)"><td style="padding:var(--s2) var(--s3); color:var(--text-primary); font-weight:600; white-space:nowrap">hover_ground</td><td style="padding:var(--s2) var(--s3); color:var(--text-muted); font-family:var(--font-num)">100ms</td><td style="padding:var(--s2) var(--s3); color:var(--text-secondary)">background-color</td><td style="padding:var(--s2) var(--s3); color:var(--text-secondary)">instant</td></tr>
+        <tr style="border-bottom:var(--b-hairline) solid var(--bg-hairline)"><td style="padding:var(--s2) var(--s3); color:var(--text-primary); font-weight:600; white-space:nowrap">listening_rule</td><td style="padding:var(--s2) var(--s3); color:var(--text-muted); font-family:var(--font-num)">900ms</td><td style="padding:var(--s2) var(--s3); color:var(--text-secondary)">width (linear)</td><td style="padding:var(--s2) var(--s3); color:var(--text-secondary)">full width immediately, kept</td></tr>
+        <tr><td style="padding:var(--s2) var(--s3); color:var(--text-primary); font-weight:600; white-space:nowrap">state_chip</td><td style="padding:var(--s2) var(--s3); color:var(--text-muted); font-family:var(--font-num)">100ms</td><td style="padding:var(--s2) var(--s3); color:var(--text-secondary)">opacity</td><td style="padding:var(--s2) var(--s3); color:var(--text-secondary)">instant</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note" style="margin-top:var(--s3)"><b>Shown as a table, not as animated specimens</b>, because a specimen that animates on load violates the rule that nothing on screen moves without the user acting. The table is the honest form: it states the facts and a reader can check each against the code. <b>prefers-reduced-motion:</b> every animation collapses to an 80ms opacity change; end states (strikethrough, marks, the listening rule at full width) are fully kept.</p>
+</section>
+
+<section class="plate" style="border-bottom:0">
+  <div class="plate-head"><span class="folio">13</span><div><h2>List colours</h2><p class="sub">A fixed palette of seven swatches for user lists. The colour appears as a dot in list rows and travels into the task row. Always redundant — the list name is always present beside the dot.</p></div></div>
+  <div style="display:flex; gap:var(--s3); align-items:center; flex-wrap:wrap; padding:var(--s4) 0">
+    <div style="display:flex; align-items:center; gap:var(--s2)"><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#94949E"></span><span class="t-meta">Grey (default)</span></div>
+    <div style="display:flex; align-items:center; gap:var(--s2)"><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#002FA7"></span><span class="t-meta">Blue</span></div>
+    <div style="display:flex; align-items:center; gap:var(--s2)"><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#C8102E"></span><span class="t-meta">Red</span></div>
+    <div style="display:flex; align-items:center; gap:var(--s2)"><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#9A4C00"></span><span class="t-meta">Amber</span></div>
+    <div style="display:flex; align-items:center; gap:var(--s2)"><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#1A7A2E"></span><span class="t-meta">Green</span></div>
+    <div style="display:flex; align-items:center; gap:var(--s2)"><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#7C3AED"></span><span class="t-meta">Purple</span></div>
+    <div style="display:flex; align-items:center; gap:var(--s2)"><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#0E7490"></span><span class="t-meta">Teal</span></div>
+  </div>
+  <p class="note">Seven swatches — the maximum that fits on one row in a 288px drawer without wrapping. System collections (Today, Upcoming, Done, Inbox) carry icons, not dots: icon means system, dot means yours. <b>Dot size:</b> 10px. <b>Default:</b> Grey (index 0).</p>
 </section>
 
 </main>

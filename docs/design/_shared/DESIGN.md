@@ -85,7 +85,7 @@ Type, colour, spacing, radius and the accent meanings are **identical on all thr
 | Sheet | slide-over from the right | **bottom sheet with a grabber, above the home indicator** | **bottom sheet with a drag handle, above the gesture bar** |
 | Primary create | button in the header | button in the header — **iOS has no FAB** | **FAB, 56dp, bottom right** |
 | Destructive confirm | inline dialog | **action sheet, destructive row in `danger`, Cancel separated** | **M3 dialog, text buttons, destructive on the right** |
-| Row delete control | appears on hover / focus-within | **always visible** — a hover-revealed control does not exist on touch | **always visible** |
+| Row delete control | appears on hover / focus-within | **swipe-left to reveal** — the visible delete button wastes 44pt of every row for an action used on 1% of taps. Second path: Delete in task detail (tap the row) + VoiceOver rotor custom action "Delete task" | **swipe-left to reveal** — same as iOS. Second path: Delete in task detail + TalkBack custom action menu "Delete task" |
 
 ## Motion
 

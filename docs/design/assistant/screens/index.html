@@ -496,18 +496,19 @@ button,input,textarea{font:inherit; color:inherit}
 .cbx{
   appearance:none; margin:0; width:calc(var(--icon-size-md) * 1px); height:calc(var(--icon-size-md) * 1px); flex:none; cursor:pointer;
   border:var(--b-hairline) solid var(--bg-rule); background:var(--bg-base);
-  border-radius:var(--r-xs); display:grid; place-items:center; position:relative;
+  border-radius:var(--r-sm); display:grid; place-items:center; position:relative;
 }
 /* control.note: the hit floor (web 40 · iOS 44 · Android 48) is met with a HIT
-   AREA, never by painting a bigger control. The painted box stays icon-size-md;
-   this transparent pseudo-element carries the target. A probe that measures the
-   input's own bounding box therefore reads 20px and is reading the paint. */
+   AREA, never by painting a bigger control. The painted box stays icon-size-md
+   (20px); this transparent pseudo-element carries the target. A probe that
+   measures the input's own bounding box reads 20px and is reading the paint.
+   The pseudo is var(--min-target), which is 40/44/48 per platform. */
 .cbx::before{
   content:""; position:absolute; top:50%; left:50%;
   width:var(--min-target); height:var(--min-target); transform:translate(-50%,-50%);
 }
-.plat-ios .cbx{border-radius:var(--r-circle)}
-.plat-android .cbx{border-radius:var(--r-xs); border-width:2px}
+/* One shape on all three platforms: rounded square at r-sm (8px on 20px). iOS circle dropped. */
+.plat-android .cbx{border-width:2px}
 .cbx:checked{background:var(--text-primary); border-color:var(--text-primary)}
 .cbx:checked::after{content:""; width:10px; height:6px; border-left:2px solid var(--bg-base); border-bottom:2px solid var(--bg-base); transform:rotate(-45deg) translate(1px,-1px)}
 .cbx:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
