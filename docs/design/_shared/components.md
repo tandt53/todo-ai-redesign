@@ -493,6 +493,10 @@ inside a 1px `bg.rule`, with a `border.mark` `attention` rule down its leading e
 `attention`; the sentence itself stays `text.secondary`, because a banner whose every word is
 coloured reads as an alarm about something that is merely true: "No connection — the list still works, and what you type is saved on the device." Shows queued-turn count when one is in flight.
 States: offline · offline-with-queued (count) · replaying · hidden (online).
+**Its inset changed 2026-08-22 (T-218):** it pads `space.3` rather than `space.4`, and a marked
+banner pads `space.3 − border.mark` on the leading side, so its icon lands on the text gutter like
+every other block's leading item. See § The gutter rule — this is the one component the rule moved
+outside the task detail, in all nine mockups, and nothing else about the banner changed.
 
 ## NewMessageAffordance
 
@@ -2586,6 +2590,74 @@ Tasks surface (title at x=84, rows at 32, the primary action at 592).
 
 ---
 
+## The gutter rule — two edges, and every block on a surface uses them (GUT-*)
+
+**Added 2026-08-22 (T-218), after the owner measured the task detail and found the typed fields on a
+different edge from everything else.** *"title và description đang có độ kích thước và căn lề không
+giống các element khác."* Measured at 390 in `detail-blank` before this pass, and **both edges were
+off rather than one**:
+
+| | ground left | ground right | its text starts |
+|---|---|---|---|
+| the name's ground · the note's ground | **4** | **386** | 16 |
+| the property group | **16** | **374** | 36 |
+| a property row's own ground, inside it | 24 | 366 | 36 |
+| the offline banner | 16 | 374 | 34 |
+| a step row's hover ground | 16 | 374 | 24 |
+
+**Five text edges on one screen and two ground edges.** The two typed grounds were bleeding outward
+by their own padding so that their *text* landed on the pane's gutter — a real technique, and one
+that works only when every other block puts its text on that gutter too. None of them did. So the
+bleed was not finished, it was **removed**, and one rule now covers the surface.
+
+**The rule.** A surface has exactly two vertical edges, and every block uses both:
+
+- **The block gutter** — `layout.grid.gutter` (16 below `wide`, 24 from 1536). Every ground a block
+  paints across the column — a quiet field's ground, a property group, a banner, a row's hover
+  ground, a skeleton bar, a button's fill or border — starts here and ends on its mirror. **Nothing
+  bleeds past it and nothing is inset from it.**
+- **The text gutter** — the block gutter plus `space.3`. Every line of text starts here, and so does
+  the first thing in a row that is not text: a checkbox, a leading icon. **This holds whether or not
+  the block paints a ground.** A block's padding exists to bring its content to this line and for
+  nothing else.
+
+**Three consequences, each of which is how the rule gets broken:**
+
+1. **A ground nested inside a ground shares one `space.3`, it does not add a second.** The property
+   group pads `space.1` and each row inside it pads `space.2`; together that is one `space.3`, so the
+   row's own hover ground sits at gutter + 4 and its label still lands on the text gutter. A group
+   that padded `space.2` and rows that padded `space.3` is what put property labels at 36.
+2. **A mark comes out of the inset, not on top of it.** § OfflineBanner's `border.mark` left rule is
+   part of the ground, so a marked banner pads `space.3 − border.mark`. Otherwise every marked
+   banner starts its text 2px past the text gutter and nothing else on the screen does.
+3. **Text with no ground of its own still takes the inset.** The meta line under the name, an
+   FLD-LABEL, an FLD-HELP line, an inline failure — each is padded to the text gutter, so one left
+   edge runs the length of the surface instead of one per block.
+
+**Three things are not blocks and do not take the text gutter**, named here so the exceptions are
+decisions rather than drift:
+
+- **A control sized to its own content** — a § Buttons button, a § Message bubble, an § OptionChip.
+  It sits where its row starts and insets its own label by `control.padding_x`. A button's ground is
+  still on the block gutter when the button opens a row: `detail-delete-button` measures **16**.
+- **A structural column** — § TimeRail. The rail is a grid track, so group headings and task titles
+  begin at `gutter + rail`. That is the *"two left edges"* the § TimeRail entry already argues for,
+  and the rule above governs padding, never columns.
+- **A chrome bar** — the topbar and the composer. The leading icon button is bled by `space.3` so the
+  **icon's** optical centre lands on the block gutter, which is what both platforms do with a back
+  affordance.
+
+**Measured after the change, 390, `task-detail.html` · `-ios` · `-android`, identical on all three:**
+every ground `L=16 R=374`; every nested property row `L=20 R=370`; every leading item of every block
+`L=28`. At 1920 the same three numbers are `340 / 980`, `344 / 976`, `352`. Checked in
+`detail-default`, `detail-blank`, `detail-typed-affordance`, `detail-overdue`, `detail-offline`,
+`detail-loading`, `detail-error` and `detail-deleted`.
+
+**A picker is its own surface**, not a block on this one: a popover or a bottom sheet sets its own
+pair of gutters from its own padding, and the rule applies again inside it.
+
+---
+
 ## Field · Label · FormRow — a field has no intrinsic width (FLD-*)
 
 **Added 2026-08-21 (T-204).** Owed since v1, which never defined them, which is why the task detail
@@ -2665,7 +2737,7 @@ list — recorded here because `phase: screens` does not write `DESIGN.md`.
 | | Web | iOS | Android |
 |---|---|---|---|
 | Date | `<input type="date">` inside FLD-GROUP — the browser's own control is the platform's own control here | **`UIDatePicker` wheels.** A column per component, five rows visible, the chosen value in a `bg.sunken` band and set in `font.weight.semibold`, so the selection survives with no colour | **M3 date picker, docked.** Month header with previous / next, a `M T W T F S S` header row, and a `role="grid"` of days at `control.minTarget.android` |
-| Time | `<input type="time">` | the same wheel assembly — hour, minute, AM/PM columns | **M3 time input.** Two `bg.sunken` numeral fields at `font.size.title` and a vertical AM/PM selector, each half a full `control.minTarget.android` tall |
+| Time | `<input type="time">` | the same wheel assembly — hour, minute, AM/PM columns | **M3 time input.** Two `bg.sunken` numeral fields at `font.size.title` and a **horizontal** AM/PM selector — one row, `AM` and `PM` side by side, each half `control.minTarget.android` in **both** directions. Laid horizontally 2026-08-22 (T-218): the owner liked this picker and named its vertical selector as the one thing wrong in it. Turning it sideways moves the short axis from height to width, so the 48dp repair it already carried is pinned on the new axis rather than lost — **measured at 390 in `detail-deadline-pick` and `detail-reminder-pick`: `AM` 48×48, `PM` 48×48, the group 98×48.** It is shorter than the 72px numeral fields now, so the row centres it against them rather than stretching it |
 | A date that is **one field among several** (the repeat's end date) | the same `<input type="date">` | the **iOS compact date**: a `bg.sunken` pill carrying the date, `aria-haspopup="dialog"` | the **M3 date input**: an outlined field with a trailing calendar icon button |
 | Commit | none | none | **none — docked, not modal.** M3's modal date picker carries Cancel / OK and this surface may not draw a commit moment (T-213) |
 
@@ -2746,6 +2818,23 @@ A `topbar` carrying only the close affordance and the word `Task`; then, in the 
    for one fact and one more box. It is a **wrapping, auto-growing multi-line control, not a single-line
    input**: at 390 the live store's own `Gọi nha sĩ đặt lịch khám răng` clipped inside an input at
    display size, and § TaskRow's rule is that a title is never truncated to protect a column.
+   **The size was queried and it stays** (2026-08-22, T-218 — the owner raised *"kích thước và căn
+   lề"* together and only the alignment was wrong). Measured at 390: **31px / weight 600**, against
+   16px body, 13px meta and 11px label, so it is the only display-size text on the surface and the
+   squint test resolves to the task's name first. Stepping down to `font.size.title` would put the
+   heading 1.56× above body instead of 1.94× and **buys no line back** — the store's longest title
+   wraps to two lines at 31 and at 25 alike, measured.
+   **Its placeholder is `No name yet`** (2026-08-22, T-218, replacing `Name this task`). This surface
+   is reached straight after a task is created by voice — the meta line under it reads *Added just
+   now · by voice* — so the placeholder is **the first thing a new task says to its owner**, and an
+   instruction to do work is the wrong thing for it to say. `No name yet` states the task's condition
+   instead of issuing a command, which is what the standing brief's *simple, soft, easy* asks for.
+   It is legal copy on both counts § Buttons binds: it uses **task**, not *item* or *to-do*, and it
+   is a plain description rather than a themed replacement for a standard string. **The affordance
+   does not depend on it** — FLD-QUIET's ground is what says *type here* and it is painted precisely
+   when the field is empty. *`Untitled task` was the alternative and was rejected: it is the common
+   spelling (macOS, Notion, Docs) and it reads as a value the task already has rather than one it is
+   waiting for.*
 2. One `font.family.numeric` meta line (`Added Aug 18 · edited 9:40 PM · 3 steps`). **No rule under it**
    — space separates it from what follows.
 3. **Note**, an FLD-QUIET multiline control under a visible FLD-LABEL.

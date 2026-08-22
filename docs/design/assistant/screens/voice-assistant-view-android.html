@@ -572,12 +572,16 @@ button,input,textarea{font:inherit; color:inherit}
    BANNERS — offline, inline retry, save notice, carried notice
    ══════════════════════════════════════════════════════════════════════════ */
 .banner{
-  display:flex; align-items:flex-start; gap:var(--s3); padding:var(--s3) var(--s4);
+  display:flex; align-items:flex-start; gap:var(--s3); padding:var(--s3);
   background:var(--bg-sunken); border-radius:var(--r-md);
   font-size:var(--fs-meta); line-height:var(--lh-meta); margin-top:var(--s4);
 }
 .banner .btxt{flex:1 1 auto; min-width:0; color:var(--text-secondary)}
 .banner .btxt b{display:block; color:var(--text-primary); font-weight:var(--w-semibold); margin-bottom:2px}
+/* THE GUTTER RULE (2026-08-22, T-218, components.md § The gutter rule): a banner
+   is a ground on the block gutter and its content starts on the text gutter, one
+   space.3 in. The mark is part of the ground, so it comes OUT of that inset. */
+.banner.attention,.banner.danger{padding-left:calc(var(--s3) - var(--b-mark))}
 .banner.attention{border-left:var(--b-mark) solid var(--attention); border-radius:0 var(--r-md) var(--r-md) 0}
 .banner.attention .ico{color:var(--attention)}
 .banner.danger{border-left:var(--b-mark) solid var(--danger); border-radius:0 var(--r-md) var(--r-md) 0}

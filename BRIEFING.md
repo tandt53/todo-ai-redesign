@@ -1,87 +1,87 @@
-# BRIEFING — T-215
+# BRIEFING — T-218
 
-- **Task ID:** T-215 · **Agent:** design-agent · **phase:** `screens` · 2026-08-22
-- **Description:** Ground instead of border on typed fields, plus two defects in the same renders
+- **Task ID:** T-218 · **Agent:** design-agent · **phase:** `screens` · 2026-08-22
+- **Description:** One gutter rule, Android's AM/PM, and better copy for an empty name
 
-## The owner signed off your screens and answered all three questions
+## The owner reviewed your three states and passed all three questions
 
-Record: `docs/reports/design-signoff-core-screens.md`.
+*Does the ground read as editable?* — **yes.** *Do the iOS wheel and Android calendar look
+native?* — **yes.** *Is Clear below the fold acceptable?* — **yes.**
 
-**Q1 — do you know where to tap to change the deadline?** *"Biết."* The property row reads.
+**Three things came back, one of them structural.**
 
-**Q3 — two pickers, or a tray that stays open?** *"2 picker."* **Settled: each property opens
-its own picker and it closes on choosing.** Do not build a tray. *(It also removes a question
-that would have reached AC-2 sideways — a tray walking between properties has no obvious
-commit moment at all.)*
+## 1 · The typed fields sit on a different gutter from everything else
 
-**Q2 is the one with work in it**, and the owner did not just approve — they supplied a better
-option:
+> *"title và description đang có độ kích thước và căn lề không giống các element khác"*
 
-> *"Đủ rồi. Nếu hiển thị nền khác cho dễ nhận biết, ta có thể bỏ border đi."*
+**Measured at 390 in `detail-blank`, and both edges are off rather than one:**
 
-## Change 1 · a typed field gets a GROUND, not a border
+| | left | right | text starts |
+|---|---|---|---|
+| title ground · note ground | **4** | **386** | 16 |
+| property block | **16** | **374** | 24 |
+| Delete button | 16 | — | — |
 
-**This is your own `border.separation_order`** — space, then ground, then type weight, and only
-then a line. The rule was already written; the field was the one place still reaching past it.
+**The two grounds are 12px wider on each side than everything else on the screen, and the
+text inside them does not line up either.**
 
-**It pays where it costs most.** `detail-blank` at 390 draws a boundary on **both** the name and
-the note, precisely because they are empty — the state with the most boxes in the whole screen.
-A ground says *type here* without four edges.
+**This reads as a half-finished optical alignment.** Bleeding a ground out by its own padding
+so the *text* lands on the gutter is a real technique — **it works only when everything else
+puts its text on that gutter too, and the property rows do not.** So neither the grounds nor
+the text agree with anything.
 
-**Keep the affordance honest:** it must still be obvious the thing is editable when empty,
-hovered and focused. **Focus is the one place a visible boundary is not optional** — 2.4.7 needs
-a focus indicator, and the ground alone will not carry it.
+**Pick ONE rule and apply it to every block on the screen**, then write it in `components.md`
+so the next surface inherits it rather than re-deciding:
 
-**Check the contrast of the new ground against the page** — `bg.sunken` on `bg.base` is a real
-pair and it is on the published list.
+- every ground shares a left edge and every text is inset by the same amount, **or**
+- every ground bleeds by its own padding and every text lands on one gutter.
 
-## Change 2 · "Add a step" is drawn twice
+**Also answer the size half.** The owner said *"kích thước và căn lề"*. The title is 31px
+against 16 everywhere else — **it is the heading and the name of the thing, so large is
+probably right, but they raised it and it deserves an answer rather than an assumption.**
+Check it at 390 in a render, not in the CSS.
 
-On the phone, `detail-blank` shows a `+ Add a step` row **and** an `Add step` button. **One
-action, two affordances**, on a screen whose owner's standing brief is *simple, soft, easy, as
-few actions as possible.*
+## 2 · Android's AM/PM is stacked and should be horizontal
 
-**Neither the visual review nor the a11y probes caught it and neither could** — a duplicate
-affordance is valid in every mechanical sense. Pick one and delete the other; check the other
-platforms for the same thing.
+The owner liked the Android calendar and named exactly one thing wrong in it: **the AM/PM
+selector runs vertically. Lay it horizontally.**
 
-## Change 3 · the iOS sheet is wearing web's clothes
+*(Worth noting when you touch it: you already found and fixed this control once, for being
+48×34.5 against Android's 48dp floor. Do not lose that.)*
 
-`task-detail-ios-detail-deadline-pick-390.png` holds **browser-default `date` and `time`
-inputs**, Chrome's calendar and clock glyphs and all, inside an iOS bottom sheet. **On iOS that
-control is a wheel.**
+## 3 · `Name this task` wants better copy
 
-Your own platform table says *putting a FAB on iOS is wearing another platform's clothes.*
-**This is the same mistake in the other direction.** Draw the platform's own control — and
-**check Android too**, where the answer is a Material date picker, not the same web input.
+**This screen is reached straight after a task is created by voice** — the metadata line right
+under it says *"Added just now · by voice"*. So this placeholder is **the first thing a new
+task says to its owner.**
 
-## Scope — bounded, do not widen
+`Name this task` is an instruction to do work. Something that reads as the task waiting to be
+named would sit better with *simple, soft, easy*. **Your call; the house vocabulary in
+`components.md § Buttons` binds the words, and this is a placeholder rather than a label, so
+check what that section allows before inventing one.**
 
-Nine mockups where they are affected, `index.html`, and the `components.md` sections these
-three changes touch (`§ Field · Label · FormRow`, `§ PropertyRow`, and the platform table if
-change 3 moves it).
+**English — `ADR-008`.**
 
-**Do not** draw the lists menu, settings, new list or the trash. **Do not** revisit the picker
-model, the property-sheet decision, radius, or the 1920 layout — all settled.
+## Scope
 
-## One thing you reported that is NOT yours to fix here
+The three task-detail mockups, `index.html`, and the `components.md` sections these touch.
+**Nothing else moves.** Not the property-sheet model, the picker model, radius, the 1920
+layout, or the ground-instead-of-border decision — all settled and all signed off.
 
-`border.budget_boxes: 5` is unreachable by construction. **You do not own `tokens.json` in
-`phase: screens` and that has not changed** — it is T-214. If change 1 moves the count, say so;
-do not edit the token.
+**The gutter rule may touch the app shell if it is genuinely one rule for the system.** If it
+does, say so and change only what the rule forces; do not redraw the shell for tidiness.
 
-## Both self-checks again
+## Both self-checks
 
-**Visual review** and the **accessibility self-check**. Change 1 touches focus visibility and
-change 3 touches a control's role and keyboard path, so probes 1, 2 and 5 are the live ones.
-**Record `a11y_review:` with counts, empty lists included.**
+Visual review and the accessibility self-check. **Change 2 touches a control you already
+repaired for a hit-area failure — re-measure it after moving it**, and record probe 3's count
+for that state specifically.
 
 ## Success criteria
 
-- `design-check` still green, or each failure named.
-- **`detail-blank` at 390 has no field boxes**, and the field is still obviously editable —
-  say how you verified that in a screenshot rather than in the CSS.
-- Focus remains visible on both typed fields, on every platform.
-- One "Add a step" affordance, across all three platforms.
-- iOS and Android pickers use their own controls.
-- No testid invented, none renamed. `index.html` rebuilt.
+- **One gutter rule, stated in `components.md` and true of every block** on the task detail.
+  Prove it with measured left/right edges in your return, the way this briefing did.
+- The title's size is answered, not assumed.
+- Android AM/PM horizontal, **and still meeting the 48dp floor** — give the measurement.
+- New placeholder copy, in English, consistent with the house vocabulary.
+- `design-check` still green. No testid invented or renamed. `index.html` rebuilt.

@@ -574,12 +574,15 @@ button,input,textarea{font:inherit; color:inherit}
    BANNERS — offline, inline retry, save notice, carried notice
    ══════════════════════════════════════════════════════════════════════════ */
 .banner{
-  display:flex; align-items:flex-start; gap:var(--s3); padding:var(--s3) var(--s4);
+  display:flex; align-items:flex-start; gap:var(--s3); padding:var(--s3);
   background:var(--bg-sunken); border-radius:var(--r-md);
   font-size:var(--fs-meta); line-height:var(--lh-meta); margin-top:var(--s4);
 }
 .banner .btxt{flex:1 1 auto; min-width:0; color:var(--text-secondary)}
 .banner .btxt b{display:block; color:var(--text-primary); font-weight:var(--w-semibold); margin-bottom:2px}
+/* The mark is part of the ground, so it comes OUT of the inset — otherwise a
+   marked banner starts its text 2px past the text gutter and nothing else does. */
+.banner.attention,.banner.danger{padding-left:calc(var(--s3) - var(--b-mark))}
 .banner.attention{border-left:var(--b-mark) solid var(--attention); border-radius:0 var(--r-md) var(--r-md) 0}
 .banner.attention .ico{color:var(--attention)}
 .banner.danger{border-left:var(--b-mark) solid var(--danger); border-radius:0 var(--r-md) var(--r-md) 0}
@@ -623,6 +626,7 @@ button,input,textarea{font:inherit; color:inherit}
 .surface-error{padding:var(--s8) 0 var(--s7); max-width:52ch}
 .surface-error h2{margin:0 0 var(--s3); font-size:var(--fs-title); letter-spacing:var(--ls-title); line-height:var(--lh-title); font-weight:var(--w-semibold)}
 .surface-error p{margin:0 0 var(--s5); color:var(--text-secondary)}
+.surface-error > h2,.surface-error > p{padding-inline:var(--s3)}
 
 /* ══════════════════════════════════════════════════════════════════════════
    TALK — conversation, bubbles, composer  (§ Message bubbles, § Composer)
@@ -784,7 +788,16 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
    a separate "Name" field holding the same string — two places for one fact,
    and one more box. ── */
 .detail-head{padding:var(--s6) 0 0}
-.typed-wrap{margin-left:calc(var(--s3) * -1); margin-right:calc(var(--s3) * -1)}
+/* THE GUTTER RULE — components.md § The gutter rule (2026-08-22, T-218).
+   This wrapper used to bleed the ground outward by its own padding so the TEXT
+   landed on the block gutter. MEASURED at 390 in detail-blank, that put the two
+   typed grounds at 4/386 while every other ground on this screen was at 16/374,
+   and the text inside them agreed with nothing either: 16 here, 36 in a property
+   row. A bleed is a real technique and it works only when EVERY block bleeds.
+   These two were the only ones that did, so the bleed is gone rather than
+   finished: the ground sits on the block gutter like every other ground, and its
+   text sits on the text gutter like every other line of text. */
+.typed-wrap{margin-left:0; margin-right:0}
 .tin{
   display:block; width:100%; margin:0; padding:var(--s2) var(--s3);
   font:inherit; color:var(--text-primary); background:transparent;
@@ -825,6 +838,13 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 }
 .detail-head .meta{margin:var(--s3) 0 0; font-size:var(--fs-meta); color:var(--text-muted); font-family:var(--font-num)}
 .fields{display:grid; gap:var(--s5); padding:0 0 var(--s2); width:100%; max-width:var(--form-max)}
+/* THE OTHER HALF OF THE GUTTER RULE. Text that paints no ground of its own —
+   the metadata under the name, a field label, an inline failure, a help line —
+   takes the same space.3 inset, so ONE text edge runs down the surface instead
+   of one per block. Direct-child selectors only: the same classes appear inside
+   the pickers, which are their own surfaces with their own gutter. */
+.detail-head > .meta,.detail-head > .fail,
+.fields > .sect > .field-label,.fields > .sect > .field-help{padding-inline:var(--s3)}
 .sect{display:grid; gap:var(--s2)}
 .fail{
   display:flex; align-items:center; gap:var(--s2); flex-wrap:wrap;
@@ -835,11 +855,13 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
    SPACE (border.separation_order: ground, then space, then a line). Case 2 of
    when_a_line_earns_it does not apply: these are not columns an eye scans
    across, they are four labelled values read one at a time. ── */
-.props{background:var(--bg-sunken); border-radius:var(--r-md); padding:var(--s2); display:grid; gap:var(--s1)}
+/* space.1 here + space.2 on the row = one space.3 to the text gutter: a ground
+   nested in a ground shares one inset, it does not add a second. */
+.props{background:var(--bg-sunken); border-radius:var(--r-md); padding:var(--s1); display:grid; gap:var(--s1)}
 .prop-row{position:relative}
 .prop{
   appearance:none; display:flex; align-items:center; gap:var(--s3); width:100%;
-  min-height:var(--h-lg); padding:var(--s2) var(--s3); text-align:left; cursor:pointer;
+  min-height:var(--h-lg); padding:var(--s2); text-align:left; cursor:pointer;
   background:transparent; border:0; border-radius:var(--r-sm);
   font:inherit; font-size:var(--fs-body); color:var(--text-primary);
 }
@@ -948,7 +970,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .m3day:hover{background:var(--bg-sunken)}
 .m3day[aria-selected="true"]{background:var(--text-primary); color:var(--bg-base); font-weight:var(--w-bold)}
 .m3day:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
-/* M3 TIME INPUT — two filled numeral fields and a vertical AM/PM selector. The
+/* M3 TIME INPUT — two filled numeral fields and a horizontal AM/PM selector. The
    fields are GROUNDS (bg.sunken), so the only box here is the selector, whose
    outline IS the control: border.box_allowlist case 1, the same shape the
    segmented control already uses. */
@@ -960,12 +982,18 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 }
 .m3time .num:focus{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
 .m3time .sep{align-self:center; font-family:var(--font-num); font-size:var(--fs-title); color:var(--text-primary)}
-/* Two rows of control.minTarget.android, not two halves of the numeral field's
-   height: MEASURED at 48x34.5 and 48x35.5 when this column matched the fields,
-   which is under Android's 48dp floor on the axis nobody looks at. */
+/* LAID HORIZONTALLY, owner 2026-08-22 (T-218). It ran as a two-row column and
+   the owner named it as the one thing wrong in an otherwise-liked picker.
+   THE HIT FLOOR IS THE SAME FLOOR IT WAS REPAIRED FOR. It was 48x34.5 and
+   48x35.5 when the column matched the numeral fields' height, which is under
+   Android's 48dp on the axis nobody looks at. Turning it sideways moves the
+   short axis from height to width, so both are pinned: each half is
+   control.minTarget.android in BOTH directions, and the control is one row
+   tall rather than two. It drops out of the fields' baseline as a result, so
+   it is centred against them by the row rather than stretched to their height. */
 .m3ampm{
-  display:flex; flex-direction:column; margin-left:var(--s2);
-  height:calc(var(--min-target) * 2);
+  display:flex; flex-direction:row; margin-left:var(--s2);
+  height:var(--min-target);
   border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-sm); overflow:hidden;
 }
 .m3ampm button{
@@ -973,7 +1001,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   font-size:var(--fs-meta); font-weight:var(--w-medium); color:var(--text-secondary);
   min-width:var(--min-target); min-height:var(--min-target); flex:1 1 0; padding:0 var(--s3);
 }
-.m3ampm button + button{border-top:var(--b-hairline) solid var(--bg-rule)}
+.m3ampm button + button{border-left:var(--b-hairline) solid var(--bg-rule)}
 .m3ampm button[aria-pressed="true"]{background:var(--text-primary); color:var(--bg-base); font-weight:var(--w-semibold)}
 .m3ampm button:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
 /* M3 DATE INPUT — the text variant of the picker, for a date that is one field
@@ -999,11 +1027,11 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .preview .refusal{font-size:var(--fs-meta); color:var(--attention)}
 
 /* ── steps: a LIST, not a form ── */
-.stepline{display:flex; align-items:center; gap:var(--s3); min-height:var(--h-md); padding:var(--s1) var(--s2)}
+.stepline{display:flex; align-items:center; gap:var(--s3); min-height:var(--h-md); padding:var(--s1) var(--s3)}
 .stepline:hover,.stepline:focus-within{background:var(--bg-sunken); border-radius:var(--r-sm)}
 .stepname{flex:1 1 auto; min-width:0; font-size:var(--fs-body)}
 .stepline.done .stepname{color:var(--text-muted); text-decoration:line-through}
-.step-add{display:flex; align-items:center; gap:var(--s2); min-height:var(--h-md); padding:var(--s1) var(--s2)}
+.step-add{display:flex; align-items:center; gap:var(--s2); min-height:var(--h-md); padding:var(--s1) var(--s3)}
 .step-add .plus{color:var(--text-muted); flex:none}
 /* ONE AFFORDANCE FOR ONE ACTION. "Add a step" is the row; "Add step" is the
    COMMIT for a step already being typed, and it is never on screen at rest.
@@ -1033,7 +1061,8 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .terminal{padding:var(--s8) 0; max-width:56ch}
 .terminal h2{margin:0 0 var(--s3); font-size:var(--fs-title); letter-spacing:var(--ls-title); line-height:var(--lh-title); font-weight:var(--w-semibold)}
 .terminal p{margin:0 0 var(--s4); color:var(--text-secondary)}
-.terminal .typed{background:var(--bg-sunken); border-radius:var(--r-md); padding:var(--s3) var(--s4); margin:0 0 var(--s5)}
+.terminal > h2,.terminal > p:not(.typed){padding-inline:var(--s3)}
+.terminal .typed{background:var(--bg-sunken); border-radius:var(--r-md); padding:var(--s3); margin:0 0 var(--s5)}
 .sk-detail{display:grid; gap:var(--field-row-gap); padding:var(--s6) 0 0; max-width:var(--form-max)}
 .sk-pair{display:grid; gap:var(--s2)}
 
@@ -1221,7 +1250,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
             <div class="detail-head" data-testid="detail-field" resource-id="detail-field" data-field="title">
               <div class="typed-wrap">
                 <textarea class="tin name-in" id="d-title" data-testid="detail-title-input" resource-id="detail-title-input" rows="1"
-                       aria-label="Task name" placeholder="Name this task">Gọi nha sĩ đặt lịch khám răng</textarea>
+                       aria-label="Task name" placeholder="No name yet">Gọi nha sĩ đặt lịch khám răng</textarea>
               </div>
               <p class="meta" id="dMeta">Added Aug 18 · edited 9:40 PM · 3 steps</p>
               <span class="v v-flex v-fail-field fail" data-testid="detail-field-failure" resource-id="detail-field-failure">
@@ -1456,8 +1485,8 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
               </li>
                 </ul>
               </div>
-              <p class="v v-steps-empty field-help" style="margin:0 var(--s2)">No steps yet. Break the task down if it helps — one line each.</p>
-              <p class="v v-steps-refused field-help" data-testid="detail-steps-refused" resource-id="detail-steps-refused" style="color:var(--attention); margin:0 var(--s2)">This task can’t take steps yet, so nothing was added.</p>
+              <p class="v v-steps-empty field-help" style="margin:0">No steps yet. Break the task down if it helps — one line each.</p>
+              <p class="v v-steps-refused field-help" data-testid="detail-steps-refused" resource-id="detail-steps-refused" style="color:var(--attention); margin:0">This task can’t take steps yet, so nothing was added.</p>
               <div class="step-add">
                 <svg class="ic plus" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
                 <input class="step-new" id="d-step" data-testid="detail-step-add-input" resource-id="detail-step-add-input" placeholder="Add a step" aria-label="Add a step">
