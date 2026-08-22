@@ -24,7 +24,6 @@
 
 | Task ID | Agent | Module | Feature | Subtree | Dispatched |
 |---------|-------|--------|---------|---------|------------|
-| T-244 | design-agent | assistant | F-009 | docs/design/_shared/ | 2026-08-22 |
 <!-- Example:
 -->
 | — | — | — | — | — | — |
@@ -51,6 +50,7 @@
 <!-- Recent entries only — archive old results when the file grows. -->
 | Date | Agent | Task | Status | Summary | Next Action |
 |------|-------|------|--------|---------|-------------|
+| 2026-08-22 | design-agent | T-244 | DONE | phase: system. Six component sections published for F-009 (SearchField, Search empty state, OverflowMenu, SelectionMode, BulkActionToolbar, ConfirmDialog), 13 ACs covered, 20 new testids, 4 drifted shell ids reconciled with reasons. No tokens added, no screens drawn. design-check 175/0/4; suite 1221/1240 unchanged. | T-225 (screens) unblocked. T-233's a11y cluster now has an exact work-list and is a src/ fix, not a docs one. |
 | 2026-08-22 | mobile-agent | T-242 | DONE | Frozen-date-vs-moving-clock fixed in two lines; fixtures.ts untouched. Suite 1220/1240 → 1221/1240, 19 failures. Date independence re-verified by the orchestrator at 23 Aug, 25 Aug and Mar 2027 — 41/41 each. Agent also threaded `now` through tasksSurfaceView, which the briefing had flagged as the likely second half of the defect. | Owner decisions A and B both closed. T-233 holds the remaining 19, most waiting on T-225. |
 | 2026-08-22 | spec-agent | T-243 | DONE | F-009 rev 2: AC-15 re-tagged (web, mobile) as sequential navigation. Web unweakened; mobile names VoiceOver/TalkBack per-control reachability and forbids the row collapsing its children. Links itself to AC-6's deferral. declared-elements exit 0, numbering intact, F-001 untouched. | Owner decision A closed. T-242 still in flight. |
 | 2026-08-22 | mobile-agent | T-232 | DONE | v1 colour shim deleted; 42 retired-key sites across 11 mobile files renamed to v2, each visual change citing the rule that decided it. 4 of 42 render differently (checkboxDone, TaskList tick, badgeNew, chipNew). Full suite re-run by the orchestrator: 1220/1240, identical to the T-233 baseline, zero new failures. | T-241 filed for two mockup divergences the agent found and left alone. T-233 (the 20 baseline failures) still PENDING at P2. |
