@@ -24,7 +24,6 @@
 
 | Task ID | Agent | Module | Feature | Subtree | Dispatched |
 |---------|-------|--------|---------|---------|------------|
-| T-210 | design-agent | assistant | — | docs/design/_shared/ | 2026-08-22 |
 <!-- Example:
 -->
 | — | — | — | — | — | — |

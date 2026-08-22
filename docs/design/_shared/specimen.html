@@ -39,7 +39,7 @@
   --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px; --s8:64px; --s9:96px;
 
   /* radius / border / control / field */
-  --r-none:0; --r-bubble:4px; --r-pill:999px;
+  --r-none:0; --r-xs:4px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:28px; --r-pill:999px;
   --b-hairline:1px; --b-focus:2px; --b-mark:2px;
   --h-sm:36px; --h-md:44px; --h-lg:52px;
   --min-target:40px;                       /* platform floor, overridden below */
@@ -83,7 +83,7 @@ body{
 }
 .bar{
   position:sticky; top:0; z-index:40; background:var(--bg-base);
-  border-bottom:var(--b-hairline) solid var(--bg-rule);
+  border-bottom:var(--b-hairline) solid var(--bg-hairline);
   display:flex; flex-wrap:wrap; align-items:center; gap:var(--s5);
   padding:var(--s3) var(--s5);
 }
@@ -91,7 +91,8 @@ body{
 .bar-id b{color:var(--text-primary); font-weight:600}
 .ctl{display:flex; align-items:center; gap:var(--s2)}
 .ctl-cap{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted)}
-.seg{display:flex; border:var(--b-hairline) solid var(--bg-rule)}
+.seg{display:flex; flex-wrap:wrap; border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-sm); overflow:hidden}
+.ctl{flex-wrap:wrap}
 .seg button{
   appearance:none; border:0; background:transparent; cursor:pointer;
   font:inherit; font-size:var(--fs-meta); font-weight:500; color:var(--text-secondary);
@@ -101,6 +102,8 @@ body{
 .seg button[aria-pressed="true"]{background:var(--text-primary); color:var(--bg-base); font-weight:600}
 .seg button:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
 .seg.num button{font-family:var(--font-num); padding:0 10px}
+.seg button:first-child{border-radius:var(--r-sm) 0 0 var(--r-sm)}
+.seg button:last-child{border-radius:0 var(--r-sm) var(--r-sm) 0}
 
 main{max-width:1360px; margin:0 auto; padding:0 var(--s5) var(--s9)}
 
@@ -118,7 +121,7 @@ main{max-width:1360px; margin:0 auto; padding:0 var(--s5) var(--s9)}
 .facts dt{color:var(--text-muted)} .facts dd{margin:0; font-family:var(--font-num); text-align:right}
 
 /* plates */
-.plate{padding:var(--s8) 0; border-bottom:var(--b-hairline) solid var(--bg-rule)}
+.plate{padding:var(--s8) 0; border-bottom:var(--b-hairline) solid var(--bg-hairline)}
 .plate-head{display:flex; align-items:baseline; gap:var(--s4); margin-bottom:var(--s6)}
 .folio{font-family:var(--font-num); font-size:var(--fs-meta); color:var(--text-muted); width:2.5ch; flex:none}
 .plate-head h2{margin:0; font-size:var(--fs-title); letter-spacing:var(--ls-title); font-weight:600; line-height:var(--lh-title)}
@@ -126,33 +129,31 @@ main{max-width:1360px; margin:0 auto; padding:0 var(--s5) var(--s9)}
 .note{font-size:var(--fs-meta); color:var(--text-muted); max-width:74ch; margin:var(--s4) 0 0}
 .note b{color:var(--text-secondary); font-weight:600}
 .note code{font-family:var(--font-num); font-size:12px; color:var(--text-secondary)}
-.rulebox{border-left:var(--b-mark) solid var(--accent); padding:var(--s1) 0 var(--s1) var(--s4); margin:var(--s5) 0 0; max-width:78ch}
+.rulebox{border-left:var(--b-mark) solid var(--accent); border-radius:0 var(--r-sm) var(--r-sm) 0; padding:var(--s1) 0 var(--s1) var(--s4); margin:var(--s5) 0 0; max-width:78ch}
 .rulebox p{margin:0; font-size:var(--fs-meta); color:var(--text-secondary)}
 .rulebox p+p{margin-top:var(--s3)}
 .grid2{display:grid; gap:var(--s6)} @media (min-width:820px){ .grid2{grid-template-columns:1fr 1fr} }
 .grid3{display:grid; gap:var(--s6)} @media (min-width:820px){ .grid3{grid-template-columns:repeat(3,1fr)} }
-.card{background:var(--bg-base); border:var(--b-hairline) solid var(--bg-hairline); padding:var(--s5)}
+.card{background:var(--bg-base); border-radius:var(--r-md); padding:var(--s5)}
 .card > h3{margin:0 0 var(--s4); font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); font-weight:600}
 .eyebrow{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); font-weight:600; margin:0 0 var(--s3)}
 
 /* stage — a fixed-width viewport for the width-sensitive plates */
-.stage-wrap{overflow:hidden; background:var(--bg-sunken); border:var(--b-hairline) solid var(--bg-hairline)}
+.stage-wrap{overflow:hidden; background:var(--bg-sunken); border-radius:var(--r-md)}
 .stage{
   transform-origin:top left;
-  container-type:inline-size; background:var(--bg-base);
+  container-type:inline-size; background:var(--bg-base); border-radius:var(--r-md);
 }
 .stage-meta{display:flex; justify-content:space-between; gap:var(--s4); font-family:var(--font-num); font-size:var(--fs-label); color:var(--text-muted); padding:var(--s2) 0; letter-spacing:.04em}
 
 /* ============================================================
    01 — colour in use
    ============================================================ */
-.paint{display:grid; gap:0; border:var(--b-hairline) solid var(--bg-hairline)}
-.paint-row{display:grid; grid-template-columns:minmax(0,1fr); border-bottom:var(--b-hairline) solid var(--bg-hairline)}
-.paint-row:last-child{border-bottom:0}
+.paint{display:grid; gap:var(--s2)}
+.paint-row{display:grid; grid-template-columns:minmax(0,1fr); background:var(--bg-base); border-radius:var(--r-md); overflow:hidden}
 @media (min-width:720px){ .paint-row{grid-template-columns:230px minmax(0,1fr)} }
-.paint-key{padding:var(--s4); border-bottom:var(--b-hairline) solid var(--bg-hairline); background:var(--bg-sunken)}
-@media (min-width:720px){ .paint-key{border-bottom:0; border-right:var(--b-hairline) solid var(--bg-hairline)} }
-.paint-key .swatch{width:100%; height:6px; margin-bottom:var(--s3)}
+.paint-key{padding:var(--s4); background:var(--bg-sunken)}
+.paint-key .swatch{width:100%; height:6px; margin-bottom:var(--s3); border-radius:var(--r-pill)}
 .paint-key strong{display:block; font-size:var(--fs-meta); font-weight:600}
 .paint-key span{display:block; font-size:var(--fs-meta); color:var(--text-muted)}
 .paint-key code{font-family:var(--font-num); font-size:11px; color:var(--text-muted)}
@@ -161,7 +162,7 @@ main{max-width:1360px; margin:0 auto; padding:0 var(--s5) var(--s9)}
 /* ============================================================
    02 — type scale
    ============================================================ */
-.ramp{border-top:var(--b-hairline) solid var(--bg-hairline)}
+.ramp{border-top:var(--b-hairline) solid var(--bg-hairline)}   /* a ramp IS a table: its rules are the measure, not decoration */
 .ramp-row{display:grid; grid-template-columns:1fr; gap:var(--s1); padding:var(--s4) 0; border-bottom:var(--b-hairline) solid var(--bg-hairline); align-items:baseline}
 @media (min-width:720px){ .ramp-row{grid-template-columns:132px minmax(0,1fr); gap:var(--s5)} }
 .ramp-key{font-family:var(--font-num); font-size:var(--fs-label); color:var(--text-muted); letter-spacing:.04em}
@@ -179,7 +180,7 @@ main{max-width:1360px; margin:0 auto; padding:0 var(--s5) var(--s9)}
 /* ============================================================
    03 — task row + the time rail (the differentiator)
    ============================================================ */
-.list{background:var(--bg-base); max-width:var(--measure-list-max); margin:0 auto; position:relative}
+.list{background:var(--bg-base); max-width:var(--measure-list-max); margin:0 auto; position:relative; padding:var(--s2) 0}
 .list::before{content:""; position:absolute; top:0; bottom:0; width:var(--b-hairline); background:var(--bg-hairline); left:calc(var(--gutter) + var(--rail))}
 .group{padding:var(--s5) var(--gutter) var(--s2); padding-left:calc(var(--gutter) + var(--rail) + var(--gutter))}
 .group h3{margin:0; font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:uppercase; font-weight:600; color:var(--text-muted)}
@@ -187,7 +188,12 @@ main{max-width:1360px; margin:0 auto; padding:0 var(--s5) var(--s9)}
 .row{
   display:grid; grid-template-columns:var(--rail) minmax(0,1fr) auto;
   align-items:center; min-height:var(--h-lg); padding:var(--s2) var(--gutter); gap:0;
+  border-radius:var(--r-md);
 }
+/* The row separates by SPACE and, on hover, by GROUND. Five hairlines gone.
+   border.separation_order: ground, then space, then a line. */
+.row:hover,.row:focus-within{background:var(--bg-sunken)}
+.row.sel{background:var(--accent-tint)}
 .row-time{
   font-family:var(--font-num); font-size:var(--fs-meta); color:var(--text-muted);
   text-align:right; padding-right:var(--s4); align-self:stretch; display:flex;
@@ -197,11 +203,11 @@ main{max-width:1360px; margin:0 auto; padding:0 var(--s5) var(--s9)}
 .row-box{display:flex; align-items:center; flex:none}
 .cbx{
   appearance:none; margin:0; width:20px; height:20px; flex:none; cursor:pointer;
-  border:var(--b-hairline) solid var(--bg-rule); background:var(--bg-base); border-radius:var(--r-none);
+  border:var(--b-hairline) solid var(--bg-rule); background:var(--bg-base); border-radius:var(--r-xs);
   display:grid; place-items:center;
 }
 [data-platform="ios"] .cbx{border-radius:50%}
-[data-platform="android"] .cbx{border-radius:2px}
+[data-platform="android"] .cbx{border-radius:var(--r-xs); border-width:2px}
 .cbx:checked{background:var(--text-primary); border-color:var(--text-primary)}
 .cbx:checked::after{content:""; width:10px; height:6px; border-left:2px solid var(--bg-base); border-bottom:2px solid var(--bg-base); transform:rotate(-45deg) translate(1px,-1px)}
 .cbx:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
@@ -212,7 +218,7 @@ main{max-width:1360px; margin:0 auto; padding:0 var(--s5) var(--s9)}
 .row-trail{display:flex; align-items:center; flex:none}
 .mark{font-family:var(--font-num); font-size:var(--fs-meta); font-weight:700; color:var(--text-primary); line-height:1}
 .mark-quiet{color:var(--text-muted); display:flex}
-.tag{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:uppercase; font-weight:600; padding:2px 6px; background:var(--accent-tint); color:var(--accent)}
+.tag{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:uppercase; font-weight:600; padding:2px 6px; background:var(--accent-tint); color:var(--accent); border-radius:var(--r-xs)}
 .row-del{
   appearance:none; border:0; background:transparent; cursor:pointer; color:var(--text-muted);
   width:var(--min-target); height:var(--min-target); display:grid; place-items:center; opacity:0;
@@ -221,7 +227,7 @@ main{max-width:1360px; margin:0 auto; padding:0 var(--s5) var(--s9)}
 [data-platform="ios"] .row-del, [data-platform="android"] .row-del{opacity:1}
 .row-del:hover{color:var(--danger)}
 .row.done .row-title{color:var(--text-muted); text-decoration:line-through}
-.list-hairline{height:var(--b-hairline); background:var(--bg-hairline); margin-left:calc(var(--gutter) + var(--rail))}
+/* .list-hairline is RETIRED — it was five of the thirteen lines counted at 1920. */
 [data-tier="single"]{--rail:var(--rail-compact); --gutter:16px}
 [data-tier="split"]{--rail:var(--rail-default); --gutter:24px}
 [data-tier="wide"]{--rail:var(--rail-wide); --gutter:24px}
@@ -230,16 +236,16 @@ main{max-width:1360px; margin:0 auto; padding:0 var(--s5) var(--s9)}
 /* ============================================================
    04 — messages
    ============================================================ */
-.conv{display:flex; flex-direction:column; gap:var(--s4); padding:var(--s5); background:var(--bg-base)}
+.conv{display:flex; flex-direction:column; gap:var(--s4); padding:var(--s5); background:var(--bg-base); border-radius:var(--r-md)}
 .msg{max-width:88%; display:flex; flex-direction:column; gap:var(--s1)}
 .msg.user{align-self:flex-end; align-items:flex-end}
 .msg.bot{align-self:flex-start}
-.bubble{padding:var(--s3) var(--s4); border-radius:var(--r-bubble); font-size:var(--fs-body)}
+.bubble{padding:var(--s3) var(--s4); border-radius:var(--r-md); font-size:var(--fs-body)}
 .msg.user .bubble{background:var(--bg-ink); color:var(--text-on-ink)}
-.msg.bot .bubble{background:var(--bg-base); border:var(--b-hairline) solid var(--bg-hairline); color:var(--text-primary)}
-.msg.bot.applied .bubble{border-left:var(--b-mark) solid var(--accent)}
+.msg.bot .bubble{background:var(--bg-sunken); color:var(--text-primary)}   /* GROUND, not a box (border.box_allowlist) */
+.msg.bot.applied .bubble{box-shadow:inset var(--b-mark) 0 0 var(--accent)}   /* one line, not a box — and it keeps the radius */
 .msg-time{font-family:var(--font-num); font-size:var(--fs-label); color:var(--text-muted); letter-spacing:.04em}
-.diff{margin:var(--s3) 0 0; border-top:var(--b-hairline) solid var(--bg-hairline); padding-top:var(--s3); display:grid; gap:var(--s2)}
+.diff{margin:var(--s4) 0 0; padding-top:0; display:grid; gap:var(--s2)}   /* separated by SPACE; the hairline is gone */
 .diff-row{display:grid; grid-template-columns:80px minmax(0,1fr); gap:var(--s3); font-size:var(--fs-meta); align-items:baseline}
 .diff-row dt{color:var(--text-muted)}
 .diff-row dd{margin:0}
@@ -253,7 +259,7 @@ main{max-width:1360px; margin:0 auto; padding:0 var(--s5) var(--s9)}
    ============================================================ */
 .btn{
   appearance:none; cursor:pointer; font:inherit; font-size:var(--fs-body); font-weight:600;
-  height:var(--h-md); min-height:var(--min-target); padding:0 var(--s5); border-radius:var(--r-none);
+  height:var(--h-md); min-height:var(--min-target); padding:0 var(--s5); border-radius:var(--r-sm);
   border:var(--b-hairline) solid transparent; display:inline-flex; align-items:center; justify-content:center; gap:var(--s2);
   transition:background var(--t-micro) var(--ease), color var(--t-micro) var(--ease);
 }
@@ -275,7 +281,7 @@ main{max-width:1360px; margin:0 auto; padding:0 var(--s5) var(--s9)}
 .btn-loading{color:transparent; position:relative; pointer-events:none}
 .btn-loading::after{
   content:""; position:absolute; left:50%; top:50%; width:16px; height:2px; margin:-1px 0 0 -8px;
-  background:var(--text-on-accent); animation:barsweep 900ms linear infinite;
+  border-radius:var(--r-pill); background:var(--text-on-accent); animation:barsweep 900ms linear infinite;
 }
 @keyframes barsweep{0%{transform:scaleX(.2)}50%{transform:scaleX(1)}100%{transform:scaleX(.2)}}
 .btn-row{display:flex; flex-wrap:wrap; gap:var(--s3); align-items:center}
@@ -295,33 +301,33 @@ main{max-width:1360px; margin:0 auto; padding:0 var(--s5) var(--s9)}
 .field{
   display:block; width:100%; height:var(--field-h); padding:0 var(--field-px);
   font:inherit; font-size:var(--fs-body); color:var(--text-primary);
-  background:var(--bg-base); border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-none);
+  background:var(--bg-base); border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-sm);
 }
-textarea.field{height:auto; min-height:96px; padding:10px var(--field-px); line-height:var(--lh-body); resize:vertical}
+textarea.field{height:auto; min-height:96px; border-radius:var(--r-sm); padding:10px var(--field-px); line-height:var(--lh-body); resize:vertical}
 .field::placeholder{color:var(--text-muted)}
 .field:focus{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px; border-color:var(--accent)}
 .field-help{display:block; font-size:var(--fs-meta); color:var(--text-muted); margin-top:var(--field-label-gap)}
 .field-row.error .field{border-color:var(--danger)}
 .field-error{display:block; font-size:var(--fs-meta); color:var(--danger); margin-top:var(--field-label-gap)}
-.bad-demo{border:var(--b-hairline) dashed var(--danger); padding:var(--s4); background:var(--danger-tint)}
-.bad-demo input{width:auto; height:var(--field-h); padding:0 var(--field-px); font:inherit; font-size:var(--fs-body); border:var(--b-hairline) solid var(--bg-rule); background:var(--bg-base); color:var(--text-primary)}
+.bad-demo{border:var(--b-hairline) dashed var(--danger); border-radius:var(--r-md); padding:var(--s4); background:var(--danger-tint)}
+.bad-demo input{width:auto; height:var(--field-h); padding:0 var(--field-px); font:inherit; font-size:var(--fs-body); border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-sm); background:var(--bg-base); color:var(--text-primary)}
 
 /* ============================================================
    07 — empty states
    ============================================================ */
-.empty{padding:var(--s6) var(--s5); background:var(--bg-base)}
+.empty{padding:var(--s6) var(--s5); background:var(--bg-base); border-radius:var(--r-md)}
 .empty h3{margin:0 0 var(--s2); font-size:var(--fs-lead); font-weight:600; line-height:1.3}
 .empty p{margin:0 0 var(--s5); color:var(--text-secondary); font-size:var(--fs-body); max-width:44ch}
 
 /* ============================================================
    08 — the wide-frame rule, drawn
    ============================================================ */
-.frame{display:flex; gap:0; height:170px; max-width:100%; border:var(--b-hairline) solid var(--bg-rule); background:var(--bg-sunken)}
-.col{display:flex; flex-direction:column; justify-content:space-between; padding:var(--s3); border-right:var(--b-hairline) solid var(--bg-rule); min-width:0}
-.col:last-child{border-right:0}
+.frame{display:flex; gap:2px; height:170px; max-width:100%; background:var(--bg-sunken); border-radius:var(--r-md); overflow:hidden}
+.col{display:flex; flex-direction:column; justify-content:space-between; padding:var(--s3); min-width:0}
 .col-name{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:uppercase; font-weight:600; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .col-w{font-family:var(--font-num); font-size:var(--fs-label); color:var(--text-muted)}
 .col.tasks{background:var(--accent-tint); flex:1 1 auto}
+.col.tasks2{background:color-mix(in srgb, var(--accent-tint) 60%, var(--bg-base)); flex:1 1 auto}
 .col.panel{background:var(--bg-base); flex:0 0 var(--panel-max)}
 .col.rail{background:var(--bg-base); flex:0 0 var(--lists-rail)}
 .col.margin{background:repeating-linear-gradient(135deg,transparent 0 6px,var(--bg-hairline) 6px 7px); flex:0 0 auto}
@@ -335,9 +341,9 @@ textarea.field{height:auto; min-height:96px; padding:10px var(--field-px); line-
 /* ============================================================
    09 — platform chrome fragments
    ============================================================ */
-.chrome{border:var(--b-hairline) solid var(--bg-hairline); background:var(--bg-base)}
-.chrome-cap{font-family:var(--font-num); font-size:var(--fs-label); letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); padding:var(--s2) var(--s3); border-bottom:var(--b-hairline) solid var(--bg-hairline); display:flex; justify-content:space-between; gap:var(--s3)}
-.topbar{display:flex; align-items:center; gap:var(--s3); padding:0 var(--s4); border-bottom:var(--b-hairline) solid var(--bg-hairline)}
+.chrome{background:var(--bg-base); border-radius:var(--r-md); overflow:hidden}
+.chrome-cap{font-family:var(--font-num); font-size:var(--fs-label); letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); padding:var(--s2) var(--s3); background:var(--bg-sunken); display:flex; justify-content:space-between; gap:var(--s3)}
+.topbar{display:flex; align-items:center; gap:var(--s3); padding:0 var(--s4)}
 .topbar.web{height:56px}
 .topbar.ios-compact{height:44px; justify-content:center; position:relative}
 .topbar.ios-compact .lead{position:absolute; left:var(--s3); display:flex; align-items:center; gap:2px; color:var(--accent); font-size:var(--fs-body)}
@@ -347,9 +353,10 @@ textarea.field{height:auto; min-height:96px; padding:10px var(--field-px); line-
 .topbar.md3{height:56px}
 .topbar.md3 .ttl{font-size:var(--fs-lead); font-weight:500}
 .iconbtn{appearance:none; border:0; background:transparent; cursor:pointer; color:var(--text-primary); width:var(--min-target); height:var(--min-target); display:grid; place-items:center; flex:none}
+.iconbtn{border-radius:var(--r-sm)}
 .iconbtn:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
 .spacer{flex:1 1 auto}
-.sheet{border-top:var(--b-hairline) solid var(--bg-rule); background:var(--bg-base); padding:var(--s3) var(--s4) 0}
+.sheet{background:var(--bg-base); border-radius:var(--r-xl) var(--r-xl) 0 0; box-shadow:var(--shadow-overlay); padding:var(--s3) var(--s4) 0}   /* xl on the TOP two corners only */
 .grabber{width:36px; height:4px; border-radius:var(--r-pill); background:var(--bg-rule); margin:0 auto var(--s4)}
 .grabber.md3{width:32px}
 .homebar{height:5px; width:134px; border-radius:var(--r-pill); background:var(--text-primary); margin:var(--s4) auto var(--s2)}
@@ -359,8 +366,8 @@ textarea.field{height:auto; min-height:96px; padding:10px var(--field-px); line-
 .sw.md3{border:2px solid var(--accent)}
 .sw.md3::after{width:24px; height:24px; right:4px; top:2px}
 .plist{display:grid; gap:0}
-.prow{display:flex; align-items:center; gap:var(--s3); padding:0 var(--s4); min-height:var(--min-target); height:var(--h-lg); border-bottom:var(--b-hairline) solid var(--bg-hairline); font-size:var(--fs-body)}
-.prow:last-child{border-bottom:0}
+.prow{display:flex; align-items:center; gap:var(--s3); padding:0 var(--s4); min-height:var(--min-target); height:var(--h-lg); border-radius:var(--r-sm); font-size:var(--fs-body)}
+.prow:hover{background:var(--bg-sunken)}
 .prow.destructive{color:var(--danger); font-weight:600}
 .ptable{width:100%; border-collapse:collapse; font-size:var(--fs-meta)}
 .ptable th,.ptable td{text-align:left; padding:10px var(--s3); border-bottom:var(--b-hairline) solid var(--bg-hairline); vertical-align:top}
@@ -370,8 +377,8 @@ textarea.field{height:auto; min-height:96px; padding:10px var(--field-px); line-
 .tblwrap{overflow-x:auto}
 
 /* composer + listening rule */
-.composer{border-top:var(--b-hairline) solid var(--bg-rule); background:var(--bg-base); position:relative}
-.composer .live{position:absolute; top:-1px; left:0; height:var(--b-mark); background:var(--accent); animation:grow 2600ms var(--ease) infinite alternate}
+.composer{border-top:var(--b-hairline) solid var(--bg-hairline); background:var(--bg-base); position:relative}
+.composer .live{position:absolute; top:-1px; left:0; height:var(--b-mark); border-radius:var(--r-pill); background:var(--accent); animation:grow 2600ms var(--ease) infinite alternate}
 @keyframes grow{from{width:8%}to{width:92%}}
 .composer-in{display:flex; align-items:center; gap:var(--s3); padding:var(--s3) var(--s4)}
 .composer-in .field{flex:1 1 auto; border:0; padding-left:0}
@@ -380,6 +387,33 @@ textarea.field{height:auto; min-height:96px; padding:10px var(--field-px); line-
 .mic.idle{background:transparent; color:var(--text-secondary); border:var(--b-hairline) solid var(--bg-rule)}
 .transcript{padding:var(--s3) var(--s4) 0; font-size:var(--fs-lead); line-height:1.35; color:var(--text-primary)}
 .transcript .pend{color:var(--text-muted)}
+
+/* ============================================================
+   10 — shape: the radius ladder and the line budget
+   ============================================================ */
+.ladder{display:grid; gap:var(--s3)}
+.grid2.shape{align-items:start}
+.rung{display:grid; grid-template-columns:1fr; gap:var(--s2); align-items:center}
+@media (min-width:720px){ .rung{grid-template-columns:88px 132px minmax(0,1fr); gap:var(--s5)} }
+.rung-key{font-family:var(--font-num); font-size:var(--fs-label); letter-spacing:.04em; color:var(--text-muted)}
+.rung-key b{display:block; color:var(--text-primary); font-size:var(--fs-meta); font-weight:600; font-family:var(--font-ui); letter-spacing:0}
+.chip{height:56px; background:var(--bg-ink); display:grid; place-items:center; font-family:var(--font-num); font-size:var(--fs-label); color:var(--text-on-ink)}
+.chip.r0{border-radius:0} .chip.rxs{border-radius:var(--r-xs)} .chip.rsm{border-radius:var(--r-sm)}
+.chip.rmd{border-radius:var(--r-md)} .chip.rlg{border-radius:var(--r-lg)} .chip.rxl{border-radius:var(--r-xl) var(--r-xl) 0 0}
+.rung-what{font-size:var(--fs-meta); color:var(--text-secondary)}
+.rung-what b{color:var(--text-primary); font-weight:600}
+.nest{display:grid; gap:var(--s4)}
+.nest-demo{padding:var(--s2); border-radius:var(--r-md); background:var(--bg-ink); max-width:320px}
+.nest-demo .in{height:44px; border-radius:var(--r-sm); background:var(--bg-base); display:grid; place-items:center; font-size:var(--fs-meta); color:var(--text-primary)}
+.nest-demo.bad{background:var(--danger)}
+.nest-demo.bad .in{border-radius:var(--r-md)}
+.tally{display:grid; gap:var(--s2)}
+.tally-row{display:grid; grid-template-columns:minmax(0,1fr) 4.5ch 4.5ch; gap:var(--s3); align-items:baseline; font-size:var(--fs-meta); padding:var(--s2) var(--s3); border-radius:var(--r-sm)}
+.tally-row.hd{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); font-weight:600}
+.tally-row.tot{background:var(--bg-base); font-weight:600}
+.tally-row span:nth-child(2),.tally-row span:nth-child(3){font-family:var(--font-num); text-align:right}
+.tally-row .was{color:var(--danger)}
+.tally-row .now{color:var(--text-primary)}
 
 svg{display:block}
 </style>
@@ -425,14 +459,17 @@ svg{display:block}
     <p class="kicker">Visual system · replaces v1 entirely</p>
     <h1>White, one accent, and a time rail.</h1>
     <p>Everything you can see is new. Not one name in the code changed — all 52 element ids are kept.</p>
+    <p class="note" style="max-width:44ch"><b>Revised 22 Aug after the owner looked at the screens.</b> The corners came back, the borders went on a budget, and 1920 stopped being one list. The direction did not move.</p>
   </div>
   <dl class="facts">
     <div><dt>Direction</dt><dd>Swiss</dd></div>
     <div><dt>Ground</dt><dd>light-first</dd></div>
     <div><dt>Accents</dt><dd>3 (v1: 5)</dd></div>
-    <div><dt>Corner radius</dt><dd>0</dd></div>
-    <div><dt>Widths measured</dt><dd>7 (v1: 4)</dd></div>
+    <div><dt>Corner radius</dt><dd>4 · 8 · 12 · 16</dd></div>
+    <div><dt>Widths measured</dt><dd>8 (v1: 4)</dd></div>
     <div><dt>Differentiator</dt><dd>the time rail</dd></div>
+    <div><dt>Frame tiers</dt><dd>4</dd></div>
+    <div><dt>Lines allowed on screen</dt><dd>8 · boxes 5</dd></div>
   </dl>
 </section>
 
@@ -526,7 +563,7 @@ svg{display:block}
 
 <!-- ══ 03 task row ══ -->
 <section class="plate">
-  <div class="plate-head"><span class="folio">03</span><div><h2>The task row, and the time rail</h2><p class="sub">The one place boldness is spent. Change the width in the bar above to watch the rail widen.</p></div></div>
+  <div class="plate-head"><span class="folio">03</span><div><h2>The task row, and the time rail</h2><p class="sub">The one place boldness is spent. Change the width in the bar above to watch the rail widen. No line between rows — hover one.</p></div></div>
   <div class="stage-meta"><span id="lbl03">frame 1440px</span><span>the Tasks pane only — the rest of the frame is plate 08</span></div>
   <div class="stage-wrap"><div class="stage">
     <div class="list">
@@ -536,20 +573,17 @@ svg{display:block}
         <div class="row-main"><div class="row-box"><input class="cbx" type="checkbox" data-testid="assistant-task-checkbox" aria-label="Complete: Send the weekly report to Hanh"></div><div class="row-title">Send the weekly report to Hanh</div></div>
         <div class="row-trail"><button class="row-del" data-testid="tasks-delete-button" aria-label="Delete task"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
       </div>
-      <div class="list-hairline"></div>
       <div class="group"><h3>Today · Fri, Aug 21</h3></div>
       <div class="row" data-testid="assistant-task-row">
         <div class="row-time"><span class="wd">Fri</span>6:00 PM</div>
         <div class="row-main"><div class="row-box"><input class="cbx" type="checkbox" aria-label="Complete: Call the dentist about a check-up"></div><div class="row-title">Call the dentist about a check-up<span class="row-marks"><span class="mark" data-testid="tasks-row-priority-mark" title="High priority">!</span></span></div></div>
         <div class="row-trail"><button class="row-del" data-testid="tasks-delete-button" aria-label="Delete task"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
       </div>
-      <div class="list-hairline"></div>
       <div class="row" data-testid="assistant-task-row">
         <div class="row-time">—</div>
         <div class="row-main"><div class="row-box"><input class="cbx" type="checkbox" aria-label="Complete: Buy milk"></div><div class="row-title">Buy milk</div></div>
         <div class="row-trail"><button class="row-del" data-testid="tasks-delete-button" aria-label="Delete task"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
       </div>
-      <div class="list-hairline"></div>
       <div class="group"><h3>Tomorrow · Sat, Aug 22</h3></div>
       <div class="row" data-testid="assistant-task-row">
         <div class="row-time"><span class="wd">Sat</span>2:00 PM</div>
@@ -557,13 +591,11 @@ svg{display:block}
           <span class="mark-quiet" data-testid="tasks-row-repeat-mark" title="Repeats weekly"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg></span></span></div></div>
         <div class="row-trail"><button class="row-del" data-testid="tasks-delete-button" aria-label="Delete task"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
       </div>
-      <div class="list-hairline"></div>
       <div class="row done" data-testid="assistant-task-row">
         <div class="row-time"><span class="wd">Fri</span>9:30 AM</div>
         <div class="row-main"><div class="row-box"><input class="cbx" type="checkbox" checked aria-label="Mark not done: Change the tyres"></div><div class="row-title">Change the tyres</div></div>
         <div class="row-trail"><button class="row-del" data-testid="tasks-delete-button" aria-label="Delete task"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
       </div>
-      <div class="list-hairline"></div>
     </div>
   </div></div>
   <div class="grid2" style="margin-top:var(--s6)">
@@ -572,14 +604,15 @@ svg{display:block}
     </div>
     <div>
       <p class="note"><b>One signal per meaning.</b> The <span style="color:var(--danger)">Overdue</span> heading carries the red; the times in its rows stay muted. The priority mark is <b>one</b> <code>!</code>, at least <code>space.2</code> clear of the title — v1 computed <code>margin-left: 0</code> and put <code>!!!</code> hard against the last letter of the task's own name.</p>
-      <p class="note" style="margin-top:var(--s4)"><b>A title is never truncated to protect a column.</b> It wraps to two lines and the row grows. Switch to 390 above to see it: the rail keeps its place and the name stays readable. Clipping a task's own name to keep a column tidy is the same mistake the 197px field made in plate 06.</p>
+      <p class="note" style="margin-top:var(--s4)"><b>Rows are separated by space, not by a line.</b> Five hairlines used to run the width of this list. They were five of the thirteen lines counted on the app shell at 1920, and nothing was lost by deleting them — the rows were already separated by <code>space.2</code> and the rail. Hover a row and the separation arrives as <b>ground</b> at <code>radius.md</code>, which is <code>border.separation_order</code> in one gesture.</p>
+    <p><b>A title is never truncated to protect a column.</b> It wraps to two lines and the row grows. Switch to 390 above to see it: the rail keeps its place and the name stays readable. Clipping a task's own name to keep a column tidy is the same mistake the 197px field made in plate 06.</p>
     </div>
   </div>
 </section>
 
 <!-- ══ 04 messages ══ -->
 <section class="plate">
-  <div class="plate-head"><span class="folio">04</span><div><h2>Messages</h2><p class="sub">Squared bubbles at 4px. You on the right on the darkest ground, the assistant on the left on white with a rule.</p></div></div>
+  <div class="plate-head"><span class="folio">04</span><div><h2>Messages</h2><p class="sub">Bubbles at <code>radius.md</code> 12. You on the right on the darkest ground, the assistant on the left on a sunken ground — no box on either.</p></div></div>
   <div class="grid2">
     <div class="card" style="padding:0">
       <div class="conv">
@@ -626,7 +659,7 @@ svg{display:block}
 
 <!-- ══ 05 buttons ══ -->
 <section class="plate">
-  <div class="plate-head"><span class="folio">05</span><div><h2>The button set</h2><p class="sub">Square corners, 44 high, one accent for the primary action and one red for destruction.</p></div></div>
+  <div class="plate-head"><span class="folio">05</span><div><h2>The button set</h2><p class="sub"><code>radius.sm</code> 8, 44 high, one accent for the primary action and one red for destruction.</p></div></div>
   <div class="grid2">
     <div class="card">
       <h3>Variants</h3>
@@ -752,8 +785,8 @@ svg{display:block}
 
 <!-- ══ 08 wide frame ══ -->
 <section class="plate">
-  <div class="plate-head"><span class="folio">08</span><div><h2>A wide screen gets another column, never more gutter</h2><p class="sub">The rule v1 did not have, and the reason 52% of its Tasks pane was dead at 1920.</p></div></div>
-  <p class="note" style="margin:0 0 var(--s5)"><b>All four are drawn at the same scale</b> (1920 → 1232), so the frames are comparable by eye. Numbers on each column are the real widths.</p>
+  <div class="plate-head"><span class="folio">08</span><div><h2>A wide screen gets another column, never more gutter</h2><p class="sub">Three tiers. A fourth was built, rendered at 1920 and rejected — the plate below says why.</p></div></div>
+  <p class="note" style="margin:0 0 var(--s5)"><b>All six are drawn at the same scale</b> (1920 → 1232), so the frames are comparable by eye. Numbers on each column are the real widths.</p>
   <div class="tiers">
     <div class="tier">
       <div class="tier-cap"><span>768 — below split</span><span>one surface on screen</span></div>
@@ -769,12 +802,31 @@ svg{display:block}
       </div>
     </div>
     <div class="tier">
-      <div class="tier-cap"><span>1920 — wide, from 1536 up (the tier that is new in v2)</span><span>a permanent Lists rail joins on the left</span></div>
+      <div class="tier-cap"><span>1536 — wide, up to ultra</span><span>a permanent Lists rail joins on the left</span></div>
       <div class="frame">
         <div class="col rail" style="flex:0 0 12.5%"><span class="col-name">Lists</span><span class="col-w">240</span></div>
         <div class="col margin" style="flex:0 0 11.46%"><span class="col-name">even</span><span class="col-w">220</span></div>
         <div class="col tasks" style="flex:0 0 42.71%"><span class="col-name">Tasks list, centred</span><span class="col-w">820 = measure.list_max</span></div>
         <div class="col margin" style="flex:0 0 11.46%"><span class="col-name">even</span><span class="col-w">220</span></div>
+        <div class="col panel" style="flex:0 0 21.87%"><span class="col-name">Talk</span><span class="col-w">420</span></div>
+      </div>
+    </div>
+    <div class="tier">
+      <div class="tier-cap"><span>1920 — the tier that ships, and the answer</span><span>220 / 220, capped, and no line drawn across the leftover</span></div>
+      <div class="frame">
+        <div class="col rail" style="flex:0 0 12.5%"><span class="col-name">Lists</span><span class="col-w">240</span></div>
+        <div class="col margin" style="flex:0 0 11.46%"><span class="col-name">even</span><span class="col-w">220</span></div>
+        <div class="col tasks" style="flex:0 0 42.71%"><span class="col-name">one list, centred — ink stops 409px in</span><span class="col-w">820 = measure.list_max</span></div>
+        <div class="col margin" style="flex:0 0 11.46%"><span class="col-name">even</span><span class="col-w">220</span></div>
+        <div class="col panel" style="flex:0 0 21.87%"><span class="col-name">Talk</span><span class="col-w">420</span></div>
+      </div>
+    </div>
+    <div class="tier">
+      <div class="tier-cap"><span>1920 — the fourth tier that was built and rejected</span><span>two columns of half-empty rows instead of one</span></div>
+      <div class="frame">
+        <div class="col rail" style="flex:0 0 12.5%"><span class="col-name">Lists</span><span class="col-w">240</span></div>
+        <div class="col" style="flex:0 0 30.7%;background:var(--bg-sunken)"><span class="col-name">Today — rejected</span><span class="col-w">590</span></div>
+        <div class="col" style="flex:0 0 30.7%;background:var(--bg-sunken)"><span class="col-name">Next 7 days — rejected</span><span class="col-w">590</span></div>
         <div class="col panel" style="flex:0 0 21.87%"><span class="col-name">Talk</span><span class="col-w">420</span></div>
       </div>
     </div>
@@ -791,7 +843,11 @@ svg{display:block}
     <p><b>One centring, and it is at the content column.</b> Each frame column holds exactly one content column, <code>min(pane − 2×gutter, its measure)</code>, <b>centred in its pane</b>. Everything inside it is left-aligned and nothing centres again. That is the single line v1 was missing: <code>.tasks-col</code> was <code>max-width: 720px</code> with no <code>margin: 0 auto</code>.</p>
     <p><b>Two checks follow, and together they are the underflow test that has never existed here.</b> First: for every frame column, measure the leftover on each side of its content column — differ by more than 8px, fail. That is what turns the red row above into a reportable defect. Second: a column's content must cover 90% of its inner width <b>unless a declared measure token explains the shortfall</b>. A capped measure with even leftover is correct; a column that stopped growing with nothing behind it is not.</p>
     <p><code>design-check</code> tests horizontal overflow and nothing else, which is how it reported <b>60 of 60 passing</b> with 780px of nothing on screen.</p>
-    <p><code>breakpoints</code> now declares <b>seven</b> widths, up to 1920. v1 declared four and stopped at 1280 — which is why its worst defect was invisible to every check that ran, and present in its own mockup.</p>
+    <p><code>breakpoints</code> declares <b>eight</b> widths, up to 1920, and <b>three of them branch</b>: <code>split</code>, <code>wide</code> and now <code>ultra</code>. v1 declared four and stopped at 1280 — which is why its worst defect was invisible to every check that ran, and present in its own mockup.</p>
+    <p><b>The row that ships is the one that already passed both checks above.</b> Even leftover, a declared measure behind the cap, no overflow — and the owner opened it and called it unusable. <b>The leftover was never the defect.</b> Measured at 1920: the content column is 820 wide and a row's ink — time, checkbox, title — ends <b>409px in</b>, so half of every row is empty.</p>
+    <p><b>What made that ugly was the line drawn across it.</b> Five row separators running the full 820 turn half-empty rows into stretched hairlines on a very wide screen. Delete them and the same emptiness reads as margin. That is the whole fix, and it is a border decision rather than a layout one.</p>
+    <p><b>The greyed row is a fourth tier that was specified, built and rendered at the full 590 per column before being rejected — on three measured grounds.</b> It <b>does not fix the empty row</b>: a task is a short string, so you get two columns of half-empty rows instead of one, the left title still stopping about 330px short of its own edge. It <b>duplicates the differentiator</b> — two time rails is two spine rules on one screen, and the budget was spent once. And at any narrower column <b>the title wraps</b>, which is the one thing a todo list is made of. It is recorded here so the next dispatch knows it is <b>tried</b>, not untried.</p>
+    <p><b>Residue, stated honestly:</b> at 1920 the lower half of the screen and the Talk panel are still largely empty. That is a question about what those surfaces <b>show</b>, and it belongs to the screens dispatch. Inventing a third structural answer without rendering it would repeat the mistake this plate records.</p>
     <p><b>Why the rail arrives at 1536 and not at 1440.</b> 1536 is the narrowest frame where the rail fits without the Tasks list ending up narrower than it was one breakpoint below — <code>240 rail + 820 list + 2 gutters + 420 Talk</code>. Bring it in at 1440 and a user maximising their window watches the list shrink, which is a regression wearing a feature's clothes.</p>
     <p><b>The Lists rail also answers a second finding.</b> v1 showed a 320px phone drawer, holding five rows and roughly 700px of nothing, on a 1440px screen — and dimmed the Talk panel behind it while it was open.</p>
   </div>
@@ -896,6 +952,76 @@ svg{display:block}
     </table>
   </div>
   <p class="note"><b>Platform paint never wins over the design system.</b> Android takes Material's behaviour and chrome — the 56dp app bar, the FAB, the drag handle, the 48dp floor — and keeps the system's ground, type, colour and <b>0 corner radius</b>. The only three round shapes anywhere are the FAB, the M3 switch and the sheet's drag handle, because in each the shape <em>is</em> the control rather than decoration on it.</p>
+</section>
+
+<!-- ══ 10 shape ══ -->
+<section class="plate">
+  <div class="plate-head"><span class="folio">10</span><div><h2>Shape — the corners, and what a line is for</h2><p class="sub">The first pass set everything structural to 0 and made the 1px rule its primary tool. Both were wrong, and the render is how we know.</p></div></div>
+
+  <div class="grid2 shape">
+    <div>
+      <p class="eyebrow">The ladder — one question, five answers</p>
+      <div class="ladder">
+        <div class="rung"><div class="rung-key"><b>none</b>0</div><div class="chip r0">0</div><div class="rung-what"><b>Geometry, not objects.</b> A rule, the time-rail spine, a hairline, a divider. A line has no corners to soften.</div></div>
+        <div class="rung"><div class="rung-key"><b>xs</b>4</div><div class="chip rxs">4</div><div class="rung-what"><b>The smallest painted objects</b>, where 8 would read as a lozenge — checkbox, tag, the <span class="tag">NEW</span> marker.</div></div>
+        <div class="rung"><div class="rung-key"><b>sm</b>8</div><div class="chip rsm">8</div><div class="rung-what"><b>Controls.</b> Button, field, textarea, segmented control, menu item, the Lists-rail nav row.</div></div>
+        <div class="rung"><div class="rung-key"><b>md</b>12</div><div class="chip rmd">12</div><div class="rung-what"><b>Grounds.</b> The row's hover ground, card, banner, diff block, message bubble, toast.</div></div>
+        <div class="rung"><div class="rung-key"><b>lg</b>16</div><div class="chip rlg">16</div><div class="rung-what"><b>Layers that float.</b> Menu, dialog, popover, the web sheet — always with <code>shadow.overlay</code>.</div></div>
+        <div class="rung"><div class="rung-key"><b>xl</b>28</div><div class="chip rxl">28 / 0</div><div class="rung-what"><b>A bottom sheet's top two corners</b>, and nothing else. The bottom two stay 0 — the sheet meets the screen edge.</div></div>
+      </div>
+      <div class="rulebox">
+        <p><b>The scale stops at 16 for everyday surfaces on purpose.</b> 24 and up is the sage-and-terracotta neighbourhood this system rejected by name in <code>## Identity</code>. Softening the corners is not a licence to move there.</p>
+      </div>
+    </div>
+
+    <div>
+      <p class="eyebrow">Nesting — checkable</p>
+      <div class="nest">
+        <div>
+          <div class="nest-demo"><div class="in">sm 8 inset 8 inside md 12</div></div>
+          <p class="note" style="margin-top:var(--s2)"><b>Right.</b> Inner is never larger than its parent's, and a child inset by <code>n</code> inside a parent at <code>r</code> takes <code>r − n</code>.</p>
+        </div>
+        <div>
+          <div class="nest-demo bad"><div class="in">md 12 inside md 12</div></div>
+          <p class="note" style="margin-top:var(--s2)"><b>Wrong.</b> The concentric-corner mistake — the gap thickens at each corner. Visible at every size once you have seen it once.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="grid2 shape" style="margin-top:var(--s7)">
+      <div>
+      <p class="eyebrow">A line earns its place in three cases</p>
+      <div class="ladder" style="margin-bottom:var(--s6)">
+        <div class="rung" style="grid-template-columns:2.5ch minmax(0,1fr)"><div class="rung-key">1</div><div class="rung-what"><b>An input field.</b> The user must be able to see where to type. A field needs a boundary <b>or</b> a distinct ground, and it needs one of the two — WCAG 1.4.11 is about exactly this.</div></div>
+        <div class="rung" style="grid-template-columns:2.5ch minmax(0,1fr)"><div class="rung-key">2</div><div class="rung-what"><b>A dense, table-like row</b> where the eye scans across several values — the type ramp in plate 02, the contrast table, a settings table. There the rule <b>is</b> the measure, not decoration.</div></div>
+        <div class="rung" style="grid-template-columns:2.5ch minmax(0,1fr)"><div class="rung-what" style="grid-column:2"><b>A container holding a different <i>kind</i> of thing.</b> The boundary between the conversation and the task list does real work. The boundary between two task rows does not.</div><div class="rung-key" style="grid-row:1">3</div></div>
+      </div>
+      </div>
+    <div>
+      <p class="eyebrow">The count — a symptom check, on the app shell at 1920</p>
+      <div class="tally">
+        <div class="tally-row hd"><span>painted line, state <code>tasks-default</code></span><span>was</span><span>now</span></div>
+        <div class="tally-row"><span>input field boundary — case 1, kept</span><span class="was">1</span><span class="now">1</span></div>
+        <div class="tally-row"><span>row separators (five 1px <code>div</code>s)</span><span class="was">5</span><span class="now">0</span></div>
+        <div class="tally-row"><span>the time-rail spine — the differentiator</span><span class="was">1</span><span class="now">1</span></div>
+        <div class="tally-row"><span>Talk panel edge — case 3, kept as ground instead</span><span class="was">1</span><span class="now">0</span></div>
+        <div class="tally-row"><span>Lists rail edge — the rail already has its own ground</span><span class="was">1</span><span class="now">0</span></div>
+        <div class="tally-row"><span>topbar · list head · Talk head · composer</span><span class="was">4</span><span class="now">3</span></div>
+        <div class="tally-row"><span>diff block top</span><span class="was">1</span><span class="now">0</span></div>
+        <div class="tally-row tot"><span>structural lines · budget 8</span><span class="was">13</span><span class="now">4</span></div>
+        <div class="tally-row tot"><span>full boxes · budget 5</span><span class="was">9</span><span class="now">6</span></div>
+      </div>
+      <div class="rulebox">
+        <p><b>Space and ground are the primary structuring tools. Type weight is third. The 1px rule is a specialist.</b> The first pass said <i>structure is a 1px rule, never a shadow</i> — and it did not merely apply that too densely, <b>it named the wrong primary tool.</b></p>
+        <p><b>That rule is a paper reading of a screen.</b> In Swiss and editorial grid systems the rule is primary because <b>paper has no other planes</b> — no elevated ground, no hover, no cheap whitespace. A screen has all three, so the primary tool moved and this system did not move with it. A full box around every element reads as roughly 2013–2017.</p>
+        <p><b>The task row here is <code>time · checkbox · title</code>. That is not a table.</b> Space separates those perfectly well, and it is what <b>Things 3</b> and <b>Apple Reminders</b> — the two closest comparables to this product — draw between task rows: nothing. Once a boundary genuinely is needed, the order is <b>ground, then space, then a line.</b></p>
+        <p><b>The count above is a symptom check, not the rule.</b> Rebuilt to the three cases the app shell lands at 4, far inside a budget of 8 — which is the point. It is also a count of <b>painted lines, not <code>border</code> declarations</b>: a source grep says 46 and the screen says 13, because six of them are <code>div</code>s and a <code>::before</code>. A declaration count is defeated by moving the line into a <code>div</code>, and this system had already done it.</p>
+        <p><b>Six boxes, not five, and all six are on the allow-list</b> — five checkboxes and the idle mic, every one a control whose outline <i>is</i> the control. A budget of 5 with five task rows on screen is the wrong shape of number: the allow-list carries the rule, and the count is what catches a bubble or a card sneaking back into a box.</p>
+      </div>
+    </div>
+  </div>
 </section>
 
 </main>
