@@ -192,7 +192,10 @@ input{font:inherit; color:inherit}
 }
 .over-head{display:flex; align-items:center; gap:var(--s2); height:56px; padding:0 var(--s3);
   border-bottom:var(--b-hairline) solid var(--bg-hairline); flex:none}
-.over-body{flex:1 1 auto; overflow-y:auto; padding:var(--s3) 0; position:relative}
+.over-body{flex:1 1 auto; overflow-y:auto; overflow-x:hidden; padding:var(--s3) 0; position:relative}
+/* Allow context menu to overflow the scrollable body */
+[data-state="menu-nonempty"] .over-body,
+[data-state="menu-empty-list"] .over-body{overflow:visible}
 .over-foot{flex:none; border-top:var(--b-hairline) solid var(--bg-hairline); padding:var(--s2) 0}
 .bar-title{font-size:var(--fs-lead); font-weight:var(--w-semibold); letter-spacing:var(--ls-title); flex:1 1 auto}
 .spacer{flex:1 1 auto}
@@ -258,11 +261,11 @@ input{font:inherit; color:inherit}
 .recolour-panel{display:none; padding:var(--s2) var(--s4) var(--s3)}
 .recolour-panel .rlabel{font-size:var(--fs-meta); font-weight:var(--w-semibold);
   color:var(--text-secondary); margin-bottom:var(--s2); display:block}
-.swatches{display:flex; gap:var(--s2); flex-wrap:nowrap}
+.swatches{display:flex; gap:var(--s2); flex-wrap:nowrap; overflow-x:auto; padding-bottom:var(--s1)}
 .swatch{
   appearance:none; border:0; cursor:pointer; width:var(--h-sm); height:var(--h-sm);
-  min-width:var(--min-target); min-height:var(--min-target);
-  border-radius:var(--r-circle); position:relative;
+  min-width:var(--h-sm); min-height:var(--min-target);
+  border-radius:var(--r-circle); position:relative; flex:none;
 }
 .swatch:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
 .swatch.on::after{content:""; position:absolute; inset:3px; border:2px solid var(--bg-base); border-radius:var(--r-circle)}
