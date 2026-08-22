@@ -97,7 +97,7 @@ export function TasksSurface({
             style={styles.iconButton}
             onPress={onOpenMenu}
           >
-            <Menu size={tokens.icon.size.md} color={colors.primary} strokeWidth={tokens.icon.stroke} />
+            <Menu size={tokens.icon.size.md} color={colors.accent} strokeWidth={tokens.icon.stroke} />
           </Pressable>
         }
       >
@@ -152,7 +152,7 @@ export function TasksSurface({
             style={styles.ghostButton}
             onPress={() => setAdding(true)}
           >
-            <Plus size={tokens.icon.size.sm} color={colors.primary} strokeWidth={tokens.icon.stroke} />
+            <Plus size={tokens.icon.size.sm} color={colors.accent} strokeWidth={tokens.icon.stroke} />
             <Text style={styles.ghostButtonText}>Add task</Text>
           </Pressable>
         </View>

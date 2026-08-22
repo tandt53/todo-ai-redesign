@@ -30,7 +30,7 @@ export function OfflineBanner({ state }: { state: AppState }) {
   const queued = state.queuedTurnId === null ? 0 : 1
   return (
     <View {...a11yProps(A11Y_IDS.offlineBanner)} style={styles.offlineBanner} accessible>
-      <WifiOff size={tokens.icon.size.sm} color={colors.question} strokeWidth={tokens.icon.stroke} />
+      <WifiOff size={tokens.icon.size.sm} color={colors.attention} strokeWidth={tokens.icon.stroke} />
       {/* Banner copy is `components.md` § OfflineBanner, verbatim. The
           queued-turn count is only described there ("Shows queued-turn count
           when one is in flight"), not worded — reported as a copy gap. */}
