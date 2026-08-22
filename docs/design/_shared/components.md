@@ -1203,12 +1203,16 @@ size (20px, `radius.sm`), same hit area (`control.minTarget`). Unchecked: 1px `b
 control, not the completion control** — tapping it selects the row, it does not complete the task.
 The existing `assistant-task-checkbox` is hidden during selection mode.
 
-**Selected row ground:** `accentTint` at `radius.md`, with `space.1` (4px) horizontal padding —
-consistent with `DESIGN.md ## Colour rules 5`, which says *"the row's ground means selection."*
-The 4px inset satisfies `radius.nesting_rule`: checkbox at `r-sm` (8) inside ground at `r-md`
-(12), inset by 4 = 12 − 8. The selection is carried by **both** the checkbox state and the row
-ground — two signals, so it is not colour-only (`## Colour rules 3`). (T-247: padding added per
-owner feedback — the flush checkbox at inset 0 made the two radii read as arbitrary.)
+**Selected row ground:** `accentTint` at `radius.md` — same pattern as the hover ground
+(`bg.sunken` at `radius.md`). **No padding override on the selected state.** The row's own
+`space.2` (8px) horizontal padding provides the inset; the ground fills the row's padding box,
+reaching the content-column edge (aligned with headings above). This means `cbLeft` and
+`titleLeft` are identical for selected, unselected and done rows — selecting a row never shifts
+its content. Consistent with `DESIGN.md ## Colour rules 5`: *"the row's ground means
+selection."* The selection is carried by **both** the checkbox state and the row ground — two
+signals, so it is not colour-only (`## Colour rules 3`). (T-248: the T-247 approach added
+padding to `.selected` only, which shifted selected rows 4px right — the ground now extends
+outward via the shared row padding instead.)
 
 **Row trailing:** the delete control is hidden in selection mode. The row has no trailing
 affordance — the bulk actions are in the toolbar, not per-row.
