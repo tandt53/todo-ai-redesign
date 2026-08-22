@@ -37,9 +37,8 @@ roots:
   # found two defects (BUG-003, BUG-004) that no other tier could reach.
   # It imports src/ and docs/design/ and is never imported BY them.
   sim_harness: .mobile-app/
-  # Tooling root: the gate deciding WHICH tests run. `npm test` ran only the api
-  # slice, so 16 unloadable files looked green for two dispatches (T-207).
-  build_config: package.json
+  # Tooling root: the gate deciding which tests run. `npm test` ran the api slice
+  build_config: package.json   # only, so 16 unloadable files looked green (T-207)
 
 shared_dir: _shared       # folder name for cross-cutting artifacts inside each root
 modules: [assistant]               # business domains in this project (e.g. auth, payments). Grows as features are specced.
@@ -216,9 +215,9 @@ writers:
 ```yaml
 limits:
   manifest_lines: 350   # this file. MANIFEST is config, not a log — nothing can be
-                        # archived out of it, so this cap only keeps it readable.
-                        # When it trips, cut prose that has done its job; the
-                        # C5 message says "archive", which does not apply here.
+                        # archived out of it, so the cap only keeps it readable.
+                        # When it trips, cut prose that has done its job: C5's
+                        # "archive" does not apply to this one file.
   status_lines:   100   # .claude/state/STATUS.md
   tasks_lines:    300   # .claude/state/TASKS.md — triggers archival to TASKS-archive.md
   done_rows:       50   # DONE rows in TASKS.md before archival, independent of line count.
