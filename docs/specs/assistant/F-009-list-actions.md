@@ -2,7 +2,7 @@
 
 **ID**: F-009
 **Slug**: list-actions
-**Status**: `draft` (**Revision 1, 2026-08-22 (T-234)**: AC-6 amended in place — screen-reader reorder is deferred by owner decision, with the deferral explicitly bounded to reorder (delete is not covered; F-001 AC-33 stands). **AC-15 is new**: Tab navigation to every task row and every row control, unconditional on sort mode. The lists-vs-tasks reorder inconsistency is recorded as accepted in `## Out of Scope`. No AC was renumbered or deleted; 14 become 15.)
+**Status**: `draft` (**Revision 1, 2026-08-22 (T-234)**: AC-6 amended in place — screen-reader reorder is deferred by owner decision, with the deferral explicitly bounded to reorder (delete is not covered; F-001 AC-33 stands). **AC-15 is new**: Tab navigation to every task row and every row control, unconditional on sort mode. The lists-vs-tasks reorder inconsistency is recorded as accepted in `## Out of Scope`. No AC was renumbered or deleted; 14 become 15.) (**Revision 2, 2026-08-22 (T-243)**: AC-15 re-tagged `(web, mobile)` and reworded — the requirement is now sequential navigation with per-platform realisation named for web and mobile, not Tab specifically. The mobile half anchors the existing `TaskList.tsx` accessibility structure where each row control is independently reachable by VoiceOver and TalkBack. AC-15 now names its link to AC-6's screen-reader reorder deferral in one clause. No AC was renumbered or deleted; count unchanged at 15.)
 
 ## Links
 
@@ -112,7 +112,7 @@ flowchart TD
 ### Keyboard and accessibility
 
 - [ ] **AC-14** (web) — Search field reachable by keyboard shortcut (`/` or platform find shortcut). Overflow menu is keyboard-navigable. Multi-select supports Space to toggle, Enter to confirm.
-- [ ] **AC-15** (web) — **Every task row and every control on a row is reachable by Tab, and focus is visible when it lands.** This is unconditional — it applies regardless of sort mode, selection mode, or any other list-action state. The focus ring follows `tokens.json focusRing` (2px inset, `accent`). Tab order follows DOM order, which matches visual order. This is a general keyboard-navigation requirement for the task list surface, not a reorder affordance — it does not enable reorder by keyboard and is not conditional on manual sort.
+- [ ] **AC-15** (web, mobile) — **Every task row and every control on a row is reachable by sequential navigation, with a visible or announced focus indicator.** This is unconditional — it applies regardless of sort mode, selection mode, or any other list-action state. **This is the reachability guarantee that AC-6's screen-reader reorder deferral depends on:** a screen-reader user cannot reorder tasks, and that is accepted only while every row and every control on it remains independently reachable by other means. This is a general navigation requirement for the task list surface, not a reorder affordance — it does not enable reorder by keyboard or assistive technology and is not conditional on manual sort. Per platform: **(web)** Tab order follows DOM order, which matches visual order; the focus ring follows `tokens.json focusRing` (2px inset, `accent`). **(mobile)** VoiceOver (iOS) and TalkBack (Android) sequential swipe navigation reaches each row and each control — checkbox, title, delete — as its own accessibility element; the row container does not collapse its children into a single focusable unit. Hardware-keyboard focus (iOS Full Keyboard Access, Android with an attached keyboard) follows the same element order.
 
 ## API Touch Points
 

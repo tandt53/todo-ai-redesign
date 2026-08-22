@@ -24,7 +24,6 @@
 
 | Task ID | Agent | Module | Feature | Subtree | Dispatched |
 |---------|-------|--------|---------|---------|------------|
-| T-243 | spec-agent | assistant | F-009 | docs/specs/assistant/ | 2026-08-22 |
 | T-242 | mobile-agent | assistant | — | src/assistant/mobile/__tests__/ | 2026-08-22 |
 <!-- Example:
 -->
@@ -52,6 +51,7 @@
 <!-- Recent entries only — archive old results when the file grows. -->
 | Date | Agent | Task | Status | Summary | Next Action |
 |------|-------|------|--------|---------|-------------|
+| 2026-08-22 | spec-agent | T-243 | DONE | F-009 rev 2: AC-15 re-tagged (web, mobile) as sequential navigation. Web unweakened; mobile names VoiceOver/TalkBack per-control reachability and forbids the row collapsing its children. Links itself to AC-6's deferral. declared-elements exit 0, numbering intact, F-001 untouched. | Owner decision A closed. T-242 still in flight. |
 | 2026-08-22 | mobile-agent | T-232 | DONE | v1 colour shim deleted; 42 retired-key sites across 11 mobile files renamed to v2, each visual change citing the rule that decided it. 4 of 42 render differently (checkboxDone, TaskList tick, badgeNew, chipNew). Full suite re-run by the orchestrator: 1220/1240, identical to the T-233 baseline, zero new failures. | T-241 filed for two mockup divergences the agent found and left alone. T-233 (the 20 baseline failures) still PENDING at P2. |
 | 2026-08-22 | spec-agent | T-234 | DONE | F-009 rev 1: AC-6 keeps drag as the only reorder and now carries the screen-reader deferral bounded to reorder alone; AC-15 new for Tab + visible focus; lists-vs-tasks inconsistency accepted in Out of Scope. 14→15 ACs, none renumbered. declared-elements exit 0. F-001 AC-33 untouched, verified by diff. | **Owner decision open: AC-15 is web-only, so mobile row/control reachability is specified nowhere — the promise AC-6's deferral rests on.** T-225 unblocked. |
 | 2026-08-19 | qa-api-agent | T-166 | DONE | F-005 QA api: 35 TCs + 154 automated cases, api tier 202/202, the three __qa__ doors built as one implementation. TC-14/TC-17 fixed at the harness with the zoneless agent kept and used. Seven assertions red on first authoring, none weakened. | T-173 filed (AC-26 edge). T-167 still waits on T-165 (screens), which waits on T-164 (mobile, in flight). |
