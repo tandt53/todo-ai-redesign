@@ -37,12 +37,8 @@ roots:
   # found two defects (BUG-003, BUG-004) that no other tier could reach.
   # It imports src/ and docs/design/ and is never imported BY them.
   sim_harness: .mobile-app/
-  # The repo's test and build configuration. Not a product artifact root — it is
-  # here because the gate that decides WHICH tests run lives in it, and that gate
-  # failed silently: `npm test` ran only `src/assistant/api`, so 16 test files
-  # that could not even import stayed green-looking across two dispatches (T-207).
-  # An agent told to stop a suite hiding itself has to be able to write the script
-  # that hides it. Added 2026-08-22.
+  # Tooling root: the gate deciding WHICH tests run. `npm test` ran only the api
+  # slice, so 16 unloadable files looked green for two dispatches (T-207).
   build_config: package.json
 
 shared_dir: _shared       # folder name for cross-cutting artifacts inside each root
@@ -219,12 +215,10 @@ writers:
 
 ```yaml
 limits:
-  manifest_lines: 350   # this file. The template itself ships at ~249 lines, so a
-                        # 250 cap left one line of headroom and tripped C5 the
-                        # first time anyone added a module row or a comment.
-                        # MANIFEST is config, not a log — there is nothing to
-                        # archive out of it, so the cap exists only to keep it
-                        # readable. Lower it if this file starts accruing prose.
+  manifest_lines: 350   # this file. MANIFEST is config, not a log — nothing can be
+                        # archived out of it, so this cap only keeps it readable.
+                        # When it trips, cut prose that has done its job; the
+                        # C5 message says "archive", which does not apply here.
   status_lines:   100   # .claude/state/STATUS.md
   tasks_lines:    300   # .claude/state/TASKS.md — triggers archival to TASKS-archive.md
   done_rows:       50   # DONE rows in TASKS.md before archival, independent of line count.

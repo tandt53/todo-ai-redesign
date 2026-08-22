@@ -18,41 +18,102 @@
   See lists.html header for design decisions D1–D5.
 -->
 <style>
-:root {
-  --bg-base:#FFFFFF; --bg-sunken:#F2F2F4; --bg-raised:#FFFFFF;
-  --bg-ink:#111318; --bg-hairline:#DCDCE1; --bg-rule:#94949E;
-  --bg-scrim:rgba(17,19,24,0.32);
-  --text-primary:#111318; --text-secondary:#54545E; --text-muted:#646470;
-  --text-on-ink:#FFFFFF; --text-on-accent:#FFFFFF;
-  --accent:#002FA7; --accent-tint:#E6EAF6;
-  --danger:#C8102E; --danger-tint:#FBE9EC;
-  --attention:#9A4C00; --attention-tint:#FBEFE2;
-  --focus-ring:#002FA7;
-  --font-ui:Roboto,system-ui,-apple-system,sans-serif;
-  --font-num:ui-monospace,'Roboto Mono',Consolas,monospace;
-  --fs-label:11px; --fs-meta:14px; --fs-body:16px; --fs-lead:20px; --fs-title:24px;
-  --w-regular:400; --w-medium:500; --w-semibold:600; --w-bold:700;
-  --lh-tight:1.15; --lh-title:1.25; --lh-body:1.5; --lh-meta:1.4;
-  --ls-label:0.08em; --ls-title:-0.015em; --ls-body:0;
-  --s0:0; --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px; --s8:64px;
-  --r-none:0; --r-xs:4px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:28px; --r-pill:999px; --r-circle:50%;
-  --b-hairline:1px; --b-focus:2px; --b-mark:2px;
-  --shadow-overlay:0 12px 32px -12px rgba(17,19,24,0.28);
-  --h-sm:36px; --h-md:44px; --h-lg:52px; --min-target:48px;
-  --icon-stroke:1.5;
-  --font-case-label:uppercase;
+/* ══════ TOKENS — GENERATED FROM tokens.json, every leaf, verbatim ══════ */
+:root{
+  --color-light-bg-base: #FFFFFF; --color-light-bg-sunken: #F2F2F4; --color-light-bg-raised: #FFFFFF;
+  --color-light-bg-ink: #111318; --color-light-bg-hairline: #DCDCE1; --color-light-bg-rule: #94949E;
+  --color-light-bg-scrim: rgba(17, 19, 24, 0.32);
+  --color-light-text-primary: #111318; --color-light-text-secondary: #54545E; --color-light-text-muted: #646470;
+  --color-light-text-onInk: #FFFFFF; --color-light-text-onAccent: #FFFFFF;
+  --color-light-accent: #002FA7; --color-light-accentTint: #E6EAF6;
+  --color-light-danger: #C8102E; --color-light-dangerTint: #FBE9EC;
+  --color-light-attention: #9A4C00; --color-light-attentionTint: #FBEFE2;
+  --color-light-focusRing: #002FA7;
+  --color-dark-bg-base: #0E0E11; --color-dark-bg-sunken: #17171C; --color-dark-bg-raised: #17171C;
+  --color-dark-bg-ink: #F4F4F6; --color-dark-bg-hairline: #2E2E38; --color-dark-bg-rule: #63636F;
+  --color-dark-bg-scrim: rgba(0, 0, 0, 0.56);
+  --color-dark-text-primary: #F4F4F6; --color-dark-text-secondary: #A8A8B4; --color-dark-text-muted: #9296A3;
+  --color-dark-text-onInk: #0E0E11; --color-dark-text-onAccent: #0E0E11;
+  --color-dark-accent: #8AA6FF; --color-dark-accentTint: #1A2140;
+  --color-dark-danger: #FF7183; --color-dark-dangerTint: #2C1519;
+  --color-dark-attention: #FFB020; --color-dark-attentionTint: #2B2010;
+  --color-dark-focusRing: #8AA6FF;
+  --font-family-ui: Inter, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI', Roboto, system-ui, sans-serif;
+  --font-family-numeric: ui-monospace, 'SF Mono', 'JetBrains Mono', 'Roboto Mono', Menlo, Consolas, monospace;
+  --font-scale_ratio: 1.25;
+  --font-size-label: 11; --font-size-meta: 13; --font-size-body: 16; --font-size-lead: 20; --font-size-title: 25; --font-size-display: 31; --font-size-hero: 39; --font-size-mega: 49;
+  --font-size_ios-label: 11; --font-size_ios-meta: 13; --font-size_ios-body: 17; --font-size_ios-lead: 20; --font-size_ios-title: 28; --font-size_ios-display: 34; --font-size_ios-hero: 40; --font-size_ios-mega: 50;
+  --font-size_android-label: 11; --font-size_android-meta: 14; --font-size_android-body: 16; --font-size_android-lead: 20; --font-size_android-title: 24; --font-size_android-display: 32; --font-size_android-hero: 40; --font-size_android-mega: 48;
+  --font-weight-regular: 400; --font-weight-medium: 500; --font-weight-semibold: 600; --font-weight-bold: 700;
+  --font-lineHeight-tight: 1.15; --font-lineHeight-title: 1.25; --font-lineHeight-body: 1.5; --font-lineHeight-meta: 1.4;
+  --font-letterSpacing-mega: -0.035em; --font-letterSpacing-hero: -0.03em; --font-letterSpacing-display: -0.025em; --font-letterSpacing-title: -0.015em; --font-letterSpacing-body: 0; --font-letterSpacing-label: 0.08em;
+  --font-case-label: uppercase; --font-numeric: tabular-nums;
+  --space-0: 0; --space-1: 4; --space-2: 8; --space-3: 12; --space-4: 16; --space-5: 24; --space-6: 32; --space-7: 48; --space-8: 64; --space-9: 96;
+  --radius-none: 0; --radius-xs: 4; --radius-sm: 8; --radius-md: 12; --radius-lg: 16; --radius-xl: 28; --radius-pill: 999; --radius-circle: 50%;
+  --border-hairline: 1; --border-rule: 1; --border-focus: 2; --border-mark: 2;
+  --shadow-overlay: 0 12px 32px -12px rgba(17, 19, 24, 0.28);
+  --shadow-overlayDark: 0 12px 32px -12px rgba(0, 0, 0, 0.64);
+  --control-height-sm: 36; --control-height-md: 44; --control-height-lg: 52;
+  --control-minTarget-web: 40; --control-minTarget-ios: 44; --control-minTarget-android: 48;
+  --control-padding_x-sm: 12; --control-padding_x-md: 20; --control-padding_x-lg: 24;
+  --field-height: 44; --field-height_multiline_min: 96; --field-padding_x: 12; --field-padding_y: 10; --field-label_gap: 6; --field-help_gap: 6; --field-row_gap: 24; --field-min_rendered_width: 240;
+  --layout-grid-columns: 12; --layout-grid-gutter: 24; --layout-grid-gutter_mobile: 16;
+  --layout-measure-text_ch: 68; --layout-measure-list_min: 560; --layout-measure-list_max: 820; --layout-measure-form_max: 640; --layout-measure-panel_min: 380; --layout-measure-panel_max: 420; --layout-measure-rail: 240;
+  --layout-measure-timerail-compact: 72; --layout-measure-timerail-default: 96; --layout-measure-timerail-wide: 136;
+  --layout-frame_max: 2200; --layout-margin_max: 96; --layout-fill_min_ratio: 0.9;
+  --breakpoints-mobile: 375; --breakpoints-phone: 390; --breakpoints-tablet: 768; --breakpoints-split: 1024; --breakpoints-desktop: 1280; --breakpoints-laptop: 1440; --breakpoints-wide: 1536; --breakpoints-ultra: 1920;
+  --motion-duration_ms-micro: 100; --motion-duration_ms-standard: 180; --motion-duration_ms-emphasis: 280; --motion-duration_ms-rulegrow: 900;
+  --motion-easing-standard: cubic-bezier(0.2, 0, 0, 1); --motion-easing-exit: cubic-bezier(0.4, 0, 1, 1); --motion-easing-linear: linear;
+  --icon-set: lucide; --icon-stroke: 1.5; --icon-cap: square; --icon-size-sm: 16; --icon-size-md: 20; --icon-size-lg: 24;
+  --haptic-listenStart: impact.light; --haptic-listenEnd: impact.light x2; --haptic-applied: notification.success; --haptic-error: notification.warning; --haptic-undo: impact.medium; --haptic-optionTap: selection;
+
+}
+/* ── Semantic aliases (Android: meta 14px, min-target 48dp) ── */
+html{
+  --bg-base:var(--color-light-bg-base); --bg-sunken:var(--color-light-bg-sunken);
+  --bg-raised:var(--color-light-bg-raised); --bg-ink:var(--color-light-bg-ink);
+  --bg-hairline:var(--color-light-bg-hairline); --bg-rule:var(--color-light-bg-rule);
+  --bg-scrim:var(--color-light-bg-scrim);
+  --text-primary:var(--color-light-text-primary); --text-secondary:var(--color-light-text-secondary);
+  --text-muted:var(--color-light-text-muted); --text-on-ink:var(--color-light-text-onInk);
+  --text-on-accent:var(--color-light-text-onAccent);
+  --accent:var(--color-light-accent); --accent-tint:var(--color-light-accentTint);
+  --danger:var(--color-light-danger); --danger-tint:var(--color-light-dangerTint);
+  --attention:var(--color-light-attention); --attention-tint:var(--color-light-attentionTint);
+  --focus-ring:var(--color-light-focusRing);
+  --font-ui:var(--font-family-ui); --font-num:var(--font-family-numeric);
+  --fs-label:calc(var(--font-size_android-label) * 1px); --fs-meta:calc(var(--font-size_android-meta) * 1px);
+  --fs-body:calc(var(--font-size_android-body) * 1px); --fs-lead:calc(var(--font-size_android-lead) * 1px);
+  --fs-title:calc(var(--font-size_android-title) * 1px);
+  --lh-tight:var(--font-lineHeight-tight); --lh-title:var(--font-lineHeight-title);
+  --lh-body:var(--font-lineHeight-body); --lh-meta:var(--font-lineHeight-meta);
+  --ls-title:var(--font-letterSpacing-title); --ls-label:var(--font-letterSpacing-label);
+  --w-regular:var(--font-weight-regular); --w-medium:var(--font-weight-medium);
+  --w-semibold:var(--font-weight-semibold); --w-bold:var(--font-weight-bold);
+  --s1:calc(var(--space-1) * 1px); --s2:calc(var(--space-2) * 1px); --s3:calc(var(--space-3) * 1px);
+  --s4:calc(var(--space-4) * 1px); --s5:calc(var(--space-5) * 1px); --s6:calc(var(--space-6) * 1px);
+  --s7:calc(var(--space-7) * 1px); --s8:calc(var(--space-8) * 1px);
+  --r-none:calc(var(--radius-none) * 1px); --r-xs:calc(var(--radius-xs) * 1px);
+  --r-sm:calc(var(--radius-sm) * 1px); --r-md:calc(var(--radius-md) * 1px);
+  --r-lg:calc(var(--radius-lg) * 1px); --r-xl:calc(var(--radius-xl) * 1px);
+  --r-pill:calc(var(--radius-pill) * 1px); --r-circle:var(--radius-circle);
+  --b-hairline:calc(var(--border-hairline) * 1px); --b-focus:calc(var(--border-focus) * 1px); --b-mark:calc(var(--border-mark) * 1px);
+  --h-sm:calc(var(--control-height-sm) * 1px); --h-md:calc(var(--control-height-md) * 1px); --h-lg:calc(var(--control-height-lg) * 1px);
+  --min-target:calc(var(--control-minTarget-android) * 1px);
 }
 [data-theme="dark"]{
-  --bg-base:#0E0E11; --bg-sunken:#17171C; --bg-raised:#17171C;
-  --bg-ink:#F4F4F6; --bg-hairline:#2E2E38; --bg-rule:#63636F;
-  --bg-scrim:rgba(0,0,0,0.56);
-  --text-primary:#F4F4F6; --text-secondary:#A8A8B4; --text-muted:#9296A3;
-  --text-on-ink:#0E0E11; --text-on-accent:#0E0E11;
-  --accent:#8AA6FF; --accent-tint:#1A2140;
-  --danger:#FF7183; --danger-tint:#2C1519;
-  --attention:#FFB020; --attention-tint:#2B2010;
-  --focus-ring:#8AA6FF;
-  --shadow-overlay:0 12px 32px -12px rgba(0,0,0,0.64);
+  --shadow-overlay:var(--shadow-overlayDark);
+  --bg-base:var(--color-dark-bg-base); --bg-sunken:var(--color-dark-bg-sunken);
+  --bg-raised:var(--color-dark-bg-raised); --bg-ink:var(--color-dark-bg-ink);
+  --bg-hairline:var(--color-dark-bg-hairline); --bg-rule:var(--color-dark-bg-rule);
+  --bg-scrim:var(--color-dark-bg-scrim);
+  --text-primary:var(--color-dark-text-primary); --text-secondary:var(--color-dark-text-secondary);
+  --text-muted:var(--color-dark-text-muted); --text-on-ink:var(--color-dark-text-onInk);
+  --text-on-accent:var(--color-dark-text-onAccent);
+  --accent:var(--color-dark-accent); --accent-tint:var(--color-dark-accentTint);
+  --danger:var(--color-dark-danger); --danger-tint:var(--color-dark-dangerTint);
+  --attention:var(--color-dark-attention); --attention-tint:var(--color-dark-attentionTint);
+  --focus-ring:var(--color-dark-focusRing);
 }
 
 *,*::before,*::after{box-sizing:border-box; margin:0; padding:0}

@@ -114,9 +114,7 @@
   --motion-easing-standard: cubic-bezier(0.2, 0, 0, 1); --motion-easing-exit: cubic-bezier(0.4, 0, 1, 1); --motion-easing-linear: linear;
   --icon-set: lucide; --icon-stroke: 1.5; --icon-cap: square; --icon-size-sm: 16; --icon-size-md: 20; --icon-size-lg: 24;
   --haptic-listenStart: impact.light; --haptic-listenEnd: impact.light x2; --haptic-applied: notification.success; --haptic-error: notification.warning; --haptic-undo: impact.medium; --haptic-optionTap: selection;
-  --listColor-palette-0: #94949E; --listColor-palette-1: #002FA7; --listColor-palette-2: #C8102E; --listColor-palette-3: #9A4C00; --listColor-palette-4: #1A7A2E; --listColor-palette-5: #7C3AED; --listColor-palette-6: #0E7490;
-  --listColor-names-0: Grey; --listColor-names-1: Blue; --listColor-names-2: Red; --listColor-names-3: Amber; --listColor-names-4: Green; --listColor-names-5: Purple; --listColor-names-6: Teal;
-  --listColor-default: 0; --listColor-dot_size: 10;
+
 }
 /* ── Semantic aliases ── */
 html{
@@ -418,16 +416,16 @@ input{font:inherit; color:inherit}
       </div>
     </div>
 
-    <!-- RENAME FORM with duplicate error -->
+    <!-- RENAME FORM with duplicate error (same controls as above, no duplicate testid) -->
     <div class="rename-form for-work-taken v v-rename-taken">
       <div class="field-row">
         <label for="rename-input-err">List name</label>
-        <input class="field" id="rename-input-err" value="Home" style="border-color:var(--danger)">
-        <span class="field-error">A list called Home already exists.</span>
+        <input class="field" id="rename-input-err" data-testid="list-rename-error-input" value="Home" style="border-color:var(--danger)">
+        <span class="field-error" data-testid="list-rename-error-message">A list called Home already exists.</span>
       </div>
       <div class="btn-row">
-        <button class="btn btn-sm btn-primary" data-testid="list-rename-save-button">Save</button>
-        <button class="btn btn-sm btn-ghost" data-testid="list-rename-cancel-button">Cancel</button>
+        <button class="btn btn-sm btn-primary" data-testid="list-rename-error-save-button">Save</button>
+        <button class="btn btn-sm btn-ghost" data-testid="list-rename-error-cancel-button">Cancel</button>
       </div>
     </div>
 
@@ -436,38 +434,38 @@ input{font:inherit; color:inherit}
       <span class="ldot" style="background:#1A7A2E" aria-hidden="true"></span>
       Home
       <span class="n">2</span>
-      <button class="overflow" data-testid="list-row-overflow-button" aria-label="More options for Home" aria-haspopup="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+      <button class="overflow" aria-label="More options for Home" aria-haspopup="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
     </div>
 
     <!-- RECOLOUR PANEL for Work (appears below Work row) -->
     <div class="recolour-panel for-work">
       <span class="rlabel">Colour for Work</span>
-      <div class="swatches" role="radiogroup" aria-label="List colour" data-testid="list-recolour-swatch-group">
-        <button type="button" class="swatch" data-testid="list-recolour-swatch" role="radio" aria-checked="false" aria-label="Grey" style="background:#94949E"></button>
-        <button type="button" class="swatch on" data-testid="list-recolour-swatch" role="radio" aria-checked="true" aria-label="Blue" style="background:#002FA7"></button>
-        <button type="button" class="swatch" data-testid="list-recolour-swatch" role="radio" aria-checked="false" aria-label="Red" style="background:#C8102E"></button>
-        <button type="button" class="swatch" data-testid="list-recolour-swatch" role="radio" aria-checked="false" aria-label="Amber" style="background:#9A4C00"></button>
-        <button type="button" class="swatch" data-testid="list-recolour-swatch" role="radio" aria-checked="false" aria-label="Green" style="background:#1A7A2E"></button>
-        <button type="button" class="swatch" data-testid="list-recolour-swatch" role="radio" aria-checked="false" aria-label="Purple" style="background:#7C3AED"></button>
-        <button type="button" class="swatch" data-testid="list-recolour-swatch" role="radio" aria-checked="false" aria-label="Teal" style="background:#0E7490"></button>
+      <div class="swatches" role="radiogroup" aria-label="List colour" data-testid="list-recolour-swatches">
+        <button type="button" class="swatch" role="radio" aria-checked="false" aria-label="Grey" style="background:#94949E"></button>
+        <button type="button" class="swatch on" role="radio" aria-checked="true" aria-label="Blue" style="background:#002FA7"></button>
+        <button type="button" class="swatch" role="radio" aria-checked="false" aria-label="Red" style="background:#C8102E"></button>
+        <button type="button" class="swatch" role="radio" aria-checked="false" aria-label="Amber" style="background:#9A4C00"></button>
+        <button type="button" class="swatch" role="radio" aria-checked="false" aria-label="Green" style="background:#1A7A2E"></button>
+        <button type="button" class="swatch" role="radio" aria-checked="false" aria-label="Purple" style="background:#7C3AED"></button>
+        <button type="button" class="swatch" role="radio" aria-checked="false" aria-label="Teal" style="background:#0E7490"></button>
       </div>
     </div>
 
-    <!-- === LIST ROW: Groceries (amber, 0 tasks) === -->
+    <!-- === LIST ROW: Groceries (amber, 0 tasks — no count shown) === -->
     <div class="mrow lrow v v-default v-rename v-rename-taken" style="position:relative">
       <span class="ldot" style="background:#9A4C00" aria-hidden="true"></span>
       Groceries
-      <button class="overflow" data-testid="list-row-overflow-button" aria-label="More options for Groceries" aria-haspopup="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+      <button class="overflow" aria-label="More options for Groceries" aria-haspopup="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
 
-      <!-- Context menu for Groceries (empty list: 0 tasks) -->
-      <nav class="ctx-menu for-groceries" role="menu" aria-label="Groceries list actions" data-testid="list-action-menu">
-        <button class="ctx-item" role="menuitem" data-testid="list-action-rename"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>Rename</button>
-        <button class="ctx-item" role="menuitem" data-testid="list-action-recolour"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12" r="2.5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10a2 2 0 0 0 2-2v-1a2 2 0 0 1 2-2h1a2 2 0 0 0 2-2c0-5.5-4.5-10-10-10z"/></svg>Change colour</button>
+      <!-- Context menu for Groceries (empty list: 0 tasks) — same shape as Work menu, no duplicate testids -->
+      <nav class="ctx-menu for-groceries" role="menu" aria-label="Groceries list actions">
+        <button class="ctx-item" role="menuitem"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>Rename</button>
+        <button class="ctx-item" role="menuitem"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12" r="2.5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10a2 2 0 0 0 2-2v-1a2 2 0 0 1 2-2h1a2 2 0 0 0 2-2c0-5.5-4.5-10-10-10z"/></svg>Change colour</button>
         <div class="ctx-sep"></div>
-        <button class="ctx-item" role="menuitem" data-testid="list-action-move-up"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>Move up</button>
-        <button class="ctx-item disabled" role="menuitem" aria-disabled="true" data-testid="list-action-move-down"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>Move down</button>
+        <button class="ctx-item" role="menuitem"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>Move up</button>
+        <button class="ctx-item disabled" role="menuitem" aria-disabled="true"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>Move down</button>
         <div class="ctx-sep"></div>
-        <button class="ctx-item danger" role="menuitem" data-testid="list-action-delete"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete</button>
+        <button class="ctx-item danger" role="menuitem"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete</button>
       </nav>
     </div>
 
