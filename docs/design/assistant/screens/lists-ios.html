@@ -161,10 +161,10 @@ input{font:inherit; color:inherit}
 
 .ldot{width:10px; height:10px; border-radius:var(--r-circle); flex:none}
 .lrow{position:relative}
-.lrow .overflow{opacity:1; margin-left:auto; flex:none;
+.lrow .lname{flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.lrow .overflow{opacity:1; flex:none;
   display:inline-flex; align-items:center; justify-content:center;
   width:var(--min-target); height:var(--min-target); border-radius:var(--r-sm)}
-.lrow .n{margin-left:0}
 
 /* ══════ iOS ACTION SHEET ══════ */
 .action-sheet{
@@ -300,9 +300,9 @@ input{font:inherit; color:inherit}
     <div class="v v-default v-rename v-rename-taken"><p class="rail-sub">Your lists</p></div>
 
     <!-- Work row -->
-    <div class="mrow lrow work-row v v-default" accessibilityIdentifier="menu-list-row" style="position:relative">
+    <div class="mrow lrow work-row v v-default vflex" accessibilityIdentifier="menu-list-row" style="position:relative">
       <span class="ldot" style="background:#002FA7" aria-hidden="true"></span>
-      Work<span class="n">5</span>
+      <span class="lname">Work</span><span class="n">5</span>
       <button class="overflow" accessibilityIdentifier="list-row-overflow-button" aria-label="More options for Work"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
     </div>
 
@@ -332,9 +332,9 @@ input{font:inherit; color:inherit}
     </div>
 
     <!-- Home row -->
-    <div class="mrow lrow v v-default v-rename v-rename-taken" style="position:relative">
+    <div class="mrow lrow v v-default v-rename v-rename-taken vflex" style="position:relative">
       <span class="ldot" style="background:#1A7A2E" aria-hidden="true"></span>
-      Home<span class="n">2</span>
+      <span class="lname">Home</span><span class="n">2</span>
       <button class="overflow" accessibilityIdentifier="list-row-overflow-button" aria-label="More options for Home"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
     </div>
 
@@ -353,17 +353,17 @@ input{font:inherit; color:inherit}
     </div>
 
     <!-- Groceries row (0 tasks) -->
-    <div class="mrow lrow v v-default v-rename v-rename-taken" style="position:relative">
+    <div class="mrow lrow v v-default v-rename v-rename-taken vflex" style="position:relative">
       <span class="ldot" style="background:#9A4C00" aria-hidden="true"></span>
-      Groceries
+      <span class="lname">Groceries</span>
       <button class="overflow" accessibilityIdentifier="list-row-overflow-button" aria-label="More options for Groceries"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
     </div>
 
     <!-- Reordered list -->
     <div class="v v-reorder"><p class="rail-sub">Your lists</p></div>
-    <div class="mrow lrow v v-reorder"><span class="ldot" style="background:#1A7A2E" aria-hidden="true"></span>Home<span class="n">2</span><button class="overflow" aria-label="More options for Home"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button></div>
-    <div class="mrow lrow v v-reorder"><span class="ldot" style="background:#002FA7" aria-hidden="true"></span>Work<span class="n">5</span><button class="overflow" aria-label="More options for Work"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button></div>
-    <div class="mrow lrow v v-reorder"><span class="ldot" style="background:#9A4C00" aria-hidden="true"></span>Groceries<button class="overflow" aria-label="More options for Groceries"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button></div>
+    <div class="mrow lrow v v-reorder vflex"><span class="ldot" style="background:#1A7A2E" aria-hidden="true"></span><span class="lname">Home</span><span class="n">2</span><button class="overflow" aria-label="More options for Home"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button></div>
+    <div class="mrow lrow v v-reorder vflex"><span class="ldot" style="background:#002FA7" aria-hidden="true"></span><span class="lname">Work</span><span class="n">5</span><button class="overflow" aria-label="More options for Work"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button></div>
+    <div class="mrow lrow v v-reorder vflex"><span class="ldot" style="background:#9A4C00" aria-hidden="true"></span><span class="lname">Groceries</span><button class="overflow" aria-label="More options for Groceries"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button></div>
 
     <!-- iOS ACTION SHEET for Work (non-empty) -->
     <nav class="action-sheet for-work" role="menu" aria-label="Work list actions" accessibilityIdentifier="list-action-menu">
