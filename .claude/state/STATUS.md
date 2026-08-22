@@ -24,6 +24,7 @@
 
 | Task ID | Agent | Module | Feature | Subtree | Dispatched |
 |---------|-------|--------|---------|---------|------------|
+| T-251 | design-agent | assistant | F-009 | docs/design/assistant/screens/ | 2026-08-22 |
 <!-- Example:
 -->
 | — | — | — | — | — | — |
