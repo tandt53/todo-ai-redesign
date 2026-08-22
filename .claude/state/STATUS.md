@@ -24,6 +24,7 @@
 
 | Task ID | Agent | Module | Feature | Subtree | Dispatched |
 |---------|-------|--------|---------|---------|------------|
+| T-247 + T-246 | design-agent | assistant | F-009 | docs/design/ (one pass, shared files) | 2026-08-22 |
 <!-- Example:
 -->
 | — | — | — | — | — | — |
@@ -35,7 +36,6 @@
 
 | ID | Description | Waiting On | Raised By |
 |----|-------------|-----------|----------|
-| F-009 design signoff | Gate 1.5 passed with 0 HIGH. Implementation cannot start until the owner has looked at renders and answered. Renders sent; four questions outstanding (three from design-agent review_guide, one product call from Gate 1.5 M1). | The owner | orchestrator |
 | design-check render tier | Playwright 1.62.1 expects chromium build 1234; the container ships 1194, so the browser will not launch and layout/state/contrast/overflow checks SKIP while the summary still reads "0 failed". Pass `DESIGN_CHECK_BROWSER=/opt/pw-browsers/chromium-1194/chrome-linux/chrome` — 13 passed becomes 175. | Nothing — workaround is known and works | orchestrator |
 
 ---
