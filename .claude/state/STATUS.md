@@ -25,7 +25,6 @@
 | Task ID | Agent | Module | Feature | Subtree | Dispatched |
 |---------|-------|--------|---------|---------|------------|
 | T-232 | mobile-agent | assistant | — | src/assistant/mobile/ | 2026-08-22 |
-| T-234 | spec-agent | assistant | F-009 | docs/specs/assistant/ | 2026-08-22 |
 <!-- Example:
 -->
 | — | — | — | — | — | — |
@@ -52,6 +51,7 @@
 <!-- Recent entries only — archive old results when the file grows. -->
 | Date | Agent | Task | Status | Summary | Next Action |
 |------|-------|------|--------|---------|-------------|
+| 2026-08-22 | spec-agent | T-234 | DONE | F-009 rev 1: AC-6 keeps drag as the only reorder and now carries the screen-reader deferral bounded to reorder alone; AC-15 new for Tab + visible focus; lists-vs-tasks inconsistency accepted in Out of Scope. 14→15 ACs, none renumbered. declared-elements exit 0. F-001 AC-33 untouched, verified by diff. | **Owner decision open: AC-15 is web-only, so mobile row/control reachability is specified nowhere — the promise AC-6's deferral rests on.** T-225 unblocked. |
 | 2026-08-19 | qa-api-agent | T-166 | DONE | F-005 QA api: 35 TCs + 154 automated cases, api tier 202/202, the three __qa__ doors built as one implementation. TC-14/TC-17 fixed at the harness with the zoneless agent kept and used. Seven assertions red on first authoring, none weakened. | T-173 filed (AC-26 edge). T-167 still waits on T-165 (screens), which waits on T-164 (mobile, in flight). |
 | 2026-08-19 | web-agent | T-163 | PARTIAL | F-005 web: S6 detail, receiver clause, AC-47's notice rules, one clock widened not duplicated, zero JS width reads. web 366/366, full suite 1017/1020 with all 3 failures owned elsewhere. PARTIAL for AC-3's proactive save, unadopted testids, placeholder copy. | T-164 (mobile) dispatched with the 8 items web named. T-171 filed for the AC-3 gap. |
 | 2026-08-19 | backend-agent | T-162 | DONE | F-005 backend: ten endpoints (four new), api 202/202, tsc clean. Guard moved onto the write behind a branded type. Attribution of the red full suite PROVEN with a HEAD worktree, not asserted. | T-164 (mobile) still waits on T-163 (web, in flight). T-166 extended with the two docs/qa/ fixes it named; T-170 filed for the contract gap. Full-suite verdict held until web returns. |

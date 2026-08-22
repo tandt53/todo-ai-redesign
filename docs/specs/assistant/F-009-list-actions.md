@@ -2,7 +2,7 @@
 
 **ID**: F-009
 **Slug**: list-actions
-**Status**: `draft`
+**Status**: `draft` (**Revision 1, 2026-08-22 (T-234)**: AC-6 amended in place — screen-reader reorder is deferred by owner decision, with the deferral explicitly bounded to reorder (delete is not covered; F-001 AC-33 stands). **AC-15 is new**: Tab navigation to every task row and every row control, unconditional on sort mode. The lists-vs-tasks reorder inconsistency is recorded as accepted in `## Out of Scope`. No AC was renumbered or deleted; 14 become 15.)
 
 ## Links
 
@@ -93,7 +93,7 @@ flowchart TD
 
 - [ ] **AC-4** (api, web, mobile) — The overflow menu offers three sort options: **Due date** (default), **Priority**, **Manual**. The active option is indicated. The choice persists per collection in `sort_preferences`.
 - [ ] **AC-5** (api, web, mobile) — **Manual sort** is available only in filing-axis collections (Inbox, personal lists). In Today, Upcoming and Done, Manual is disabled or absent. When active, tasks appear in `sort_order` order; day headers are suppressed in Inbox. `sort_order` uses the same sparse-integer scheme as `list.position` (F-008): gaps of 1024, assigned on create.
-- [ ] **AC-6** (web, mobile) — **Drag-to-reorder** is available only when manual sort is active. Web: drag handle on each row, click-and-drag. Mobile: long-press then drag. Writes the moved task's `sort_order`; sparse gaps avoid cascading writes to other rows.
+- [ ] **AC-6** (web, mobile) — **Drag-to-reorder** is available only when manual sort is active. Web: drag handle on each row, click-and-drag. Mobile: long-press then drag. Writes the moved task's `sort_order`; sparse gaps avoid cascading writes to other rows. **No Move up / Move down alternative is provided.** Pointer drag is the only reorder mechanism. **Screen-reader reorder is deferred** (owner decision 2026-08-22, T-234): VoiceOver and TalkBack cannot perform a custom drag, and reorder is cosmetic — it changes display order within a filing cell, not task data or membership — so a screen-reader user cannot reorder tasks, and that is accepted for this control. **This deferral covers reorder and nothing else.** Delete is also gesture-hidden (swipe-left on mobile, hover/focus-within on web), and F-001 AC-33 requires a no-gesture path for it — VoiceOver rotor custom action and TalkBack custom action menu — because delete destroys data. The reasoning that justifies deferring screen-reader reorder does not extend to delete; the two are treated differently because one is lossy and the other is not.
 - [ ] **AC-6a** (api) — **Priority sort** orders high → medium → low → none. Within each group, by due date (earliest first, undated last).
 
 ### Hide completed
@@ -112,6 +112,7 @@ flowchart TD
 ### Keyboard and accessibility
 
 - [ ] **AC-14** (web) — Search field reachable by keyboard shortcut (`/` or platform find shortcut). Overflow menu is keyboard-navigable. Multi-select supports Space to toggle, Enter to confirm.
+- [ ] **AC-15** (web) — **Every task row and every control on a row is reachable by Tab, and focus is visible when it lands.** This is unconditional — it applies regardless of sort mode, selection mode, or any other list-action state. The focus ring follows `tokens.json focusRing` (2px inset, `accent`). Tab order follows DOM order, which matches visual order. This is a general keyboard-navigation requirement for the task list surface, not a reorder affordance — it does not enable reorder by keyboard and is not conditional on manual sort.
 
 ## API Touch Points
 
@@ -144,6 +145,7 @@ No preferences entity exists. Theme is client-side only. These are the first per
 - Saved searches; bulk edit fields (priority, due date); sort by alphabetical or creation date
 - Voice commands for any of these four actions (hand-only controls)
 - Drag-to-reorder lists in the menu (remains F-008 out-of-scope)
+- **Lists reorder by menu item (F-008 `PATCH /lists/{id}`), tasks reorder by drag (AC-6).** This inconsistency is noticed and accepted (owner decision 2026-08-22, T-234). Lists have a small cardinality (single digits) and a position field already writable via the API; tasks within a filing cell can number in the hundreds and drag is the conventional gesture. Harmonising the two — either adding drag to lists or adding a menu reorder to tasks — is not planned and would require its own spec.
 
 ## Open Questions
 
