@@ -231,3 +231,6 @@
 {"ts":"2026-08-22T13:00:17.171Z","event":"session_stop","session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
 {"ts":"2026-08-22T13:34:06.112Z","event":"session_stop","session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
 {"ts":"2026-08-22T13:41:12.907Z","event":"session_stop","session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
+{"ts":"2026-08-22T13:41:49.791Z","event":"session_stop","session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
+{"ts":"2026-08-22T13:49:25.329Z","event":"agent_return","task":null,"agent":"spec-agent","status":"UNKNOWN","artifacts":[],"evidence_conflict":null,"session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
+{"ts":"2026-08-22T13:49:49.333Z","event":"agent_return","task":null,"agent":"design-agent","status":"UNKNOWN","artifacts":[],"evidence_conflict":null,"session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
