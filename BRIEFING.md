@@ -1,90 +1,90 @@
-# BRIEFING — T-220
+# BRIEFING — T-234
 
-- **Task ID:** T-220 · **Agent:** design-agent · **phase:** `system` + `screens` · 2026-08-22
-- **Description:** Panels on a canvas, and the two self-checks that were skipped
+- **Task ID**: T-234
+- **Title**: Task reorder: drag is enough, but Tab must reach every row
+- **Module**: assistant
+- **Feature**: F-009
+- **Agent**: spec-agent
+- **Date**: 2026-08-22
+- **Depends on**: — (none)
 
-## 1 · The big layout regions stop being separated by lines
+## Context
 
-The owner, looking at the web shell:
+`F-009 AC-6` (line ~96) currently specs reorder as pointer drag only:
 
-> *"web vẫn có các line border giữa các layout lớn. Hiện tại gần như tất cả các app đã bỏ các
-> border này rồi. Thay vào đó là 1 layout có nền màu nhạt ở dưới cùng, các layout chứa content
-> sẽ đặt lên trên có màu nền đậm hơn, giống nhau, bo tròn, và cách nhau 1 khoảng nhỏ."*
+> **AC-6** (web, mobile) — **Drag-to-reorder** is available only when manual sort is active.
+> Web: drag handle on each row, click-and-drag. Mobile: long-press then drag. Writes the moved
+> task's `sort_order`; sparse gaps avoid cascading writes to other rows.
 
-**Measured at 1440 on `app-shell.html`, exactly three long structural borders remain:**
+This was raised as an accessibility gap — a reorder reachable only by a custom drag does not
+exist for a VoiceOver or TalkBack user, the same shape of problem `F-001 AC-33` already solves
+for delete.
 
-| element | side | length |
-|---|---|---|
-| `header.topbar` | bottom | 1020px |
-| `aside.col-panel` | **left** | 820px |
-| `div.composer` | top | 419px |
+**The owner decided on 2026-08-22 and the decision narrows the task from what it was raised as.**
+This briefing is that decision. You are writing it down, not re-opening it.
 
-**The pattern replaces all three**, and it uses tokens you already have: the page becomes
-`bg.sunken`, each content region becomes a `bg.base` panel on top of it, **same ground as each
-other**, rounded, with a small gap between. Linear, Notion, Vercel and the current macOS
-sidebars all read this way.
+**The answer: pointer drag is enough for reordering. Do NOT add Move up / Move down for tasks.**
 
-**This narrows a rule you wrote, and the narrowing is the coordinator's error to own.** Your
-`border.when_a_line_earns_it` has three cases and the third is *a container holding a different
-KIND of thing* — **I suggested that one, and the owner's pattern is the better answer to the
-same problem.** So the third case goes, or is rewritten as *panels, not lines*. **Say which in
-`tokens.json` and `DESIGN.md`.**
+Two things do change.
 
-**This is a system change plus screens in one dispatch, deliberately, and here is why that is
-allowed here:** the usual rule forbids authoring a system and then building against it in one
-pass, because the system has no external standard to meet. **That is not this.** The system is
-authored, signed off, and one rule inside it is being narrowed by an owner instruction — the
-external standard exists and the owner is it.
+**(a) Tab navigation must work.** The owner's words: *"việc chuyển nhảy giữa các phần tử thì nên
+làm"* — moving between elements by keyboard should work. Every task row and every control on a
+row is reachable by Tab, and focus is visible when it lands. **This is a general requirement, not
+a reorder feature** — it is not conditional on manual sort being active, and it is not a clause of
+AC-6. Give it its own AC.
 
-**Two things to get right rather than to assume:**
+**(b) Screen-reader support for reorder is deferred by decision, and the AC must say so.** Leave
+no silent hole: VoiceOver and TalkBack cannot perform a custom drag, so those users cannot
+reorder tasks, and reorder is cosmetic enough to live without. Write the deferral, the reason,
+and the consequence into AC-6 itself, so a later reader sees a decision rather than an oversight.
 
-- **A panel's gap is not a margin around everything.** The elevation is what separates them, so
-  the gap is small — the pattern reads as *floating*, not *spaced out*. Look at it, do not
-  reason about it.
-- **The gutter rule you just landed (`16 → 374`) is inside the panel now.** Check it still
-  holds against the panel's edge rather than the window's, at every width including 1920.
+## The boundary — this is the part most likely to be got wrong
 
-## 2 · Re-run both self-checks — the last pass skipped them
+**The scope of that deferral is REORDER ONLY.** It was deliberately not widened to `F-001 AC-33`,
+which requires a no-gesture delete path via the VoiceOver rotor and the TalkBack custom action
+menu. The reason the two are treated differently: **delete destroys data and reorder does not.**
 
-**Your previous dispatch was interrupted and its return was lost, so neither the visual review
-nor the accessibility self-check has a recorded result for anything drawn since.** The owner
-noticed and asked for them.
+Do not apply the reorder deferral to delete. Do not amend, soften or cross-reference `F-001
+AC-33` as though the same reasoning covers it. If anything, say in F-009 that the deferral stops
+here and why, so the next reader cannot generalise it. If the owner meant it more broadly that is
+a separate call, not yours to take.
 
-**Run both over the whole current set, not only what this task changes.** Record
-`visual_review:` and `a11y_review:` with counts, empty lists included.
+**Also accepted, not a defect to fix:** lists reorder by a menu item while tasks reorder by drag.
+That inconsistency was noticed and stands. Record it as accepted rather than harmonising the two.
 
-**Two things carried from the last recorded a11y run that need re-checking specifically:**
+## Read these files first
 
-- **Step checkboxes render 20×20 on all three platforms**, under every floor (web 40 · iOS 44 ·
-  Android 48). Filed as T-216 and not fixed. **If this pass touches them, fix with a hit area,
-  not bigger paint; if not, confirm the measurement still stands.**
-- **`detail-repeat-until` shows *Never* pressed while an until-date is displayed.** T-217. One
-  of the two is wrong and the drawing does not say which.
+1. `docs/specs/assistant/F-009-list-actions.md` — AC-6 (~line 96), the `sort_order` row in
+   `## Data` (~line 73), and the spec's `## Status` line for the revision convention
+2. `docs/specs/assistant/F-001-*.md` — **AC-33** (the gesture-hidden delete path). This is the
+   precedent you are deliberately *not* extending; read it so the boundary you write is accurate
+3. `docs/specs/assistant/F-008-lists.md` — how lists reorder (menu item), for the accepted
+   inconsistency
+4. `docs/design/_shared/DESIGN.md` — `## Platform`, the row-delete table and the custom-action
+   mechanism, so the new Tab AC does not contradict the drawn behaviour
 
-**And one question with no recorded answer**, from T-219: the owner said *kích thước và căn lề*.
-Alignment was fixed and measured. **Size was never answered** — the title renders 32px against
-16 elsewhere. It is the heading and the name of the thing, so large is probably right, **but it
-was asked and deserves a sentence.**
+## Write to
 
-## Scope
-
-`tokens.json`, `DESIGN.md`, the `components.md` sections this touches, the nine mockups where
-the pattern applies, and `index.html`.
-
-**Web is where the owner saw it. Check whether the pattern is right on iOS and Android too** —
-iOS grouped-inset lists are already this shape, Android's M3 is not always. **If a platform
-should keep its own answer, say so with the rule that forces it.**
-
-**Nothing else moves:** the property-sheet model, the picker model, radius, the 1920 layout,
-ground-instead-of-border, the gutter rule. All settled.
+- `/home/user/todo-ai-redesign/docs/specs/assistant/F-009-list-actions.md`
 
 ## Success criteria
 
-- **Zero long structural borders between layout regions on web** — give the same measurement
-  this briefing did, at 1440 and 1920.
-- The narrowed border rule is written down, and says whether the third case is gone or rewritten.
-- **`visual_review:` and `a11y_review:` present, with counts** — this is the point of the task
-  as much as the panels are.
-- T-216 and T-217 either fixed or re-confirmed.
-- The title's size answered in one sentence.
-- `design-check` green. No testid invented or renamed. `index.html` rebuilt.
+1. **AC-6 keeps pointer drag as the only reorder mechanism.** No Move up / Move down for tasks.
+2. **AC-6 carries the deferral in its own text** — that screen-reader reorder is deferred, by
+   owner decision on 2026-08-22, because VoiceOver and TalkBack cannot perform a custom drag and
+   reorder is cosmetic; and that this deferral covers reorder and nothing else.
+3. **A new AC requires Tab to reach every task row and every row control, with visible focus**,
+   unconditional on sort mode. Platform-tagged the way the spec tags its other ACs.
+4. **`F-001 AC-33` is neither amended nor undermined**, and F-009 says the deferral stops at
+   reorder because delete destroys data.
+5. **The lists-vs-tasks reorder inconsistency is recorded as accepted**, with the reason.
+6. **The spec's own conventions are followed**: no AC renumbered, none deleted; the revision
+   recorded in the `## Status` line the way F-001 records revisions 4–8, naming this task id and
+   the date.
+7. Verify on disk after writing — re-read what you wrote and confirm AC numbering is unbroken.
+
+## Do not
+
+Do not widen this into a general accessibility pass on F-009. Other ACs may well have gaps; if
+you find one, **return it as an unresolved item** for a separate row rather than fixing it here.
+The owner narrowed this task once already and a silent re-widening would undo that.

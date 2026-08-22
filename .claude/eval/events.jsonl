@@ -197,3 +197,7 @@
 {"ts":"2026-08-22T08:40:01.045Z","event":"session_stop","session":"96714da3-5f4d-4c4d-98b8-72def06d7ea0"}
 {"ts":"2026-08-22T08:41:28.252Z","event":"session_stop","session":"96714da3-5f4d-4c4d-98b8-72def06d7ea0"}
 {"ts":"2026-08-22T08:43:21.157Z","event":"session_stop","session":"96714da3-5f4d-4c4d-98b8-72def06d7ea0"}
+{"ts":"2026-08-22T08:49:28.219Z","event":"session_stop","session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
+{"ts":"2026-08-22T08:54:34.717Z","event":"agent_return","task":"T-232","agent":"mobile-agent","status":"UNKNOWN","artifacts":[],"evidence_conflict":null,"session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
+{"ts":"2026-08-22T08:54:56.185Z","event":"agent_return","task":"T-234","agent":"spec-agent","status":"UNKNOWN","artifacts":[],"evidence_conflict":null,"session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
+{"ts":"2026-08-22T08:55:34.396Z","event":"session_stop","session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
