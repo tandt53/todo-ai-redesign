@@ -97,3 +97,78 @@ addressable by it.
   `deleted_at` in `TASK_PATCH_FIELDS` would make un-delete reachable from every
   client that can spell a field name, and because `PATCH` 404s on a deleted row
   — inverting that would weaken the guard for every other field.
+
+---
+
+## Amendment (2026-08-23, T-181) — the restore also clears `series_ended_at`
+
+**Trigger.** `F-006 ## Impact` §6, Open Question 2, and `LEARNINGS.md` **L-026**.
+Measured on `main`: `plan.ts:713-722` writes `series_ended_at` on **every** row of
+a series delete (including completed occurrences that are not soft-deleted), and
+`app.ts:822-826` clears **`deleted_at` and `updated_at`, and nothing else**. So
+restoring a series-deleted set returns the occurrences with `series_live: false`
+and the repeat permanently dead. `F-005 AC-43`'s *"it reverses exactly the
+action it was offered for and nothing else"* is false for the series class.
+
+**Why it was invisible.** Three reasons stacked (L-026): the AC reads as
+satisfied, the restore's own tests assert on `deleted_at` (which does come
+back), and the window in which a human could have noticed was seconds wide —
+the undo offer expires, so nobody ever restored a series days later. Verified:
+**0 rows in the live store carry `series_id` and `deleted_at` together.**
+F-006's trash makes that restore a deliberate act days later, changing the
+viewing angle on old code.
+
+### The fork
+
+**Option A — the restore also clears `series_ended_at`.** AC-43's promise is
+kept. The reversal is complete per field, not per row. Risk: a restore could
+revive a series the user ended deliberately.
+
+**Option B — AC-43 narrows its claim.** The restore returns the occurrences
+but the repeat stays dead. The user gets their tasks back and must re-set the
+repeat. The trash entry must say so (copy that design does not yet have).
+
+### Decision: Option A — clear `series_ended_at` on restore
+
+**`series_ended_at` is written ONLY by the series-delete path** (`plan.ts`,
+the same `softDelete + side: { series_ended_at: ctx.at }` code block). There
+is no other writer. So clearing it on restore is safe: it was always written
+by the exact gesture being reversed.
+
+**The clearing rule:** when a restore brings back rows that carry a `series_id`,
+it clears `series_ended_at` on every row of that series whose
+`series_ended_at` matches the gesture's shared `deleted_at`. This is precise:
+it clears only the end marker written by the gesture being restored, and it
+reaches the completed occurrences that the series delete marked but did not
+trash.
+
+**`app.ts:822-826` changes:** in addition to clearing `deleted_at` and
+advancing `updated_at` on the membership set, the restore identifies the
+series (from any member's `series_id`) and runs a second pass clearing
+`series_ended_at` on rows of that series where `series_ended_at` equals the
+gesture's `deleted_at`. Those rows appear in `changed` so both clients see
+them.
+
+### What the rejected option would have required
+
+Option B would have narrowed AC-43's claim to exclude the series class — the
+one class where the delete does two things (`deleted_at` + `series_ended_at`).
+The trash entry would have needed copy stating *"the repeat will not come
+back"*, which design does not have and which the spec's own `## Impact` §9
+does not route. And L-026's lesson — *"enumerate every FIELD that write
+touched, not every ROW"* — would have become an item the pipeline paid for and
+then ignored.
+
+### Consequences of the amendment
+
+- **Good:** AC-43's promise is true for every class. The reversal is
+  field-complete. L-026's lesson is applied.
+- **Good:** no design dependency — the trash entry needs no special copy about
+  the repeat, because the repeat does come back.
+- **Bad:** the restore's changed set now includes completed occurrences that
+  were never deleted, because their `series_ended_at` is being cleared. Both
+  clients must handle a `changed` member that was already in `state.tasks`.
+- **Neutral:** the clearing is by value match (`series_ended_at` equals the
+  gesture's `deleted_at`), so a series whose end marker was written by a
+  *different* gesture is unaffected. A series that was ended and then had some
+  members separately deleted and restored has its markers preserved.

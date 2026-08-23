@@ -133,3 +133,25 @@ hygiene rather than as a queue.
 **The structural reason it stays invisible: the mockups are HTML and the app is React and React
 Native, with nothing connecting them.** A mockup edit can never touch the build, so *design
 approved* never implies *app changed* — only a dispatch does. See [[T-290]].
+
+## 2026-08-23 — A closed enum with no member for the case reuses the nearest one, and lies
+
+Recorded from architect-agent's return on T-191, which met this from one side while
+backend-agent met it from the other in the same hour.
+
+`skipped.reason` had one member, `modified_since_apply`, so a row the user had
+**permanently destroyed** was reported to them as *"modified since apply"* — and the
+test that passed certified the wrong message. `RefusalReason` is closed at twelve
+members with none meaning *"this operation is not permitted on this entity type"*, so
+a duplicate list name ships as `structural_field_not_settable` on a field that is
+perfectly settable, and a refused list operation ships with `field: null`, which is
+the tell.
+
+Neither agent did anything wrong: each had a closed vocabulary and a case outside it,
+and each flagged the choice rather than hiding it.
+
+**The method, which is the part worth keeping:** when adding a member to a closed
+enum, grep every existing use of the nearest member and ask which uses are already
+misfits. **The misfits are the same gap arriving earlier.** They compound — each
+false-statement use teaches a test that the wrong message is correct, and after that
+the test defends the defect.

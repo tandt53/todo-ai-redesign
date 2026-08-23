@@ -139,7 +139,10 @@ either** — that is the point of it. **F-005 does** (`## task — the F-005
 fields`). Prototype serves, as the F-001 baseline:
 `id (uuid, client-generatable — POST /tasks accepts optional id, 409
 TASK_ID_EXISTS on collision), title, due_at, reminder_at, priority,
-status(inbox|today|done|archived), updated_at, deleted_at (soft delete),
+status(inbox|today|done|archived), updated_at, deleted_at (soft delete —
+**F-006: it is the retention clock's start**; the 30-day expiry is derived from
+it as `deleted_at + 30 days`, and a restore resets it because the restore
+clears `deleted_at` and the next delete re-sets it),
 created_at`. Owned per `user_id`; the assistant marks rows only via
 `turn.changed_task_ids`, never by writing marker fields onto tasks (AC-4:
 only the turn's own changes are marked).
@@ -468,8 +471,8 @@ so an enum reads tidily.
 | repeat_until | iso8601 date \| null | no | inclusive; **exclusive with `repeat_count`**; earlier than the due date is reported, not corrected | AC-25 |
 | repeat_count | integer \| null | no | ≥ 1; exclusive with `repeat_until`; **runs are counted, never stored** — see `ever_completed` | AC-25, ADR-014 |
 | series_id | uuid \| null | assigned when a repeat is first set | **never cleared** — it survives clearing the repeat, because AC-30 and the run count have no other key to the history. **Therefore it is never the liveness predicate** | AC-25, AC-26, AC-28, AC-30 |
-| series_ended_at | iso8601 \| null | no | written on **every** row of a series by AC-30's series delete, including the surviving completed occurrences. **Internal.** It is the only one of AC-25's four endings that needs a marker — the other three are derivable | AC-25, AC-30, AC-39 |
-| delete_gesture_id | uuid \| null | with a soft delete | one id per delete gesture, written on every row that gesture trashed, in the same transaction as `deleted_at`. **Internal.** `null` on the **53 of 790** rows that predate the field | `## Data`'s `delete_membership`; AC-30, AC-41, AC-43, ADR-012 |
+| series_ended_at | iso8601 \| null | no | written on **every** row of a series by AC-30's series delete, including the surviving completed occurrences. **Cleared by a series restore** (ADR-012 Amendment, T-181): when the restore reverses a series delete, `series_ended_at` is cleared on every row of the series whose marker matches the gesture's `deleted_at`. **Internal.** It is the only one of AC-25's four endings that needs a marker — the other three are derivable | AC-25, AC-30, AC-39; F-005 AC-43, ADR-012 |
+| delete_gesture_id | uuid \| null | with a soft delete | one id per delete gesture, written on every row that gesture trashed, in the same transaction as `deleted_at`. **Internal, never serialized, not made serializable by F-006** (AC-6, `§ Task on the wire`). `null` on the **53 of 790** rows that predate the field. **F-006 adds two readers**: the trash read groups entries by this field server-side (AC-5), and permanent deletion resolves membership through it (AC-11) | `## Data`'s `delete_membership`; AC-30, AC-41, AC-43, ADR-012; F-006 AC-5, AC-6, AC-8, AC-11 |
 
 **`series_live` is derived and is not a stored field** (AC-25, ADR-011's
 neighbour). Its formula is in `api-contracts.md § Task on the wire`; it is
