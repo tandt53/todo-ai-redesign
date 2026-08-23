@@ -13,6 +13,11 @@ narration of the machinery instead of the product.
 
 ### Prefer Dispatching Agents Over Direct Implementation
 
+This governs **how** work gets done once it is a task. It says nothing about
+whether a request should become a task at all — that is `## When a request
+arrives`, and it runs first. Reaching for an agent the moment a request lands is
+the failure that ordering exists to prevent.
+
 For any substantial work (writing code, tests, specs, design files, fixing bugs), **strongly prefer dispatching the appropriate agent** rather than doing it yourself. This ensures:
 - Metrics are captured in the dashboard
 - Agent protocols (startup, completion) are followed
@@ -41,6 +46,73 @@ When dispatching a sub-agent, you MUST read the agent definition file and pass i
 Agent(subagent_type: "backend-agent", prompt: "Read BRIEFING.md...")
 ```
 This does NOT load the agent definition. The sub-agent won't have proper tool access and will fail silently.
+
+## When a request arrives
+
+A request is not a task. Between the two sits the only judgement here that
+nothing else can make: whether to build it, when, and instead of what. Skip it
+and the queue fills with whatever was asked for most recently, which is not the
+same as what matters.
+
+**Applies when the owner asks for something new** — a feature, a change, a bug
+they hit. Not to `next` / `status` / `retry`, and not to a request whose whole
+scope you could state in one line and be sure of: a typo, a renamed label, a
+config value. For those, say what you are about to do in one sentence and do it.
+When you are unsure which kind you have, it is the first kind.
+
+### What you read first
+
+`CLAUDE.md ## Project`. Those five lines are what a priority is judged against —
+without them every request looks equally urgent, because there is nothing for one
+to be more urgent *than*.
+
+**A line still in square brackets is unanswered. Stop and ask for it.** Do not
+infer the product from the code, and do not proceed on your own guess about what
+matters. `Is not` is the one that gets skipped and the one that does the work: it
+is what makes a request refusable.
+
+### The five answers
+
+**1. What changes for someone using the product?** One sentence they would
+recognise. If you cannot write it, you do not understand the request yet — ask,
+rather than dispatching an agent to find out.
+
+**2. Does it fit what the product is?** Check it against `Is not` and `For`. A
+request that contradicts one of them gets said once, plainly, quoting the line it
+contradicts.
+
+**3. What does it collide with?** Name what is already built, in flight, or
+queued that this changes, reworks, or makes unnecessary. `TASKS.md` and the
+feature specs' `## Links` blocks are where you look. A request that quietly
+obsoletes a pending task is the cheapest saving available and the easiest to
+miss.
+
+**4. What is it competing with?** Name the two highest-priority pending items it
+would go ahead of, and say why it should or should not. **Priority is the
+owner's decision, so you recommend and they confirm** — but arriving with a bare
+list and no recommendation hands them your job.
+
+**5. What is the smallest version that delivers it?** State it, and state what
+you are leaving out. Most requests contain a version that is half the work and
+most of the value, and nobody finds it once the tasks are written.
+
+### Then present it, and wait
+
+One short block per `.claude/agents/_communication.md`: what it does for a user,
+where you would put it and against what, the smallest version, and anything from
+2 or 3 they need to rule on.
+
+**Their answer is what creates rows in `TASKS.md`** — not your reading of the
+request. Until then nothing is dispatched.
+
+### Disagreement is part of the job, and it is spent once
+
+If the request is premature, already covered by something built, or solves a
+problem the product does not have, say so in one or two sentences with the
+evidence. **Say it once.** If the owner hears it and chooses otherwise, that is
+their call: do it their way, note the consequence in one line, and drop it.
+Repeating a rejected argument is not diligence, and it costs you the credibility
+you will need the next time you are right.
 
 ## When User Says "next", "continue", or "what's next"
 

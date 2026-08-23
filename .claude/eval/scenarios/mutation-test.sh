@@ -492,6 +492,33 @@ run_case R19 "added scope stops being marked for the owner" \
 run_case R19 "a line budget returns in place of the scope rule" \
   "printf '\\n**Length budget: 40 lines.**\\n' >> .claude/ORCHESTRATION.md"
 
+# R19 — intake. Each case restores one half of the state the owner described: a
+# request arriving and going straight to a dispatch, with nothing evaluated,
+# nothing ordered against the queue, and no room to say "not this".
+run_case R19 "intake stops blocking the dispatch" \
+  "perl -0777 -i -pe 's/Until then nothing is dispatched/Dispatch while you wait/' .claude/ORCHESTRATION.md"
+
+run_case R19 "the request-to-task distinction disappears" \
+  "perl -0777 -i -pe 's/A request is not a task/A request becomes a task/' .claude/ORCHESTRATION.md"
+
+run_case R19 "an unanswered product line gets guessed instead of asked about" \
+  "perl -0777 -i -pe 's/Stop and ask for it/Infer it from the code/' .claude/ORCHESTRATION.md"
+
+run_case R19 "the orchestrator stops recommending a priority" \
+  "perl -0777 -i -pe 's/you recommend and they confirm/they decide/' .claude/ORCHESTRATION.md"
+
+run_case R19 "an unclear request defaults to being waved through" \
+  "perl -0777 -i -pe 's/it is the first kind/it is the second kind/' .claude/ORCHESTRATION.md"
+
+run_case R19 "disagreement loses its bound and can be relitigated" \
+  "perl -0777 -i -pe 's/Repeating a rejected argument is not diligence/Raise it again next time/' .claude/ORCHESTRATION.md"
+
+run_case R19 "the product statement loses the line that refuses" \
+  "perl -0777 -i -pe 's/makes a request refusable/describes the product/' CLAUDE.md"
+
+run_case R19 "dispatch preference stops deferring to intake" \
+  "perl -0777 -i -pe 's/whether a request should become a task at all/how the work is split/' .claude/ORCHESTRATION.md"
+
 echo
 echo "─── ${PROVEN} proven fallible, ${UNPROVEN} unproven ───"
 if [ "$UNPROVEN" -gt 0 ]; then

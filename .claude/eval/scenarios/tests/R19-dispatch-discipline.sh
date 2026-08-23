@@ -24,6 +24,7 @@ source "$SCRIPT_DIR/../lib/assert.sh"
 
 CLAUDE_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 ORCH="$CLAUDE_ROOT/ORCHESTRATION.md"
+PROJ_MD="$CLAUDE_ROOT/../CLAUDE.md"
 
 echo "─── R19 — the orchestrator has dispatch discipline ───"
 
@@ -88,6 +89,71 @@ if grep -qE 'Length budget: [0-9]+ lines' "$ORCH"; then
 else
   _record_pass "no invented line budget on briefings"
 fi
+
+# ── A request is not a task ────────────────────────────────────────────────
+# The complaint that produced this: a request arrived, the orchestrator studied
+# it and dispatched. No evaluation, no ordering against what was queued, no
+# pushback. The only guidance in that region of the file was "Prefer Dispatching
+# Agents", which taught exactly that, and tasks in this playbook were only ever
+# created by the pipeline reacting to itself — from a PARTIAL return, a HIGH
+# finding, a REJECT. Nothing described a request arriving from the owner at all.
+assert_file_contains "$ORCH" 'When a request arrives' \
+  "there is a step between a request and a task"
+assert_file_contains "$ORCH" 'A request is not a task' \
+  "intake states the distinction it exists to enforce"
+
+intake="$(grep -n '^## When a request arrives' "$ORCH" | head -1 | cut -d: -f1)"
+nextcmd="$(grep -n '^## When User Says' "$ORCH" | head -1 | cut -d: -f1)"
+if [ -n "$intake" ] && [ -n "$nextcmd" ] && [ "$intake" -lt "$nextcmd" ]; then
+  _record_pass "intake is defined before the queue-advancing command"
+else
+  _record_fail "intake comes after 'next' — the queue moves before anything is evaluated"
+fi
+
+# Intake must end in the owner, not in TASKS.md. Without this it becomes a
+# checklist the orchestrator ticks on its way to the dispatch it already chose.
+assert_file_contains "$ORCH" 'creates rows in `TASKS.md`' \
+  "the owner's answer is what creates tasks, not the orchestrator's reading"
+assert_file_contains "$ORCH" 'Until then nothing is dispatched' \
+  "intake blocks dispatch rather than advising it"
+
+# A threshold, or every typo costs a round trip and the step gets skipped whole.
+assert_file_contains "$ORCH" 'it is the first kind' \
+  "an ambiguous request defaults to being evaluated, not waved through"
+
+# Priority needs something to judge against, and it is not the orchestrator's
+# opinion. A bracketed placeholder must stop the run rather than be invented.
+assert_file_contains "$ORCH" 'CLAUDE.md ## Project' \
+  "intake reads the product statement before judging priority"
+assert_file_contains "$ORCH" 'Stop and ask for it' \
+  "an unanswered product line stops intake instead of being guessed"
+for field in '**Is**' '**For**' '**Must**' '**Is not**' '**Succeeds when**'; do
+  assert_file_contains "$PROJ_MD" "$field" "product statement has the field: $field"
+done
+assert_file_contains "$PROJ_MD" 'makes a request refusable' \
+  "the product statement says why Is not is the load-bearing line"
+
+# The two judgements that make this project management rather than a form.
+assert_file_contains "$ORCH" 'What does it collide with' \
+  "intake looks for queued work the request obsoletes"
+assert_file_contains "$ORCH" 'What is it competing with' \
+  "intake places the request against what is already pending"
+assert_file_contains "$ORCH" 'you recommend and they confirm' \
+  "priority is recommended by the orchestrator and decided by the owner"
+assert_file_contains "$ORCH" 'smallest version' \
+  "intake asks for the cheapest version that still delivers"
+
+# Pushback, bounded. Absent, the orchestrator builds whatever it is handed;
+# unbounded, it relitigates a decision the owner already made.
+assert_file_contains "$ORCH" 'it is spent once' \
+  "disagreement is stated, and stated once"
+assert_file_contains "$ORCH" 'Repeating a rejected argument is not diligence' \
+  "the bound on disagreement is stated, not left to judgement"
+
+# The dispatch-preference section must defer to intake, or the two contradict and
+# the reader follows whichever they reach first.
+assert_file_contains "$ORCH" 'whether a request should become a task at all' \
+  "the dispatch-preference section defers to intake instead of competing"
 
 if pass_or_fail "R19"; then
   echo "R19 VERDICT: PASS"
