@@ -506,13 +506,32 @@ Purpose: a tappable row at the end of every `.list` that creates a new task with
 
 **What a short list looks like:** byte-for-byte today's behaviour — 0 rows covered, gap 0. `position: sticky` has no visual effect when the element's natural position is already within the scrollport. This property is what made the feature cheap and must survive.
 
-**Voice FAB clearance:** on mobile (below `breakpoints.split`), the FAB moves to `bottom: 0` — the same level as the pinned bar (both 52px). The bar gets `padding-right: calc(var(--h-lg) + var(--s4) + var(--s2))` on mobile so its text stops before the FAB area. The FAB sits on the bar's right padding zone, covering no text the bar does not already cover. Rejected options and measured evidence: (1) **FAB above bar** (`bottom: calc(var(--h-lg) + var(--s4))`) — covered 2 rows of readable content, including due times hidden behind the mic button; (2) **FAB at original position** (`bottom: var(--s4)`) — protrudes 16px above the bar, covering 1 row's due time; (3) **FAB hidden while bar is pinned** — removes the only Talk navigation on mobile.
+**Voice FAB clearance:** on mobile (below `breakpoints.split`), the FAB sits at `bottom: 25px` (iOS) / `bottom: 23px` (Android) — raised above the system indicator so it clears the homebar / gesturebar. The bar gets `padding-right: calc(var(--h-lg) + var(--s4) + var(--s2))` on mobile so its text stops before the FAB area. The FAB sits on the bar's right padding zone, covering no text the bar does not already cover. Rejected options and measured evidence: (1) **FAB above bar** (`bottom: calc(var(--h-lg) + var(--s4))`) — covered 2 rows of readable content, including due times hidden behind the mic button; (2) **FAB at original position** (`bottom: var(--s4)`) — protrudes 16px above the bar, covering 1 row's due time; (3) **FAB hidden while bar is pinned** — removes the only Talk navigation on mobile.
+
+**System indicator reservation (T-318).** The inline-new is restructured to a column layout: `.inline-new-in` holds the content row (plus/label or input), and a `.homebar` (iOS) / `.gesturebar` (Android) sits below it, same treatment as § TaskBottomBar. **Total height with indicator:** iOS 77px (52 + 25), Android 75px (52 + 23). This reserves the space the system home indicator occupies on a real device.
+
+**Permanent vertical cost (updated T-318):** iOS 77px (1.26 rows), Android 75px (1.23 rows). Previously 52px (0.85 rows) with no indicator reservation. Now essentially level with option B's cost (iOS 81px / 1.33 rows, Android 79px / 1.30 rows).
 
 **No mic in this row.** The add row calls `addTask` with the title verbatim. A mic icon next to a text field promises the text goes through the assistant, which it does not. The mic control lives exclusively on the Talk surface (§ MicControl).
 
 **Not drawn and why:** Option B (one fixed bottom bar merging the field and the mic) was examined by the owner and not taken *for now*. Nothing in the current design forecloses it. **Option B is now drawn alongside A (T-311)** — see § TaskBottomBar below.
 
-States: default (idle, plus icon + "Add a task" in `text.muted`) · hover (label shifts to `text.secondary`) · focused (focus ring).
+**Typing state (T-319).** When the user taps the inline-new, the plus icon and label hide, and an `.inline-input` text field appears in their place. The row stays pinned at `sticky; bottom: 0` — it does NOT scroll to its natural flow position first, because that would disorient the user (they tapped a control at the bottom of the screen and should not see the view jump). The keyboard appears below the field (keyboard-mock, 38% of frame height). When the keyboard is up, the system indicator hides (it is behind the keyboard) and the voice FAB repositions to `bottom: 312px`, riding just above the keyboard.
+
+**A's advantage over B while typing:** the voice FAB remains visible and reachable above the keyboard. B morphs the mic into a send arrow when the field has text, closing the voice path. A keeps the FAB as a separate control.
+
+**Typing measurements (T-319, comparable to B):**
+
+| | iOS | Android |
+|---|---|---|
+| Keyboard | 38% of frame (312px) | 38% (312px) |
+| Input bar (no indicator when kb up) | 52px (6.3%) | 52px (6.3%) |
+| List visible | 50% (412px) | 49% (400px) |
+| Voice FAB | visible above keyboard | visible above keyboard |
+
+Option B comparison: list 50% (iOS) / 48% (Android), bar 56px, no voice FAB while typing.
+
+States: default (idle, plus icon + "Add a task" in `text.muted`) · hover (label shifts to `text.secondary`) · focused (focus ring) · typing (inline-input visible, keyboard up, voice FAB above keyboard).
 
 ## TaskBottomBar — option B: fixed field + morphing mic/send (T-311, provisional)
 
