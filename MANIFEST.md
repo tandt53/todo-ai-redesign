@@ -188,8 +188,8 @@ writers:
   # returns and consolidations in it stay the orchestrator's to write.
   spec-agent:        ["{specs}/", "{design}/{shared_dir}/components.md", "docs/reports/gate1-lenses/"]
   architect-agent:   ["{specs}/"]
-  # `{reports}/` 2026-08-21 — map change not a one-off grant (L-017): an audit produces a report.
-  design-agent:      ["{design}/", "{reports}/"]
+  # `{reports}/` 2026-08-21 and `.claude/tools/design-check/` 2026-08-23 — map changes, not one-off grants (L-017): an audit produces a report, and design-agent AUTHORS the checker rather than visiting it.
+  design-agent:      ["{design}/", "{reports}/", ".claude/tools/design-check/"]
   # implementers also own the root build manifests (platform docs make the
   # first implementer create them; they are shared config, not source)
   backend-agent:     ["{src}/", "package.json", "tsconfig.json", ".gitignore"]

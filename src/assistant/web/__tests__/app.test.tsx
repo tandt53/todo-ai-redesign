@@ -11,10 +11,12 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { App } from '../App.tsx'
 import { AssistantApi } from '../../_shared/api/client.ts'
 import { AssistantController } from '../../_shared/controller.ts'
+import { installClock } from '../../_shared/model/clock.ts'
+import type { ClockProvider } from '../../_shared/model/clock.ts'
 import { initialState, reducer } from '../../_shared/model/reducer.ts'
 import type { Action, AppState } from '../../_shared/model/reducer.ts'
 import type { NewMsg } from '../../_shared/model/messages.ts'
@@ -39,7 +41,24 @@ import {
 import type { TestController } from './_helpers.ts'
 import { distanceFromBottom } from '../../_shared/model/follow.ts'
 
-afterEach(cleanup)
+// Frozen clock — same reason as shell.test.tsx: `upcomingTask` is T0 + 7 days,
+// and without a fixed clock `nowDate()` falls back to `new Date()`, which drifts
+// the task into Today once the calendar reaches that date. Components that read
+// `nowDate()` (ListsMenu) would disagree with the controller's frozen T0, causing
+// a split-brain between menu counts and task-surface rows.
+let previousClock: ClockProvider | null = null
+beforeEach(() => {
+  previousClock = installClock({
+    nowDate: () => new Date(T0),
+    zoneName: () => 'Asia/Ho_Chi_Minh',
+  })
+})
+
+afterEach(() => {
+  cleanup()
+  installClock(previousClock)
+  previousClock = null
+})
 
 // jsdom rewrites import.meta.url to an http URL, so resolve from the vitest
 // root instead — the mockups are the contract and must really be read.
