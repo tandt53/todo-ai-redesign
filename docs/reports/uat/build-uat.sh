@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Rebuild the UAT flow document from the current design mockups.
+# Rebuild the DESIGN-MOCKUP book from the current mockups.
+#
+# For the UAT document — the running product — use build-uat-real.sh instead.
 #
 #   bash docs/reports/uat/build-uat.sh
 #
@@ -21,4 +23,4 @@ echo "2/3  nén"
 UAT_TMP="$TMP" python3 docs/reports/uat/compress.py
 echo "3/3  sinh HTML"
 UAT_TMP="$TMP" python3 docs/reports/uat/render.py
-echo "xong: docs/reports/uat/uat-flows.html"
+echo "xong: docs/reports/uat/design-mockups.html"

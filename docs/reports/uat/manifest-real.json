@@ -1,0 +1,460 @@
+{
+ "flows": [
+  {
+   "id": "F1",
+   "title": "Lần chạy đầu — chưa có việc nào",
+   "purpose": "Người mới mở app lần đầu. Trạng thái rỗng có mời gọi hành động không, và app chịu lỗi mạng ra sao.",
+   "steps": [
+    {
+     "name": "landing",
+     "caption": "Màn hình đầu tiên khi mở app",
+     "kind": "happy",
+     "img": {
+      "wide": "F1__landing__wide.png",
+      "narrow": "F1__landing__narrow.png"
+     }
+    },
+    {
+     "name": "tasks-empty",
+     "caption": "Danh sách việc khi chưa có gì",
+     "kind": "happy",
+     "img": {
+      "wide": "F1__tasks-empty__wide.png",
+      "narrow": "F1__tasks-empty__narrow.png"
+     }
+    },
+    {
+     "name": "offline",
+     "caption": "Mở app khi mất mạng",
+     "kind": "neg",
+     "img": {
+      "wide": "F1__offline__wide.png",
+      "narrow": "F1__offline__narrow.png"
+     }
+    }
+   ],
+   "console": [
+    "Failed to load resource: net::ERR_CONNECTION_RESET",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ],
+   "viewports": [
+    "wide",
+    "narrow"
+   ]
+  },
+  {
+   "id": "F2",
+   "title": "Thêm việc bằng cách gõ — thanh dưới cùng (khổ hẹp)",
+   "purpose": "Luồng chính của phương án B: ô nhập nằm dưới, nút mic hoá mũi tên gửi khi có chữ.",
+   "steps": [
+    {
+     "name": "bar-idle",
+     "caption": "Thanh dưới ở trạng thái nghỉ — nút mic, chạm vào là sang Talk",
+     "kind": "happy",
+     "img": {
+      "narrow": "F2__bar-idle__narrow.png"
+     }
+    },
+    {
+     "name": "bar-typing",
+     "caption": "Đang gõ — nút mic đã hoá mũi tên gửi",
+     "kind": "happy",
+     "img": {
+      "narrow": "F2__bar-typing__narrow.png"
+     }
+    },
+    {
+     "name": "bar-sent",
+     "caption": "Đã gửi — việc mới nằm trong danh sách",
+     "kind": "happy",
+     "img": {
+      "narrow": "F2__bar-sent__narrow.png"
+     }
+    },
+    {
+     "name": "bar-whitespace",
+     "caption": "Chỉ gõ khoảng trắng — nút hành động ở trạng thái nào",
+     "kind": "neg",
+     "img": {
+      "narrow": "F2__bar-whitespace__narrow.png"
+     }
+    }
+   ],
+   "console": [
+    "Failed to load resource: net::ERR_CONNECTION_RESET"
+   ],
+   "viewports": [
+    "narrow"
+   ]
+  },
+  {
+   "id": "F3",
+   "title": "Thêm việc ở khổ rộng — dòng thêm việc tại chỗ",
+   "purpose": "Từ split (1024) trở lên không có thanh dưới; thêm việc bằng dòng \"Add a task\" ngay trong danh sách.",
+   "steps": [
+    {
+     "name": "inline-idle",
+     "caption": "Dòng \"Add a task\" ở cuối danh sách",
+     "kind": "happy",
+     "img": {
+      "wide": "F3__inline-idle__wide.png"
+     }
+    },
+    {
+     "name": "inline-typing",
+     "caption": "Đang gõ vào dòng thêm việc",
+     "kind": "happy",
+     "img": {
+      "wide": "F3__inline-typing__wide.png"
+     }
+    },
+    {
+     "name": "inline-added",
+     "caption": "Việc mới đã vào danh sách",
+     "kind": "happy",
+     "img": {
+      "wide": "F3__inline-added__wide.png"
+     }
+    }
+   ],
+   "console": [
+    "Failed to load resource: net::ERR_CONNECTION_RESET"
+   ],
+   "viewports": [
+    "wide"
+   ]
+  },
+  {
+   "id": "F4",
+   "title": "Danh sách dài — có che mất việc không",
+   "purpose": "Câu hỏi đã tranh luận khi chốt phương án B: danh sách dài thì thanh dưới có che dòng cuối không.",
+   "steps": [
+    {
+     "name": "long-top",
+     "caption": "Đầu danh sách dài",
+     "kind": "happy",
+     "img": {
+      "wide": "F4__long-top__wide.png",
+      "narrow": "F4__long-top__narrow.png"
+     }
+    },
+    {
+     "name": "long-bottom",
+     "caption": "Cuộn hết xuống — dòng cuối cùng và thanh dưới",
+     "kind": "happy",
+     "img": {
+      "wide": "F4__long-bottom__wide.png",
+      "narrow": "F4__long-bottom__narrow.png"
+     }
+    }
+   ],
+   "console": [
+    "Failed to load resource: net::ERR_CONNECTION_RESET"
+   ],
+   "viewports": [
+    "wide",
+    "narrow"
+   ]
+  },
+  {
+   "id": "F5",
+   "title": "Mở và sửa chi tiết một việc",
+   "purpose": "Chạm vào một việc để mở chi tiết, đổi mức ưu tiên, thêm ghi chú, thêm bước con.",
+   "steps": [
+    {
+     "name": "detail-open",
+     "caption": "Chi tiết việc vừa mở",
+     "kind": "happy",
+     "img": {
+      "wide": "F5__detail-open__wide.png",
+      "narrow": "F5__detail-open__narrow.png"
+     }
+    },
+    {
+     "name": "detail-priority",
+     "caption": "Sau khi đổi mức ưu tiên",
+     "kind": "happy",
+     "img": {
+      "wide": "F5__detail-priority__wide.png",
+      "narrow": "F5__detail-priority__narrow.png"
+     }
+    },
+    {
+     "name": "detail-note",
+     "caption": "Đã thêm ghi chú",
+     "kind": "happy",
+     "img": {
+      "wide": "F5__detail-note__wide.png",
+      "narrow": "F5__detail-note__narrow.png"
+     }
+    },
+    {
+     "name": "detail-step",
+     "caption": "Đã thêm một bước con",
+     "kind": "happy",
+     "img": {
+      "wide": "F5__detail-step__wide.png",
+      "narrow": "F5__detail-step__narrow.png"
+     }
+    }
+   ],
+   "console": [
+    "Failed to load resource: net::ERR_CONNECTION_RESET"
+   ],
+   "viewports": [
+    "wide",
+    "narrow"
+   ]
+  },
+  {
+   "id": "F6",
+   "title": "Đánh dấu xong và xoá",
+   "purpose": "Hai thao tác phá huỷ nhất trong app: tick xong, và xoá một việc.",
+   "steps": [
+    {
+     "name": "before",
+     "caption": "Trước khi thao tác",
+     "kind": "happy",
+     "img": {
+      "wide": "F6__before__wide.png",
+      "narrow": "F6__before__narrow.png"
+     }
+    },
+    {
+     "name": "completed",
+     "caption": "Sau khi tick xong một việc",
+     "kind": "happy",
+     "img": {
+      "wide": "F6__completed__wide.png",
+      "narrow": "F6__completed__narrow.png"
+     }
+    },
+    {
+     "name": "done-list",
+     "caption": "Việc vừa xong nằm trong nhóm Done",
+     "kind": "happy",
+     "img": {
+      "wide": "F6__done-list__wide.png",
+      "narrow": "F6__done-list__narrow.png"
+     }
+    }
+   ],
+   "console": [
+    "Failed to load resource: net::ERR_CONNECTION_RESET"
+   ],
+   "viewports": [
+    "wide",
+    "narrow"
+   ]
+  },
+  {
+   "id": "F7",
+   "title": "Duyệt các nhóm việc",
+   "purpose": "Chuyển giữa Today, Upcoming, Inbox, Done và xem mỗi nhóm hiển thị gì.",
+   "steps": [
+    {
+     "name": "collection-today",
+     "caption": "Nhóm Today",
+     "kind": "happy",
+     "img": {
+      "wide": "F7__collection-today__wide.png",
+      "narrow": "F7__collection-today__narrow.png"
+     }
+    },
+    {
+     "name": "collection-upcoming",
+     "caption": "Nhóm Upcoming",
+     "kind": "happy",
+     "img": {
+      "wide": "F7__collection-upcoming__wide.png",
+      "narrow": "F7__collection-upcoming__narrow.png"
+     }
+    },
+    {
+     "name": "collection-inbox",
+     "caption": "Nhóm Inbox",
+     "kind": "happy",
+     "img": {
+      "wide": "F7__collection-inbox__wide.png",
+      "narrow": "F7__collection-inbox__narrow.png"
+     }
+    },
+    {
+     "name": "collection-done",
+     "caption": "Nhóm Done",
+     "kind": "happy",
+     "img": {
+      "wide": "F7__collection-done__wide.png",
+      "narrow": "F7__collection-done__narrow.png"
+     }
+    }
+   ],
+   "console": [
+    "Failed to load resource: net::ERR_CONNECTION_RESET"
+   ],
+   "viewports": [
+    "wide",
+    "narrow"
+   ]
+  },
+  {
+   "id": "F8",
+   "title": "Màn Talk — trợ lý",
+   "purpose": "Gõ một câu cho trợ lý, xem nó dựng việc, và hoàn tác được không.",
+   "steps": [
+    {
+     "name": "talk-idle",
+     "caption": "Màn Talk khi chưa nói gì",
+     "kind": "happy",
+     "img": {
+      "wide": "F8__talk-idle__wide.png",
+      "narrow": "F8__talk-idle__narrow.png"
+     }
+    },
+    {
+     "name": "talk-typed",
+     "caption": "Đã gõ vào ô của trợ lý",
+     "kind": "happy",
+     "img": {
+      "wide": "F8__talk-typed__wide.png",
+      "narrow": "F8__talk-typed__narrow.png"
+     }
+    },
+    {
+     "name": "talk-result",
+     "caption": "Trợ lý trả lời và dựng việc",
+     "kind": "happy",
+     "img": {
+      "wide": "F8__talk-result__wide.png",
+      "narrow": "F8__talk-result__narrow.png"
+     }
+    }
+   ],
+   "console": [
+    "Failed to load resource: net::ERR_CONNECTION_RESET"
+   ],
+   "viewports": [
+    "wide",
+    "narrow"
+   ]
+  },
+  {
+   "id": "F9",
+   "title": "Menu danh sách — và hai nút chưa có gì phía sau",
+   "purpose": "Menu danh sách chạy được. Nút kính lúp và nút ⋯ đã nằm trên thanh nhưng TasksSurface.tsx:454 ghi rõ chúng còn trơ — bấm không ra gì. UAT cần thấy đúng điều đó.",
+   "steps": [
+    {
+     "name": "lists-menu",
+     "caption": "Menu danh sách — chạy được",
+     "kind": "happy",
+     "img": {
+      "wide": "F9__lists-menu__wide.png",
+      "narrow": "F9__lists-menu__narrow.png"
+     }
+    },
+    {
+     "name": "search-inert",
+     "caption": "Bấm kính lúp — không có gì mở ra (chức năng chưa dựng)",
+     "kind": "neg",
+     "img": {
+      "wide": "F9__search-inert__wide.png",
+      "narrow": "F9__search-inert__narrow.png"
+     }
+    },
+    {
+     "name": "overflow-inert",
+     "caption": "Bấm ⋯ — không có gì mở ra (chức năng chưa dựng)",
+     "kind": "neg",
+     "img": {
+      "wide": "F9__overflow-inert__wide.png",
+      "narrow": "F9__overflow-inert__narrow.png"
+     }
+    }
+   ],
+   "console": [
+    "Failed to load resource: net::ERR_CONNECTION_RESET",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ],
+   "viewports": [
+    "wide",
+    "narrow"
+   ]
+  },
+  {
+   "id": "F11",
+   "title": "Cài đặt và đổi giao diện",
+   "purpose": "Vào cài đặt, đổi sáng/tối, quay lại danh sách.",
+   "steps": [
+    {
+     "name": "settings",
+     "caption": "Màn cài đặt",
+     "kind": "happy",
+     "img": {
+      "wide": "F11__settings__wide.png",
+      "narrow": "F11__settings__narrow.png"
+     }
+    },
+    {
+     "name": "settings-light",
+     "caption": "Đã chuyển sang giao diện sáng",
+     "kind": "happy",
+     "img": {
+      "wide": "F11__settings-light__wide.png",
+      "narrow": "F11__settings-light__narrow.png"
+     }
+    },
+    {
+     "name": "after-back",
+     "caption": "Quay lại danh sách, giao diện sáng còn giữ",
+     "kind": "happy",
+     "img": {
+      "wide": "F11__after-back__wide.png",
+      "narrow": "F11__after-back__narrow.png"
+     }
+    }
+   ],
+   "console": [
+    "Failed to load resource: net::ERR_CONNECTION_RESET"
+   ],
+   "viewports": [
+    "wide",
+    "narrow"
+   ]
+  },
+  {
+   "id": "F12",
+   "title": "API hỏng giữa chừng",
+   "purpose": "Máy chủ trả lỗi khi đang dùng. App nói cho người dùng biết, hay im lặng nuốt lỗi.",
+   "steps": [
+    {
+     "name": "healthy",
+     "caption": "Trước khi máy chủ hỏng",
+     "kind": "happy",
+     "img": {
+      "wide": "F12__healthy__wide.png",
+      "narrow": "F12__healthy__narrow.png"
+     }
+    },
+    {
+     "name": "load-failed",
+     "caption": "Tải danh sách thất bại (máy chủ trả 500)",
+     "kind": "neg",
+     "img": {
+      "wide": "F12__load-failed__wide.png",
+      "narrow": "F12__load-failed__narrow.png"
+     }
+    }
+   ],
+   "console": [
+    "Failed to load resource: net::ERR_CONNECTION_RESET",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+   ],
+   "viewports": [
+    "wide",
+    "narrow"
+   ]
+  }
+ ],
+ "failures": [],
+ "captured_at": "2026-08-23T17:01:02Z"
+}

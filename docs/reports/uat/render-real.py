@@ -24,7 +24,10 @@ if orphan or ghost or empty:
     for k in empty:  print('  BƯỚC KHÔNG CÓ ẢNH NÀO   :', k, file=sys.stderr)
     sys.exit(f'render: {len(orphan)} ảnh thừa, {len(ghost)} ảnh thiếu, {len(empty)} bước rỗng')
 
-b64 = lambda n: base64.b64encode(open(f"{TMP}/webp/" + n.replace('.png', '.webp'), 'rb').read()).decode()
+# PNGs are embedded as captured — there is no re-encode step. 58 frames of a
+# dark UI are 2.5 MB raw, ~3.3 MB once base64'd: a fine size for one file. The
+# WebP pass this replaced cost minutes and softened the very text a reviewer reads.
+b64 = lambda n: base64.b64encode(open(f'{TMP}/png/{n}', 'rb').read()).decode()
 
 def card(fid, step, n):
     sid = f"{fid}-{step['name']}"
@@ -33,7 +36,7 @@ def card(fid, step, n):
     for vp, label in VP:
         f = step['img'].get(vp)
         if f:
-            panes.append(f'<figure class="pane"><img loading="lazy" src="data:image/webp;base64,{b64(f)}" '
+            panes.append(f'<figure class="pane"><img loading="lazy" src="data:image/png;base64,{b64(f)}" '
                          f'alt="{html.escape(step["caption"])} — {label}"><figcaption>{label}</figcaption></figure>')
     badge = '<span class="n neg">!</span>' if neg else f'<span class="n">{n}</span>'
     return (f'<article class="card{" negc" if neg else ""}" id="{sid}">'
