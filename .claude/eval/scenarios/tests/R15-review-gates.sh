@@ -100,8 +100,8 @@ assert_file_contains "$PROTO" 'itself a HIGH finding' \
 
 # --- Gate 1.5: the design review, which for a long time did not exist ---
 #
-# The spec got five lenses before anything was built, the code got fifteen
-# deterministic checks, and the design got neither — it went from its author
+# The spec got a lens per consuming role before anything was built, the code got
+# sixteen deterministic checks, and the design got neither — it went from its author
 # straight to the implementers. Backwards against cost: a design defect is
 # cheapest before anyone builds on it, and the design is where a large share of a
 # feature's decisions are actually taken.
@@ -224,6 +224,17 @@ if [ -f "$TOOL" ]; then
     _record_fail "the C13 tool has a syntax error — Gate 1 step 1 would abort"
   fi
 fi
+
+# ── the second review round is narrowed by what the revision touched ──────
+# T-146 ran nine lenses on F-005 and T-155 ran the same nine again on r3. Step 4
+# capped how many rounds there are and said nothing about who is in one, so a
+# revision confined to api ACs still re-dispatched the mobile lenses.
+assert_file_contains "$ORCH" 'who is in the second round' \
+  "Step 4 states who the re-review goes to, not only how many rounds"
+assert_file_contains "$ORCH" 'lenses whose ACs actually changed' \
+  "the second round is scoped by what the revision moved"
+assert_file_contains "$ORCH" 'it never widens it' \
+  "the second round may only narrow the Step 2 consumer set"
 
 if pass_or_fail "R15"; then
   echo "R15 VERDICT: PASS"

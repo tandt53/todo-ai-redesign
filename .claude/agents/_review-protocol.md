@@ -58,8 +58,10 @@ produced. **What does not:** code, tests, and any implementation of the contract
 the design implies.
 
 **Why this gate exists at all.** Before it, a design went straight from its author
-to the implementers. The spec got five lenses before anything was built; the
-design got none; the code got fifteen deterministic checks. That is backwards
+to the implementers. The spec got a lens for every role that would consume it —
+Gate 1 reads that set off the AC platform tags, so a spec tagged for three
+platforms gets more lenses than one tagged for a single one. The design got
+none. The code got sixteen deterministic checks. That is backwards
 against cost — a design defect is cheapest to fix before anyone builds against
 it, and the design is where a large share of a feature's consequential decisions
 are actually made.

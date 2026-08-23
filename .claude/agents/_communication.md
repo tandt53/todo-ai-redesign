@@ -82,22 +82,36 @@ invisible — naming, file placement, ordering — you decide silently.
 | Reader | The person who wants the software. Not a maintainer of this pipeline |
 | Their words | Feature names, and what someone using the product can do |
 | A result is | A capability that works now — plus what is not covered |
-| Budget | 8 lines |
+| Budget | 8 bullets across the whole report |
 
-Shape:
+Shape — markdown, so it renders as sections the reader can skip between. Omit
+any zone with nothing in it; most reports use three.
 
+```markdown
+## <Feature in plain words> (<id>)
+
+**Works**
+- the capability, from the using side
+
+**Not yet**
+- what is missing
+
+**Not checked**
+- what could not be verified, and why
+
+**Needs you**
+- a decision only they can make
+
+**Next**
+- one line, so "ok" is a sufficient reply
 ```
-<Feature in plain words> — <what a person can now do> (<id>)
 
-Works        the capability, from the using side
-Not yet      what is missing
-Not checked  what could not be verified, and why
-Needs you    a decision only they can make. Omit when there is none
-Next         one line, so "ok" is a sufficient reply
-```
-
-`Not checked` is its own line on purpose. Folded into `Works` it reads as
+`Not checked` is its own zone on purpose. Folded into `Works` it reads as
 covered, and the gap is the half a reader most needs.
+
+**One fact per bullet, and a bullet is one line.** A bullet that wraps past two
+lines is an explanation; explanations wait to be asked for. Never indent a
+paragraph under a label — it is a wall of text wearing a structure.
 
 One table, because the rule is per code, not per category. A code survives into
 the sentence when the person can act on it, and is replaced by plain words when
