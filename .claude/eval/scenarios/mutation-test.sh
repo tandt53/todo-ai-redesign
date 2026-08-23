@@ -519,6 +519,28 @@ run_case R19 "the product statement loses the line that refuses" \
 run_case R19 "dispatch preference stops deferring to intake" \
   "perl -0777 -i -pe 's/whether a request should become a task at all/how the work is split/' .claude/ORCHESTRATION.md"
 
+# R9 — the sanction register. A grant mechanism widens quietly, so the two ways
+# it stops being narrow are exercised: the exact-triple match becoming a prefix
+# match (which would license a whole tree from one row), and the dead-grant check
+# going quiet (which is how a row nobody removes turns into a standing licence).
+run_case R9 "a sanction matches by prefix instead of the exact path" \
+  "perl -0777 -i -pe 's/if \\(t==id && a==ag && p==pa\\)/if (t==id \\&\\& a==ag \\&\\& index(pa,p)==1)/' .claude/hooks/validate-state.sh"
+
+run_case R9 "a dead sanction stops failing the build" \
+  "perl -0777 -i -pe 's/&& continue   # archived/|| continue   # archived/' .claude/hooks/validate-state.sh"
+
+# R19 — a question is not a request. Each case restores the state that made a
+# question start work: no classification step, no default when the message is
+# ambiguous, or the contract half of the rule going missing.
+run_case R19 "intake stops asking whether the message was a request" \
+  "perl -0777 -i -pe 's/is this a request at all\\?/what the request needs/' .claude/ORCHESTRATION.md"
+
+run_case R19 "an ambiguous message defaults to being acted on" \
+  "perl -0777 -i -pe 's/it is a question\\./it is a request./' .claude/ORCHESTRATION.md"
+
+run_case R19 "the communication contract drops the question rule" \
+  "perl -0777 -i -pe 's/A question is answered, not acted on/Answer promptly/' .claude/agents/_communication.md"
+
 echo
 echo "─── ${PROVEN} proven fallible, ${UNPROVEN} unproven ───"
 if [ "$UNPROVEN" -gt 0 ]; then

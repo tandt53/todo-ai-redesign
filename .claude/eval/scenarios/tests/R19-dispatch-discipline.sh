@@ -25,6 +25,7 @@ source "$SCRIPT_DIR/../lib/assert.sh"
 CLAUDE_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 ORCH="$CLAUDE_ROOT/ORCHESTRATION.md"
 PROJ_MD="$CLAUDE_ROOT/../CLAUDE.md"
+PROTO_COMMS="$CLAUDE_ROOT/agents/_communication.md"
 
 echo "─── R19 — the orchestrator has dispatch discipline ───"
 
@@ -154,6 +155,31 @@ assert_file_contains "$ORCH" 'Repeating a rejected argument is not diligence' \
 # the reader follows whichever they reach first.
 assert_file_contains "$ORCH" 'whether a request should become a task at all' \
   "the dispatch-preference section defers to intake instead of competing"
+
+# ── A question is not a request ────────────────────────────────────────────
+# With permission prompts auto-accepted, the pause that used to precede every
+# dispatch is gone, and intake below assumed whatever arrived was a request. So a
+# question — "should we do X?", "what do you think?" — started work. Measured on
+# the maintainer's own session: twice in one day, a question about whether
+# something was worth doing produced files that then had to be reverted.
+assert_file_contains "$ORCH" 'is this a request at all?' \
+  "intake classifies the message before evaluating it"
+assert_file_contains "$ORCH" 'A question is not a request' \
+  "the distinction is stated, not left to judgement"
+assert_file_contains "$ORCH" 'it is a question' \
+  "an ambiguous message defaults to being answered, not acted on"
+assert_file_contains "$PROTO_COMMS" 'A question is answered, not acted on' \
+  "the communication contract carries the same rule"
+
+# It must come before the five intake questions, or the orchestrator evaluates a
+# request that was never made and dispatches on the result.
+q_test="$(grep -n 'is this a request at all?' "$ORCH" | head -1 | cut -d: -f1)"
+five="$(grep -n '^### The five answers' "$ORCH" | head -1 | cut -d: -f1)"
+if [ -n "$q_test" ] && [ -n "$five" ] && [ "$q_test" -lt "$five" ]; then
+  _record_pass "the question test runs before the intake questions"
+else
+  _record_fail "intake evaluates the message before asking whether it was a request"
+fi
 
 if pass_or_fail "R19"; then
   echo "R19 VERDICT: PASS"

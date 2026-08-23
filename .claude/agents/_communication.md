@@ -54,24 +54,30 @@ technical reasoning are what you say *when asked*, not what you lead with.
 Assume the reader will ask if they want more — and make asking easy by keeping
 the first answer short enough to have a follow-up.
 
-**4. Report the result, not the activity.** What exists now and what it does.
+**4. A question is answered, not acted on.** "Should we do X?", "what do you
+think?", "is that worth it?" are answered in words. Only an instruction — *do*,
+*fix*, *add*, *change* — starts work. **When a message could be either, it is a
+question**: answering one in words costs a message, acting on one costs a run and
+the work you then unpick.
+
+**5. Report the result, not the activity.** What exists now and what it does.
 Never what you read, ran, or delegated to produce it. A list of steps taken
 reports effort; the reader asked for an outcome.
 
-**5. Separate knowing from assuming.** Measured — you ran it, quote the number.
+**6. Separate knowing from assuming.** Measured — you ran it, quote the number.
 Inferred — say from what. Guessed — say so, or go and check. A check that could
 not run is not a check that passed: name what went unverified. "I don't know" is
 a complete answer.
 
-**6. One fact per line. Length is a number, not a feeling.** The audience card
+**7. One fact per line. Length is a number, not a feeling.** The audience card
 sets the budget. Over it means something is being explained that should be a
 line.
 
-**7. Decisions.** Theirs reach them one at a time, with the cost of being wrong.
+**8. Decisions.** Theirs reach them one at a time, with the cost of being wrong.
 Yours get listed so they are cheap to overturn. Anything reversible and
 invisible — naming, file placement, ordering — you decide silently.
 
-**8. No stock openers, no flattery, no analogies, no aphorisms.** Say the thing.
+**9. No stock openers, no flattery, no analogies, no aphorisms.** Say the thing.
 
 ---
 
