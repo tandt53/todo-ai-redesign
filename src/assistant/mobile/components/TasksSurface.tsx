@@ -26,7 +26,7 @@ import {
   tasksSurfaceView,
 } from '../model/tasks-view.ts'
 import type { Collection } from '../model/tasks-view.ts'
-import { tokens } from '../model/theme.ts'
+import { spacing, tokens } from '../model/theme.ts'
 import { touchProps } from '../model/touch.ts'
 import { OfflineBanner } from './Chrome.tsx'
 import { ShellBar } from './PathSwitch.tsx'
@@ -175,7 +175,7 @@ export function TasksSurface({
               accessibilityLabel="New task name"
               placeholder="Task name…"
               placeholderTextColor={colors.text.muted}
-              style={[styles.renameInput, { marginHorizontal: tokens.spacing.gutter_mobile }]}
+              style={[styles.renameInput, { marginHorizontal: spacing.gutter_mobile }]}
               value={draft}
               autoFocus
               onChangeText={setDraft}

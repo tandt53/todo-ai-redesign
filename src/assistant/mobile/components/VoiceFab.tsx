@@ -30,7 +30,7 @@ export function VoiceFab({
   const { hitSlop } = touchProps(id, platform)
   return (
     <Pressable
-      {...a11yProps(id, { label: 'Start listening', role: 'button' })}
+      {...a11yProps(id, { label: 'Talk', role: 'button' })}
       hitSlop={hitSlop}
       style={styles.voiceFab}
       onPress={onPress}

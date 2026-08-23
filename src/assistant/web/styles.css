@@ -103,6 +103,7 @@
   --motion-duration_ms-diffFlashHold: 1600;  /* tokens.json motion.duration_ms.diffFlashHold */
   --motion-duration_ms-diffFlashFade: 400;   /* tokens.json motion.duration_ms.diffFlashFade */
   --motion-duration_ms-rulegrow: 900;        /* tokens.json motion.duration_ms.rulegrow — listening rule growth */
+  --motion-duration_ms-activityPulse: 1200;  /* tokens.json motion.duration_ms.activityPulse — status indicator loops (T-281) */
   /* motion.easing — tokens.json v2 (T-270: retires spring per motion.rule "NO spring, NO bounce") */
   --motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);  /* tokens.json motion.easing.standard */
   --motion-easing-exit: cubic-bezier(0.4, 0, 1, 1);      /* tokens.json motion.easing.exit */
@@ -138,6 +139,7 @@ html {
   --dur-emphasis: calc(var(--motion-duration_ms-emphasis) * 1ms);
   --dur-rulegrow: calc(var(--motion-duration_ms-rulegrow) * 1ms);
   --dur-flash: calc((var(--motion-duration_ms-diffFlashHold) + var(--motion-duration_ms-diffFlashFade)) * 1ms);
+  --dur-pulse: calc(var(--motion-duration_ms-activityPulse) * 1ms); /* activity-indicator loops (T-281) */
   --icon-sm: calc(var(--icon-size-sm) * 1px);
   --icon-md: calc(var(--icon-size-md) * 1px);
   --icon-lg: calc(var(--icon-size-lg) * 1px);
@@ -583,27 +585,20 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 
 /* queued turn notice */
 .queued-note { display: inline-flex; align-items: center; gap: var(--sp-xs); margin-top: var(--sp-xs); padding: 0 var(--sp-xs); font-size: var(--fs-meta); color: var(--tx-muted); }
-.queued-note .dot-pulse { width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--attention); animation: qPulse var(--dur-breath) var(--motion-easing-standard) infinite; }
+.queued-note .dot-pulse { width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--attention); animation: qPulse var(--dur-pulse) var(--motion-easing-standard) infinite; }
 @keyframes qPulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
 
 /* thinking indicator (in-conversation) */
 .thinking-msg { display: inline-flex; align-items: center; gap: var(--sp-sm); }
 .tdots { display: inline-flex; gap: 5px; }
-.tdots i { width: 7px; height: 7px; border-radius: var(--r-pill); background: var(--accent); animation: tBlink var(--dur-breath) var(--motion-easing-standard) infinite; }
-.tdots i:nth-child(2) { animation-delay: calc(var(--dur-breath) / 6); }
-.tdots i:nth-child(3) { animation-delay: calc(var(--dur-breath) / 3); }
+.tdots i { width: 7px; height: 7px; border-radius: var(--r-pill); background: var(--accent); animation: tBlink var(--dur-pulse) var(--motion-easing-standard) infinite; }
+.tdots i:nth-child(2) { animation-delay: calc(var(--dur-pulse) / 6); }
+.tdots i:nth-child(3) { animation-delay: calc(var(--dur-pulse) / 3); }
 @keyframes tBlink { 0%, 100% { opacity: 0.25; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-2px); } }
 
-/* ============ voice surface — the ONE place the aurora lives ============ */
+/* ============ voice surface ============ */
 .voice-surface { display: none; position: relative; flex: none; padding: var(--sp-md) var(--gutter); overflow: hidden; }
 .st-listening .voice-surface, .st-thinking .voice-surface { display: block; }
-.aurora-band {
-  position: absolute; inset: var(--sp-sm) 12%;
-  background: var(--grad-voice); opacity: 0.32; filter: blur(22px); border-radius: var(--r-pill);
-  animation: bandBreath var(--dur-breath) var(--motion-easing-standard) infinite;
-}
-.st-thinking .aurora-band { inset: var(--sp-md) 28%; opacity: 0.22; background: var(--color-dark-accent); }
-@keyframes bandBreath { 0%, 100% { transform: scaleX(0.96); opacity: 0.22; } 50% { transform: scaleX(1); opacity: 0.36; } }
 .state-indicator { position: relative; display: flex; align-items: center; justify-content: center; gap: var(--sp-md); min-height: 44px; }
 .state-word { font-family: var(--font-family-display); font-size: var(--fs-state); font-weight: var(--font-weight-title); }
 .si-listening, .si-thinking { display: inline-flex; align-items: center; gap: var(--sp-md); }
@@ -615,7 +610,7 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 }
 .cancel-btn:hover { background: var(--accent-tint); }
 .waveform { display: inline-flex; align-items: center; gap: 3px; height: 24px; }
-.waveform i { width: 3px; border-radius: var(--r-pill); background: var(--tx); animation: wave var(--dur-breath) var(--motion-easing-standard) infinite; }
+.waveform i { width: 3px; border-radius: var(--r-pill); background: var(--tx); animation: wave var(--dur-pulse) var(--motion-easing-standard) infinite; }
 .waveform i:nth-child(1) { height: 8px; animation-delay: 0ms; }
 .waveform i:nth-child(2) { height: 16px; animation-delay: 120ms; }
 .waveform i:nth-child(3) { height: 22px; animation-delay: 240ms; }
@@ -704,7 +699,7 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 .st-listening .mic { background: var(--grad-voice); border-color: transparent; box-shadow: var(--shadow-glow); color: var(--tx-onaccent); }
 html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); }
 .st-listening .mic::after { opacity: 0; }
-.st-thinking .mic { border-color: var(--accent); box-shadow: var(--shadow-glow); animation: orbBreath var(--dur-breath) var(--motion-easing-standard) infinite; }
+.st-thinking .mic { border-color: var(--accent); box-shadow: var(--shadow-glow); animation: orbBreath var(--dur-pulse) var(--motion-easing-standard) infinite; }
 .st-thinking .mic::after { opacity: 0.3; }
 @keyframes orbBreath { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
 .st-error .mic { border-color: var(--danger); }

@@ -1118,10 +1118,18 @@ in `app-shell.html` (`.search-field`, `data-search="open"`) — this section pub
 anywhere on the Tasks surface. `Escape` closes search. The field is a standard `<input>` in the tab
 order; no custom keyboard handling beyond the shortcut.
 
-**Completed tasks in search results (AC-2 interaction).** When `hide_completed` is true, completed
-tasks are excluded from search results. When false, they appear. The mockup hides done rows
-unconditionally (a demonstration shortcut), but **the implementer must follow the
-`hide_completed` preference** — the mockup is not the rule for this behaviour, this sentence is.
+**Narrowing rule (AC-2).** Live filtering by title: every visible row's title contains the query
+(case-insensitive substring on `task.title` only). Rows whose title does not match are hidden
+regardless of completion status — **a done row whose title matches IS visible** (the mockup
+demonstrates this: its JS in `showState` filters by `.row-title` text, not by `.done` class).
+**`hide_completed` interaction (AC-7):** when `hide_completed` is true, completed rows are
+excluded from search results even if their title matches; when false, they appear. The implementer
+must respect both rules. **Diacritics:** AC-2 specifies case-insensitive substring; diacritic
+folding (e.g. "goi" matching "Gọi") is not specified — the mockup uses `toLowerCase()` only. If
+the implementer adds diacritic-insensitive matching, record the decision here.
+**QA assertion note:** a test that asserts narrowing by counting visible rows (e.g. 5 → 4) will
+pass on a broken state that hides one row by status instead of by query. The correct assertion
+checks row *content*: every visible `.row-title` contains the query string.
 
 States: **closed** (default — field hidden, surface title visible) · **open-empty** (field visible,
 focused, no query, full list) · **open-filtering** (query typed, list narrowing live) ·
@@ -1400,6 +1408,8 @@ Genuinely new controls, and only those, take new ids:
 | `list-editor-name-input` | ListEditorSheet field |
 | `list-editor-create-button` | Create |
 | `list-editor-cancel-button` | Cancel |
+| `list-editor-color-swatch` | § ListEditorSheet colour swatch exemplar (one per colour option; `role="radio"`, accessible name is the colour name e.g. "Grey", "Blue") |
+| `assistant-voice-fab` | Voice FAB — navigates to Talk (below split only). Accessible name: **"Talk"** (AC-37 rev 9 — the control navigates, it does not start capture; § MicControl on the Talk surface is the capture control). `role=button`. Not rendered at or above `breakpoints.split` (the panel is permanent) |
 | `talk-session-retry-button` | SE-SESSION Retry |
 | `talk-task-link` | MessageTaskLink exemplar |
 | `tasks-list-retry-button` | InlineRetryBanner / SE-TASKS Retry |
@@ -1450,8 +1460,8 @@ No content-width floor is published for any control above. § Touch's floors are
 shipped control; none of these has shipped, and publishing a floor measured only in Chromium
 would put a number into a table whose whole value is that its numbers are checkable.
 
-**The counts (updated T-247 — drag-handle testid).** This table now has
-**50** new-control rows (was 49; +1 for `tasks-drag-handle`). The carried-over list is still **6**.
+**The counts (updated T-276 — `list-editor-color-swatch`, `assistant-voice-fab`).** This table now has
+**52** new-control rows (was 50; +2 for `list-editor-color-swatch` and `assistant-voice-fab`). The carried-over list is still **6**.
 **`src/assistant/mobile/model/a11y.ts SHELL_A11Y_IDS`** holds 29 and
 needs updating: add `shell-search-button`, `shell-overflow-button`, `tasks-drag-handle` and the
 20 F-009 ids; retire `shell-talk-button`. This is L-008's mechanism working in the direction drift actually travels — the
@@ -3215,3 +3225,87 @@ about one dialog); a **dirty-field-in-flight** state (the save is on blur and co
 there is no observable third moment); and **§ CarriedNotice's rows on this surface**, which are
 drawn in the three shell mockups because the whole point of that family is that it renders on every
 surface, including the two the detail mockup does not contain.
+
+---
+
+## Testid catalogue — conversation (voice-assistant-view)
+
+**Added 2026-08-23 (T-276).** These ids were drawn in
+`voice-assistant-view.html`, `-ios.html`, `-android.html` (and two of them also in
+`app-shell*.html`) since the conversation mockups were first created, but were
+never declared in a catalogue section. All 14 are `(web, mobile)`.
+
+| Testid | Control | A11y |
+|---|---|---|
+| `assistant-message-bubble` | message bubble exemplar — one per assistant turn; carries the bubble's content including diff rows, question text and action chips | non-interactive container |
+| `assistant-diff-old` | old value in an Applied bubble's per-field diff row | `text.muted`, struck through |
+| `assistant-diff-new` | new value in the same diff row | `text.primary`, semibold |
+| `assistant-row-badge` | AI-change marker on a task row — `NEW` or `EDITED` (AC-4) | non-interactive; accessible name is the badge text |
+| `assistant-chip-affirm` | affirmative chip on a confirm question (e.g. "Delete" on AC-9's bulk delete) | `role=button`; label is the visible text |
+| `assistant-chip-negative` | negative chip on a confirm question (e.g. "Cancel") | `role=button`; label is the visible text |
+| `assistant-option-chip` | § OptionChip exemplar on a clarify question (AC-13) — one per candidate | `role=button`; label is the candidate text |
+| `assistant-boundary-marker` | § BoundaryMarker — session-close separator (AC-28) | non-interactive; the session label is the accessible name |
+| `assistant-queued-notice` | § QueuedTurnNotice — "Waiting for the network" banner under a queued UserTurn (AC-25) | `role=status`; announces on appearance |
+| `assistant-composer-input` | § Composer text input field | `aria-label="Message"` |
+| `assistant-composer-send` | § Composer send button (enabled when input has text) | `aria-label="Send"` |
+| `assistant-mic-button` | § MicControl orb — tap-to-talk (also drawn in `app-shell*.html`) | accessible name follows state: "Tap to speak" (idle) / "Listening — tap to stop" / "Microphone needs permission" |
+| `assistant-state-indicator` | state indicator text in the Composer during listening/thinking — "Listening" or "Thinking..." | `aria-live` region |
+| `assistant-cancel-button` | cancel button during listening/thinking — returns to idle, restores any preserved text (AC-3, AC-26) | label is "Cancel" |
+
+---
+
+## Testid catalogue — lists surface
+
+**Added 2026-08-23 (T-276).** These ids were drawn in `lists.html`, `-ios.html`,
+`-android.html` since the lists mockups were first created, but were never
+declared. All are `(web, mobile)` except the four `list-rename-error-*` ids, which
+are `(web)` — the rename-error state is drawn only in `lists.html`.
+
+**Swatch container drift (resolved T-276):** the container was
+`list-recolour-swatches` in `lists.html` and `list-recolour-swatch-group` in the
+two mobile mockups. Resolved to **`list-recolour-swatches`** — the web name — for
+three reasons: (1) the container's name is the plural of the child exemplar
+`list-recolour-swatch`, which is the same pattern `detail-steps` /
+`detail-step-row` follows; (2) `-group` is redundant with `role="radiogroup"` on
+the element; (3) the web mockup was drawn first.
+
+| Testid | Control | A11y |
+|---|---|---|
+| `list-row-overflow-button` | overflow trigger on a personal-list row (one per row) | `aria-label="More options for {list name}"`, `aria-haspopup="true"` |
+| `list-action-menu` | the floating context / action menu for a list (web: dropdown, iOS: action sheet, Android: bottom menu) | `role=menu`; `aria-label="{list name} list actions"` |
+| `list-action-rename` | menu item: Rename | `role=menuitem`; label is "Rename" |
+| `list-action-recolour` | menu item: Change colour | `role=menuitem`; label is "Change colour" |
+| `list-action-move-up` | menu item: Move up (disabled when the list is first) | `role=menuitem`; `aria-disabled` when at top |
+| `list-action-move-down` | menu item: Move down (disabled when the list is last) | `role=menuitem`; `aria-disabled` when at bottom |
+| `list-action-delete` | menu item: Delete (danger variant) | `role=menuitem`; label is "Delete" |
+| `list-rename-input` | inline rename text field | value pre-filled with current list name |
+| `list-rename-save-button` | rename Save button | label is "Save" |
+| `list-rename-cancel-button` | rename Cancel button | label is "Cancel" |
+| `list-rename-error-input` | rename field in validation-error state (web only) | `border-color: danger`; the input retains the rejected name |
+| `list-rename-error-message` | validation error message (web only) — e.g. "A list called Home already exists." | visible text is the error |
+| `list-rename-error-save-button` | Save in error state (web only) | label is "Save" |
+| `list-rename-error-cancel-button` | Cancel in error state (web only) | label is "Cancel" |
+| `list-recolour-swatches` | colour swatch radiogroup container | `role=radiogroup`; `aria-label="List colour"` |
+| `list-recolour-swatch` | individual colour swatch exemplar (one per colour) | `role=radio`; `aria-checked`; accessible name is the colour name (e.g. "Blue") |
+| `list-delete-dialog` | delete confirmation dialog (web: `alertdialog`, iOS: action sheet, Android: M3 dialog) | `role=alertdialog`, `aria-modal=true` (web) |
+| `list-delete-confirm-button` | destructive confirm button — "Move and delete" | label is "Move and delete" |
+| `list-delete-cancel-button` | cancel button | label is "Cancel" |
+
+---
+
+## Testid catalogue — task detail
+
+**Added 2026-08-23 (T-276).** These six ids were drawn in `task-detail.html`,
+`-ios.html`, `-android.html` by T-204 and adopted by § TaskDetail, which lists
+every field-level id inline. These six are the **surface-level** controls that
+§ TaskDetail describes but that were not collected into a catalogue table. All are
+`(web, mobile)`.
+
+| Testid | Control | A11y |
+|---|---|---|
+| `detail-surface` | the detail surface container (`<main>`) | the landmark that scopes the detail |
+| `detail-close-button` | close / back button in the topbar (web: ✕ icon; iOS: "< Today" backlink; Android: back arrow) | `aria-label="Close"` (web) / backlink text (iOS) / `aria-label="Back to your tasks"` (Android) |
+| `detail-fields` | fields container wrapping all seven property fields | non-interactive container |
+| `detail-repeat-clear` | "Clear the repeat" button inside the repeat picker | label is "Clear the repeat" |
+| `detail-surface-error` | § SurfaceError SE-DETAIL — the surface-level error container (the detail's own read failed) | announces on appearance |
+| `detail-retry-button` | Retry button inside the surface error | label is "Retry" |

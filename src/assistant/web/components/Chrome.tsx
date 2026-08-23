@@ -74,14 +74,15 @@ export function PathSwitch({
  * the bottom of the screen.
  *
  * The mockup (app-shell.html, app-shell-ios.html) draws this as a circle with
- * the mic icon, accent background, `aria-label="Start listening"`.
+ * the mic icon, accent background. Accessible name is "Talk" — AC-37:
+ * the control navigates to the Talk surface, it does not start capture.
  */
 export function VoiceFab({ onGo }: { onGo: () => void }) {
   return (
     <button
       className="voice-fab"
       data-testid="assistant-voice-fab"
-      aria-label="Start listening"
+      aria-label="Talk"
       onClick={onGo}
     >
       <MicIcon />
