@@ -54,6 +54,27 @@ nothing else can make: whether to build it, when, and instead of what. Skip it
 and the queue fills with whatever was asked for most recently, which is not the
 same as what matters.
 
+### First: is this a request at all?
+
+**A question is not a request.** "Should we do X?", "what do you think?", "is that
+worth it?", "has Y finished?" are answered in words. "Do X" is a request. Answer
+the first kind and dispatch nothing.
+
+| The message | Read it as |
+|---|---|
+| ends in a question mark | a question |
+| asks for a view — *should we*, *is it worth*, *what do you think*, *right?* | a question |
+| asks about state — *is it done*, *what is left*, *why did that happen* | a question |
+| is an instruction — *do*, *fix*, *add*, *run*, *change* | a request |
+
+**When it could be either, it is a question.** Answering a request in words costs
+one message and they reply "yes, go". Acting on a question costs an agent run,
+costs the work you then unpick, and cuts across the conversation they were having.
+
+This test used to be done accidentally, by the permission prompt: it paused
+before every dispatch and the owner could stop it there. With prompts auto-
+accepted that pause is gone, and nothing replaced it. This is the replacement.
+
 **Applies when the owner asks for something new** — a feature, a change, a bug
 they hit. Not to `next` / `status` / `retry`, and not to a request whose whole
 scope you could state in one line and be sure of: a typo, a renamed label, a
