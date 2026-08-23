@@ -446,9 +446,10 @@ describe('the shell', () => {
       fireEvent.click(screen.getByTestId('shell-tasks-button'))
     })
     expect(surfaceOf(container)).toBe('tasks')
-    // shell-talk-button retired (T-254); its replacement is the VoiceFab.
+    // shell-talk-button retired (T-254); VoiceFab retired (T-321).
+    // TaskBottomBar's action button navigates to Talk when the field is empty.
     act(() => {
-      fireEvent.click(screen.getByTestId('assistant-voice-fab'))
+      fireEvent.click(screen.getByTestId('tasks-bar-action'))
     })
     expect(surfaceOf(container)).toBe('talk')
   })

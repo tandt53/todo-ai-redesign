@@ -202,3 +202,26 @@ or behind something already covering the same area. **Before comparing rects: fi
 on computed visibility, check every scrollable ancestor's clip, and state what the
 question is** — "covered by X" and "covered by X beyond what Y already covers" are
 different questions with different answers.
+
+## 2026-08-23 — "Pre-existing" is the word to distrust, and a briefing warning does not stop it
+
+Twice in one day an agent finished, ran the full suite, saw a red it could not explain,
+and labelled it **pre-existing**. Both times it was another agent's work, in flight, in
+a tree the reporting agent had never touched.
+
+The second time, **the briefing warned about this in plain words** — naming the earlier
+occurrence — and the agent used the word anyway. Its *attribution* was right ("mobile
+agent's domain"); only the label was wrong. That is the milder failure and still the
+dangerous one: **"pre-existing" closes an investigation, "another agent is writing right
+now" opens one.**
+
+Verifying costs one command: `git stash push -- <the other tree>`, re-run, `git stash
+pop`. Both times it took under a minute and both times the answer was the opposite of
+the label.
+
+**The rule is for the orchestrator, not the agent.** An agent cannot see another agent
+typing, so asking it to be careful is asking it to do something it lacks the information
+for. Two things follow: **brief agents to measure their own tier and treat the full suite
+as informational**, and **verify every "pre-existing" in a return by stashing the other
+in-flight tree** before recording it. A warning in prose has now failed once; the check
+has worked twice.

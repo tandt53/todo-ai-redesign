@@ -26,7 +26,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 import type { AssistantController } from '../_shared/controller.ts'
 import { micMode, undoableTurnId } from '../_shared/model/reducer.ts'
 import { CarriedNotices, StatusAnnouncer } from './components/CarriedNotices.tsx'
-import { OfflineBanner, VoiceFab } from './components/Chrome.tsx'
+import { OfflineBanner } from './components/Chrome.tsx'
 import { ListsMenu } from './components/ListsMenu.tsx'
 import { ListsRail } from './components/ListsRail.tsx'
 import { PassedReminders } from './components/PassedReminders.tsx'
@@ -134,11 +134,8 @@ export function App({ controller }: { controller: AssistantController }) {
         )}
         <SettingsSurface theme={theme} onTheme={setTheme} onBack={shell.backFromSettings} />
       </div>
-      {/* ── Voice FAB — below split, opens Talk (T-254, replaces shell-talk-button) ──
-          Positioned absolutely at the app root (which is `position:relative`).
-          Hidden at or above the split by `@container app`, where Talk is
-          permanently visible. Hidden when not on the Tasks surface by CSS. */}
-      <VoiceFab onGo={() => shell.go('talk')} />
+      {/* ── Voice FAB RETIRED (T-321) — replaced by TaskBottomBar inside TasksSurface.
+          The bar holds a text field and a morphing action button (AC-37). */}
       {/* AC-33's 4.1.3 — the status region for every refusal and status message
           this feature states. Separate from § CarriedNotice's region so that one can
           be `aria-atomic="false"` (N rows, only the changed one announces) while a

@@ -1,4 +1,4 @@
-// Shell chrome: the PathSwitch, VoiceFab and the offline banner.
+// Shell chrome: the PathSwitch and the offline banner.
 //
 // OQ-1 IS ANSWERED (F-001 rev 4, Open Questions 1). The assistant does not sit
 // above the list's navigation and does not replace it: the two are PEERS. So
@@ -8,13 +8,13 @@
 // different control wearing the same glyph" (components.md § Testid catalogue —
 // app shell). Its replacement is `shell-lists-menu-button` on the Tasks bar.
 //
-// `shell-talk-button` is RETIRED. T-227 removed it from all three mockups;
-// its below-split route to Talk is now `assistant-voice-fab` — the floating
-// action button positioned at the bottom-right of the Tasks surface. The FAB
-// opens Talk in one tap, which is the same guarantee PathSwitch carried.
+// `shell-talk-button` is RETIRED. T-227 removed it from all three mockups.
+// `assistant-voice-fab` (VoiceFab) is RETIRED (T-321). Replaced by the
+// TaskBottomBar's morphing action button (`tasks-bar-action`) inside
+// TasksSurface. The bar navigates to Talk when the field is empty (AC-37).
 
 import type { AppState } from '../../_shared/model/reducer.ts'
-import { ListIcon, MicIcon, WifiOffIcon } from './icons.tsx'
+import { ListIcon, WifiOffIcon } from './icons.tsx'
 
 /**
  * PS-TASKS — `todo-ai ADR-11`'s second path made reachable in one action from
@@ -30,8 +30,8 @@ import { ListIcon, MicIcon, WifiOffIcon } from './icons.tsx'
  * Nothing here is ever disabled: AC-24's reachability bound requires the
  * affordance to survive the failure it is escaping from.
  *
- * The Talk direction (`shell-talk-button`) was retired by T-227 and replaced
- * by the VoiceFab below.
+ * The Talk direction (`shell-talk-button`) was retired by T-227; VoiceFab
+ * retired by T-321 — replaced by TaskBottomBar's action button.
  */
 export function PathSwitch({
   count,
@@ -64,31 +64,8 @@ export function PathSwitch({
   )
 }
 
-/**
- * Voice FAB — the floating action button that opens Talk below the split.
- *
- * **Replaces `shell-talk-button`** (retired T-227). Positioned absolutely at the
- * bottom-right of the `.app` container, hidden at or above the split (where the
- * Talk panel is permanently visible and a button to "go there" would be dead).
- * Hidden during selection mode (`data-selection`), since bulk operations own
- * the bottom of the screen.
- *
- * The mockup (app-shell.html, app-shell-ios.html) draws this as a circle with
- * the mic icon, accent background. Accessible name is "Talk" — AC-37:
- * the control navigates to the Talk surface, it does not start capture.
- */
-export function VoiceFab({ onGo }: { onGo: () => void }) {
-  return (
-    <button
-      className="voice-fab"
-      data-testid="assistant-voice-fab"
-      aria-label="Talk"
-      onClick={onGo}
-    >
-      <MicIcon />
-    </button>
-  )
-}
+// VoiceFab RETIRED (T-321) — replaced by TaskBottomBar (tasks-bar-action) in
+// TasksSurface.tsx. The testid `assistant-voice-fab` is removed from all mockups.
 
 /**
  * AC-25 / ADR-7: no half-running conversation — the surface says so and hands
