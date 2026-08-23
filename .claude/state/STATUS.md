@@ -24,7 +24,7 @@
 
 | Task | Agent | Module | Feature | Subtree | Started |
 |---|---|---|---|---|---|
-| T-314+T-315 | design-agent | assistant | — | `docs/design/` | 2026-08-23 14:1Z |
+| T-314+T-315+T-316 | design-agent | assistant | — | `docs/design/` | 2026-08-23 14:1Z |
 
 ## Blockers
 <!-- Anything stopping progress. Orchestrator resolves these. -->
