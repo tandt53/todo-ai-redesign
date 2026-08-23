@@ -154,9 +154,10 @@ export const EMPTY_TASKS = {
     action: 'Add task',
     secondDoor: null,
   },
+  // T-300 defect 5: the body sentence is dropped — one heading is enough.
   'ET-COLLECTION': {
     head: 'Nothing in {list}',
-    body: 'This list is empty. Your other tasks are still where you left them.',
+    body: null,
     action: 'Add task',
     secondDoor: null,
   },

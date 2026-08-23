@@ -485,32 +485,6 @@ export function TasksSurface({
 
       <div className="tasks-body" ref={shell.tasksRef}>
         <div className="tasks-col">
-          {/* The old add-form stays for the empty/failedBlank states where the
-              inline row is not visible (inline lives inside `showList`). The
-              empty-state CTA sets `adding=true`, and this form catches it. */}
-          {adding && !showList && (
-            <div className="add-form">
-              <input
-                className="add-input"
-                aria-label="New task name"
-                placeholder="Task name…"
-                autoFocus
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') commitAdd()
-                  if (e.key === 'Escape') {
-                    setDraft('')
-                    setAdding(false)
-                  }
-                }}
-              />
-              <button className="add-save" onClick={commitAdd}>
-                Save
-              </button>
-            </div>
-          )}
-
           {loading && <TaskSkeletons collection={collection} />}
 
           {failedBlank && (
@@ -538,29 +512,29 @@ export function TasksSurface({
             <TasksEmpty
               collection={collection}
               nothingAnywhere={nothingAnywhere}
-              onAdd={() => setAdding(true)}
+              adding={adding}
+              draft={draft}
+              setDraft={setDraft}
+              onCommit={commitAdd}
+              onCancel={() => { setDraft(''); setAdding(false) }}
+              onActivate={() => setAdding(true)}
             />
           )}
 
           {showList && (
             <>
-              <div className="tasks-head">
-                {showCount && (
+              {/* The count line exists to report how many remain; drop it when the
+                  answer is none — "0 tasks left today" says what the empty state
+                  heading already says. The header button is removed: the inline
+                  field at the end of the list is the single add affordance
+                  (briefing item 4). */}
+              {showCount && openToday > 0 && (
+                <div className="tasks-head">
                   <span className="count num">
-                    {openToday === 0
-                      ? 'Nothing left today'
-                      : `${openToday} ${tasksWord(openToday)} left today`}
+                    {`${openToday} ${tasksWord(openToday)} left today`}
                   </span>
-                )}
-                <button
-                  className="add-btn"
-                  data-testid="assistant-add-task-button"
-                  onClick={() => setAdding(true)}
-                >
-                  <PlusIcon />
-                  Add task
-                </button>
-              </div>
+                </div>
+              )}
               {groups.map((g) => (
                 <div className="day-group" key={g.label ?? 'flat'}>
                   {/* `null` is the flat collections' instruction, not a missing
@@ -603,11 +577,21 @@ export function TasksSurface({
 function TasksEmpty({
   collection,
   nothingAnywhere,
-  onAdd,
+  adding,
+  draft,
+  setDraft,
+  onCommit,
+  onCancel,
+  onActivate,
 }: {
   collection: Collection
   nothingAnywhere: boolean
-  onAdd: () => void
+  adding: boolean
+  draft: string
+  setDraft: (v: string) => void
+  onCommit: () => void
+  onCancel: () => void
+  onActivate: () => void
 }) {
   // ET-DONE: no CTA. No action fills this list directly, and inventing one
   // would be a shrug dressed as an invitation.
@@ -627,23 +611,18 @@ function TasksEmpty({
       <div className="empty">
         <h2>No tasks yet</h2>
         <p>Add your first one — or say one, on Talk.</p>
-        <button className="btn-primary" data-testid="tasks-empty-add-button" onClick={onAdd}>
-          <PlusIcon />
-          Add task
-        </button>
+        <InlineAdd adding={adding} draft={draft} setDraft={setDraft} onCommit={onCommit} onCancel={onCancel} onActivate={onActivate} />
       </div>
     )
   }
   // ET-COLLECTION — never ET-FIRST's wording: telling a user with 40 tasks that
-  // they have none is the lie the generic empty state tells.
+  // they have none is the lie the generic empty state tells. The paragraph is
+  // dropped: the first clause repeats the heading; the second answers a worry
+  // a user standing in Today does not have.
   return (
     <div className="empty">
       <h2>Nothing in {collectionName(collection)}</h2>
-      <p>This list is empty. Your other tasks are still where you left them.</p>
-      <button className="btn-primary" data-testid="tasks-empty-add-button" onClick={onAdd}>
-        <PlusIcon />
-        Add task
-      </button>
+      <InlineAdd adding={adding} draft={draft} setDraft={setDraft} onCommit={onCommit} onCancel={onCancel} onActivate={onActivate} />
     </div>
   )
 }

@@ -10,8 +10,8 @@
 // and the rendering are one source.
 
 import { useEffect, useRef, useState } from 'react'
-import { Pressable, Text, TextInput, View } from 'react-native'
-import { Menu, Plus, TriangleAlert } from 'lucide-react-native'
+import { Pressable, Text, View } from 'react-native'
+import { Menu, MoreHorizontal, Plus, Search, TriangleAlert } from 'lucide-react-native'
 import type { AppState } from '../../_shared/model/reducer.ts'
 import type { MobileAssistantController } from '../controller.ts'
 import { A11Y_IDS, SHELL_A11Y_IDS, a11yProps } from '../model/a11y.ts'
@@ -26,7 +26,7 @@ import {
   tasksSurfaceView,
 } from '../model/tasks-view.ts'
 import type { Collection } from '../model/tasks-view.ts'
-import { spacing, tokens } from '../model/theme.ts'
+import { tokens } from '../model/theme.ts'
 import { touchProps } from '../model/touch.ts'
 import { OfflineBanner } from './Chrome.tsx'
 import { ShellBar } from './PathSwitch.tsx'
@@ -112,10 +112,22 @@ export function TasksSurface({
           </Text>
         }
       >
-        {/* T-257: the Talk affordance on the Tasks surface is the voice FAB,
-            not a path switch button in the header. The bar's right slot is
-            empty here; the FAB floats at the bottom of the surface. */}
-        <View />
+        {/* T-300 defect 7: Search and overflow placed in the bar per the mockup
+            (matching web's T-227). What sits BEHIND them — the search field, the
+            overflow menu — is NOT_BUILT and belongs to a later surface. The
+            buttons are inert until that surface ships. */}
+        <Pressable
+          {...a11yProps(SHELL_A11Y_IDS.shellSearchButton, { label: 'Search', role: 'button' })}
+          style={styles.iconButton}
+        >
+          <Search size={tokens.icon.size.md} color={colors.text.primary} strokeWidth={tokens.icon.stroke} />
+        </Pressable>
+        <Pressable
+          {...a11yProps(SHELL_A11Y_IDS.shellOverflowButton, { label: 'More', role: 'button' })}
+          style={styles.iconButton}
+        >
+          <MoreHorizontal size={tokens.icon.size.md} color={colors.text.primary} strokeWidth={tokens.icon.stroke} />
+        </Pressable>
       </ShellBar>
 
       {/* § InlineRetryBanner — the list is NEVER replaced by an error while
@@ -168,29 +180,16 @@ export function TasksSurface({
         </View>
       ) : (
         <>
-          <View style={styles.listHead}>
-            <Text style={styles.listCount}>{tasksHeadline(openTodayCount(state.tasks))}</Text>
-          </View>
-          {/* The standalone add-form stays for the empty/failedBlank states
-              where the inline row is not visible (inline lives inside the list
-              body, which requires tasks). The empty-state CTA sets
-              `adding=true`, and this form catches it.
-              NOT `renameInput` — that style carries `flex: 1`, which in this
-              column parent means "take all remaining height". This field gets
-              its own single-line style instead. */}
-          {adding && view.tasks.length === 0 && (
-            <TextInput
-              accessibilityLabel="New task name"
-              placeholder="Task name…"
-              placeholderTextColor={colors.text.muted}
-              style={[styles.emptyAddInput, { marginHorizontal: spacing.gutter_mobile }]}
-              value={draft}
-              autoFocus
-              onChangeText={setDraft}
-              onSubmitEditing={commit}
-              onBlur={commit}
-            />
+          {/* T-300 defect 4: drop the count when zero — "0 tasks left today"
+              duplicates the empty heading. Show only when there are open tasks
+              today and only on the Today collection, matching web. */}
+          {collection === 'today' && openTodayCount(state.tasks) > 0 && (
+            <View style={styles.listHead}>
+              <Text style={styles.listCount}>{tasksHeadline(openTodayCount(state.tasks))}</Text>
+            </View>
           )}
+          {/* T-300 defect 3: the standalone add-form is removed — the empty
+              state now includes InlineAdd directly. */}
           <TaskList
             state={state}
             view={view}

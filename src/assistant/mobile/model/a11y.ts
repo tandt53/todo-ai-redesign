@@ -251,10 +251,13 @@ export const SHELL_IDS_BLOCKED: Partial<Record<ShellA11yId, string>> = {
   [SHELL_A11Y_IDS.tasksSaveNoticeDismiss]:
     'the dismiss control of a notice that does not render yet; it lands with SaveNotice itself (components.md § SaveNotice)',
   // ── T-227 / T-244 / T-247 / T-249 — drawn controls not yet built on mobile ──
-  [SHELL_A11Y_IDS.shellSearchButton]:
-    'T-227/T-244 — Search icon button in the Tasks header; drawn, not yet built',
-  [SHELL_A11Y_IDS.shellOverflowButton]:
-    'T-227/T-244 — Overflow icon button in the Tasks header; drawn, not yet built',
+  // T-300: shellSearchButton and shellOverflowButton are now rendered in the
+  // Tasks header (defect 7). Removed from SHELL_IDS_BLOCKED.
+  // T-300 defect 3: the empty state CTA is now InlineAdd (always an inline
+  // field, never a button). The button id stays in the catalogue for web parity
+  // but is not rendered on mobile.
+  [SHELL_A11Y_IDS.tasksEmptyAddButton]:
+    'T-300 — mobile empty state uses InlineAdd instead of a button; web still renders it',
   [SHELL_A11Y_IDS.tasksDragHandle]:
     'T-247 — drag handle for manual reorder, visible only in manual sort; drawn, not yet built',
   [SHELL_A11Y_IDS.tasksSearchInput]:
@@ -490,6 +493,11 @@ export function expectedShellIds(
   }
 
   ids.add(SHELL_A11Y_IDS.listsMenuButton)
+  // T-300 defect 7: Search and overflow buttons are now rendered in the Tasks
+  // header, matching web's T-227. They are inert — what sits behind them is
+  // not yet built.
+  ids.add(SHELL_A11Y_IDS.shellSearchButton)
+  ids.add(SHELL_A11Y_IDS.shellOverflowButton)
   // T-257: the voice FAB is the Talk affordance on the Tasks surface — the
   // reciprocal of PS-TASKS on the Talk surface. Always present (hidden only at
   // split+ width, which a phone never reaches, and during selection mode, which
@@ -499,15 +507,18 @@ export function expectedShellIds(
   if (tasks.banner === 'retry' || tasks.view === 'error') {
     ids.add(SHELL_A11Y_IDS.tasksListRetryButton)
   }
+  // T-300 defect 3: the empty state CTA is now an InlineAdd (always an inline
+  // field, never a button), so `tasksInlineAdd` renders in both the empty and
+  // populated states whenever an action is available.
   if (tasks.empty !== null && EMPTY_TASKS[tasks.empty].action !== null) {
-    ids.add(SHELL_A11Y_IDS.tasksEmptyAddButton)
+    ids.add(SHELL_A11Y_IDS.tasksInlineAdd)
   }
   if (tasks.tasks.length > 0) {
     // touch is not hover: the delete control is ALWAYS visible in the row's
     // trailing slot (components.md § Platform variants)
     ids.add(SHELL_A11Y_IDS.tasksDeleteButton)
     // T-285: the inline add row renders at the end of the list whenever the
-    // list has content. The empty state keeps its own CTA instead.
+    // list has content.
     ids.add(SHELL_A11Y_IDS.tasksInlineAdd)
     const renaming = ui.renaming ?? null
     if (renaming !== null && tasks.tasks.some((t) => t.id === renaming)) {

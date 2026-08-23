@@ -152,7 +152,7 @@ export function makeStyles(c: Palette, platform: 'ios' | 'android' = 'ios') {
     // the row's ground arrives on press at `radius.md`.
     taskRow: {
       flexDirection: 'row',
-      alignItems: 'flex-start',
+      alignItems: 'center',
       gap: spacing.md,
       paddingHorizontal: spacing.gutter_mobile,
       paddingVertical: spacing.sm,
@@ -173,7 +173,18 @@ export function makeStyles(c: Palette, platform: 'ios' | 'android' = 'ios') {
     // Design: .cbx:checked{background:var(--text-primary); border-color:var(--text-primary)}
     // Tick drawn in bg.base (mockups app-shell-ios:549, app-shell-android:544).
     checkboxDone: { backgroundColor: c.text.primary, borderColor: c.text.primary },
+    // The row's main area: title left, marks right, single line. Defect 1
+    // (T-300): the due date was wrapping to a second line under the title
+    // because the Pressable defaulted to column layout.
+    taskMain: {
+      flex: 1,
+      flexDirection: 'row' as const,
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
     taskTitle: {
+      flex: 1,
+      flexShrink: 1,
       fontFamily: font.family.ui,
       fontSize: fs.body,
       lineHeight: lineHeightFor(fs.body),
@@ -198,9 +209,9 @@ export function makeStyles(c: Palette, platform: 'ios' | 'android' = 'ios') {
      */
     rowMarks: {
       flexDirection: 'row',
-      flexWrap: 'wrap',
       alignItems: 'center',
       gap: spacing.xs,
+      flexShrink: 0,
     },
     /**
      * TR-URGENCY — `fs.meta`, `font.weight.emphasis`, **`text.primary`**:
