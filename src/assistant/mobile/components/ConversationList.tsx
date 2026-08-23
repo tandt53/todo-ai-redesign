@@ -164,7 +164,7 @@ function MessageView({
                 <View style={styles.diffRow}>
                   <Undo2
                     size={tokens.icon.size.sm}
-                    color={colors.primary}
+                    color={colors.accent}
                     strokeWidth={tokens.icon.stroke}
                   />
                   <Text style={styles.undoButtonText}>Undo</Text>

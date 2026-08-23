@@ -216,6 +216,16 @@ turned half-empty rows into stretched rules; `layout.ultra_answer` records the t
 it. **Hover and focus-within now paint a `bg.sunken` ground at `radius.md`** — a ground, not a box, and
 the first thing `border.separation_order` reaches for.
 
+**Ground inset (T-251): the row's painted ground is a `::before` pseudo, inset vertically by `space.1`
+(4px) from the row box edges.** This produces a `space.2` (8px) gap between adjacent painted grounds —
+hover, focus-within and selected all share the same pseudo. Without the inset, two selected rows (or a
+hovered row beside a focused one) butt directly and read as one fused blob with a pinched waist at the
+join. The horizontal extent is unchanged: the pseudo spans `left:0; right:0`, so it fills the row's
+padding-box width. The row pitch is unaffected — the row box is still `min-height: control.height.lg`
+with `space.2` padding and no margin. **Implementers: use an absolutely-positioned `::before` with
+`top: space.1; bottom: space.1; left:0; right:0; border-radius: radius.md; z-index:-1` inside an
+`isolation: isolate` stacking context on the row.** Never `background` on `.row` itself.
+
 **The marks sit beside the open affordance, not inside it** (same revision). Inside, the open button's
 visible text ended in the urgency `!` while its accessible name did not — a WCAG 2.5.3 label-in-name
 mismatch — and the mark's own meaning was never announced at all. Each mark now carries
@@ -572,6 +582,7 @@ Standard copy for standard actions: "Undo", "Retry", "Send", "Cancel" — no the
 | **reversing a delete or a reorder the user performed by hand** (F-005 AC-43) | **put back** | undo, revert, restore, undelete, take back, bring back, recover |
 | the date a task must be done by (F-005 AC-10) | **deadline** | due date, due, when, target, by-date |
 | a task inside a task (F-005 AC-14 … AC-18) | **step** | subtask, sub-task, child, checklist item, item |
+| leaving selection mode (F-009 AC-9, T-249) | (✕ icon) accessible name **exit selection** | Done (clash with Complete and with the task state), Cancel (would promise undo of actions already applied), Close, Finish |
 
 **The three rows added 2026-08-19 (T-152), and the first one needs its reasoning beside it.** `put back` is not a synonym for `undo` sneaking past the row above it — it is the row above's rule being *obeyed*: **undo** is bound to reversing the last applied **turn**, F-005 AC-43 defines a different mechanism (reversing a delete or a reorder the user's own hand performed), and one word per concept means the second mechanism gets its own word rather than sharing one. `§ SaveNotice` refused to carry an `Undo` action for exactly this reason, in writing, and that refusal stands. Note `take back` is forbidden **as a synonym for undo** and `put back` is close to it in shape — the difference is the whole point of the two rows, so they are read together: *undo* reverses what the assistant did, *put back* returns what your hand removed. The word has precedent outside this catalogue (Apple Photos' *Put Back* for recovering a deleted photo), which is what keeps it standard copy for a standard action rather than a themed replacement. It renders in `§ CarriedNotice` as CN-UNDO, in the `secondary` variant above, never in the accent.
 
@@ -1089,21 +1100,301 @@ has filled: **what `Add task` does while viewing Upcoming has no derivable date.
 § LandingSummary's foot, *The cell this pass refuses to fill*. The empty state is drawn; its CTA's
 behaviour is pending that decision and is **not** `Add task`-with-a-guessed-date.
 
+## SearchField — inline search on the Tasks surface (F-009 AC-1, AC-2, AC-3, AC-14)
+
+Purpose: filter the current collection's tasks by title. An inline text field that **replaces** the
+surface title in the Tasks header — not a separate layer, not a modal, not a new surface. The field
+expands from `shell-search-button`, takes focus, and narrows the list with every keystroke
+(case-insensitive substring on `task.title` only — notes, steps and other fields are not searched).
+
+**Anatomy:** the surface title hides; in its place, a standard field (`field.height` 44, `radius.sm`,
+1px `bg.rule` border, `font.size.body`, `field.padding_x` inset) spans the available header width.
+A close control (Lucide `x` at `icon.size.md`, `text.secondary`) sits at the field's trailing edge.
+Placeholder: *"Search tasks"* in `text.muted`. **The close control and Escape both exit search** — the
+field clears, the surface title returns, the full list is restored. T-227 already drew the field's CSS
+in `app-shell.html` (`.search-field`, `data-search="open"`) — this section publishes it.
+
+**Keyboard (AC-14):** `/` or the platform find shortcut (`Cmd+F` / `Ctrl+F`) focuses the field from
+anywhere on the Tasks surface. `Escape` closes search. The field is a standard `<input>` in the tab
+order; no custom keyboard handling beyond the shortcut.
+
+**Narrowing rule (AC-2).** Live filtering by title: every visible row's title contains the query
+(case-insensitive substring on `task.title` only). Rows whose title does not match are hidden
+regardless of completion status — **a done row whose title matches IS visible** (the mockup
+demonstrates this: its JS in `showState` filters by `.row-title` text, not by `.done` class).
+**`hide_completed` interaction (AC-7):** when `hide_completed` is true, completed rows are
+excluded from search results even if their title matches; when false, they appear. The implementer
+must respect both rules. **Diacritics:** AC-2 specifies case-insensitive substring; diacritic
+folding (e.g. "goi" matching "Gọi") is not specified — the mockup uses `toLowerCase()` only. If
+the implementer adds diacritic-insensitive matching, record the decision here.
+**QA assertion note:** a test that asserts narrowing by counting visible rows (e.g. 5 → 4) will
+pass on a broken state that hides one row by status instead of by query. The correct assertion
+checks row *content*: every visible `.row-title` contains the query string.
+
+States: **closed** (default — field hidden, surface title visible) · **open-empty** (field visible,
+focused, no query, full list) · **open-filtering** (query typed, list narrowing live) ·
+**open-no-results** (query typed, zero matches → § Empty states — Search below) · **focused**
+(2px `focusRing` inset, border turns `accent`).
+
+| Testid | Control |
+|---|---|
+| `tasks-search-input` | the search text field |
+| `tasks-search-close` | the close control (exits search, restores list) |
+
+## Empty states — Search (F-009 AC-3)
+
+A variation of § Empty states — Tasks, specific to search. Same anatomy: **left-aligned, in the
+content column**, `font.size.title` `font.weight.semibold` head, one `text.secondary` sentence at
+`font.size.body`, capped at 44 characters of measure. **No illustration, no icon.**
+
+| ID | When | Head | Action |
+|---|---|---|---|
+| **ET-SEARCH** | search query matches zero tasks in the current collection | No tasks matching "{query}" | **none** — the search field's close control is on screen; no CTA is needed |
+
+`{query}` is a `verbatim` slot — the user's typed string, never re-worded, never truncated. The
+empty state appears in the list area below the header while the search field remains open above it.
+
+| Testid | Control |
+|---|---|
+| `tasks-no-results` | the no-results empty state container |
+
+## OverflowMenu — the three-kind floating layer (F-009 AC-4, AC-5, AC-7, AC-8, AC-9, AC-14)
+
+Purpose: a single floating menu holding **three different kinds of item at once** — a single-choice
+group, a persisting toggle, and a plain action. Opens from `shell-overflow-button`, **anchored to
+the trigger**: right edges aligned, `space.1` (4px) gap below. The button and menu share a
+`position:relative` wrapper (`.overflow-anchor`) so the menu positions against the button, not
+against the pane — T-247 fix for the measured 68px gap and 82px overhang the owner flagged.
+Closes on selection, on tap outside, or on `Escape`.
+
+**Shape:** `radius.lg` (16), `shadow.overlay`, `bg.base` ground. Menu width: `min(280px, 100vw − 2×gutter)`.
+Scrim: none — the menu closes on outside tap, but no dimming; this is a lightweight popover, not a
+dialog.
+
+**Three item kinds, visually distinguished.** A menu that renders all three identically is the failure
+mode — the user must know which items persist, which are exclusive, and which just fire.
+
+| Kind | Items | Trailing control | Separation | Reason |
+|---|---|---|---|---|
+| **Single-choice group** | *Due date* · *Priority* · *Manual* | Lucide `check` at `icon.size.sm` in `accent` on the **active** option; others show no icon | Preceded by a section label *"Sort by"* in `font.size.meta` `text.muted` uppercase, same treatment as TaskList day headers | A checkmark is the universal indicator of "one of these is active" (iOS, Android, web select menus all use it). The `accent` colour is consistent with focus and primary action |
+| **Persisting toggle** | *Hide completed* / *Show completed* | A switch control — the same M3-style pill track as § SettingsRow: on = `accent` fill, knob `text.onAccent`; off = `bg.hairline` track, knob `text.secondary` | Separated from the group above by `space.4` (16px) — space, not a rule (`border.separation_order`) | A switch signals *this persists and has two stable states*, which is exactly what `hide_completed` does. It is visually distinct from a checkmark, so the user cannot confuse "selecting a sort" with "toggling a filter" |
+| **Plain action** | *Select* | nothing — bare text | Separated from the toggle above by `space.4` (16px) | No trailing control means *this does something and closes the menu*. The absence is the signal |
+
+**Each menu item:** `control.height.md` (44), `padding: space.2 space.4` (8 16), `font.size.body`,
+`text.primary`. Hover/pressed ground: `bg.sunken` at `radius.sm` (8). Focus: 2px `focusRing` inset.
+
+**Manual sort disabled state (AC-5).** In Today, Upcoming, and Done, the *Manual* option is
+**disabled**: 40% opacity **and** no border/control — `DESIGN.md ## Colour rules 3` requires both.
+The option stays visible so the user knows the feature exists; it just cannot be activated. The
+disabled row does not respond to hover or tap.
+
+**Label flipping (AC-8).** The toggle row label reads *"Hide completed"* when `hide_completed` is
+false, and *"Show completed"* when true. The switch position and the label agree — they are one
+signal, not two (`DESIGN.md ## Colour rules 1`).
+
+**Keyboard (AC-14).** Arrow keys navigate items. `Enter` or `Space` activates the focused item.
+`Escape` closes. The menu traps focus while open — standard Radix UI `DropdownMenu` / `Popover`
+behaviour.
+
+States: **closed** (default) · **open** (the layer is visible, first item focused) · **open with
+manual-disabled** (in Today/Upcoming/Done — the Manual option is visually disabled).
+
+| Testid | Control |
+|---|---|
+| `overflow-menu` | the floating menu layer |
+| `overflow-sort-due` | sort option: Due date |
+| `overflow-sort-priority` | sort option: Priority |
+| `overflow-sort-manual` | sort option: Manual (disabled in Today/Upcoming/Done) |
+| `overflow-hide-completed` | toggle: Hide completed / Show completed |
+| `overflow-select` | action: enter multi-select mode |
+
+## SelectionMode on TaskRow (F-009 AC-9, AC-10)
+
+Purpose: a mode overlay on the existing § TaskRow. When active, **every row — including done
+rows — shows a selection checkbox** and a row tap toggles selection instead of opening the task.
+(Owner override 2026-08-22: *"Task đã xong thì hiển thị checkbox đã check, có thể chọn được."*)
+
+**Entering:** the user taps *Select* in the overflow menu. **Exiting:** the ✕ icon button on the
+§ BulkActionToolbar, or deselecting all tasks.
+
+**Selection checkbox — open rows:** replaces the completion checkbox in the row's leading
+position. Same box size (20px, `radius.sm`), same hit area (`control.minTarget`). Unchecked: 1px
+`bg.rule` border, `bg.base` fill. Checked: `accent` fill, white `check` glyph. The existing
+`assistant-task-checkbox` is hidden during selection mode.
+
+**Selection checkbox — done rows (T-249).** The same `select-cbx` appears in the same leading
+position. **One checkbox carries two facts: "this task is done" AND "is it selected?"** The visual
+encoding:
+
+| Row state | Checkbox fill | Checkmark | Row ground |
+|---|---|---|---|
+| open, not selected | `bg.base` (empty border) | none | `bg.base` |
+| open, selected | `accent` | white | `accentTint` |
+| done, not selected | `text.primary` (dark fill) | white | `bg.base` |
+| done, selected | `accent` | white | `accentTint` |
+
+**Why this holds.** The checkmark means "done" — it is always present on done rows and never on
+open unselected rows. The fill colour means "selected or not" — `accent` is selected, everything
+else is not. Neither is colour-only: done is also carried by strikethrough + muted text
+(`## Colour rules 3`); selected is also carried by the `accentTint` row ground. The reader never
+learns a special case; the convention is: **accent = selected, checkmark = done**.
+
+**Rejected: two checkboxes per row** (a selection checkbox AND the completion checkbox side by
+side). This would break `cbLeft`/`titleLeft` alignment unless every row had two checkboxes,
+which doubles the controls and confuses "which do I tap?". **Rejected: hiding done state in
+selection mode** (the previous design). The owner explicitly asked for the checked checkbox to
+remain visible.
+
+Bulk Complete applied to an already-complete task is normal — no special case, no error. The task
+stays complete. Nothing is disabled on account of doneness.
+
+**Selected row ground:** `accentTint` at `radius.md` — painted on the same `::before` pseudo as
+the hover ground (see § TaskRow, ground inset). **No padding override on the selected state.**
+The row's own `space.2` (8px) horizontal padding provides the horizontal inset; the `::before`
+pseudo provides the vertical inset (`space.1` top and bottom), so adjacent selected rows show an
+8px gap between their painted grounds instead of fusing into one blob. `cbLeft` and `titleLeft`
+are identical across all four row combinations — open, open+selected, done, done+selected —
+selecting a row never shifts its content. Consistent with `DESIGN.md ## Colour rules 5`:
+*"the row's ground means selection."* The selection is carried by **both** the checkbox state and
+the row ground — two signals, so it is not colour-only (`## Colour rules 3`). (T-248: padding
+moved to `.row`; T-251: ground moved from `background` on `.row` to `::before` pseudo for
+vertical inset.)
+
+**Row trailing:** the delete control is hidden in selection mode. The row has no trailing
+affordance — the bulk actions are in the toolbar, not per-row.
+
+**Count display (AC-9):** a selected-count chip in the toolbar, not in the row. See
+§ BulkActionToolbar.
+
+States: **unselected** (checkbox unchecked, `bg.base` ground) · **selected** (checkbox checked,
+`accentTint` ground) · **done-unselected** (checkbox shows dark fill + checkmark, `bg.base`
+ground) · **done-selected** (checkbox shows accent fill + checkmark, `accentTint` ground) ·
+**no-selection** (entering mode — all rows unselected, toolbar actions disabled).
+
+| Testid | Control |
+|---|---|
+| `tasks-select-checkbox` | selection checkbox exemplar (one per row, replaces completion checkbox in select mode) |
+
+## BulkActionToolbar (F-009 AC-9, AC-10, AC-11, AC-13)
+
+Purpose: a bottom-pinned toolbar that appears in selection mode. Shows the selected count and the
+three bulk actions. Exits selection mode via the ✕ icon button.
+
+**Shape:** pinned to the viewport bottom, full width, `bg.base` ground, `space.3` padding,
+`bg.hairline` top border (decorative separation, not structural — `border.when_a_line_earns_it`
+does not reach it, but the toolbar boundary needs a visual edge above scrolling content).
+
+**Layout, left to right:** selected count → spacer → bulk action buttons → ✕ exit button.
+
+**Selected count:** *"{n} selected"* in `font.size.body` `font.weight.semibold`, e.g. *"3 selected"*.
+The count is always visible while the toolbar is on screen. Zero count: *"0 selected"* — drawn
+explicitly, never absent.
+
+**Bulk action buttons:** three, in `secondary` variant at `control.height.md`:
+- *Complete* (Lucide `check` icon + label)
+- *Delete* (Lucide `trash-2` icon + label)
+- *Move to list* (Lucide `folder` icon + label)
+
+**Disabled state (AC-10).** When zero tasks are selected, all three action buttons are disabled:
+**40% opacity and no border** — both signals, per `DESIGN.md ## Colour rules 3`. A disabled button
+does not respond to hover, tap, or keyboard activation. The ✕ exit button is **never** disabled.
+
+**Exit button (T-249).** Lucide `x` icon at `icon.size.md`, `text.secondary`, no label. Accessible
+name: *"Exit selection"*. Hit area: `control.minTarget`. Right-aligned. Always enabled — exits
+selection mode regardless of selection count. **Why ✕ rather than text:** the previous label
+*"Done"* clashed with the *"Complete"* action beside it — both words mean "finished" in English,
+and `Done` was already spoken for twice in this product (the task state `.row.done` /
+"Mark not done", and the sidebar collection "Done"). The owner flagged the clash. An ✕ icon
+resolves it entirely: it is universally understood as "dismiss this surface" (Google Photos,
+Google Keep), visually separates the exit from the three action buttons, and introduces no new
+word that could drift. **Rejected: "Cancel"** — leaving selection mode does not undo bulk actions
+already applied, so Cancel would promise something false. **Rejected: "Close"** — ambiguous;
+could mean closing the toolbar rather than exiting the mode.
+
+States: **no-selection** (toolbar visible, all actions disabled, count reads "0 selected") ·
+**some-selected** (actions enabled, count reads "{n} selected") · **action-in-progress** (an
+action is executing — the triggering button shows the § Buttons loading treatment, width locked;
+other actions disabled).
+
+| Testid | Control |
+|---|---|
+| `tasks-bulk-toolbar` | the toolbar container |
+| `tasks-select-count` | the selected-count display |
+| `tasks-bulk-complete` | bulk complete button |
+| `tasks-bulk-delete` | bulk delete button |
+| `tasks-bulk-move` | bulk move-to-list button |
+| `tasks-select-done` | ✕ exit button (exits select mode, accessible name "Exit selection") |
+
+## ConfirmDialog — bulk delete confirmation (F-009 AC-12)
+
+Purpose: a blocking dialog that gates bulk delete of more than one task. Extends F-001 AC-9's
+confirmation principle to the hand path. **A single selected task deletes immediately with undo
+per F-005 AC-42** — no dialog.
+
+**Shape:** centred dialog, `radius.lg` (16), `shadow.overlay`, `bg.base` ground, `bg.scrim`
+backdrop. Width: `min(400px, 100vw − 2×gutter)`. **This is a dialog, not a conversation
+message** (AC-12 is explicit).
+
+**Platform divergence (§ Platform in DESIGN.md):**
+- **Web:** centred dialog, two buttons.
+- **iOS:** action sheet with destructive row in `danger`, `Cancel` separated.
+- **Android:** M3 dialog, text buttons, destructive on the right.
+
+**Web dialog anatomy:**
+- Title: *"Delete {n} tasks?"* at `font.size.lead` `font.weight.semibold`.
+- Body: the task titles as a comma-separated list in `text.secondary` at `font.size.body`, e.g.
+  *"Buy milk, Order the cake, Collect the parcel."* — real titles, never "these tasks" or
+  "the selected items".
+- Buttons: *"Delete {n} tasks"* (`danger` variant) and *"Cancel"* (`secondary` variant). The
+  destructive button names the count and the word *delete* — it never says "Confirm" or "OK".
+
+**Focus:** the dialog traps focus. **`Cancel` receives initial focus** — this is the safe default
+for a destructive action (the user must move to the destructive button deliberately). Not stated
+in AC-12 but recorded here as the design's decision so the implementer does not guess. `Escape`
+cancels.
+
+**Single-task bypass (AC-12).** When exactly one task is selected, tapping *Delete* in the toolbar
+deletes immediately with undo (per F-005 AC-42) — **no dialog appears**. The dialog gates only
+`n > 1`. This state is not drawn as a separate mockup because the visible result is identical to
+a single task delete from the row: the row disappears and the undo bar appears. The difference is
+in the trigger (toolbar, not row control) and the bypass decision, both recorded here.
+
+States: **closed** (default — no dialog) · **open** (dialog visible, scrim active, `Cancel`
+focused) · **deleting** (*"Delete {n} tasks"* shows loading treatment, width locked; `Cancel`
+disabled).
+
+**Deleted tasks enter F-006's trash.** This is stated because it changes the confirmation's
+severity: the action is reversible within the trash window, and the dialog is about preventing
+mistakes, not about permanence.
+
+| Testid | Control |
+|---|---|
+| `tasks-confirm-dialog` | the confirmation dialog |
+| `tasks-confirm-delete` | the destructive confirm button |
+| `tasks-confirm-cancel` | the cancel button |
+
 ## Testid catalogue — app shell
 
 Controls that already exist keep their ids and simply render on a different surface:
-`assistant-task-row`, `assistant-task-checkbox`, `assistant-add-task-button`,
+`assistant-task-row`, `assistant-task-checkbox`,
 `assistant-undo-button`, `assistant-retry-button`, `assistant-permission-cta`. **They are not
 renamed** — § Touch publishes width floors against them which `src/assistant/mobile/model/touch.ts`
 adopts and a test asserts row by row.
+
+**`assistant-add-task-button` is retired from the shell by T-227** — the header's Add task button was
+removed when Search and overflow replaced Talk and Add task in the Tasks header. Adding a task is now
+the inline add row (`tasks-inline-add`), which is a different control. The id stays in `A11Y_IDS`
+(the conversation catalogue) because it still exists on the conversation surface; what changes is
+that it is no longer carried over to the shell.
 
 Genuinely new controls, and only those, take new ids:
 
 | Testid | Control |
 |---|---|
-| `shell-tasks-button` | PS-TASKS |
-| `shell-talk-button` | PS-TALK |
+| `shell-tasks-button` | PS-TASKS (below split only) |
 | `shell-lists-menu-button` | the hamburger on Tasks |
+| `shell-search-button` | Search icon button in the Tasks header (drawn T-227, published T-244) |
+| `shell-overflow-button` | Overflow (⋯) icon button in the Tasks header (drawn T-227, published T-244) |
 | `menu-collection-row` | LM-COLLECTION exemplar |
 | `menu-list-row` | LM-LIST exemplar |
 | `menu-new-list-button` | LM-ACTION — New list |
@@ -1117,10 +1408,12 @@ Genuinely new controls, and only those, take new ids:
 | `list-editor-name-input` | ListEditorSheet field |
 | `list-editor-create-button` | Create |
 | `list-editor-cancel-button` | Cancel |
+| `list-editor-color-swatch` | § ListEditorSheet colour swatch exemplar (one per colour option; `role="radio"`, accessible name is the colour name e.g. "Grey", "Blue") |
+| `assistant-voice-fab` | Voice FAB — navigates to Talk (below split only). Accessible name: **"Talk"** (AC-37 rev 9 — the control navigates, it does not start capture; § MicControl on the Talk surface is the capture control). `role=button`. Not rendered at or above `breakpoints.split` (the panel is permanent) |
 | `talk-session-retry-button` | SE-SESSION Retry |
 | `talk-task-link` | MessageTaskLink exemplar |
 | `tasks-list-retry-button` | InlineRetryBanner / SE-TASKS Retry |
-| `tasks-empty-add-button` | ET-FIRST / ET-COLLECTION CTA (distinct from the header's `assistant-add-task-button`) |
+| `tasks-empty-add-button` | ET-FIRST / ET-COLLECTION CTA (the conversation's `assistant-add-task-button` was retired from the shell header by T-227) |
 | `tasks-rename-input` | inline rename, which ships on web today with no testid |
 | `tasks-delete-button` | the row's delete control, which ships on web today with no testid |
 | `tasks-save-notice` | SN-ONE / SN-MANY — the notice itself (§ SaveNotice, added T-135) |
@@ -1130,6 +1423,33 @@ Genuinely new controls, and only those, take new ids:
 | `shell-carried-notice-retry` | CN-FAILED / CN-OFFLINE Retry (added T-152) |
 | `shell-carried-notice-undo` | CN-UNDO's `Put back` control — F-005 AC-43's offer, and the id `## Impact` §8(d) records as owed for an element that did not exist (added T-152) |
 | `shell-carried-notice-dismiss` | any row's trailing dismiss control (added T-152) |
+| `tasks-search-input` | § SearchField — the inline search text field (added T-244) |
+| `tasks-search-close` | § SearchField — close control, exits search (added T-244) |
+| `tasks-no-results` | § Empty states — Search — the no-results container (added T-244) |
+| `overflow-menu` | § OverflowMenu — the floating menu layer (added T-244) |
+| `overflow-sort-due` | § OverflowMenu — sort option: Due date (added T-244) |
+| `overflow-sort-priority` | § OverflowMenu — sort option: Priority (added T-244) |
+| `overflow-sort-manual` | § OverflowMenu — sort option: Manual (added T-244) |
+| `overflow-hide-completed` | § OverflowMenu — toggle: Hide completed / Show completed (added T-244) |
+| `overflow-select` | § OverflowMenu — action: enter multi-select mode (added T-244) |
+| `tasks-select-checkbox` | § SelectionMode — selection checkbox exemplar (added T-244) |
+| `tasks-bulk-toolbar` | § BulkActionToolbar — the toolbar container (added T-244) |
+| `tasks-select-count` | § BulkActionToolbar — selected-count display (added T-244) |
+| `tasks-bulk-complete` | § BulkActionToolbar — bulk complete button (added T-244) |
+| `tasks-bulk-delete` | § BulkActionToolbar — bulk delete button (added T-244) |
+| `tasks-bulk-move` | § BulkActionToolbar — bulk move-to-list button (added T-244) |
+| `tasks-select-done` | § BulkActionToolbar — ✕ exit button, exits select mode (added T-244, renamed T-249) |
+| `tasks-confirm-dialog` | § ConfirmDialog — the confirmation dialog (added T-244) |
+| `tasks-confirm-delete` | § ConfirmDialog — destructive confirm button (added T-244) |
+| `tasks-confirm-cancel` | § ConfirmDialog — cancel button (added T-244) |
+| `tasks-drag-handle` | § TaskRow — drag handle for manual reorder, visible only in manual sort (added T-247) |
+
+**`shell-talk-button` is retired by T-227** — the PathSwitch Talk button was removed when the Talk
+path changed from a bottom-bar tab to the voice FAB (below split) and the permanent panel (at
+split and above). The Talk surface is no longer reached by a path switch; the FAB is
+`assistant-voice-fab` and has its own identity, and the panel is always visible. The id stays in
+`SHELL_A11Y_IDS` in `src/` until the implementation pass reconciles it; this catalogue no longer
+publishes it.
 
 **`assistant-drawer-button` is retired by this IA** — the hamburger stops toggling a pane and
 becomes navigation to a different surface, which is a different control wearing the same glyph.
@@ -1140,14 +1460,14 @@ No content-width floor is published for any control above. § Touch's floors are
 shipped control; none of these has shipped, and publishing a floor measured only in Chromium
 would put a number into a table whose whole value is that its numbers are checkable.
 
-**The counts, and the assertions in `src/` that go red by design (added 2026-08-19, T-152).** This table
-goes **24 → 29** new-control rows and the three shell mockups' totals go **31 → 36** (24 new + 7 carried,
-verified by parsing all three). `src/assistant/mobile/model/a11y.ts SHELL_A11Y_IDS` holds 24 and
-`src/assistant/mobile/__tests__/a11y.test.ts` pins the mockup total at 31; both, plus
-`src/assistant/web/__tests__/app.test.tsx`'s `NOT_BUILT` map, need the five new ids. This is L-008's
-mechanism working in the direction drift actually travels — the suite fails because the **upstream**
-artifact moved — and the fix belongs to whoever owns `src/`, not to this file. All five are
-`(web, mobile)` like the component they belong to, so the one-catalogue-three-spellings invariant holds.
+**The counts (updated T-276 — `list-editor-color-swatch`, `assistant-voice-fab`).** This table now has
+**52** new-control rows (was 50; +2 for `list-editor-color-swatch` and `assistant-voice-fab`). The carried-over list is still **6**.
+**`src/assistant/mobile/model/a11y.ts SHELL_A11Y_IDS`** holds 29 and
+needs updating: add `shell-search-button`, `shell-overflow-button`, `tasks-drag-handle` and the
+20 F-009 ids; retire `shell-talk-button`. This is L-008's mechanism working in the direction drift actually travels — the
+suite fails because the **upstream** artifact moved — and the fix belongs to whoever owns `src/`, not
+to this file. All new ids are `(web, mobile)` like the components they belong to, so the
+one-catalogue-three-spellings invariant holds.
 
 **One asymmetry is deliberate and is recorded so it is not read as an omission.** § TaskRow's three mark
 ids (`tasks-row-priority-mark`, `tasks-row-repeat-mark`, `tasks-row-steps-mark`) are **not** in this
@@ -1229,8 +1549,10 @@ A control that switches to what is already visible is a dead control. § PathSwi
 second path is not one tap away, it is never left. `talk-failed` is the state to look at, and it
 is the state that most justifies the split: the assistant is broken in the panel and the whole
 todo is untouched and usable in the centre.
-**Consequence for the id catalogue:** `shell-tasks-button` and `shell-talk-button` are
-**below-split-only controls**. A desktop selector for either will not resolve, and should not.
+**Consequence for the id catalogue:** `shell-tasks-button` is a **below-split-only control**. A
+desktop selector for it will not resolve, and should not. (`shell-talk-button` was retired by T-227 —
+the Talk path is now the voice FAB below split and the permanent panel at split and above; see
+§ Testid catalogue.)
 
 **A container query, not a viewport media query.** The branch reads `.app`'s own width. It is
 equivalent to a media query whenever the app fills the window and stays correct when it does not
@@ -2893,7 +3215,7 @@ confirmation whose sentence has already named what goes. `detail-delete-button` 
 | **DET-FIELD-FAILED** | one field's write failed (AC-2) | `detail-field-failure` **on the field**, the typed value kept, `detail-field-retry` beside it, the field's border `danger`. The surface does not close and never silently reverts. Concurrent failures aggregate into one announcement, not N |
 | **DET-OFFLINE** | AC-2's third state | § OfflineBanner above, and the field states the refusal. **It is not a queue** — no spinner, no pending badge, no timer, no replay on reconnection |
 | **DET-ERROR** | the detail's own read failed | § SurfaceError SE-DETAIL. Takes the **column**, not the frame, so the conversation stays beside it, and the close affordance stays live |
-| **DET-DELETED** | AC-4's terminal state | `detail-deleted` — the unsaved text legible in `detail-deleted-text`, a way back in `detail-back-button`, and **no retry**: a retry aimed at a deleted row is dead or a resurrection |
+| **DET-DELETED** | AC-4's terminal state | `detail-deleted` — the unsaved text legible in `detail-deleted-text`, `detail-copy-button` (secondary, "Copy text" — the last legible copy of the user's unsaved text can be kept, not just displayed), a way back in `detail-back-button`, and **no retry**: a retry aimed at a deleted row is dead or a resurrection |
 | **DET-STEPS-REFUSED**, **DET-REPEAT-REFUSED** | the task cannot take steps / a repeat | one `attention` line where the region would be. Not an error — nothing failed |
 
 **Not drawn, on purpose, and named so the omission is a decision:** the delete **confirmation**
@@ -2903,3 +3225,87 @@ about one dialog); a **dirty-field-in-flight** state (the save is on blur and co
 there is no observable third moment); and **§ CarriedNotice's rows on this surface**, which are
 drawn in the three shell mockups because the whole point of that family is that it renders on every
 surface, including the two the detail mockup does not contain.
+
+---
+
+## Testid catalogue — conversation (voice-assistant-view)
+
+**Added 2026-08-23 (T-276).** These ids were drawn in
+`voice-assistant-view.html`, `-ios.html`, `-android.html` (and two of them also in
+`app-shell*.html`) since the conversation mockups were first created, but were
+never declared in a catalogue section. All 14 are `(web, mobile)`.
+
+| Testid | Control | A11y |
+|---|---|---|
+| `assistant-message-bubble` | message bubble exemplar — one per assistant turn; carries the bubble's content including diff rows, question text and action chips | non-interactive container |
+| `assistant-diff-old` | old value in an Applied bubble's per-field diff row | `text.muted`, struck through |
+| `assistant-diff-new` | new value in the same diff row | `text.primary`, semibold |
+| `assistant-row-badge` | AI-change marker on a task row — `NEW` or `EDITED` (AC-4) | non-interactive; accessible name is the badge text |
+| `assistant-chip-affirm` | affirmative chip on a confirm question (e.g. "Delete" on AC-9's bulk delete) | `role=button`; label is the visible text |
+| `assistant-chip-negative` | negative chip on a confirm question (e.g. "Cancel") | `role=button`; label is the visible text |
+| `assistant-option-chip` | § OptionChip exemplar on a clarify question (AC-13) — one per candidate | `role=button`; label is the candidate text |
+| `assistant-boundary-marker` | § BoundaryMarker — session-close separator (AC-28) | non-interactive; the session label is the accessible name |
+| `assistant-queued-notice` | § QueuedTurnNotice — "Waiting for the network" banner under a queued UserTurn (AC-25) | `role=status`; announces on appearance |
+| `assistant-composer-input` | § Composer text input field | `aria-label="Message"` |
+| `assistant-composer-send` | § Composer send button (enabled when input has text) | `aria-label="Send"` |
+| `assistant-mic-button` | § MicControl orb — tap-to-talk (also drawn in `app-shell*.html`) | accessible name follows state: "Tap to speak" (idle) / "Listening — tap to stop" / "Microphone needs permission" |
+| `assistant-state-indicator` | state indicator text in the Composer during listening/thinking — "Listening" or "Thinking..." | `aria-live` region |
+| `assistant-cancel-button` | cancel button during listening/thinking — returns to idle, restores any preserved text (AC-3, AC-26) | label is "Cancel" |
+
+---
+
+## Testid catalogue — lists surface
+
+**Added 2026-08-23 (T-276).** These ids were drawn in `lists.html`, `-ios.html`,
+`-android.html` since the lists mockups were first created, but were never
+declared. All are `(web, mobile)` except the four `list-rename-error-*` ids, which
+are `(web)` — the rename-error state is drawn only in `lists.html`.
+
+**Swatch container drift (resolved T-276):** the container was
+`list-recolour-swatches` in `lists.html` and `list-recolour-swatch-group` in the
+two mobile mockups. Resolved to **`list-recolour-swatches`** — the web name — for
+three reasons: (1) the container's name is the plural of the child exemplar
+`list-recolour-swatch`, which is the same pattern `detail-steps` /
+`detail-step-row` follows; (2) `-group` is redundant with `role="radiogroup"` on
+the element; (3) the web mockup was drawn first.
+
+| Testid | Control | A11y |
+|---|---|---|
+| `list-row-overflow-button` | overflow trigger on a personal-list row (one per row) | `aria-label="More options for {list name}"`, `aria-haspopup="true"` |
+| `list-action-menu` | the floating context / action menu for a list (web: dropdown, iOS: action sheet, Android: bottom menu) | `role=menu`; `aria-label="{list name} list actions"` |
+| `list-action-rename` | menu item: Rename | `role=menuitem`; label is "Rename" |
+| `list-action-recolour` | menu item: Change colour | `role=menuitem`; label is "Change colour" |
+| `list-action-move-up` | menu item: Move up (disabled when the list is first) | `role=menuitem`; `aria-disabled` when at top |
+| `list-action-move-down` | menu item: Move down (disabled when the list is last) | `role=menuitem`; `aria-disabled` when at bottom |
+| `list-action-delete` | menu item: Delete (danger variant) | `role=menuitem`; label is "Delete" |
+| `list-rename-input` | inline rename text field | value pre-filled with current list name |
+| `list-rename-save-button` | rename Save button | label is "Save" |
+| `list-rename-cancel-button` | rename Cancel button | label is "Cancel" |
+| `list-rename-error-input` | rename field in validation-error state (web only) | `border-color: danger`; the input retains the rejected name |
+| `list-rename-error-message` | validation error message (web only) — e.g. "A list called Home already exists." | visible text is the error |
+| `list-rename-error-save-button` | Save in error state (web only) | label is "Save" |
+| `list-rename-error-cancel-button` | Cancel in error state (web only) | label is "Cancel" |
+| `list-recolour-swatches` | colour swatch radiogroup container | `role=radiogroup`; `aria-label="List colour"` |
+| `list-recolour-swatch` | individual colour swatch exemplar (one per colour) | `role=radio`; `aria-checked`; accessible name is the colour name (e.g. "Blue") |
+| `list-delete-dialog` | delete confirmation dialog (web: `alertdialog`, iOS: action sheet, Android: M3 dialog) | `role=alertdialog`, `aria-modal=true` (web) |
+| `list-delete-confirm-button` | destructive confirm button — "Move and delete" | label is "Move and delete" |
+| `list-delete-cancel-button` | cancel button | label is "Cancel" |
+
+---
+
+## Testid catalogue — task detail
+
+**Added 2026-08-23 (T-276).** These six ids were drawn in `task-detail.html`,
+`-ios.html`, `-android.html` by T-204 and adopted by § TaskDetail, which lists
+every field-level id inline. These six are the **surface-level** controls that
+§ TaskDetail describes but that were not collected into a catalogue table. All are
+`(web, mobile)`.
+
+| Testid | Control | A11y |
+|---|---|---|
+| `detail-surface` | the detail surface container (`<main>`) | the landmark that scopes the detail |
+| `detail-close-button` | close / back button in the topbar (web: ✕ icon; iOS: "< Today" backlink; Android: back arrow) | `aria-label="Close"` (web) / backlink text (iOS) / `aria-label="Back to your tasks"` (Android) |
+| `detail-fields` | fields container wrapping all seven property fields | non-interactive container |
+| `detail-repeat-clear` | "Clear the repeat" button inside the repeat picker | label is "Clear the repeat" |
+| `detail-surface-error` | § SurfaceError SE-DETAIL — the surface-level error container (the detail's own read failed) | announces on appearance |
+| `detail-retry-button` | Retry button inside the surface error | label is "Retry" |

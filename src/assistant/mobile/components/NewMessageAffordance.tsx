@@ -57,7 +57,7 @@ export function NewMessageAffordance({
           >
             <ArrowDown
               size={tokens.icon.size.sm}
-              color={waiting ? colors.question : colors.text.secondary}
+              color={waiting ? colors.attention : colors.text.secondary}
               strokeWidth={tokens.icon.stroke}
             />
             {/* Two lines, not one. At 375pt a single non-wrapping line

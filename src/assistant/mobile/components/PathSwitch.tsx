@@ -31,9 +31,12 @@ export function PathSwitch({
   onPress: () => void
 }) {
   const { styles, colors } = useStyles()
-  const id = view.row === 'PS-TASKS' ? SHELL_A11Y_IDS.pathTasks : SHELL_A11Y_IDS.pathTalk
+  // T-257: PathSwitch is now only rendered for PS-TASKS (on the Talk surface).
+  // The Talk affordance on the Tasks surface is the VoiceFab component, which
+  // carries `assistant-voice-fab` directly. PathSwitch always uses pathTasks.
+  const id = SHELL_A11Y_IDS.pathTasks
   const { hitSlop } = touchProps(id, platform)
-  const Icon = view.row === 'PS-TASKS' ? List : Mic
+  const Icon = List
   return (
     <Pressable
       {...a11yProps(id, { label: view.accessibleName, role: 'button' })}

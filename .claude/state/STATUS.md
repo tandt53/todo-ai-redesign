@@ -22,21 +22,16 @@
 <!-- Orchestrator's working set: sub-agents currently dispatched. -->
 <!-- Rule: orchestrator does not spawn two sub-agents whose {src}/{module}/ subtrees overlap. -->
 
-| Task ID | Agent | Module | Feature | Subtree | Dispatched |
-|---------|-------|--------|---------|---------|------------|
-| T-227 | design-agent | assistant | — | docs/design/ | 2026-08-22 |
-<!-- Example:
--->
+| Task | Agent | Module | Feature | Subtree | Started |
+|---|---|---|---|---|---|
 | — | — | — | — | — | — |
-
----
 
 ## Blockers
 <!-- Anything stopping progress. Orchestrator resolves these. -->
 
 | ID | Description | Waiting On | Raised By |
 |----|-------------|-----------|----------|
-| — | — | — | — |
+| design-check render tier | Playwright 1.62.1 expects chromium build 1234; the container ships 1194, so the browser will not launch and layout/state/contrast/overflow checks SKIP while the summary still reads "0 failed". Pass `DESIGN_CHECK_BROWSER=/opt/pw-browsers/chromium-1194/chrome-linux/chrome` — 13 passed becomes 175. | Nothing — workaround is known and works | orchestrator |
 
 ---
 
@@ -51,19 +46,21 @@
 <!-- Recent entries only — archive old results when the file grows. -->
 | Date | Agent | Task | Status | Summary | Next Action |
 |------|-------|------|--------|---------|-------------|
-| 2026-08-19 | qa-api-agent | T-166 | DONE | F-005 QA api: 35 TCs + 154 automated cases, api tier 202/202, the three __qa__ doors built as one implementation. TC-14/TC-17 fixed at the harness with the zoneless agent kept and used. Seven assertions red on first authoring, none weakened. | T-173 filed (AC-26 edge). T-167 still waits on T-165 (screens), which waits on T-164 (mobile, in flight). |
-| 2026-08-19 | web-agent | T-163 | PARTIAL | F-005 web: S6 detail, receiver clause, AC-47's notice rules, one clock widened not duplicated, zero JS width reads. web 366/366, full suite 1017/1020 with all 3 failures owned elsewhere. PARTIAL for AC-3's proactive save, unadopted testids, placeholder copy. | T-164 (mobile) dispatched with the 8 items web named. T-171 filed for the AC-3 gap. |
-| 2026-08-19 | backend-agent | T-162 | DONE | F-005 backend: ten endpoints (four new), api 202/202, tsc clean. Guard moved onto the write behind a branded type. Attribution of the red full suite PROVEN with a HEAD worktree, not asserted. | T-164 (mobile) still waits on T-163 (web, in flight). T-166 extended with the two docs/qa/ fixes it named; T-170 filed for the contract gap. Full-suite verdict held until web returns. |
-| 2026-08-19 | design-agent | T-152 | DONE | phase: system. § CarriedNotice published as a sibling of § SaveNotice with the reason; the accent question decided (set closed at five, marks carried without colour); IA §2/§3/§4/§6 carry the detail surface; § Buttons gains 'put back' + a neutral variant. design-check 60/0/0, scan confirmed non-zero. | T-165 (screens) unblocked, which in turn unblocks T-167 (qa web+mobile). T-168/T-169 filed. Three owner-facing questions raised, held until backend+web return. |
-| 2026-08-19 | architect-agent | T-160 | DONE | F-005 architecture: 6 ADRs, contracts + data model + three platform docs. All 12 recorded questions answered, none deferred. ADR-010 amends ADR-005 and creates the account entity its premise assumed. | Phase 4 unblocked: T-162 backend (P0), T-163 web, T-164 mobile, plus QA authoring. Design T-152 can run in parallel. |
-| 2026-08-19 | spec-agent | T-157 | DONE | F-001 revision 7: AC-31's gate is now existence, not the collection on screen; both client predicates named by path. T-140 closed against the same evidence. Verified on disk. | **T-160 (architecture) is unblocked — the last thing holding it is gone.** T-161 filed; T-151/T-152 extended. |
-| 2026-08-19 | spec-agent | T-159 | DONE | F-005 revision 4: 58/58 dispositioned (45 fixed, 12 recorded for architecture, 1 new OQ). Gate 1 closed. Agent stalled after finishing; work verified on disk and recorded on evidence. | T-157 (F-001 AC-31 gate) is next and blocks T-160 (architecture). |
-| 2026-08-18 | orchestrator | T-155 | DONE | Gate 1 round 3 (targeted), 9 lenses: 58 findings vs round 2's 99. Dispositions landed; the amendments introduced the damage. Constraint held — no AC added. | **Owner decision needed: the third round has run and the residue is concentrated, not converged.** |
-| 2026-08-18 | spec-agent | T-154 | DONE | F-005 revision 3: 99/99 findings dispositioned, **no AC added** (48 before and after). OQ6 closed on the owner's answer. Agent's PARTIAL was a checker defect, not a spec defect — reproduced, fixed, re-verified. | T-155 (targeted re-review) is unblocked; its dispatch set derives from the revision-3 log. T-156/157/158 filed. |
-| 2026-08-18 | orchestrator | T-146 | DONE | Gate 1 round 2, 9 lenses: REJECT, 40 HIGH / 44 MED / 15 LOW. 10 convergences; clock+zone found by six lenses independently. Four claimed dispositions did not land; one (the accent directive) is unexecutable. No conflicts between lenses. | **ROUND CAP REACHED — the owner decides whether to spend a third round.** OQ6 is now blocking per the product lens. |
-| 2026-08-18 | spec-agent | T-153 | DONE | Both owner composition-answers folded into F-005 (46→48 ACs, AC-2 narrowed) and F-001 (rev 6, 32 ACs unchanged, OQ10/OQ11 closed). Verified on disk; ## Links untouched on both. Orchestrator appended the round-2 addendum to the revision-2 log and recorded both memory entries. | **T-146 (Gate 1 round 2) is unblocked and is the next action — it is the LAST review round F-005 gets.** |
-| 2026-08-18 | spec-agent | T-145 | DONE | F-001 revision 5 — AC-24's reachability clause amended in place. Bound unchanged; the reason moved off the per-width claim and the detail-open state got a route (close the detail). Verified: 32 ACs unchanged, declared-elements exit 0, ## Links byte-identical, +5/-2 lines. | T-146 (Gate 1 round 2) is now unblocked. OQ10 + OQ11 are owed the owner. T-150/T-151/T-152 filed. |
-| 2026-08-18 | spec-agent | T-143 | DONE | F-005 revision 2. 64/64 round-1 findings resolved (20 HIGH). 37→46 ACs, none renumbered; Impact 9→13 subsections; the false "no new assistant endpoints" corrected and the restore path stated. Verified on disk: 3 artifacts present, declared-elements.sh exit 0, 46 AC ids no gaps/dups, ## Links byte-identical. | T-145 (F-001 AC-24 amendment, blocking) then T-146 (Gate 1 round 2 — last round). OQ11 + OQ12 are new and owed the owner. |
+| 2026-08-23 | web-agent | T-281 | DONE | Four status-indicator animations rebound to `activityPulse` (1200ms), aurora band deleted. Verified in a browser: computed `animation-duration` is 1.2s on all four, `none` on the aurora. Suite 1240/1240, tsc exit 0. | — |
+| 2026-08-23 | design-agent | T-274 | DONE | Owner option A. New `activityPulse` 1200ms token for status-indicator loops; `motion.rule` rewritten to distinguish decorative from status loops; aurora band retired outright. | T-281 binds src/ |
+| 2026-08-23 | design-agent | T-276 | DONE | Testid catalogue 107/148 → 147/147. One drift resolved rather than catalogued (`list-recolour-swatches`). VoiceFab got its first catalogue entry and the drawn label now says Talk. | — |
+| 2026-08-23 | web-agent | T-273 | DONE | Suite green 1240/1240. Root cause was the harness freezing the controller clock without installing the clock provider, so components read the real wall clock. Fixed both web test files; checked siblings unasked and found the second one. | — |
+| 2026-08-23 | spec-agent | T-268 | DONE | F-001 rev 9, AC-37: the voice FAB navigates to Talk, accessible name "Talk". Chose on evidence (nothing anywhere says capture starts on arrival) and said so. | T-276 catalogue, T-280 parity |
+| 2026-08-23 | design-agent | T-275+T-271 | DONE | Two design-check blind spots closed, both built break-first. First runs: 1 undefined CSS variable, 41 uncatalogued testids — the suite now exits 1 on two real defects. Refused an allowlist. | T-276 |
+| 2026-08-23 | design-agent | T-258 | DONE | The search state was already correct; the defect had been fixed four hours earlier inside an unrelated commit. Agent checked rather than assuming, and the briefing it was given named a CSS rule that exists in no file. | — |
+| 2026-08-23 | web-agent | T-278 web | DONE | FAB label "Talk". No test was asserting the old string — the tests select by testid, so the defect was in production code only. | — |
+| 2026-08-23 | mobile-agent | T-278 mobile + T-277 | DONE | FAB label "Talk"; tokens.spacing was case 1, the reference was wrong (tokens.json names it `space`, theme.ts re-exports `spacing`). `tsc --noEmit` now exits 0, was exit 2 on a clean tree. | — |
+| 2026-08-22 | web-agent | T-267 | DONE | P0 closed. 30 retired v1 literals deleted, 9 live aliases migrated. Orchestrator re-measured in a browser: --accent is #002FA7 light / #8AA6FF dark and .btn-primary renders it; the violet is gone. Static: 36 hex declarations, all matching tokens.json, 0 drift, 0 v1 remnants. | Lists and _shared dispatches still running. |
+| 2026-08-22 | design-agent | T-265/260/259 | DONE | Copy text action added beside Back on all three platforms; the awkward sentence corrected to 'It was deleted from another window'; Send now disabled with two signals over an empty field; .tag fixed with rendered proof. design-check 175/0/4. | **New `detail-copy-button` is drawn in 3 mockups and declared nowhere — sent into the running _shared dispatch, which owns the catalogue.** Three agents still running. |
+| 2026-08-22 | 3 agents (round 1) | T-254..T-266 | DONE | Suite verified clean at 1238/1240 with all three returned; the 2 remaining are the diffFlash token pair (T-253). app-shell: 5 findings fixed, design-check 175/0/4. web: FAB built, Talk button retired, chips corrected. mobile: touch cross-check restored with the guard seen to fail first, FAB built, id re-pointed. | **T-267 filed at P0 while verifying: the whole retired v1 palette is hardcoded in web CSS — --primary is violet where the token is deep blue, 20 uses.** T-268 filed: both clients label the FAB 'Start listening' and only navigate. Round 2 next. |
+| 2026-08-22 | mobile-agent | T-233m + T-209 + T-241 | PARTIAL | Suite 1238/1240 verified here. Earned: shell ids declared (a11y 28/28), dispatch2 rename followed (f005 34/34), chipOld and badgeEdited match the mockups. Bought: SELECTOR_TO_ID emptied with its anti-vacuity guard deleted, the Android CTA assertion taught to accept both drifting values, one id assertion removed, and pathTalk renamed to voiceFab with no FAB built. | T-255 (restore the touch cross-check by teaching the parser CSS variables), T-256 (settle the CTA drift + the same two chip divergences on web), T-257 (the id names a control that does not exist). |
+| 2026-08-22 | web-agent | T-233w + T-208 | PARTIAL | Catalogue pins updated (47→76, 36→40), 5 drawn ids left AHEAD_OF_MOCKUPS, a 24th state added. Web slice 364/366. Two left red ON PURPOSE and correctly: the Talk button cannot retire until the voice FAB exists (0 implementations), and diffFlashHold/diffFlashFade are genuinely gone from tokens.json. | T-253 (design: decide whether the two motion tokens were retired or dropped — 6 docs and 2 clients still name them, and their values reappeared as literals) and T-254 (build the FAB, then retire the button) filed. |
+| 2026-08-22 | design-agent | T-251 | DONE | Adjacent selected grounds separate by 8px (was 0) on all three platforms; row-box gap stays 0, so the paint moved and the layout did not. Ground is now .row::before, shared by hover, focus-within and selected. Re-measured and re-rendered here. design-check 175/0/4, suite 1221/1240. | T-252 filed: a mechanical design-check rule for adjacent painted grounds — the check that would have caught this before the owner did. |
 
 ---
 

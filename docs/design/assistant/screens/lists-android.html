@@ -167,10 +167,15 @@ input{font:inherit; color:inherit}
 
 /* ══════ M3 POPUP MENU (dropdown) ══════ */
 .ctx-menu{
-  position:absolute; right:var(--s2); z-index:30;
+  position:absolute; right:var(--s2); top:100%; z-index:30;
   background:var(--bg-base); border-radius:var(--r-lg); box-shadow:var(--shadow-overlay);
   min-width:200px; padding:var(--s1) 0; display:none;
 }
+/* Groceries row is last: flip menu upward so it stays inside the stage */
+.ctx-menu.for-groceries{top:auto; bottom:100%}
+/* Allow context menu to overflow the scrollable body */
+[data-state="menu-nonempty"] .over-body,
+[data-state="menu-empty-list"] .over-body{overflow:visible}
 .ctx-item{display:flex; align-items:center; gap:var(--s3); width:100%;
   padding:var(--s3) var(--s4); font-size:var(--fs-body); line-height:var(--lh-body);
   text-align:left; cursor:pointer; color:var(--text-primary);
@@ -356,17 +361,10 @@ input{font:inherit; color:inherit}
       </div>
     </div>
 
-    <!-- Home row -->
-    <div class="mrow lrow v v-default v-rename v-rename-taken vflex" style="position:relative">
-      <span class="ldot" style="background:#1A7A2E" aria-hidden="true"></span>
-      <span class="lname">Home</span><span class="n">2</span>
-      <button class="overflow" contentDescription="list-row-overflow-button" aria-label="More options for Home"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
-    </div>
-
-    <!-- Recolour panel for Work -->
+    <!-- Recolour panel for Work (attached to Work row, same mechanism as rename) -->
     <div class="recolour-panel for-work">
       <span class="rlabel">Colour for Work</span>
-      <div class="swatches" role="radiogroup" aria-label="List colour" contentDescription="list-recolour-swatch-group">
+      <div class="swatches" role="radiogroup" aria-label="List colour" contentDescription="list-recolour-swatches">
         <button type="button" class="swatch" contentDescription="list-recolour-swatch" role="radio" aria-checked="false" aria-label="Grey" style="background:#94949E"></button>
         <button type="button" class="swatch on" contentDescription="list-recolour-swatch" role="radio" aria-checked="true" aria-label="Blue" style="background:#002FA7"></button>
         <button type="button" class="swatch" contentDescription="list-recolour-swatch" role="radio" aria-checked="false" aria-label="Red" style="background:#C8102E"></button>
@@ -375,6 +373,13 @@ input{font:inherit; color:inherit}
         <button type="button" class="swatch" contentDescription="list-recolour-swatch" role="radio" aria-checked="false" aria-label="Purple" style="background:#7C3AED"></button>
         <button type="button" class="swatch" contentDescription="list-recolour-swatch" role="radio" aria-checked="false" aria-label="Teal" style="background:#0E7490"></button>
       </div>
+    </div>
+
+    <!-- Home row -->
+    <div class="mrow lrow v v-default v-rename v-rename-taken vflex" style="position:relative">
+      <span class="ldot" style="background:#1A7A2E" aria-hidden="true"></span>
+      <span class="lname">Home</span><span class="n">2</span>
+      <button class="overflow" contentDescription="list-row-overflow-button" aria-label="More options for Home"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
     </div>
 
     <!-- Groceries row (0 tasks) -->
@@ -408,19 +413,19 @@ input{font:inherit; color:inherit}
   </div>
 
   <div class="gesturebar"></div>
-</aside>
 
-<!-- M3 DIALOG for delete confirmation (over entire screen) -->
-<div class="m3-dialog-scrim" contentDescription="list-delete-dialog">
-  <div class="m3-dialog" role="alertdialog" aria-modal="true" aria-labelledby="del-title-and">
-    <h2 id="del-title-and">Delete Work?</h2>
-    <p>Move 5 tasks to Inbox and delete Work? The tasks are not deleted.</p>
-    <div class="btn-row">
-      <button class="btn-text neutral" contentDescription="list-delete-cancel-button">Cancel</button>
-      <button class="btn-text danger" contentDescription="list-delete-confirm-button">Delete</button>
+  <!-- M3 DIALOG for delete confirmation (inside drawer so data-state selector matches) -->
+  <div class="m3-dialog-scrim" contentDescription="list-delete-dialog">
+    <div class="m3-dialog" role="alertdialog" aria-modal="true" aria-labelledby="del-title-and">
+      <h2 id="del-title-and">Move 5 tasks to Inbox and delete Work?</h2>
+      <p>The tasks are not deleted. They move to Inbox, where they were before you filed them.</p>
+      <div class="btn-row">
+        <button class="btn-text neutral" contentDescription="list-delete-cancel-button">Cancel</button>
+        <button class="btn-text danger" contentDescription="list-delete-confirm-button">Move and delete</button>
+      </div>
     </div>
   </div>
-</div>
+</aside>
 
 </div></div>
 

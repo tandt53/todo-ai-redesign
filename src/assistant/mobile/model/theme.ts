@@ -17,34 +17,12 @@ export const tokens = tokensJson
 
 export type ThemeName = 'dark' | 'light'
 
-// tokens.json v2 renamed colours and retired two accents ($meta.accents):
-//   primary → accent, primaryTint → accentTint
-//   question → attention, questionTint → attentionTint
-//   success, voice, diff → RETIRED (accent set closed at three)
-//
-// This translation layer keeps the old keys alive so styles.ts and consumers
-// compile without a full-codebase rename, and does NOT crash on chained access
-// (c.diff.add, c.voice.listening) because it supplies the objects.
+// tokens.json v2 keys only — the T-207 translation layer that kept retired
+// names alive (success, voice, diff, primary, question) is deleted as of T-232.
+// Every call site now references the v2 key directly and cites the design rule
+// that decided the replacement.
 export function palette(theme: ThemeName = tokens.$meta.default_theme as ThemeName) {
-  const raw = theme === 'light' ? tokens.color.light : tokens.color.dark
-  return {
-    ...raw,
-    // renamed
-    primary: raw.accent,
-    primaryTint: raw.accentTint,
-    question: raw.attention,
-    questionTint: raw.attentionTint,
-    // retired — mapped to closest surviving accent so the UI does not crash.
-    // Each mapping is a DECISION recorded in the return summary.
-    success: raw.accent,                              // green → accent blue
-    voice: { listening: raw.accent, thinking: raw.accent },
-    diff: {
-      add: raw.accent,
-      addTint: raw.accentTint,
-      remove: raw.danger,
-      removeTint: raw.dangerTint,
-    },
-  }
+  return theme === 'light' ? tokens.color.light : tokens.color.dark
 }
 
 // tokens.json renamed `spacing` → `space` with numeric indices (0–9, 4-based).

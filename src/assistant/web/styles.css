@@ -14,52 +14,48 @@
  *    plus `is-offline` when the connection is down.
  */
 
-/* ============ tokens.json → :root (generated; names/values verbatim) ============ */
+/* ============ tokens.json v2 → :root (colour section from docs/design/_shared/tokens.json color.*) ============ */
 :root {
-  --color-dark-bg-base: #0C0E16;
-  --color-dark-bg-raised: #161A28;
-  --color-dark-bg-hairline: #232741;
-  --color-dark-text-primary: #F2F4FA;
-  --color-dark-text-secondary: #A9B0CC;
-  --color-dark-text-muted: #8189A8;
-  --color-dark-text-onAccent: #0C0E16;
-  --color-dark-primary: #9D8CFF;
-  --color-dark-primaryTint: #1B1833;
-  --color-dark-voice-listening: #3EE6D2;
-  --color-dark-voice-listeningTint: #0E2724;
-  --color-dark-voice-thinking: #9D8CFF;
-  --color-dark-voice-thinkingTint: #1B1833;
-  --color-dark-danger: #FF7A8A;
-  --color-dark-success: #4ADE9E;
-  --color-dark-question: #FFC24B;
-  --color-dark-questionTint: #2A2113;
-  --color-dark-diff-add: #4ADE9E;
-  --color-dark-diff-addTint: #10261C;
-  --color-dark-diff-remove: #FF7A8A;
-  --color-dark-diff-removeTint: #2C161A;
-  --color-dark-focusRing: #3EE6D2;
-  --color-light-bg-base: #F6F7FB;
+  /* color.dark — tokens.json v2 (T-267: replaces v1 palette in full) */
+  --color-dark-bg-base: #0E0E11;
+  --color-dark-bg-sunken: #17171C;
+  --color-dark-bg-raised: #17171C;
+  --color-dark-bg-ink: #F4F4F6;
+  --color-dark-bg-hairline: #2E2E38;
+  --color-dark-bg-rule: #63636F;
+  --color-dark-bg-scrim: rgba(0, 0, 0, 0.56);
+  --color-dark-text-primary: #F4F4F6;
+  --color-dark-text-secondary: #A8A8B4;
+  --color-dark-text-muted: #9296A3;
+  --color-dark-text-onInk: #0E0E11;
+  --color-dark-text-onAccent: #0E0E11;
+  --color-dark-accent: #8AA6FF;
+  --color-dark-accentTint: #1A2140;
+  --color-dark-danger: #FF7183;
+  --color-dark-dangerTint: #2C1519;
+  --color-dark-attention: #FFB020;
+  --color-dark-attentionTint: #2B2010;
+  --color-dark-focusRing: #8AA6FF;
+  /* color.light — tokens.json v2 */
+  --color-light-bg-base: #FFFFFF;
+  --color-light-bg-sunken: #F2F2F4;
   --color-light-bg-raised: #FFFFFF;
-  --color-light-bg-hairline: #E4E6F0;
-  --color-light-text-primary: #191D33;
-  --color-light-text-secondary: #454C6E;
-  --color-light-text-muted: #5D6486;
+  --color-light-bg-ink: #111318;
+  --color-light-bg-hairline: #DCDCE1;
+  --color-light-bg-rule: #94949E;
+  --color-light-bg-scrim: rgba(17, 19, 24, 0.32);
+  --color-light-text-primary: #111318;
+  --color-light-text-secondary: #54545E;
+  --color-light-text-muted: #646470;
+  --color-light-text-onInk: #FFFFFF;
   --color-light-text-onAccent: #FFFFFF;
-  --color-light-primary: #5646D6;
-  --color-light-primaryTint: #EAE7FB;
-  --color-light-voice-listening: #0A7473;
-  --color-light-voice-listeningTint: #DFF2F1;
-  --color-light-voice-thinking: #5646D6;
-  --color-light-voice-thinkingTint: #EAE7FB;
-  --color-light-danger: #C7223A;
-  --color-light-success: #0E7B4F;
-  --color-light-question: #8A5A00;
-  --color-light-questionTint: #F7EDD8;
-  --color-light-diff-add: #0E7B4F;
-  --color-light-diff-addTint: #E3F4EA;
-  --color-light-diff-remove: #C7223A;
-  --color-light-diff-removeTint: #FBE7EA;
-  --color-light-focusRing: #5646D6;
+  --color-light-accent: #002FA7;
+  --color-light-accentTint: #E6EAF6;
+  --color-light-danger: #C8102E;
+  --color-light-dangerTint: #FBE9EC;
+  --color-light-attention: #9A4C00;
+  --color-light-attentionTint: #FBEFE2;
+  --color-light-focusRing: #002FA7;
   --gradient-voice-angle_deg: 135;
   --font-family-display: 'Space Grotesk', 'Be Vietnam Pro', sans-serif;
   --font-family-body: 'Be Vietnam Pro', system-ui, sans-serif;
@@ -98,18 +94,20 @@
   --radius-taskRow: 0;
   --shadow-raised: 0 8px 24px -8px rgba(4, 6, 16, 0.50);
   --shadow-raisedLight: 0 8px 24px -10px rgba(25, 29, 51, 0.18);
-  --shadow-glowListening: 0 0 24px rgba(62, 230, 210, 0.35);
-  --shadow-glowThinking: 0 0 24px rgba(157, 140, 255, 0.35);
-  --motion-duration_ms-micro: 120;
-  --motion-duration_ms-standard: 200;
-  --motion-duration_ms-emphasis: 320;
-  --motion-duration_ms-celebrate: 600;
-  --motion-duration_ms-auroraBreath: 2400;
-  --motion-duration_ms-diffFlashHold: 1600;
-  --motion-duration_ms-diffFlashFade: 400;
-  --motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
-  --motion-easing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --motion-easing-exit: cubic-bezier(0.4, 0, 1, 1);
+  /* rule 6: voice pair retired → one accent; both glows now accent at 35% */
+  --shadow-glow: 0 0 24px color-mix(in srgb, var(--color-dark-accent) 35%, transparent);
+  /* motion.duration_ms — tokens.json v2 (T-270: corrects v1 speeds, retires celebrate/auroraBreath) */
+  --motion-duration_ms-micro: 100;           /* tokens.json motion.duration_ms.micro */
+  --motion-duration_ms-standard: 180;        /* tokens.json motion.duration_ms.standard */
+  --motion-duration_ms-emphasis: 280;        /* tokens.json motion.duration_ms.emphasis */
+  --motion-duration_ms-diffFlashHold: 1600;  /* tokens.json motion.duration_ms.diffFlashHold */
+  --motion-duration_ms-diffFlashFade: 400;   /* tokens.json motion.duration_ms.diffFlashFade */
+  --motion-duration_ms-rulegrow: 900;        /* tokens.json motion.duration_ms.rulegrow — listening rule growth */
+  --motion-duration_ms-activityPulse: 1200;  /* tokens.json motion.duration_ms.activityPulse — status indicator loops (T-281) */
+  /* motion.easing — tokens.json v2 (T-270: retires spring per motion.rule "NO spring, NO bounce") */
+  --motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);  /* tokens.json motion.easing.standard */
+  --motion-easing-exit: cubic-bezier(0.4, 0, 1, 1);      /* tokens.json motion.easing.exit */
+  --motion-easing-linear: linear;                          /* tokens.json motion.easing.linear */
   --icon-stroke: 1.8;
   --icon-size-sm: 16;
   --icon-size-md: 20;
@@ -139,13 +137,15 @@ html {
   --dur-micro: calc(var(--motion-duration_ms-micro) * 1ms);
   --dur-standard: calc(var(--motion-duration_ms-standard) * 1ms);
   --dur-emphasis: calc(var(--motion-duration_ms-emphasis) * 1ms);
-  --dur-breath: calc(var(--motion-duration_ms-auroraBreath) * 1ms);
+  --dur-rulegrow: calc(var(--motion-duration_ms-rulegrow) * 1ms);
   --dur-flash: calc((var(--motion-duration_ms-diffFlashHold) + var(--motion-duration_ms-diffFlashFade)) * 1ms);
+  --dur-pulse: calc(var(--motion-duration_ms-activityPulse) * 1ms); /* activity-indicator loops (T-281) */
   --icon-sm: calc(var(--icon-size-sm) * 1px);
   --icon-md: calc(var(--icon-size-md) * 1px);
   --icon-lg: calc(var(--icon-size-lg) * 1px);
-  /* gradient.voice — legal ONLY on the voice surface (orb, band, breath) */
-  --grad-voice: linear-gradient(calc(var(--gradient-voice-angle_deg) * 1deg), var(--color-dark-voice-listening), var(--color-dark-voice-thinking));
+  /* rule 6: voice pair retired → one accent on both halves of its turn;
+     the gradient collapses to a solid accent (DESIGN.md motion: gradient retired) */
+  --grad-voice: var(--color-dark-accent);
 }
 /* responsive gutter: mobile 375 → web 768+ (spacing.gutter_mobile / gutter_web) */
 @media (min-width: 768px) {
@@ -153,33 +153,37 @@ html {
 }
 
 html[data-theme="dark"] {
-  --bg-base: var(--color-dark-bg-base); --bg-raised: var(--color-dark-bg-raised); --hairline: var(--color-dark-bg-hairline);
+  /* bg — tokens.json color.dark.bg.* */
+  --bg-base: var(--color-dark-bg-base); --bg-raised: var(--color-dark-bg-raised); --bg-sunken: var(--color-dark-bg-sunken); --hairline: var(--color-dark-bg-hairline);
+  /* text — tokens.json color.dark.text.* */
   --tx: var(--color-dark-text-primary); --tx-2: var(--color-dark-text-secondary); --tx-muted: var(--color-dark-text-muted); --tx-onaccent: var(--color-dark-text-onAccent);
-  --primary: var(--color-dark-primary); --primary-tint: var(--color-dark-primaryTint);
-  --listening: var(--color-dark-voice-listening); --listening-tint: var(--color-dark-voice-listeningTint);
-  --thinking: var(--color-dark-voice-thinking); --thinking-tint: var(--color-dark-voice-thinkingTint);
-  --danger: var(--color-dark-danger); --success: var(--color-dark-success);
-  --question: var(--color-dark-question); --question-tint: var(--color-dark-questionTint);
-  --add: var(--color-dark-diff-add); --add-tint: var(--color-dark-diff-addTint);
-  --remove: var(--color-dark-diff-remove); --remove-tint: var(--color-dark-diff-removeTint);
+  /* accent — $meta.replaces: primary/primaryTint → accent/accentTint */
+  --accent: var(--color-dark-accent); --accent-tint: var(--color-dark-accentTint);
+  /* danger — tokens.json color.dark.danger/dangerTint */
+  --danger: var(--color-dark-danger); --danger-tint: var(--color-dark-dangerTint);
+  /* attention — $meta.replaces: question/questionTint → attention/attentionTint */
+  --attention: var(--color-dark-attention); --attention-tint: var(--color-dark-attentionTint);
+  /* focusRing — tokens.json color.dark.focusRing */
   --focus: var(--color-dark-focusRing);
   --shadow-card: var(--shadow-raised);
-  --scrim: rgba(12, 14, 22, 0.66);
+  --scrim: var(--color-dark-bg-scrim);
   color-scheme: dark;
 }
 html[data-theme="light"] {
-  --bg-base: var(--color-light-bg-base); --bg-raised: var(--color-light-bg-raised); --hairline: var(--color-light-bg-hairline);
+  /* bg — tokens.json color.light.bg.* */
+  --bg-base: var(--color-light-bg-base); --bg-raised: var(--color-light-bg-raised); --bg-sunken: var(--color-light-bg-sunken); --hairline: var(--color-light-bg-hairline);
+  /* text — tokens.json color.light.text.* */
   --tx: var(--color-light-text-primary); --tx-2: var(--color-light-text-secondary); --tx-muted: var(--color-light-text-muted); --tx-onaccent: var(--color-light-text-onAccent);
-  --primary: var(--color-light-primary); --primary-tint: var(--color-light-primaryTint);
-  --listening: var(--color-light-voice-listening); --listening-tint: var(--color-light-voice-listeningTint);
-  --thinking: var(--color-light-voice-thinking); --thinking-tint: var(--color-light-voice-thinkingTint);
-  --danger: var(--color-light-danger); --success: var(--color-light-success);
-  --question: var(--color-light-question); --question-tint: var(--color-light-questionTint);
-  --add: var(--color-light-diff-add); --add-tint: var(--color-light-diff-addTint);
-  --remove: var(--color-light-diff-remove); --remove-tint: var(--color-light-diff-removeTint);
+  /* accent — $meta.replaces: primary/primaryTint → accent/accentTint */
+  --accent: var(--color-light-accent); --accent-tint: var(--color-light-accentTint);
+  /* danger — tokens.json color.light.danger/dangerTint */
+  --danger: var(--color-light-danger); --danger-tint: var(--color-light-dangerTint);
+  /* attention — $meta.replaces: question/questionTint → attention/attentionTint */
+  --attention: var(--color-light-attention); --attention-tint: var(--color-light-attentionTint);
+  /* focusRing — tokens.json color.light.focusRing */
   --focus: var(--color-light-focusRing);
   --shadow-card: var(--shadow-raisedLight);
-  --scrim: rgba(25, 29, 51, 0.44);
+  --scrim: var(--color-light-bg-scrim);
   color-scheme: light;
 }
 
@@ -260,10 +264,32 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 .path:hover { background: var(--bg-raised); }
 .path-badge {
   min-width: 22px; padding: 1px var(--sp-sm); border-radius: var(--r-pill);
-  background: var(--primary-tint); color: var(--primary);
+  background: var(--accent-tint); color: var(--accent);
   font-size: var(--fs-meta); font-weight: var(--font-weight-emphasis);
   font-variant-numeric: var(--font-numeric); text-align: center;
 }
+
+/* Voice FAB — floating action button opening Talk, below split only (T-254).
+   Replaces shell-talk-button, which was retired by T-227.
+   Positioned absolutely at bottom-right of the `.app` container (position:relative).
+   Hidden at or above the split where Talk is permanently visible.
+   Hidden when not on the Tasks surface (Talk, Settings, Detail all cover it). */
+.voice-fab {
+  display: grid; position: absolute; z-index: 5; cursor: pointer;
+  width: var(--icon-lg); height: var(--icon-lg);
+  min-width: 44px; min-height: 44px;
+  padding: var(--sp-md);
+  box-sizing: content-box;
+  border-radius: 50%; border: 0;
+  background: var(--accent); color: var(--tx-onaccent);
+  place-items: center;
+  right: var(--sp-lg); bottom: var(--sp-lg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+.voice-fab:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.voice-fab svg.ic { width: var(--icon-lg); height: var(--icon-lg); }
+/* Only visible on the Tasks surface below the split */
+.app:not([data-surface="tasks"]) .voice-fab { display: none; }
 
 /* ============ S2 · Tasks — the second path, as a surface ============ */
 .tasks-body { flex: 1; min-height: 0; overflow-y: auto; }
@@ -276,7 +302,7 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
   padding: var(--sp-xs) var(--sp-sm); border-radius: var(--r-pill);
   border: 1px solid var(--hairline);
 }
-.add-btn:hover { border-color: var(--primary); color: var(--primary); }
+.add-btn:hover { border-color: var(--accent); color: var(--accent); }
 .add-btn svg.ic { width: var(--icon-sm); height: var(--icon-sm); }
 .add-form { flex: none; display: flex; gap: var(--sp-sm); padding: 0 0 var(--sp-md); }
 .add-input {
@@ -287,7 +313,7 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 .add-input::placeholder { color: var(--tx-muted); }
 .add-save {
   padding: 0 var(--sp-md); border-radius: var(--r-sm);
-  background: var(--primary); color: var(--tx-onaccent); font-weight: var(--font-weight-emphasis); font-size: var(--fs-meta);
+  background: var(--accent); color: var(--tx-onaccent); font-weight: var(--font-weight-emphasis); font-size: var(--fs-meta);
 }
 /* SK-ROW's day heading is a BAR, not words (components.md § Skeletons): a
    skeleton cannot know which heading the read will produce, so it mirrors the
@@ -315,7 +341,7 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
   display: inline-flex; align-items: center; justify-content: center; color: transparent;
   transition: border-color var(--dur-micro) var(--motion-easing-standard);
 }
-.checkbox:hover { border-color: var(--primary); }
+.checkbox:hover { border-color: var(--accent); }
 .checkbox svg.ic { width: 12px; height: 12px; }
 .task-row.done .checkbox { border-color: var(--tx-muted); color: var(--tx-muted); }
 .task-main { flex: 1; min-width: 0; }
@@ -325,7 +351,7 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 .task-meta { display: block; font-size: var(--fs-meta); line-height: var(--font-lineHeight-meta); color: var(--tx-muted); font-variant-numeric: var(--font-numeric); margin-top: 1px; }
 .task-edit-input {
   width: 100%; height: 32px;
-  background: var(--bg-raised); border: 1px solid var(--primary); border-radius: var(--r-sm);
+  background: var(--bg-raised); border: 1px solid var(--accent); border-radius: var(--r-sm);
   padding: 0 var(--sp-sm); color: var(--tx); font-size: var(--fs-body);
 }
 .row-actions { flex: none; display: inline-flex; gap: var(--sp-xs); opacity: 0; transition: opacity var(--dur-micro) var(--motion-easing-standard); }
@@ -342,8 +368,10 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
   letter-spacing: var(--font-letterSpacing-label); text-transform: uppercase;
 }
 .badge.show { display: inline; }
-.badge-new { color: var(--add); }
-.badge-edited { color: var(--primary); } /* violet — an applied change is the assistant's act */
+/* rule 6: green/success retired — the label NEW does the work, the hue was
+   decoration. text.primary at semibold (mobile T-232 precedent: badgeNew). */
+.badge-new { color: var(--tx); font-weight: var(--font-weight-emphasis); }
+.badge-edited { color: var(--tx-2); background: var(--bg-sunken); } /* DESIGN.md rule 1: EDITED is not the assistant speaking, so accent violates one signal per meaning */
 .row-diff { display: none; margin-top: var(--sp-xs); font-size: var(--fs-meta); line-height: var(--font-lineHeight-meta); }
 .row-diff.show { display: block; }
 .row-diff-pair + .row-diff-pair { margin-left: var(--sp-sm); }
@@ -355,8 +383,9 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
    the stable marker the tests read. */
 .task-row.on-arrival-a { animation: rowFlashA var(--dur-flash) var(--motion-easing-standard) forwards; }
 .task-row.on-arrival-b { animation: rowFlashB var(--dur-flash) var(--motion-easing-standard) forwards; }
-@keyframes rowFlashA { 0%, 80% { background-color: var(--add-tint); } 100% { background-color: transparent; } }
-@keyframes rowFlashB { 0%, 80% { background-color: var(--add-tint); } 100% { background-color: transparent; } }
+/* accent-tint: the assistant changed this row — accent = the assistant (rule 1) */
+@keyframes rowFlashA { 0%, 80% { background-color: var(--accent-tint); } 100% { background-color: transparent; } }
+@keyframes rowFlashB { 0%, 80% { background-color: var(--accent-tint); } 100% { background-color: transparent; } }
 
 /* Empty states — ET-FIRST / ET-COLLECTION / ET-DONE */
 .empty { padding: var(--sp-xxl) 0; max-width: 44ch; }
@@ -372,14 +401,14 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 .btn-primary {
   display: inline-flex; align-items: center; gap: var(--sp-sm); margin-top: var(--sp-lg);
   padding: var(--sp-sm) var(--sp-lg); border-radius: var(--r-pill);
-  background: var(--primary); color: var(--tx-onaccent); font-weight: var(--font-weight-emphasis);
+  background: var(--accent); color: var(--tx-onaccent); font-weight: var(--font-weight-emphasis);
 }
 .btn-ghost {
   display: inline-flex; align-items: center; gap: var(--sp-sm);
   padding: var(--sp-xs) var(--sp-md); border-radius: var(--r-pill);
-  color: var(--primary); font-weight: var(--font-weight-emphasis);
+  color: var(--accent); font-weight: var(--font-weight-emphasis);
 }
-.btn-ghost:hover { background: var(--primary-tint); }
+.btn-ghost:hover { background: var(--accent-tint); }
 .surface-error .btn-ghost { margin-left: var(--sp-sm); }
 
 /* InlineRetryBanner — the list is NEVER replaced by an error while anything is
@@ -441,11 +470,11 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
   padding: var(--sp-sm) var(--sp-md); border-radius: var(--r-sm);
   color: var(--tx); text-align: left;
 }
-.menu-row:hover { background: var(--primary-tint); }
+.menu-row:hover { background: var(--accent-tint); }
 .menu-row .mcount { margin-left: auto; font-size: var(--fs-meta); color: var(--tx-muted); font-variant-numeric: var(--font-numeric); }
 /* active row = 7% primary tint — the one legal chrome tint, carried unchanged
    from the drawer this menu replaces. */
-.menu-row.active { background: color-mix(in srgb, var(--primary) 7%, transparent); color: var(--primary); }
+.menu-row.active { background: color-mix(in srgb, var(--accent) 7%, transparent); color: var(--accent); }
 .menu-foot { border-top: 1px solid var(--hairline); padding: var(--sp-sm) var(--sp-sm) 0; margin-top: var(--sp-sm); }
 
 /* ============ S4 · Settings ============ */
@@ -455,7 +484,7 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 .set-sub { display: block; font-size: var(--fs-meta); color: var(--tx-muted); }
 .seg { display: inline-flex; border: 1px solid var(--hairline); border-radius: var(--r-pill); overflow: hidden; }
 .seg button { padding: var(--sp-xs) var(--sp-md); font-size: var(--fs-meta); color: var(--tx-2); }
-.seg button.on { background: var(--primary-tint); color: var(--primary); font-weight: var(--font-weight-emphasis); }
+.seg button.on { background: var(--accent-tint); color: var(--accent); font-weight: var(--font-weight-emphasis); }
 
 /* ============ conversation pane ============ */
 .s-talk { min-width: 0; background: var(--bg-base); }
@@ -494,22 +523,25 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
   font-size: var(--fs-meta); line-height: var(--font-lineHeight-meta);
   padding: 2px var(--sp-sm); border-radius: var(--r-sm); font-variant-numeric: var(--font-numeric);
 }
-.chip-old { color: var(--remove); background: var(--remove-tint); text-decoration: line-through; }
-.chip-new { color: var(--add); background: var(--add-tint); }
+.chip-old { color: var(--tx-muted); text-decoration: line-through; }
+/* rule 6: added values read text.primary at semibold — no tint ground
+   (mobile T-232 precedent: chipNew uses text.primary, no background). */
+.chip-new { color: var(--tx); font-weight: var(--font-weight-emphasis); }
 .diff-arrow { color: var(--tx-muted); }
 .mini-label {
   font-size: var(--fs-label); font-weight: var(--font-weight-label);
   letter-spacing: var(--font-letterSpacing-label); text-transform: uppercase;
 }
-.mini-label.add { color: var(--add); }
-.mini-label.edit { color: var(--primary); }
+/* rule 6: green retired — the label carries the meaning, not the hue */
+.mini-label.add { color: var(--tx); }
+.mini-label.edit { color: var(--accent); }
 .undo-btn {
   display: inline-flex; align-items: center; gap: var(--sp-xs);
   margin-top: var(--sp-sm); padding: var(--sp-xs) var(--sp-md);
-  border-radius: var(--r-pill); color: var(--primary); font-weight: var(--font-weight-emphasis);
+  border-radius: var(--r-pill); color: var(--accent); font-weight: var(--font-weight-emphasis);
   transition: background var(--dur-micro) var(--motion-easing-standard);
 }
-.undo-btn:hover { background: var(--primary-tint); }
+.undo-btn:hover { background: var(--accent-tint); }
 .undo-btn svg.ic { width: var(--icon-sm); height: var(--icon-sm); }
 .bubble.undone { color: var(--tx-muted); }
 .bubble.undone .chip-old, .bubble.undone .chip-new { opacity: 0.6; }
@@ -518,18 +550,18 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 .past-tag { font-size: var(--fs-label); color: var(--tx-muted); margin-top: var(--sp-sm); display: block; }
 
 /* question bubbles */
-.bubble.q { background: var(--question-tint); border-left: 3px solid var(--question); }
+.bubble.q { background: var(--attention-tint); border-left: 3px solid var(--attention); }
 .bubble.q.resolved { background: var(--bg-raised); border-left-color: var(--hairline); color: var(--tx-muted); }
 .chips { display: flex; flex-wrap: wrap; gap: var(--sp-sm); margin-top: var(--sp-md); }
 .chip {
   padding: var(--sp-xs) var(--sp-lg); border-radius: var(--r-pill);
-  border: 1px solid var(--primary); color: var(--primary); font-weight: var(--font-weight-emphasis);
-  transition: background var(--dur-micro) var(--motion-easing-standard), transform var(--dur-micro) var(--motion-easing-spring);
+  border: 1px solid var(--accent); color: var(--accent); font-weight: var(--font-weight-emphasis);
+  transition: background var(--dur-micro) var(--motion-easing-standard), transform var(--dur-micro) var(--motion-easing-standard);
 }
-.chip:hover { background: var(--primary-tint); }
+.chip:hover { background: var(--accent-tint); }
 .chip:active { transform: scale(0.96); }
 .chip.chip-danger { border-color: var(--danger); color: var(--danger); } /* the ONLY red action: delete confirmation */
-.chip.chip-danger:hover { background: var(--remove-tint); }
+.chip.chip-danger:hover { background: var(--danger-tint); }
 .chip[disabled] { border-color: var(--hairline); color: var(--tx-muted); cursor: default; }
 .chip[disabled]:hover { background: none; }
 
@@ -539,8 +571,8 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 .retry-btn {
   display: inline-flex; align-items: center; gap: var(--sp-xs);
   margin-top: var(--sp-sm); padding: var(--sp-sm) var(--sp-lg);
-  border-radius: var(--r-pill); background: var(--primary); color: var(--tx-onaccent); font-weight: var(--font-weight-emphasis);
-  transition: transform var(--dur-micro) var(--motion-easing-spring);
+  border-radius: var(--r-pill); background: var(--accent); color: var(--tx-onaccent); font-weight: var(--font-weight-emphasis);
+  transition: transform var(--dur-micro) var(--motion-easing-standard);
 }
 .retry-btn:active { transform: scale(0.96); }
 
@@ -553,39 +585,32 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 
 /* queued turn notice */
 .queued-note { display: inline-flex; align-items: center; gap: var(--sp-xs); margin-top: var(--sp-xs); padding: 0 var(--sp-xs); font-size: var(--fs-meta); color: var(--tx-muted); }
-.queued-note .dot-pulse { width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--question); animation: qPulse var(--dur-breath) var(--motion-easing-standard) infinite; }
+.queued-note .dot-pulse { width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--attention); animation: qPulse var(--dur-pulse) var(--motion-easing-standard) infinite; }
 @keyframes qPulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
 
 /* thinking indicator (in-conversation) */
 .thinking-msg { display: inline-flex; align-items: center; gap: var(--sp-sm); }
 .tdots { display: inline-flex; gap: 5px; }
-.tdots i { width: 7px; height: 7px; border-radius: var(--r-pill); background: var(--thinking); animation: tBlink var(--dur-breath) var(--motion-easing-standard) infinite; }
-.tdots i:nth-child(2) { animation-delay: calc(var(--dur-breath) / 6); }
-.tdots i:nth-child(3) { animation-delay: calc(var(--dur-breath) / 3); }
+.tdots i { width: 7px; height: 7px; border-radius: var(--r-pill); background: var(--accent); animation: tBlink var(--dur-pulse) var(--motion-easing-standard) infinite; }
+.tdots i:nth-child(2) { animation-delay: calc(var(--dur-pulse) / 6); }
+.tdots i:nth-child(3) { animation-delay: calc(var(--dur-pulse) / 3); }
 @keyframes tBlink { 0%, 100% { opacity: 0.25; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-2px); } }
 
-/* ============ voice surface — the ONE place the aurora lives ============ */
+/* ============ voice surface ============ */
 .voice-surface { display: none; position: relative; flex: none; padding: var(--sp-md) var(--gutter); overflow: hidden; }
 .st-listening .voice-surface, .st-thinking .voice-surface { display: block; }
-.aurora-band {
-  position: absolute; inset: var(--sp-sm) 12%;
-  background: var(--grad-voice); opacity: 0.32; filter: blur(22px); border-radius: var(--r-pill);
-  animation: bandBreath var(--dur-breath) var(--motion-easing-standard) infinite;
-}
-.st-thinking .aurora-band { inset: var(--sp-md) 28%; opacity: 0.22; background: var(--color-dark-voice-thinking); }
-@keyframes bandBreath { 0%, 100% { transform: scaleX(0.96); opacity: 0.22; } 50% { transform: scaleX(1); opacity: 0.36; } }
 .state-indicator { position: relative; display: flex; align-items: center; justify-content: center; gap: var(--sp-md); min-height: 44px; }
 .state-word { font-family: var(--font-family-display); font-size: var(--fs-state); font-weight: var(--font-weight-title); }
 .si-listening, .si-thinking { display: inline-flex; align-items: center; gap: var(--sp-md); }
 .cancel-btn {
   display: inline-flex; align-items: center; padding: var(--sp-xs) var(--sp-md);
   border-radius: var(--r-pill); background: var(--bg-raised); border: 1px solid var(--hairline);
-  color: var(--primary); font-weight: var(--font-weight-emphasis); font-size: var(--fs-meta);
+  color: var(--accent); font-weight: var(--font-weight-emphasis); font-size: var(--fs-meta);
   transition: background var(--dur-micro) var(--motion-easing-standard);
 }
-.cancel-btn:hover { background: var(--primary-tint); }
+.cancel-btn:hover { background: var(--accent-tint); }
 .waveform { display: inline-flex; align-items: center; gap: 3px; height: 24px; }
-.waveform i { width: 3px; border-radius: var(--r-pill); background: var(--tx); animation: wave var(--dur-breath) var(--motion-easing-standard) infinite; }
+.waveform i { width: 3px; border-radius: var(--r-pill); background: var(--tx); animation: wave var(--dur-pulse) var(--motion-easing-standard) infinite; }
 .waveform i:nth-child(1) { height: 8px; animation-delay: 0ms; }
 .waveform i:nth-child(2) { height: 16px; animation-delay: 120ms; }
 .waveform i:nth-child(3) { height: 22px; animation-delay: 240ms; }
@@ -608,9 +633,9 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
   box-shadow: var(--shadow-card);
   font-family: var(--font-family-body); font-size: var(--fs-body); font-weight: var(--font-weight-emphasis);
   cursor: pointer;
-  transition: transform var(--dur-micro) var(--motion-easing-spring), background var(--dur-micro) var(--motion-easing-standard);
+  transition: transform var(--dur-micro) var(--motion-easing-standard), background var(--dur-micro) var(--motion-easing-standard);
 }
-.nm-pill:hover { background: var(--primary-tint); }
+.nm-pill:hover { background: var(--accent-tint); }
 .nm-pill:active { transform: scale(0.96); }
 .nm-pill svg.ic { width: var(--icon-sm); height: var(--icon-sm); color: var(--tx-2); flex: none; }
 /* One line where it fits, TWO where it does not. The question is the half that
@@ -625,16 +650,16 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 }
 /* NMA-WAITING — the amber that already means "open question" everywhere else here.
    Colour never carries this alone: the words change too (components.md §NewMessageAffordance). */
-.nm-waiting .nm-pill { background: var(--question-tint); border-color: var(--question); color: var(--question); }
-.nm-waiting .nm-pill:hover { background: var(--question-tint); }
-.nm-waiting .nm-pill svg.ic { color: var(--question); }
+.nm-waiting .nm-pill { background: var(--attention-tint); border-color: var(--attention); color: var(--attention); }
+.nm-waiting .nm-pill:hover { background: var(--attention-tint); }
+.nm-waiting .nm-pill svg.ic { color: var(--attention); }
 
 /* ============ offline banner ============ */
 .offline-banner {
   display: flex; align-items: center; gap: var(--sp-sm); flex: none;
   padding: var(--sp-sm) var(--gutter);
   background: var(--bg-raised); border-top: 1px solid var(--hairline);
-  color: var(--question); font-size: var(--fs-meta); line-height: var(--font-lineHeight-meta);
+  color: var(--attention); font-size: var(--fs-meta); line-height: var(--font-lineHeight-meta);
 }
 .offline-banner svg.ic { width: var(--icon-sm); height: var(--icon-sm); }
 .offline-banner .queued-count { margin-left: auto; font-variant-numeric: var(--font-numeric); }
@@ -651,17 +676,17 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
   background: var(--bg-base); border: 1px solid var(--hairline); border-radius: var(--r-pill);
   padding: 0 var(--sp-lg); color: var(--tx);
   font-family: var(--font-family-body); font-size: var(--fs-body);
-  caret-color: var(--primary);
+  caret-color: var(--accent);
 }
 .composer-input::placeholder { color: var(--tx-muted); }
 .composer-input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.st-listening .composer-input { color: var(--listening); caret-color: var(--listening); border-color: var(--listening); }
+.st-listening .composer-input { color: var(--accent); caret-color: var(--accent); border-color: var(--accent); }
 
 .mic {
   position: relative; flex: none; width: 52px; height: 52px; border-radius: var(--radius-orb);
   background: var(--bg-raised); border: 1px solid var(--hairline);
   display: inline-flex; align-items: center; justify-content: center; color: var(--tx);
-  transition: transform var(--dur-micro) var(--motion-easing-spring), box-shadow var(--dur-standard) var(--motion-easing-standard);
+  transition: transform var(--dur-micro) var(--motion-easing-standard), box-shadow var(--dur-standard) var(--motion-easing-standard);
 }
 .mic::after { /* idle ember — the gradient at 8%, a promise of the bloom */
   content: ""; position: absolute; inset: 0; border-radius: var(--radius-orb);
@@ -671,10 +696,10 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 .mic:hover { transform: scale(1.04); }
 .mic:active { transform: scale(0.94); }
 .mic svg.ic { width: var(--icon-lg); height: var(--icon-lg); position: relative; z-index: 1; }
-.st-listening .mic { background: var(--grad-voice); border-color: transparent; box-shadow: var(--shadow-glowListening); color: var(--tx-onaccent); }
+.st-listening .mic { background: var(--grad-voice); border-color: transparent; box-shadow: var(--shadow-glow); color: var(--tx-onaccent); }
 html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); }
 .st-listening .mic::after { opacity: 0; }
-.st-thinking .mic { border-color: var(--thinking); box-shadow: var(--shadow-glowThinking); animation: orbBreath var(--dur-breath) var(--motion-easing-standard) infinite; }
+.st-thinking .mic { border-color: var(--accent); box-shadow: var(--shadow-glow); animation: orbBreath var(--dur-pulse) var(--motion-easing-standard) infinite; }
 .st-thinking .mic::after { opacity: 0.3; }
 @keyframes orbBreath { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
 .st-error .mic { border-color: var(--danger); }
@@ -687,9 +712,9 @@ html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); 
 
 .send {
   flex: none; width: 40px; height: 40px; border-radius: var(--radius-orb);
-  background: var(--primary); color: var(--tx-onaccent);
+  background: var(--accent); color: var(--tx-onaccent);
   display: inline-flex; align-items: center; justify-content: center;
-  transition: transform var(--dur-micro) var(--motion-easing-spring), opacity var(--dur-micro) var(--motion-easing-standard);
+  transition: transform var(--dur-micro) var(--motion-easing-standard), opacity var(--dur-micro) var(--motion-easing-standard);
 }
 .send:active { transform: scale(0.96); }
 .send[aria-disabled="true"] { opacity: 0.4; }
@@ -743,11 +768,13 @@ html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); 
 
   /* PathSwitch is ABSENT — both paths are on screen, and a control that
      switches to what the user is already looking at is a dead control. This is
-     what makes `shell-tasks-button` / `shell-talk-button` below-split-only ids:
-     a desktop selector for either will not resolve, and should not
-     (components.md § AppFrame). The fallback guarantee PathSwitch carried is
-     met MORE strongly here — the second path is never left. */
+     what makes `shell-tasks-button` below-split-only: a desktop selector for it
+     will not resolve, and should not (components.md § AppFrame). The fallback
+     guarantee PathSwitch carried is met MORE strongly here — the second path
+     is never left. `shell-talk-button` is retired; the VoiceFab is its
+     replacement below split, also hidden here for the same reason. */
   .path { display: none; }
+  .voice-fab { display: none; }
 
   .s-talk .wordmark { display: none; }
   .s-talk .panel-title { display: inline; }
@@ -798,7 +825,7 @@ html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); 
 }
 .cn-icon { flex: none; display: flex; padding-top: 2px; color: var(--tx-2); }
 .cn-carried-failed    .cn-icon { color: var(--danger); }
-.cn-carried-offline   .cn-icon { color: var(--question); }
+.cn-carried-offline   .cn-icon { color: var(--attention); }
 .cn-body { flex: 1; min-width: 0; }
 .cn-sentence { font-size: var(--fs-body); color: var(--tx); }
 /* The user's own words are not chrome and are never muted. */

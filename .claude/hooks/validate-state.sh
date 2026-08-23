@@ -10,7 +10,8 @@
 #   C3  every Depends entry references a task ID that exists
 #   C4  no duplicate task IDs
 #   C5  MANIFEST/STATUS/TASKS are within the caps in MANIFEST ## Limits
-#   C6  every artifact lands inside its agent's subtree (MANIFEST writers:)
+#   C6  every artifact lands inside its agent's subtree (MANIFEST writers:),
+#       unless .claude/state/SANCTIONS.md records that exact crossing
 #   C7  events.jsonl does not contradict TASKS.md
 #
 # Exits non-zero on any violation. A convention with no check here is a
@@ -279,6 +280,33 @@ echo
 # the per-dispatch scope in BRIEFING.md is overwritten by the next dispatch.
 echo "C6 — artifacts land inside the writing agent's subtree"
 
+# A crossing that already happened cannot be un-happened, and re-attributing it to
+# an agent that did not do the work is a worse record than the violation. The map
+# has no way to say "sanctioned once" — MANIFEST says so in those words — so the
+# sanction lives in its own register, one exact (task, agent, path) triple per row.
+#
+# Deliberately NOT a prefix match: `tests/` would license the whole tree, which is
+# the back door this mechanism exists to avoid. And a sanctioned crossing prints as
+# `sanc`, never as `ok`, because a grant that reads like a pass is how the next one
+# gets issued without anyone deciding to.
+SANCTIONS="$ROOT/.claude/state/SANCTIONS.md"
+SANCTIONED=0
+sanctioned_for() {  # id agent path
+  [ -f "$SANCTIONS" ] || return 1
+  awk -F'|' -v id="$1" -v ag="$2" -v pa="$3" '
+    # T-[0-9]+[a-z]* and not T-[0-9]+: lettered sub-tasks (T-070b) are real rows,
+    # and a reader that drops them is the hazard R9 already names as having bitten
+    # this queue twice. A sanction silently not matching would read as a violation
+    # nobody granted.
+    /^\| *T-[0-9]+[a-z]* *\|/ {
+      t=$2; a=$3; p=$4
+      gsub(/^ +| +$/,"",t); gsub(/^ +| +$/,"",a); gsub(/^ +| +$/,"",p)
+      gsub(/`/,"",p)
+      if (t==id && a==ag && p==pa) { found=1; exit }
+    }
+    END { exit(found?0:1) }' "$SANCTIONS"
+}
+
 # Resolve any {token} in a writers: prefix against MANIFEST's own roots: block.
 #
 # This used to name the roots one by one — {specs}, {design}, {src}, {qa} — which
@@ -331,11 +359,35 @@ else
       done <<< "$scope"
       if [ "$ok" -eq 1 ]; then
         pass "$id — $agent wrote inside its subtree"
+      elif sanctioned_for "$id" "$agent" "$p"; then
+        printf '  sanc  %s\n' "$id — $agent wrote '$p' outside its subtree; sanctioned in SANCTIONS.md"
+        SANCTIONED=$((SANCTIONED + 1))
       else
         fail "$id — $agent wrote '$p', outside its declared subtree ($(printf '%s' "$scope_raw" | tr -d '\n'))"
       fi
     done <<< "$(artifact_paths "$artifacts")"
   done <<< "$ROWS"
+fi
+
+# A grant that no longer describes anything is a dead grant, and dead grants are how
+# a narrow mechanism widens: nobody removes a row that costs nothing to leave. So a
+# sanction whose task still exists but no longer names that path is a FAILURE, not a
+# note. A sanction whose task has been archived is skipped — the row moved, the
+# history did not change.
+if [ -f "$SANCTIONS" ]; then
+  while IFS='|' read -r _ s_id s_ag s_path _rest; do
+    s_id="$(printf '%s' "$s_id" | sed 's/^ *//; s/ *$//')"
+    s_ag="$(printf '%s' "$s_ag" | sed 's/^ *//; s/ *$//')"
+    s_path="$(printf '%s' "$s_path" | tr -d '`' | sed 's/^ *//; s/ *$//')"
+    [ -z "$s_id" ] && continue
+    row="$(printf '%s\n' "$ROWS" | grep -m1 "^| *$s_id *|" || true)"
+    [ -z "$row" ] && continue   # archived — the sanction stays for the record
+    if printf '%s\n' "$(artifact_paths "$(cell "$row" Artifacts)")" | grep -qxF "$s_path"; then
+      pass "sanction for $s_id still describes a real artifact"
+    else
+      fail "SANCTIONS.md licenses $s_ag to have written '$s_path' on $s_id, but $s_id no longer names that path — remove the dead grant"
+    fi
+  done <<< "$(grep -E '^\| *T-[0-9]+[a-z]* *\|' "$SANCTIONS")"
 fi
 echo
 
@@ -369,9 +421,11 @@ fi
 echo
 
 # ─── Verdict ────────────────────────────────────────────────────────────────
+SANC_NOTE=""
+[ "${SANCTIONED:-0}" -gt 0 ] && SANC_NOTE=", $SANCTIONED sanctioned crossing(s) — see .claude/state/SANCTIONS.md"
 if [ "$FAILURES" -gt 0 ]; then
-  echo "validate-state: $FAILURES violation(s), $CHECKED check(s) passed"
+  echo "validate-state: $FAILURES violation(s), $CHECKED check(s) passed$SANC_NOTE"
   exit 1
 fi
-echo "validate-state: all $CHECKED checks passed"
+echo "validate-state: all $CHECKED checks passed$SANC_NOTE"
 exit 0

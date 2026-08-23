@@ -24,6 +24,8 @@ import { APP_VERSION } from '../version.ts'
 import { initialState, reducer } from '../../_shared/model/reducer.ts'
 import type { Action, AppState } from '../../_shared/model/reducer.ts'
 import type { NewMsg } from '../../_shared/model/messages.ts'
+import { installClock } from '../../_shared/model/clock.ts'
+import type { ClockProvider } from '../../_shared/model/clock.ts'
 import { collectionCount, inCollection } from '../../_shared/model/tasks.ts'
 import {
   appliedTurn,
@@ -39,7 +41,25 @@ import type { TestController } from './_helpers.ts'
 
 const ROOT = process.cwd()
 
-afterEach(cleanup)
+// Install a frozen clock so that `nowDate()` in the clock module (used by
+// ListsMenu and every defaulted `now` parameter in _shared/model/) returns
+// the fixture instant T0 instead of the real system clock. Without this,
+// `upcomingTask` — whose due_at is T0 + 7 days — drifts into Today on the
+// day the calendar reaches that date, and the menu counts shift by one.
+// This is the web twin of the fix T-242 applied to mobile.
+let previousClock: ClockProvider | null = null
+beforeEach(() => {
+  previousClock = installClock({
+    nowDate: () => new Date(T0),
+    zoneName: () => 'Asia/Ho_Chi_Minh',
+  })
+})
+
+afterEach(() => {
+  cleanup()
+  installClock(previousClock)
+  previousClock = null
+})
 
 // jsdom has no `scrollIntoView`; without a stand-in the reveal routine's own
 // guard returns early and every AC-31 assertion below would pass while nothing
@@ -426,8 +446,9 @@ describe('the shell', () => {
       fireEvent.click(screen.getByTestId('shell-tasks-button'))
     })
     expect(surfaceOf(container)).toBe('tasks')
+    // shell-talk-button retired (T-254); its replacement is the VoiceFab.
     act(() => {
-      fireEvent.click(screen.getByTestId('shell-talk-button'))
+      fireEvent.click(screen.getByTestId('assistant-voice-fab'))
     })
     expect(surfaceOf(container)).toBe('talk')
   })
