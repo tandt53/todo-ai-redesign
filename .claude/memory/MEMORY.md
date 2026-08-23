@@ -110,3 +110,26 @@ The search state genuinely was wrong when it was found (`git log -S` puts the fi
 hours later, inside an unrelated commit). Brief the measurement — *"query 'bill', 4 rows
 visible, 1 contains 'bill'"* — and let the agent find the cause. A briefing that names the
 cause narrows the search to the orchestrator's guess.
+
+## The design is the source of truth and the code follows it
+
+**Owner instruction, 2026-08-23**, given after a day spent closing the gap between the two.
+
+**Two things follow, and the second is what actually failed.**
+
+**When the build and the mockup disagree, the mockup wins by default.** Not the orchestrator's
+impression. This was tested the same day: a briefing asked for `No tasks yet` to be *smaller* than
+the bar title on the grounds that a secondary heading should not out-rank a primary one. The mockup
+sets the bar title at 17px and the empty heading at 28 — deliberately larger, because the bar title
+is persistent chrome and the empty heading is the screen's content. **An opinion had been written
+into a briefing in the grammar of a defect, and an agent implemented it.**
+
+**A design change is not finished until an implementation task exists naming what it drew.** Over
+two days the pipeline ran phase 3 roughly a dozen times and phase 4 not once, because every piece of
+owner feedback was about how something looked and so went back to design-agent. The signal was there
+and was misread: `app.test.tsx`'s `NOT_BUILT` map grew to 35 drawn-and-unbuilt ids and read as good
+hygiene rather than as a queue.
+
+**The structural reason it stays invisible: the mockups are HTML and the app is React and React
+Native, with nothing connecting them.** A mockup edit can never touch the build, so *design
+approved* never implies *app changed* — only a dispatch does. See [[T-290]].
