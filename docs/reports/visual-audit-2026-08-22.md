@@ -293,3 +293,55 @@ The tool counts *distinct renderings* per state, so an overlay containing nothin
 distinct — the scrim differs from the base state. **A rule for "an overlay element that renders
 with no visible content" catches this whole class**, and belongs with the adjacent-grounds rule
 already filed as T-252.
+
+---
+
+# Sixth pass — and the pattern in my own failures
+
+## The empty-overlay sweep: 24 hits, 24 false positives
+
+Having confirmed the class in F8, I swept every state of every mockup at both widths for overlays
+rendering with no content. It returned 24 `scrim-with-no-layer` hits across all three
+`task-detail` files and `lists.html`.
+
+**All 24 were false.** The layers are drawn; my predicate matched on
+`dialog|sheet|menu|popover|modal|confirm|picker|popup` and the codebase names them **`pick`** and
+**`over`**. Verified: `detail-priority-pick` has a `v v-pick-priority pick` layer above the scrim;
+`lists.html rename` has an `over` layer with 11 text leaves.
+
+The only true hit was `lists.html menu-nonempty` → `ctx-menu` with no content, **already found in
+the previous pass by comparing platforms.**
+
+## The pattern, stated plainly
+
+Six sweeps now. The failure is the same every time and it is not subtle:
+
+| sweep | why it failed |
+|---|---|
+| column alignment | compared **left** edges of right-aligned text |
+| clipping | read deliberate off-canvas content as a defect — **and then I dismissed the one true positive inside it** |
+| header counts | looked for rows **inside** a `.group` element that only ever holds its `<h3>` |
+| empty overlays | matched class names the codebase does not use |
+
+**Every one of them failed because I wrote the predicate from a guess about the markup instead of
+reading the markup first.** That is a fixable mistake and I have not fixed it across six attempts.
+The cross-platform sweep (F7, F8) is the only one that worked, and it worked because it compared
+two renderings of the same thing rather than asserting what the DOM should look like.
+
+## F9 — the colour picker sits two rows below the list it edits
+
+Measured at 390 on all three platforms:
+
+| state | placement |
+|---|---|
+| `rename` | `rename-form for-work` at **y=410** — replaces the Work row in place; Home follows at 547 |
+| `recolour` | Work at 410 → Home at 462 → **`recolour-panel for-work` at 514** |
+
+The picker knows its target — its class is `for-work` — and is simply placed after the wrong row.
+**The same file gets the same problem right for rename**, which is what makes this a defect rather
+than a choice.
+
+A swatch row captioned *"Colour for Work"* sitting directly under **Home** reads as belonging to
+Home; the caption is the only thing contradicting the position, and in a list, position wins.
+
+Filed as T-264.
