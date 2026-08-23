@@ -464,7 +464,10 @@ export function TasksSurface({
 
       <div className="tasks-body" ref={shell.tasksRef}>
         <div className="tasks-col">
-          {adding && (
+          {/* The old add-form stays for the empty/failedBlank states where the
+              inline row is not visible (inline lives inside `showList`). The
+              empty-state CTA sets `adding=true`, and this form catches it. */}
+          {adding && !showList && (
             <div className="add-form">
               <input
                 className="add-input"
@@ -559,6 +562,10 @@ export function TasksSurface({
                   </ul>
                 </div>
               ))}
+              {/* Inline new-task row — at the END of the list. Tapping turns
+                  it into a text field; Enter creates, Escape/empty cancels.
+                  Testid: tasks-inline-add (design mockup catalogue). */}
+              <InlineAdd adding={adding} draft={draft} setDraft={setDraft} onCommit={commitAdd} onCancel={() => { setDraft(''); setAdding(false) }} onActivate={() => setAdding(true)} />
             </>
           )}
         </div>
@@ -616,6 +623,83 @@ function TasksEmpty({
         <PlusIcon />
         Add task
       </button>
+    </div>
+  )
+}
+
+/**
+ * § InlineAdd — the `+ Add a task` row at the end of the task list.
+ *
+ * In its resting state it is a clickable row with a plus icon and the label
+ * "Add a task". Activating it (click, Enter, Space) replaces the label with a
+ * text input. Enter commits (if the title is non-empty after trimming);
+ * Escape or blur-with-empty cancels and returns to the resting state.
+ *
+ * Empty titles are refused: blank, whitespace-only and newline-only all count
+ * as empty (F-005 AC-37 applied to creation).
+ *
+ * Testid: `tasks-inline-add` — from the design mockup catalogue.
+ */
+function InlineAdd({
+  adding,
+  draft,
+  setDraft,
+  onCommit,
+  onCancel,
+  onActivate,
+}: {
+  adding: boolean
+  draft: string
+  setDraft: (v: string) => void
+  onCommit: () => void
+  onCancel: () => void
+  onActivate: () => void
+}) {
+  if (adding) {
+    return (
+      <div className="inline-new inline-new-editing" data-testid="tasks-inline-add">
+        <span className="plus">
+          <PlusIcon />
+        </span>
+        <input
+          className="inline-input"
+          aria-label="New task name"
+          placeholder="Task name…"
+          autoFocus
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') onCommit()
+            if (e.key === 'Escape') onCancel()
+          }}
+          onBlur={() => {
+            // Blur with empty text cancels; blur with content commits.
+            if (draft.trim() === '') onCancel()
+            else onCommit()
+          }}
+        />
+      </div>
+    )
+  }
+  return (
+    <div
+      className="inline-new"
+      role="button"
+      tabIndex={0}
+      data-testid="tasks-inline-add"
+      aria-label="Add a task"
+      onClick={onActivate}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onActivate()
+        }
+      }}
+    >
+      <span className="plus">
+        <PlusIcon />
+      </span>
+      <span className="inline-label">Add a task</span>
     </div>
   )
 }

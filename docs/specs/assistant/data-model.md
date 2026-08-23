@@ -532,3 +532,118 @@ old-shape record is `POST /__qa__/seed` (`api-contracts.md § Harness doors`).
   a task with eight steps contributes **one** handle. A step is therefore never
   named in a message, which also closes the door-to-nowhere case F-001 AC-31 is
   about.
+
+---
+
+# Features F-008 and F-009 — lists, list actions
+
+**Added**: 2026-08-23 by architect-agent (T-286). Specs:
+`F-008-lists.md` (personal lists) and `F-009-list-actions.md` (search, sort,
+hide completed, multi-select). Wire behaviour: `api-contracts.md § Feature
+F-008 / F-009`.
+
+## task — the F-008 / F-009 fields
+
+Added to the F-005 field table above. Both are nullable-or-defaulted on
+existing rows.
+
+### task.sort_order (new field — F-009)
+
+| Field | Type | Required | Constraints | Notes |
+|---|---|---|---|---|
+| sort_order | integer | yes | sparse, gaps of 1024; assigned by the server on create; rewritten on drag-reorder within a filing cell | F-009 AC-5, AC-6 |
+
+**Existing rows.** 839 rows have no `sort_order`. On store open, the
+initialisation pass assigns values from `created_at` order within each
+filing cell (keyed by `list_id` — `null` groups the Inbox rows), spacing by
+1024. The field is inert until manual sort is selected. Uses the same
+sparse-integer scheme as `list.position` (F-008): gaps absorb inserts without
+cascading writes.
+
+**This field is NOT in `DIFF_FIELDS` and NOT in `ContextTask`** (F-009
+Impact §2). Reorder is cosmetic — it changes display order, not task data or
+membership — and is not assistant-visible. It is in `TASK_CREATE_FIELDS` and
+`TASK_PATCH_FIELDS`.
+
+### task.list_id — field-list amendments (F-008)
+
+The field and its constraints are defined in `§ task.list_id (new field —
+F-008)` above. What F-008 adds to the seven closed field lists:
+
+| List | Change | AC |
+|---|---|---|
+| `TASK_PATCH_FIELDS` | gains `list_id` | F-008 AC-11, AC-12 |
+| `TURN_WRITE_FIELDS` | gains `list_id` | F-008 AC-18, AC-19; F-005 AC-36 allowlist widens |
+| `DIFF_FIELDS` | gains `list_id` | F-008 AC-25 (undo of a voice filing records list_id) |
+| `ContextTask` | gains `list_id` | F-008 AC-18 (the interpreter must see where a task is filed to resolve "move this to Work") |
+| `TaskWire` / `serializeTask` | gains `list_id` | F-008 AC-10 (client needs filing state) |
+| `TASK_CREATE_FIELDS` | gains `sort_order` | F-009 AC-5 |
+| `TASK_PATCH_FIELDS` | gains `sort_order` | F-009 AC-6 (drag-reorder writes sort_order) |
+
+`list_id` is **not** in `TASK_CREATE_FIELDS` — a created task lands in Inbox
+(`null`). Filing is a separate action after creation.
+
+## `Collection` type — widened to `string` (F-008 OQ-3, closed)
+
+`Collection = 'inbox' | 'today' | 'upcoming' | 'done'` widens to `string`.
+The four static members become named constants (`COLLECTION_INBOX`,
+`COLLECTION_TODAY`, `COLLECTION_UPCOMING`, `COLLECTION_DONE`). A personal
+list's collection id is its uuid — the same `list.id` stored on `task.list_id`.
+
+**Why `string`, not a branded type or a tagged union like `list:${uuid}`.**
+The runtime value of a list collection is already a uuid (it is the `list.id`
+the client holds). Adding a prefix means every site that reads `task.list_id`
+must add the prefix before comparing, and every site that writes a collection
+into a preference key must strip it. The brand exists at compile time but the
+runtime value is still a string, so the type noise has no safety payoff. A
+`string` with constants for the known four is simpler and makes the force run
+in the right direction: every `switch` on `Collection` must have a `default`
+branch, and that branch is the list-id handler — the absence of exhaustiveness
+checking is the forcing function that ensures new call sites handle lists.
+
+**`COLLECTION_GROUPS` gains a third group** below Inbox. The static grouping
+(`date: [today, upcoming]`, `filing: [inbox]`, `gate: [done]`) becomes
+`date: [today, upcoming]`, `filing: [inbox, ...listIds]`, `gate: [done]`.
+
+**`inCollection` must not be a single classification returning exactly one
+answer** (F-008 AC-16). A task is in a date cell and a filing cell
+simultaneously. `inCollection(task, collectionId)` returns `boolean` — the
+caller iterates, and a task may return `true` for two collections.
+
+`inCollection` for a personal list: `task.list_id === listId && status !==
+'done' && parent_id === null`. The step gate (`parent_id`) matches the done
+gate — steps are in no collection.
+
+## account — the F-009 preference fields
+
+Added to the account field table at `§ account (new entity — ADR-010)`.
+
+| Field | Type | Required | Constraints | Notes |
+|---|---|---|---|---|
+| hide_completed | boolean | yes | default `false` | F-009 AC-7; global toggle — when true, done tasks are excluded from every collection except Done |
+| sort_preferences | `Record<string, SortOrder>` | no | default `{}`; key is a collection id (a `Collection` string — static name or list uuid); absent key = `'due_date'`; `SortOrder = 'due_date' \| 'priority' \| 'manual'`; `'manual'` valid only when the key is a filing-axis collection (Inbox or a list uuid) | F-009 AC-4, AC-5 |
+
+**Why on `account`, not a new entity.** The account row already holds
+user-scoped configuration (timezone). These are two more fields of the same
+kind — a per-user preference that every client reads at boot and caches. A
+separate entity would need the same lazily-created lifecycle and the same
+`PATCH` door, for zero structural benefit. The trade-off: the account row
+grows wider, and a future settings surface will also use it. That is a feature,
+not a cost.
+
+**`sort_preferences` enforcement.** A PATCH that sets `'manual'` on a date-axis
+collection (`today`, `upcoming`, `done`) is refused with `400 VALIDATION`.
+The client disables Manual for those collections (F-009 AC-5), so the refusal
+is a server guard against a client bug, not a user-facing error.
+
+## Store initialisation pass — `sort_order` migration
+
+On store open, before the first read, the initialisation pass assigns
+`sort_order` to every row that lacks it:
+
+1. Group tasks by filing cell: `list_id` (null for Inbox).
+2. Within each group, sort by `created_at` ascending.
+3. Assign `sort_order = index * 1024` (0, 1024, 2048, ...).
+
+The pass is idempotent — rows that already carry `sort_order` are skipped. It
+runs once; after it, every create assigns a value and no row is missing one.
