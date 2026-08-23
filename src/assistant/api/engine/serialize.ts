@@ -58,6 +58,8 @@ export interface TaskWire {
   series_id: string | null
   /** AC-25 — DERIVED server-side, never stored, never keyed off `series_id` */
   series_live: boolean
+  /** F-008 AC-10 — uuid of a personal list, or null (Inbox) */
+  list_id: string | null
   created_at: string
   updated_at: string
   deleted_at: string | null
@@ -183,6 +185,7 @@ export function serializeTask(t: TaskRow, view: TaskView): TaskWire {
     repeat_count: t.repeat_count ?? null,
     series_id: t.series_id ?? null,
     series_live: seriesLive(t, view.state, view.nowMs, view.zone),
+    list_id: t.list_id ?? null,
     created_at: t.created_at,
     updated_at: t.updated_at,
     deleted_at: t.deleted_at,

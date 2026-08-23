@@ -28,6 +28,7 @@ export const TURN_WRITE_FIELDS = [
   'reminder_at',
   'priority',
   'status',
+  'list_id',
 ] as const
 
 /**
@@ -45,6 +46,7 @@ export const DIFF_FIELDS = [
   'status',
   'parent_id',
   'step_order',
+  'list_id',
   ...RECURRENCE_MEMBERS,
 ] as const
 

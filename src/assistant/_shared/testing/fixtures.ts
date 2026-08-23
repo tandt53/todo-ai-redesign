@@ -57,6 +57,9 @@ export function task(over: Partial<TaskWire> = {}): TaskWire {
     // guessed liveness from the id would bake in the exact defect AC-39's third
     // negative case exists to catch.
     series_live: false,
+    // F-008 AC-10 — null means Inbox (unfiled). A test that needs a filed task
+    // must supply a list_id explicitly.
+    list_id: null,
     // `'inbox'`, not `'today'` — ADR-009 retired `status: 'today'` as a live
     // value, so a builder defaulting to it would mint rows the app can no
     // longer produce and put every un-overridden fixture in a state no user

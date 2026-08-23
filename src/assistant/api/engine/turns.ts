@@ -411,8 +411,13 @@ export async function processTurn(
         due_at: t.due_at,
         reminder_at: t.reminder_at,
         priority: t.priority,
+        list_id: t.list_id ?? null,
       }
     })
+    // F-008: the user's personal lists for list-name resolution
+    const userLists = Object.values(s.lists ?? {})
+      .filter((l) => l.user_id === userId)
+      .map((l) => ({ id: l.id, name: l.name }))
     const recent = sessionTurns(s, session.id)
       .filter((t) => t.status !== 'pending')
       .slice(-10) // sliding interpretation window (ADR-003)
@@ -425,6 +430,7 @@ export async function processTurn(
       source: req.source,
       timezone: req.timezone,
       tasks: ctxTasks,
+      lists: userLists,
       recent_turns: recent,
       question:
         boundQuestion === null
@@ -715,6 +721,115 @@ function applyInterpretation(
     case 'answer':
       // an answer with no pending question answers nothing (rule 9 honesty)
       return noMatch()
+    // ---- F-008: list operations ----
+    case 'list_create': {
+      // AC-17: create a list by voice, default color 0
+      const lists = s.lists ?? (s.lists = {})
+      const userLists = Object.values(lists).filter((l) => l.user_id === userId)
+      // AC-23: 50 list limit
+      if (userLists.length >= 50) {
+        return refused(
+          { reason: 'length_exceeded', field: null, message: 'user already has 50 lists' },
+          null,
+        )
+      }
+      // AC-3: duplicate name check
+      const nameLower = interp.name.trim().toLowerCase()
+      if (nameLower === '' || interp.name.trim().length > 100) {
+        return refused(
+          { reason: 'empty_title', field: 'name', message: 'list name is invalid' },
+          null,
+        )
+      }
+      if (userLists.some((l) => l.name.toLowerCase() === nameLower)) {
+        return refused(
+          { reason: 'structural_field_not_settable', field: 'name', message: 'a list with this name already exists' },
+          null,
+        )
+      }
+      const maxPos = userLists.length > 0 ? Math.max(...userLists.map((l) => l.position)) : 0
+      const listId = uuid()
+      const listRow = {
+        id: listId,
+        user_id: userId,
+        name: interp.name.trim(),
+        color: 0,
+        position: maxPos + 1024,
+        created_at: at,
+        updated_at: at,
+      }
+      lists[listId] = listRow
+      // AC-26: created_ids carries the list id for undo
+      turn.created_ids.push(listId)
+      // An applying turn that creates a list: changed_task_ids is empty,
+      // no undo_snapshot of tasks is captured.
+      turn.status = 'applied'
+      turn.outcome = {
+        kind: 'applied',
+        changed_task_ids: [],
+        diff: [],
+        created_titles: [listRow.name],
+        deleted_titles: [],
+      }
+      turn.resolved_at = at
+      turn.undo_snapshot = []
+      turn.post_apply = {}
+      session.last_activity_at = at
+      return
+    }
+    case 'list_move': {
+      // AC-18, AC-19: move a task to a named list or Inbox
+      const taskId = handleMap[interp.handle]
+      if (taskId === undefined) return noMatch()
+      const task = s.tasks[taskId]
+      if (task === undefined || task.user_id !== userId || task.deleted_at !== null) return noMatch()
+      // AC-13: step constraint
+      if ((task.parent_id ?? null) !== null) {
+        return refused(
+          { reason: 'structural_field_not_settable', field: 'list_id', message: "A step's filing follows its parent" },
+          taskId,
+        )
+      }
+      let targetListId: string | null = null
+      if (interp.list_name !== null) {
+        // resolve list name (case-insensitive exact match)
+        const userListsForMove = Object.values(s.lists ?? {}).filter((l) => l.user_id === userId)
+        const matches = userListsForMove.filter(
+          (l) => l.name.toLowerCase() === interp.list_name!.toLowerCase(),
+        )
+        if (matches.length === 0) {
+          // AC-21: no_match, not a create
+          setResolved(turn, { kind: 'no_match', heard_transcript: turn.transcript_raw }, at)
+          return
+        }
+        if (matches.length > 1) {
+          // Multiple matches → clarify (F-001 AC-13)
+          const ids = matches.map((m) => m.id)
+          const titles = matches.map((m) => m.name)
+          askQuestion(s, turn, 'clarify', ids, titles, { op: 'edit', changes: { list_id: matches[0]!.id } }, at)
+          return
+        }
+        targetListId = matches[0]!.id
+      }
+      // File the task via planEdits
+      const planned = planEdits(plans, [{ task_id: taskId, changes: { list_id: targetListId } }], { door: 'turn' })
+      if (!planned.ok) return refused(planned.violation, taskId)
+      const res = executePlan(plans, planned.plan)
+      if (res.anatomy.changed_task_ids.length === 0) return noMatch()
+      attachApply(turn, res)
+      setResolved(turn, { kind: 'applied', ...structuredClone(res.anatomy) }, at)
+      return
+    }
+    case 'list_refuse': {
+      // AC-20: refuse rename/recolour/delete a list
+      setResolved(turn, {
+        kind: 'refused',
+        reason: 'structural_field_not_settable',
+        field: null,
+        task_id: null,
+      }, at)
+      return
+    }
   }
   void session
 }

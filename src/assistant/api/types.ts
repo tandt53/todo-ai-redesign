@@ -73,6 +73,21 @@ export interface TaskRow {
   series_ended_at?: string | null
   /** ADR-012 — one id per delete gesture, on every row it trashed. Internal. */
   delete_gesture_id?: string | null
+  /** F-008 AC-10 — uuid of a personal list, or null (Inbox). A step may not carry a list_id. */
+  list_id?: string | null
+}
+
+/** list (new entity — F-008). A personal named container on the filing axis. */
+export interface ListRow {
+  id: string
+  user_id: string
+  name: string
+  /** 0–6, index into tokens.json listColor.palette; default 0 (Grey) */
+  color: number
+  /** sparse, gaps of 1024; assigned on create, rewritten on reorder */
+  position: number
+  created_at: string
+  updated_at: string
 }
 
 /** account (new entity — ADR-010). One row per `user_id`, created lazily. */
@@ -194,6 +209,8 @@ export interface TaskChanges {
   repeat_month_days?: string | null
   repeat_until?: string | null
   repeat_count?: number | null
+  /** F-008 AC-10 — uuid of a personal list, or null (Inbox) */
+  list_id?: string | null
 }
 
 export interface Question {
