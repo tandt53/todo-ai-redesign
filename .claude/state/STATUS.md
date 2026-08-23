@@ -24,6 +24,7 @@
 
 | Task | Agent | Module | Feature | Subtree | Started |
 |---|---|---|---|---|---|
+| T-191+T-181 | architect-agent | assistant | F-006/F-005 | `docs/specs/` | 2026-08-23 12:0Z |
 | T-287 | backend-agent | assistant | F-008 | `src/assistant/api/` | 2026-08-23 11:5Z |
 | T-200 | design-agent | assistant | — | `docs/design/` | 2026-08-23 11:5Z |
 
