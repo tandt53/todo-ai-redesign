@@ -225,4 +225,12 @@ export const FIXTURE_TABLE: FixtureRow[] = [
   { utterance: 'delete the work list', result: { kind: 'list_refuse' } },
   // AC-21: no auto-create on no-match (handled by list_move with no_match)
   { utterance: 'add buy milk to nonexistent list', result: { kind: 'list_move', target: 'Buy milk', list_name: 'Nonexistent' } },
+  // -------------------------------------------------------------------------
+  // F-006 — trash read (AC-14)
+  // -------------------------------------------------------------------------
+  // AC-14: ask about a specific task that is in the trash
+  { utterance: 'what happened to buy milk', result: { kind: 'trash_read', query: 'task_in_trash', target: 'Buy milk' } },
+  // AC-14: ask what is in the trash
+  { utterance: 'what is in the trash', result: { kind: 'trash_read', query: 'trash_contents' } },
+  { utterance: 'show my deleted tasks', result: { kind: 'trash_read', query: 'trash_contents' } },
 ]

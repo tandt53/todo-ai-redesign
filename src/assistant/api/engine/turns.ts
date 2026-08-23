@@ -414,6 +414,22 @@ export async function processTurn(
         list_id: t.list_id ?? null,
       }
     })
+    // F-006 AC-14 (processing rule 5 amendment): top-level deleted tasks,
+    // unexpired, read-only. The interpreter may recognise a task as "in the
+    // trash" and produce a trash_read outcome, but may NEVER target a row in
+    // this set for any mutation. Steps excluded (mirroring the handle list).
+    const nowMs = clock.now()
+    const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000
+    const deletedTasks = Object.values(s.tasks)
+      .filter((t) =>
+        t.user_id === userId &&
+        t.deleted_at !== null &&
+        (t.parent_id ?? null) === null &&
+        Date.parse(t.deleted_at) + THIRTY_DAYS_MS > nowMs,
+      )
+      .sort((a, b) => b.deleted_at!.localeCompare(a.deleted_at!) || a.id.localeCompare(b.id))
+      .map((t) => ({ id: t.id, title: t.title, deleted_at: t.deleted_at! }))
+
     // F-008: the user's personal lists for list-name resolution
     const userLists = Object.values(s.lists ?? {})
       .filter((l) => l.user_id === userId)
@@ -430,6 +446,7 @@ export async function processTurn(
       source: req.source,
       timezone: req.timezone,
       tasks: ctxTasks,
+      deleted_tasks: deletedTasks,
       lists: userLists,
       recent_turns: recent,
       question:
@@ -828,6 +845,63 @@ function applyInterpretation(
         field: null,
         task_id: null,
       }, at)
+      return
+    }
+    case 'trash_read': {
+      // F-006 AC-14: the user asked about a task in the trash or about trash
+      // contents. This is a read, not a mutation — changed_task_ids is empty,
+      // no undo_snapshot is captured, the turn never occupies the undo window.
+      if (interp.query === 'task_in_trash' && interp.handle !== undefined) {
+        // The handle here is the deleted task's id (set by the fixture interpreter)
+        const deletedRow = s.tasks[interp.handle]
+        if (deletedRow !== undefined && deletedRow.user_id === userId && deletedRow.deleted_at !== null) {
+          turn.status = 'applied'
+          turn.outcome = {
+            kind: 'trash_read',
+            query: 'task_in_trash',
+            task_id: deletedRow.id,
+            task_title: deletedRow.title,
+          }
+          turn.resolved_at = at
+          turn.undo_snapshot = []
+          turn.post_apply = {}
+          session.last_activity_at = at
+          return
+        }
+        // If the task is not found in the trash, fall through to no_match
+        return noMatch()
+      }
+      // trash_contents: the user asked what's in the trash
+      const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000
+      const topDeleted = Object.values(s.tasks)
+        .filter((t) =>
+          t.user_id === userId &&
+          t.deleted_at !== null &&
+          (t.parent_id ?? null) === null &&
+          Date.parse(t.deleted_at) + THIRTY_DAYS_MS > nowMs,
+        )
+      // Group by delete_gesture_id to count entries
+      const gestureIds = new Set<string | null>()
+      for (const t of topDeleted) {
+        gestureIds.add(t.delete_gesture_id ?? t.id)
+      }
+      const entryCount = gestureIds.size
+      // Up to 3 task titles, then overflow following title_list's published rule
+      const entryTitles = topDeleted
+        .sort((a, b) => b.deleted_at!.localeCompare(a.deleted_at!) || a.id.localeCompare(b.id))
+        .slice(0, 3)
+        .map((t) => t.title)
+      turn.status = 'applied'
+      turn.outcome = {
+        kind: 'trash_read',
+        query: 'trash_contents',
+        entry_count: entryCount,
+        entry_titles: entryTitles,
+      }
+      turn.resolved_at = at
+      turn.undo_snapshot = []
+      turn.post_apply = {}
+      session.last_activity_at = at
       return
     }
   }

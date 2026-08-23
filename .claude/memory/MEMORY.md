@@ -155,3 +155,50 @@ enum, grep every existing use of the nearest member and ask which uses are alrea
 misfits. **The misfits are the same gap arriving earlier.** They compound — each
 false-statement use teaches a test that the wrong message is correct, and after that
 the test defends the defect.
+
+## 2026-08-23 — A full-suite run during parallel work attributes another agent's breakage to nobody
+
+backend-agent finished T-309 and reported four failing tests: one its own, one a known
+stale fixture, and **two as "pre-existing"**. They were not pre-existing and they were
+not its own — design-agent had added two testids to the mockups **while it was
+running**, and the catalogue tests read the drawings from disk.
+
+Verified by stashing `docs/design/` and re-running: **82/82 pass.**
+
+Nothing the agent did was wrong. It ran the suite, saw four reds, and attributed the
+two it could not explain to the past — which is the most reasonable guess available to
+something that cannot see another agent typing.
+
+**L-022 said quoting a failure COUNT is unreliable during parallel work. This sharpens
+it: attribution is unreliable too, and it fails in the direction that hides the
+finding** — "pre-existing" closes an investigation, where "unknown" would have opened
+one.
+
+**Two rules follow.** Brief an agent to measure **its own tier** and treat the full
+suite as informational, saying so. And when a return says "pre-existing", the
+orchestrator verifies it by stashing the other agent's tree — the cost is one command
+and the alternative is a real defect filed as history.
+
+## 2026-08-23 — Geometric overlap is not occlusion, and this is the third time
+
+Measuring "does A overlap B" by comparing bounding rectangles has now produced three
+wrong conclusions in one day:
+
+1. A hidden `.row-time` (`display:none`) was measured through a selector that matched
+   it, and a **correct finding was retracted** on the strength of it.
+2. The voice FAB was reported as still covering row text after a fix, because the
+   probe counted any overlap rather than **overlap the pinned bar did not already
+   cover**. The FAB sits in the bar's exact band; its additional coverage is zero.
+3. Option B's bar was reported as covering a row, because the probe did not account
+   for **clipping**: the bar sits below the scroller (measured, bar top 1449 =
+   scroller bottom 1449), so the row is cut by the scroller's own edge, not painted
+   over by the bar.
+
+Each time the number was plausible and nothing errored.
+
+**A rectangle overlap is a claim about geometry. Occlusion is a claim about painted
+pixels**, and the two differ whenever the element is hidden, clipped by an ancestor,
+or behind something already covering the same area. **Before comparing rects: filter
+on computed visibility, check every scrollable ancestor's clip, and state what the
+question is** — "covered by X" and "covered by X beyond what Y already covers" are
+different questions with different answers.

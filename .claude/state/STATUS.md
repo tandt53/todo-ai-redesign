@@ -24,8 +24,7 @@
 
 | Task | Agent | Module | Feature | Subtree | Started |
 |---|---|---|---|---|---|
-| T-309 | backend-agent | assistant | F-006 | `src/assistant/api/` | 2026-08-23 13:2Z |
-| T-311 | design-agent | assistant | — | `docs/design/` | 2026-08-23 13:2Z |
+| — | — | — | — | — | — |
 
 ## Blockers
 <!-- Anything stopping progress. Orchestrator resolves these. -->
@@ -47,6 +46,8 @@
 <!-- Recent entries only — archive old results when the file grows. -->
 | Date | Agent | Task | Status | Summary | Next Action |
 |------|-------|------|--------|---------|-------------|
+| 2026-08-23 | design-agent | T-311 | DONE | Option B drawn, 5 states × 3 platforms. Bar 52px = 6.3% = 0.85 rows, covers 0 (it sits below the scroller). The trade: A is 0 permanent + 1–2 rows occluded; B is 0.85 rows permanent + 0 occluded. | T-312 |
+| 2026-08-23 | backend-agent | T-309 | DONE | The trash is served — 4 routes, the QA door, turn path and undo. 273/273 api, 35 new tests. Refused to invent enum members the contract does not declare. | T-313, T-170 |
 | 2026-08-23 | design-agent | T-305+T-306 | DONE | Long list drawn on 3 platforms with a real scroller; add row pins and releases; short list unchanged (0 covered, gap 0). FAB moved into the bar's band — zero additional text coverage, verified. | T-311 |
 | 2026-08-23 | architect-agent | T-191+T-181 | DONE / PARTIAL | Nine shapes specified, ninth found by the agent itself. ADR-016, ADR-017, ADR-012 amended. No collision with F-008 — trash_read is additive. T-181 decided as Option A but OQ2 is the owner's per the spec; awaiting them. | T-309, T-170 |
 | 2026-08-23 | backend-agent | T-287 | DONE | 23 api ACs, 36 new tests, suite 1240→1275. Delete unfiles rather than deletes; no trash lifecycle; no invented migration. Two follow-ups: a stale QA wire constant (T-307) and a refusal reason that states something false (T-308). | T-307, T-308 |

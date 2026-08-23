@@ -510,9 +510,38 @@ Purpose: a tappable row at the end of every `.list` that creates a new task with
 
 **No mic in this row.** The add row calls `addTask` with the title verbatim. A mic icon next to a text field promises the text goes through the assistant, which it does not. The mic control lives exclusively on the Talk surface (§ MicControl).
 
-**Not drawn and why:** Option B (one fixed bottom bar merging the field and the mic) was examined by the owner and not taken *for now*. Nothing in the current design forecloses it.
+**Not drawn and why:** Option B (one fixed bottom bar merging the field and the mic) was examined by the owner and not taken *for now*. Nothing in the current design forecloses it. **Option B is now drawn alongside A (T-311)** — see § TaskBottomBar below.
 
 States: default (idle, plus icon + "Add a task" in `text.muted`) · hover (label shifts to `text.secondary`) · focused (focus ring).
+
+## TaskBottomBar — option B: fixed field + morphing mic/send (T-311, provisional)
+
+Purpose: the owner's alternative to InlineAdd. One fixed bottom row holding a text field and a single action button that morphs between two identities depending on whether the field has text.
+
+**Placement:** bottom of `.col-main`, outside the scroll container. Not position:absolute; not overlapping content. The bar is a flex:none child of the column, so the scrollable pane (`.pane-tasks`) fills the remaining vertical space above it. **Below `breakpoints.split` only** — at split and above, the Talk panel is permanent and the inline-new row in the list body is reachable.
+
+**Bar height: h-lg (52px).** Built: s1 (4px) top pad + h-md (44px) content + s1 (4px) bottom pad. This matches InlineAdd's min-height exactly and matches Microsoft To Do's "Add a Task" bar at 6.2% of the viewport. The painted field and button are both 44px; the platform hit-area floor (web 40, iOS 44, Android 48) is met by a transparent `::before` pseudo on the button, never by painting a larger control.
+
+**The morph — one button, two identities:**
+
+| Field state | Button icon | Accessible name | What it does |
+|---|---|---|---|
+| empty | mic (lucide `mic`) | **"Talk"** | Navigates to the Talk surface. Does NOT start capture (AC-37). |
+| has text | arrow-up (lucide `arrow-up`) | **"Add task"** | Calls `addTask` with the title verbatim. Same path as InlineAdd. |
+
+The button is one element with `data-testid="tasks-bar-action"`. Its accessible name changes with the field state. The mic icon and styling (quiet border, `text.secondary`) match the idle MicControl's visual weight. The send state takes the `accent` fill so the action reads as committal.
+
+**Empty field with arrow:** the arrow is NOT present when the field is empty. The mic stays until the first character. An empty submit is not possible. This is the field state being the mode switch.
+
+**Typing user reaching voice:** No. Once text is in the field, the mic is gone and only the send arrow shows. To reach Talk, the user clears the field (backspace to empty) or submits the text first. This is intentional: there is no state where a text field with content and a mic are both on screen, which is the property that dissolves the trap described in InlineAdd's "No mic in this row" paragraph.
+
+**Talk Composer divergence.** The Talk surface's Composer (§ Composer) shows input + mic + send all three at once, with send always present (merely `aria-disabled` when empty). **This bar does not follow that pattern, and the difference is deliberate:** on Talk, mic and send do different things simultaneously (mic starts capture, send submits text), while on Tasks the mic means "go somewhere else". The morph prevents the accidental promise that a mic beside a text field makes — that the text goes through the assistant. **The alternative — teaching Talk the same morph — was considered and rejected**: Talk's Composer handles the listening state (live transcript replaces the field) and the mic there IS an input method for the field, not a navigation control. Merging them into one morph would mean that on Talk, tapping the mic while the field has text would need to choose between sending the text and starting capture — a mode conflict the current three-button layout already resolves. Recorded here because `§ Composer` and `§ TaskBottomBar` now describe two bottom bars that behave differently, and the difference must read as decided rather than inconsistent.
+
+**Permanent vertical cost:** 52px = 0.85 task rows (a row is 61px at these tokens). Option A costs 0 rows permanently but occludes 1–2 rows while the inline-new is pinned on a long list. B costs 0.85 rows permanently and occludes 0.
+
+States: idle (field empty, mic button) · typing (field has text, send button) · focused (field ring).
+
+Testids: `tasks-bar-input` (the text field), `tasks-bar-action` (the morphing button).
 
 ## OfflineBanner
 
@@ -1461,6 +1490,8 @@ Genuinely new controls, and only those, take new ids:
 | `tasks-confirm-delete` | § ConfirmDialog — destructive confirm button (added T-244) |
 | `tasks-confirm-cancel` | § ConfirmDialog — cancel button (added T-244) |
 | `tasks-drag-handle` | § TaskRow — drag handle for manual reorder, visible only in manual sort (added T-247) |
+| `tasks-bar-input` | § TaskBottomBar (option B, T-311) — text field. Accessible name: **"Add a task"**. Visible only in optb-* states (below split). |
+| `tasks-bar-action` | § TaskBottomBar (option B, T-311) — the morphing action button. Accessible name: **"Talk"** (field empty, mic icon) / **"Add task"** (field has text, arrow-up icon, accent fill). One element, one testid, name changes with field state. |
 
 **`shell-talk-button` is retired by T-227** — the PathSwitch Talk button was removed when the Talk
 path changed from a bottom-bar tab to the voice FAB (below split) and the permanent panel (at
@@ -1478,8 +1509,8 @@ No content-width floor is published for any control above. § Touch's floors are
 shipped control; none of these has shipped, and publishing a floor measured only in Chromium
 would put a number into a table whose whole value is that its numbers are checkable.
 
-**The counts (updated T-276 — `list-editor-color-swatch`, `assistant-voice-fab`).** This table now has
-**52** new-control rows (was 50; +2 for `list-editor-color-swatch` and `assistant-voice-fab`). The carried-over list is still **6**.
+**The counts (updated T-311 — `tasks-bar-input`, `tasks-bar-action`).** This table now has
+**54** new-control rows (was 52; +2 for `tasks-bar-input` and `tasks-bar-action`). The carried-over list is still **6**.
 **`src/assistant/mobile/model/a11y.ts SHELL_A11Y_IDS`** holds 29 and
 needs updating: add `shell-search-button`, `shell-overflow-button`, `tasks-drag-handle` and the
 20 F-009 ids; retire `shell-talk-button`. This is L-008's mechanism working in the direction drift actually travels — the

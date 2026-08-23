@@ -16,7 +16,7 @@
 
 import { ApiError } from '../errors.ts'
 import type { StoreState } from '../store/store.ts'
-import type { TaskRow, TurnRow, UndoOutcomeWire, UndoVia } from '../types.ts'
+import type { SkippedReason, TaskRow, TurnRow, UndoOutcomeWire, UndoVia } from '../types.ts'
 import { newestAppliedTurn } from './sessions.ts'
 import { cloneTask, replayTask, taskEquals } from './task-equals.ts'
 
@@ -105,7 +105,7 @@ export function performUndo(
   }
 
   const revertedRows: TaskRow[] = []
-  const skippedRows: TaskRow[] = []
+  const skippedRows: { row: TaskRow; reason: SkippedReason }[] = []
   let revertedCount = 0
   const postApply = turn.post_apply ?? {}
   const createdIds = new Set(turn.created_ids)
@@ -120,9 +120,9 @@ export function performUndo(
   for (const row of snapshot) recorded.set(row.id, row)
   for (const row of Object.values(postApply)) recorded.set(row.id, row)
 
-  const skip = (row: TaskRow | undefined, fallback: TaskRow | undefined): void => {
+  const skip = (row: TaskRow | undefined, fallback: TaskRow | undefined, reason: SkippedReason = 'modified_since_apply'): void => {
     const named = row ?? fallback
-    if (named !== undefined) skippedRows.push(named)
+    if (named !== undefined) skippedRows.push({ row: named, reason })
   }
 
   // F-008 AC-26: undo of list_create. A created_id that names a LIST (not a task)
@@ -174,7 +174,10 @@ export function performUndo(
       revertedRows.push(cur)
       revertedCount += 1
     } else {
-      skip(cur, expected)
+      // F-006 AC-13: a created row that no longer exists in the store was
+      // permanently deleted (AC-11, AC-17, or AC-12's retention purge).
+      const reason: SkippedReason = cur === undefined ? 'permanently_deleted' : 'modified_since_apply'
+      skip(cur, expected, reason)
     }
   }
 
@@ -201,7 +204,13 @@ export function performUndo(
       revertedRows.push(state.tasks[entry.id]!)
       revertedCount += 1
     } else {
-      skip(cur, entry)
+      // F-006 AC-13: a snapshot row that no longer exists in the store (and was
+      // not removed by this turn) was permanently deleted. The undo cannot
+      // replay what no longer exists; "modified_since_apply" would be a false
+      // statement about a row that is gone.
+      const reason: SkippedReason =
+        cur === undefined && !removedByThisTurn ? 'permanently_deleted' : 'modified_since_apply'
+      skip(cur, entry, reason)
     }
   }
 
@@ -232,24 +241,29 @@ export function performUndo(
     return state.tasks[parentId] ?? recorded.get(parentId)
   }
 
-  const nameTopLevel = <T>(rows: TaskRow[], make: (row: TaskRow) => T): T[] => {
+  const nameTopLevel = <T, R>(rows: R[], getRow: (r: R) => TaskRow, make: (row: TaskRow, r: R) => T): T[] => {
     const out: T[] = []
     const named = new Set<string>()
-    for (const row of rows) {
+    for (const r of rows) {
+      const row = getRow(r)
       const subject = subjectOf(row)
       if (subject === undefined || named.has(subject.id)) continue
       named.add(subject.id)
-      out.push(make(subject))
+      out.push(make(subject, r))
     }
     return out
   }
 
-  const skipped = nameTopLevel(skippedRows, (row) => ({
-    task_id: row.id,
-    title: row.title,
-    reason: 'modified_since_apply' as const,
-  }))
-  const reverted = nameTopLevel(revertedRows, (row) => ({ task_id: row.id, title: row.title }))
+  const skipped = nameTopLevel(
+    skippedRows,
+    (s) => s.row,
+    (row, s) => ({
+      task_id: row.id,
+      title: row.title,
+      reason: s.reason,
+    }),
+  )
+  const reverted = nameTopLevel(revertedRows, (r) => r, (row) => ({ task_id: row.id, title: row.title }))
 
   // **`nothing_reverted` is the RAW count, not the list length.** The lists are
   // collapsed to top-level subjects, so nine reverted rows can render as one name —

@@ -53,12 +53,26 @@ export interface ContextList {
   name: string
 }
 
+/**
+ * F-006 AC-14 (processing rule 5 amendment): top-level deleted tasks,
+ * unexpired. Read-only — the interpreter may recognise a task as "in the
+ * trash" and produce a trash_read outcome, but may NEVER target a row in
+ * this set for any mutation. Steps excluded (mirroring the handle list).
+ */
+export interface DeletedContextTask {
+  id: string
+  title: string
+  deleted_at: string
+}
+
 export interface InterpreterContext {
   transcript: string
   source: TurnSource
   timezone: string | null
   /** the user's current tasks, read fresh inside this turn's queue slot (OQ 7) */
   tasks: ContextTask[]
+  /** F-006 AC-14: top-level deleted tasks, unexpired, read-only */
+  deleted_tasks: DeletedContextTask[]
   /** F-008: the user's personal lists, for list-name resolution */
   lists: ContextList[]
   /** sliding window: at most the last 10 resolved turns (ADR-003) */
@@ -88,6 +102,8 @@ export type Interpretation =
   | { kind: 'list_move'; handle: string; list_name: string | null }
   /** F-008 AC-20: attempted rename/recolour/delete a list — refused */
   | { kind: 'list_refuse' }
+  /** F-006 AC-14: the user asked about a task in the trash or about trash contents */
+  | { kind: 'trash_read'; query: 'task_in_trash' | 'trash_contents'; handle?: string }
 
 export interface Interpreter {
   interpret(ctx: InterpreterContext): Promise<Interpretation>
