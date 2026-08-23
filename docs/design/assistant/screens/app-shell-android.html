@@ -46,6 +46,19 @@
   putting them here would fail the "names nothing the client declares" check.
   They are drawn, unlabelled, and owed.
 
+  DUE TIME FORMAT RULE (T-266, all platforms):
+   · Format is always `Weekday H:MM AM/PM` — e.g. `Thu 5:00 PM`.
+   · Weekday is always present, even under a group heading that names the day,
+     because the user scans rows, not headings.
+   · Minutes are always shown (`:00` included) for tabular-numeral alignment.
+   · All three platforms follow the same rule. Per-platform differences in time
+     format are not intended.
+
+  SEARCH FILTERING RULE (T-258, AC-2):
+   · search-filtering hides rows whose title does not contain the query.
+   · It is TITLE filtering, not hide-completed. The CSS does not hide by
+     completion status; the JS in showState filters by title text.
+
   Self-contained: no network, no server, no build. Open by double-click.
   Design system: docs/design/_shared/DESIGN.md · tokens: tokens.json ·
   rendered proof of the system: docs/design/_shared/specimen.html
@@ -585,7 +598,10 @@ button,input,textarea{font:inherit; color:inherit}
 .row-marks{display:inline-flex; align-items:center; gap:var(--s2); margin-left:var(--s2); flex:none}
 .mark{font-family:var(--font-num); font-size:var(--fs-body); font-weight:var(--w-bold); color:var(--text-primary); line-height:1.35}
 .mark-quiet{color:var(--text-muted); display:inline-flex; align-self:center}
-.tag{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:var(--font-case-label); font-weight:var(--w-semibold); padding:2px 6px; border-radius:var(--r-xs); background:var(--accent-tint); color:var(--accent); white-space:nowrap}
+/* .tag — DESIGN.md ## Colour rules 6: retired accent-on-tint for diff markers.
+   NEW reads in text.primary at semibold on bg.sunken — legible to a colour-blind
+   user by construction. The client already implements this (styles.ts:217). */
+.tag{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:var(--font-case-label); font-weight:var(--w-semibold); padding:2px 6px; border-radius:var(--r-xs); background:var(--bg-sunken); color:var(--text-primary); white-space:nowrap}
 .tag.edited{background:var(--bg-sunken); color:var(--text-secondary)}
 .row-trail{display:flex; align-items:center; flex:none; gap:var(--s1)}
 .row-del{
@@ -1087,7 +1103,9 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   flex:1 1 auto; min-width:0;
   transition:transform var(--t-std) var(--ease);
 }
-.row.row-swiped .row-inner{transform:translateX(-80px)}
+/* T-261/T-262: the row has overflow:hidden. padding-left compensates for the
+   transform so the title stays inside the visible area. */
+.row.row-swiped .row-inner{transform:translateX(-80px); padding-left:80px}
 .row.row-swiped .swipe-action{transform:translateX(0)}
 
 /* ── Inline new-task row — visible at all widths ── */
@@ -1172,14 +1190,16 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .app[data-search="no-results"] .btn-search{display:none}
 .app[data-search="no-results"] .list{display:none}
 .app[data-search="no-results"] .inline-new{display:none}
+/* When search is filtering, JS hides rows whose title does not contain the
+   query (AC-2: live filtering by title). The CSS below shows the search UI
+   chrome; the actual row visibility is set by showState's searchQuery handler.
+   RULE: search narrows by title, not by completion status. */
 .app[data-search="filtering"] .search-field{display:block}
 .app[data-search="filtering"] .search-close{display:grid}
 .app[data-search="filtering"] .bar-surface-title{display:none}
 .app[data-search="filtering"] .head{display:none}
 .app[data-search="filtering"] .overflow-anchor{display:none}
 .app[data-search="filtering"] .btn-search{display:none}
-.app[data-search="filtering"] .row.done{display:none}
-.app[data-search="filtering"] .group:last-of-type{display:none}
 
 /* ── OVERFLOW MENU (F-009) ── */
 /* .overflow-anchor wraps the trigger and the menu, so the menu positions
@@ -1344,6 +1364,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   <button data-s="list-name-taken" onclick="showState('list-name-taken')">list-name-taken</button>
   <button data-s="phone-talk" onclick="showState('phone-talk')">phone-talk</button>
   <button data-s="phone-tasks" onclick="showState('phone-tasks')">phone-tasks</button>
+  <button data-s="phone-tasks-swiped" onclick="showState('phone-tasks-swiped')">phone-swiped</button>
   <button data-s="phone-tasks-arrived" onclick="showState('phone-tasks-arrived')">phone-arrived</button>
   <button data-s="phone-tasks-empty" onclick="showState('phone-tasks-empty')">phone-empty</button>
   <button data-s="wide-tasks" onclick="showState('wide-tasks')">wide-tasks</button>
@@ -1502,9 +1523,9 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
         </div>
         
-        <div class="row">
+        <div class="row" id="swipeRow">
           <div class="row-time"><span class="wd">Wed</span>9:00 AM</div>
-          <div class="row-main">
+          <div class="row-main row-inner">
             <input class="select-cbx" type="checkbox" aria-label="Select: Gọi nha sĩ đặt lịch khám răng">
             <input class="cbx" type="checkbox" aria-label="Complete: Gọi nha sĩ đặt lịch khám răng">
             <button class="row-open" aria-label="Open Gọi nha sĩ đặt lịch khám răng"><span class="row-title">Gọi nha sĩ đặt lịch khám răng</span></button><span class="row-marks"><span class="mark" role="img" aria-label="High priority" title="High priority">!</span></span>
@@ -2311,6 +2332,16 @@ var STATES = {
     "surface": "tasks",
     "frame": "phone"
   },
+  "phone-tasks-swiped": {
+    "collection": "today",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "frame": "phone",
+    "swiped": true
+  },
   "phone-tasks-arrived": {
     "collection": "today",
     "tasks": "list",
@@ -2491,6 +2522,31 @@ function paint(cfg){
   var set = document.getElementById('searchEmptyTitle');
   if (set && cfg.searchQuery) set.textContent = 'No tasks matching "' + cfg.searchQuery + '"';
 
+  /* ── Search filtering: hide rows whose title does not contain the query (AC-2).
+     Also hide empty groups whose every row was hidden. Reset when leaving search. ── */
+  var allRows = document.querySelectorAll('.v-collection-today .row');
+  var allGroups = document.querySelectorAll('.v-collection-today .group');
+  if (cfg.search === 'filtering' && cfg.searchQuery) {
+    var q = cfg.searchQuery.toLowerCase();
+    for (var sr = 0; sr < allRows.length; sr++) {
+      var titleEl = allRows[sr].querySelector('.row-title');
+      var titleText = titleEl ? titleEl.textContent.toLowerCase() : '';
+      allRows[sr].style.display = titleText.indexOf(q) !== -1 ? '' : 'none';
+    }
+    for (var sg = 0; sg < allGroups.length; sg++) {
+      var hasVisible = false;
+      var sib = allGroups[sg].nextElementSibling;
+      while (sib && !sib.classList.contains('group') && !sib.classList.contains('inline-new')) {
+        if (sib.classList.contains('row') && sib.style.display !== 'none') hasVisible = true;
+        sib = sib.nextElementSibling;
+      }
+      allGroups[sg].style.display = hasVisible ? '' : 'none';
+    }
+  } else {
+    for (var rr = 0; rr < allRows.length; rr++) allRows[rr].style.display = '';
+    for (var gg = 0; gg < allGroups.length; gg++) allGroups[gg].style.display = '';
+  }
+
   /* ── Overflow menu — manual disabled ── */
   var manualBtn = document.getElementById('overflowManual');
   if (manualBtn) {
@@ -2548,6 +2604,13 @@ function paint(cfg){
   var cd = document.getElementById('confirmDeleteBtn');
   if (ct && sc > 0) ct.textContent = 'Delete ' + sc + ' tasks?';
   if (cd && sc > 0) cd.textContent = 'Delete ' + sc + ' tasks';
+
+  /* ── Swipe reveal (T-262: phone-tasks-swiped draws the gesture result) ── */
+  var swipeRow = document.getElementById('swipeRow');
+  if (swipeRow) {
+    if (cfg.swiped) swipeRow.classList.add('row-swiped');
+    else swipeRow.classList.remove('row-swiped');
+  }
 }
 
 function toggleTheme(){

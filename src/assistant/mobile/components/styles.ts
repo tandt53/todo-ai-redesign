@@ -40,6 +40,7 @@ const sendBox = paintedBox(A11Y_IDS.composerSend)
 
 // App-shell boxes, read from `PAINTED` on the same terms as the five above.
 const pathBox = paintedBox(SHELL_A11Y_IDS.pathTasks)
+const voiceFabBox = paintedBox(SHELL_A11Y_IDS.voiceFab)
 const rowDeleteBox = paintedBox(SHELL_A11Y_IDS.tasksDeleteButton)
 const menuRowBox = paintedBox(SHELL_A11Y_IDS.menuCollectionRow)
 const segmentBox = paintedBox(SHELL_A11Y_IDS.settingsThemeControl)
@@ -554,6 +555,20 @@ export function makeStyles(c: Palette) {
       fontSize: font.size.meta,
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.accent,
+    },
+    // § VoiceFab — circular accent FAB, bottom-right, replaces Talk path switch
+    // on the Tasks surface (T-257). Dimensions from `PAINTED[voiceFab]` (52×52),
+    // positioning from `app-shell-ios.html .voice-fab { right: s4; bottom: s4 }`.
+    voiceFab: {
+      position: 'absolute',
+      right: spacing.md,
+      bottom: spacing.md,
+      ...voiceFabBox,
+      borderRadius: orbRadius(voiceFabBox.width),
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: c.accent,
+      zIndex: 5,
     },
     largeTitle: {
       paddingHorizontal: spacing.gutter_mobile,

@@ -426,8 +426,9 @@ describe('the shell', () => {
       fireEvent.click(screen.getByTestId('shell-tasks-button'))
     })
     expect(surfaceOf(container)).toBe('tasks')
+    // shell-talk-button retired (T-254); its replacement is the VoiceFab.
     act(() => {
-      fireEvent.click(screen.getByTestId('shell-talk-button'))
+      fireEvent.click(screen.getByTestId('assistant-voice-fab'))
     })
     expect(surfaceOf(container)).toBe('talk')
   })
