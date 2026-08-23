@@ -1462,7 +1462,7 @@ describe('AC-9 / AC-17 / AC-39 — the row’s three marks', () => {
     goToTasks()
     const rows = screen.getAllByTestId('assistant-task-row')
     const byId = (id: string) => rows.find((r) => r.getAttribute('data-task-id') === id) as HTMLElement
-    expect(within(byId('h')).getByTestId('tasks-row-priority-mark').textContent).toBe('!!!')
+    expect(within(byId('h')).getByTestId('tasks-row-priority-mark').textContent).toBe('!')
     // `none` renders no mark at all, **so the marks stay meaningful**.
     expect(within(byId('n')).queryByTestId('tasks-row-priority-mark')).toBeNull()
     // …and **all four states are distinguished in the accessible name regardless**,

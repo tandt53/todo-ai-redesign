@@ -9,7 +9,7 @@
 import { createContext, useContext, useMemo } from 'react'
 import { StyleSheet, useColorScheme } from 'react-native'
 import { A11Y_IDS, SHELL_A11Y_IDS } from '../model/a11y.ts'
-import { font, lineHeightFor, orbRadius, palette, radius, spacing } from '../model/theme.ts'
+import { font, lineHeightFor, orbRadius, palette, radius, spacing, tokens } from '../model/theme.ts'
 import type { ThemeName } from '../model/theme.ts'
 import { MIN_TOUCH_TARGET, paintedBox } from '../model/touch.ts'
 
@@ -64,11 +64,15 @@ export function makeStyles(c: Palette, platform: 'ios' | 'android' = 'ios') {
     // T-298: the topbar's bottom hairline is RETIRED — `border.primary_tool`:
     // space and ground are the primary structuring tools, and the panel pattern
     // replaces the three long structural borders between layout regions.
+    // T-302 defect 3: the mockup sets bar-in padding to `gutter - s3` (16-12=4)
+    // so each icon button's 44pt frame starts outside the content gutter and
+    // its 20pt ink lands at exactly 16pt — level with the content column below.
+    // The previous value (gutter_mobile = 16) pushed the ink to ~38pt.
     topBar: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.md,
-      paddingHorizontal: spacing.gutter_mobile,
+      paddingHorizontal: spacing.gutter_mobile - tokens.space['3'],
       paddingVertical: spacing.sm,
       backgroundColor: c.bg.raised,
     },
@@ -770,10 +774,35 @@ export function makeStyles(c: Palette, platform: 'ios' | 'android' = 'ios') {
     },
     cnDismiss: { alignItems: 'center', justifyContent: 'center' },
     // § Empty states — Tasks
-    emptyState: { padding: spacing.gutter_mobile, gap: spacing.sm, alignItems: 'flex-start' },
+    // T-302 defect 1: the mockup anchors the empty block to the top with
+    // padding s7 (48), not centred and not at gutter_mobile.
+    // T-302 defect 2: the heading was fs.title (28pt iOS) — larger than the
+    // bar title (fs.body, 17pt iOS). Now fs.body/semibold: same rank as the
+    // surface title, so an empty-state message never outranks the screen name.
+    // T-303: paddingBottom set to s3 (12). In the mockup the add button lives
+    // INSIDE `.empty`, separated from the heading by the body paragraph's own
+    // height + its margin-bottom s5 (24). The mobile ET-FIRST drops the body
+    // text, so the heading-to-InlineAdd gap must replace both the h2 margin
+    // (s2, 8) and the missing paragraph. s3 (12) is the group-internal step
+    // in the spacing scale: larger than s2 (which read as cramped without the
+    // body text between them) but smaller than s4 (gutter), so the pair reads
+    // as one group, not two items sharing a margin.
+    //
+    // VERTICAL PLACEMENT: the mockup anchors the empty block near the top
+    // (`.empty { padding: var(--s7) 0 var(--s6) }` = 48/32) and does NOT
+    // centre it in the available space. The phone empty state
+    // (`phone-tasks-empty`) applies no override. The mobile code matches:
+    // paddingTop s7 (48), top-anchored, no vertical centering.
+    emptyState: {
+      paddingTop: spacing.xxl,
+      paddingBottom: tokens.space['3'],
+      paddingHorizontal: spacing.gutter_mobile,
+      gap: spacing.sm,
+      alignItems: 'flex-start',
+    },
     emptyHead: {
       fontFamily: font.family.ui,
-      fontSize: fs.title,
+      fontSize: fs.body,
       fontWeight: String(font.weight.title) as '600',
       color: c.text.primary,
     },

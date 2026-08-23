@@ -196,7 +196,7 @@ body {
   font-weight: var(--font-weight-body);
   line-height: var(--font-lineHeight-body); /* 1.5 floor — Vietnamese stacked diacritics never clip */
   color: var(--tx);
-  background: var(--bg-base);
+  background: var(--bg-sunken);
   overflow: hidden;
 }
 #root { display: flex; flex-direction: column; }
@@ -222,6 +222,7 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 .app {
   flex: 1; min-height: 0; position: relative;
   display: flex; flex-direction: column;
+  background: var(--bg-base);
   container-type: inline-size; container-name: app;
 }
 .surfaces { flex: 1; min-height: 0; display: flex; flex-direction: column; }
@@ -500,6 +501,40 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 .menu-row.active { background: color-mix(in srgb, var(--accent) 7%, transparent); color: var(--accent); }
 .menu-foot { border-top: 1px solid var(--hairline); padding: var(--sp-sm) var(--sp-sm) 0; margin-top: var(--sp-sm); }
 
+/* ============ Lists rail — permanent sidebar at breakpoints.wide ============ */
+/* Hidden below 1536; the container wide block below shows it. Styles are the
+   mockup's rail-in / rail-row / rail-sub verbatim. */
+.rail {
+  display: none; flex-direction: column; min-width: 0;
+  background: var(--bg-base);
+}
+.rail-in {
+  padding: var(--sp-xl) var(--sp-lg); display: flex; flex-direction: column;
+  gap: var(--sp-xs); height: 100%;
+}
+.rail-word {
+  font-size: var(--fs-meta); font-weight: var(--font-weight-label);
+  letter-spacing: 0.02em; margin-bottom: var(--sp-lg); color: var(--tx);
+}
+.rail-group.filing { margin-top: var(--sp-lg); }
+.rail-row {
+  display: flex; align-items: center; gap: var(--sp-md); width: 100%;
+  min-height: 40px; padding: 0 var(--sp-md); border-radius: var(--r-sm);
+  font-size: var(--fs-meta); color: var(--tx-2); text-align: left;
+}
+.rail-row:hover { background: var(--accent-tint); }
+.rail-row .rail-count { margin-left: auto; font-variant-numeric: var(--font-numeric); color: var(--tx-muted); }
+.rail-row.on {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  color: var(--tx); font-weight: var(--font-weight-emphasis);
+}
+.rail-sub {
+  font-size: var(--fs-label); letter-spacing: var(--font-letterSpacing-label);
+  text-transform: uppercase; font-weight: var(--font-weight-label);
+  color: var(--tx-muted); padding: var(--sp-md) var(--sp-md) var(--sp-xs);
+}
+.rail-row svg.ic { width: var(--icon-sm); height: var(--icon-sm); }
+
 /* ============ S4 · Settings ============ */
 .set-col { max-width: 640px; padding: var(--sp-lg) var(--gutter) var(--sp-xxl); }
 .set-row { display: flex; align-items: center; gap: var(--sp-lg); padding: var(--sp-md) 0; border-bottom: 1px solid var(--hairline); flex-wrap: wrap; }
@@ -691,7 +726,7 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 .composer {
   flex: none; display: flex; align-items: center; gap: var(--sp-md);
   padding: var(--sp-md) var(--gutter) var(--sp-lg);
-  background: var(--bg-raised); border-top: 1px solid var(--hairline);
+  background: var(--bg-base);
 }
 .composer-inner { display: flex; align-items: center; gap: var(--sp-md); width: 100%; max-width: 720px; margin: 0 auto; }
 .composer-input {
@@ -765,6 +800,7 @@ html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); 
     grid-template-columns: minmax(0, 1fr) minmax(360px, 420px);
     grid-template-rows: minmax(0, 1fr);
     gap: 4px;
+    padding: 4px;
     background: var(--bg-sunken);
   }
   .surface { grid-row: 1; background: var(--bg-base); border-radius: var(--r-md); }
@@ -775,9 +811,10 @@ html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); 
      layout.panel pattern). */
   .s-talk { display: flex; grid-column: 2; }
   /* PANEL CORNER FIX — topbar and composer cover the panel's border-radius
-     unless they carry the matching corners themselves (mockup § PANEL CORNER FIX). */
-  .s-tasks > .topbar { border-radius: var(--r-md) var(--r-md) 0 0; }
-  .s-talk > .topbar { border-radius: var(--r-md) var(--r-md) 0 0; }
+     unless they carry the matching corners themselves (mockup § PANEL CORNER FIX).
+     Every surface with a topbar needs matching top corners; Talk's composer
+     needs bottom corners. */
+  .surface > .topbar { border-radius: var(--r-md) var(--r-md) 0 0; }
   .s-talk .composer { border-radius: 0 0 var(--r-md) var(--r-md); }
   /* Settings is a STACKED surface: it takes the centre, never the panel. The
      assistant is never dismissed by navigating, which is the difference
@@ -818,6 +855,28 @@ html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); 
      look like a spreadsheet. The canvas is used by the SPLIT. */
   .tasks-col { max-width: 720px; padding-left: var(--sp-xxl); padding-right: var(--sp-xxl); }
   .set-col { padding-left: var(--sp-xxl); }
+}
+
+/* ================= THE SECOND BRANCH — tokens.json breakpoints.wide ===========
+ * Above desktop the app adds a COLUMN, never a gutter. The Lists rail arrives
+ * here and at no narrower width, because 1536 is where it fits without the task
+ * list getting narrower than it was at 1440 (tokens.json layout.wide_rule).
+ * The drawer trigger (shell-lists-menu-button) is hidden; the rail replaces it.
+ */
+@container app (min-width: 1536px) {
+  .surfaces {
+    grid-template-columns: 240px minmax(0, 1fr) minmax(360px, 420px);
+  }
+  .rail { display: flex; grid-column: 1; grid-row: 1; border-radius: var(--r-md); }
+  .s-tasks, .s-settings { grid-column: 2; }
+  .s-talk { grid-column: 3; }
+  .s-detail { grid-column: 2; }
+  /* The drawer trigger is replaced by the permanent rail. */
+  .hide-wide { display: none; }
+  /* If the drawer is open when crossing into wide, CSS alone makes it invisible
+     so the rail is never unreachable behind a scrim. The JS side clears the
+     React state via a ResizeObserver so the DOM is honest too. */
+  .scrim, .menu { display: none; }
 }
 
 /* ============ reduced motion — end states kept ============ */

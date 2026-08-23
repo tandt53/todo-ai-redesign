@@ -91,6 +91,13 @@ export interface RevealHandle {
   revealTask: (taskId: string) => void
 }
 
+/** Chip display: priority values arrive as raw enum strings ("high", "low",
+ * "medium"); capitalise them so they read as labels, not leaked internals. */
+function chipText(field: string, value: string): string {
+  if (field === 'priority') return value.charAt(0).toUpperCase() + value.slice(1)
+  return value
+}
+
 function DiffRow({ line, reveal }: { line: DiffLine; reveal: RevealHandle }) {
   return (
     <div className="diff-row">
@@ -99,13 +106,13 @@ function DiffRow({ line, reveal }: { line: DiffLine; reveal: RevealHandle }) {
         <span className="row-diff-pair" key={`${c.field}-${i}`}>
           {c.old !== null && (
             <span className="chip-old" data-testid="assistant-diff-old">
-              {c.old}
+              {chipText(c.field, c.old)}
             </span>
           )}
           {c.old !== null && c.new !== null && <span className="diff-arrow">→</span>}
           {c.new !== null && (
             <span className="chip-new" data-testid="assistant-diff-new">
-              {c.new}
+              {chipText(c.field, c.new)}
             </span>
           )}
         </span>
