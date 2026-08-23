@@ -1,0 +1,31 @@
+{
+  "layer": 1,
+  "agent": "architect-agent",
+  "task_id": "T-191",
+  "task_description": "T-191 + T-181 — F-006 contracts and the dead series",
+  "feature_id": "F-006",
+  "timestamp": "2026-08-23T12:05:30Z",
+  "status": "unknown",
+  "duration_seconds": 0,
+  "files_created": [],
+  "files_created_count": 0,
+  "project_stats": {
+    "spec_files": 0,
+    "source_files": 143,
+    "test_files": 37,
+    "qa_files": 0,
+    "total_loc": 45781
+  },
+  "confidence": "unknown",
+  "tests": {
+    "passing": 0,
+    "failing": 0,
+    "total": 0
+  },
+  "acs_covered": "none",
+  "blockers": "none",
+  "bugs_filed": [],
+  "summary": "No summary available",
+  "capture_method": "hook:PostToolUse",
+  "project": "todo-ai-redesign"
+}
