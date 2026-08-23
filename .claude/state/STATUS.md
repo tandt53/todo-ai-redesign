@@ -24,6 +24,9 @@
 
 | Task ID | Agent | Module | Feature | Subtree | Dispatched |
 |---------|-------|--------|---------|---------|------------|
+| T-258/261/262/266 +NEW | design-agent | assistant | — | docs/design/.../app-shell*.html | 2026-08-22 |
+| T-254 + T-256w | web-agent | assistant | — | src/assistant/web/ | 2026-08-22 |
+| T-255 + T-257 | mobile-agent | assistant | — | src/assistant/mobile/, tests/assistant/mobile/ | 2026-08-22 |
 <!-- Example:
 -->
 | — | — | — | — | — | — |
