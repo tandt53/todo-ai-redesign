@@ -146,8 +146,8 @@ const NOT_BUILT: Record<string, string> = {
   'tasks-confirm-cancel': '§ ConfirmDialog (T-244) — not built',
   // Drag handle (§ TaskRow, T-247): drawn, not built.
   'tasks-drag-handle': '§ TaskRow (T-247) — drag handle for manual reorder, not built',
-  // Inline add (T-244): drawn, not built.
-  'tasks-inline-add': '§ InlineAdd (T-244) — not built',
+  // Inline add (T-244): BUILT (T-284/T-285). The inline row at the end of the
+  // task list, replacing the old header-area add form.
 }
 
 /**
@@ -728,7 +728,7 @@ describe('testid contract (design mockup catalogue)', () => {
     // both yield the same green as a working check.
     expect(catalogue().size).toBe(76)
     const expected = builtCatalogue()
-    expect(expected.size).toBe(41)
+    expect(expected.size).toBe(42)
 
     const seen = new Set<string>()
     for (const { state, drive } of STATES) {

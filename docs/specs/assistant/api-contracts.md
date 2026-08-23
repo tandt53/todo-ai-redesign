@@ -659,9 +659,11 @@ inverted — it pins the gap F-005 closes.)*
 ## `PATCH /tasks/{id}`
 
 **`TASK_PATCH_FIELDS`, in full:** `title`, `note`, `due_at`, `due_all_day`,
-`reminder_at`, `priority`, `status`, `step_order`, and the six ADR-011 repeat
-members. That is the create list **minus `id` and `parent_id`, plus
-`step_order`** — which is patchable, and is how a move is made (ADR-015).
+`reminder_at`, `priority`, `status`, `step_order`, **`list_id`** (F-008),
+**`sort_order`** (F-009), and the six ADR-011 repeat members. That is the
+create list **minus `id` and `parent_id`, plus `step_order`** — which is
+patchable, and is how a move is made (ADR-015). **`list_id` and `sort_order`
+added by F-008/F-009** — see § `PATCH /tasks/{id}` — F-008 / F-009 amendments.
 
 `parent_id` is deliberately **not** patchable: a step does not change parents
 this phase, and re-parenting is a gesture no AC describes and no control
@@ -912,14 +914,15 @@ and narrowing it silently would make a repeating task's deletion emit a diff
 with no recurrence in it:
 
 ```
-TURN_WRITE_FIELDS = [title, note, due_at, reminder_at, priority, status]
+TURN_WRITE_FIELDS = [title, note, due_at, reminder_at, priority, status, list_id]
   # what a turn may set. `note`, `priority`, `due_at`, `reminder_at` are AC-36's
-  # four value fields; `title` and `status` are F-001's. It excludes
-  # parent_id, step_order, every repeat_* member, due_all_day,
+  # four value fields; `title` and `status` are F-001's; `list_id` is F-008's
+  # (AC-18, AC-19 — the assistant's filing verb). It excludes
+  # parent_id, step_order, sort_order, every repeat_* member, due_all_day,
   # reminder_shown_at, series_id, deleted_at.
 
 DIFF_FIELDS = [title, note, due_at, due_all_day, reminder_at, priority, status,
-               parent_id, step_order,
+               parent_id, step_order, list_id,
                repeat_frequency, repeat_interval, repeat_weekdays,
                repeat_month_days, repeat_until, repeat_count]
   # what a create or a delete must describe COMPLETELY (F-001 AC-2, AC-4).
@@ -941,9 +944,10 @@ must stop hard-coding `reminder_at: null`: *"add a task to call the dentist and
 remind me at nine"* is the most natural sentence for the field the owner's
 decision exists to make reachable.
 
-**`ContextTask`** (what the interpreter can read) gains `note` and
-`reminder_at`. The assistant must be able to read what it may write — *"push
-the reminder an hour later"* has nothing to read today.
+**`ContextTask`** (what the interpreter can read) gains `note`,
+`reminder_at`, and **`list_id`** (F-008). The assistant must be able to read
+what it may write — *"push the reminder an hour later"* has nothing to read
+today, and *"move this to Work"* needs to see where the task currently is.
 
 **The handle list excludes steps.** `turns.ts`'s context builder filters
 `parent_id == null` (AC-35, AC-36): a task with eight steps contributes **one**
@@ -1065,3 +1069,474 @@ deliberately unanswered. Index:
 | How the run count is derived (T35) | **ADR-014**; § `Task` on the wire → `series_live` |
 | Who may write `reminder_shown_at` — caller scoping, may a turn set it (T37) | § `POST /tasks/{id}/reminder-ack` |
 | AC-46's capture-before-apply ordering and the record-to-row mapping | **ADR-013**; `POST /assistant/turn` rule 6 and the undo endpoint's revert shapes, both amended in place above |
+
+---
+
+# Feature F-008 / F-009 — lists, list actions
+
+**Added**: 2026-08-23 by architect-agent (T-286). Specs:
+`F-008-lists.md` (personal lists) and `F-009-list-actions.md` (search, sort,
+hide completed, multi-select). Entities and field semantics:
+`data-model.md § Features F-008 and F-009`.
+
+F-008 adds five endpoints (list CRUD) and amends two (task PATCH, assistant
+turn). F-009 adds one endpoint (bulk operations), amends two (account
+GET/PATCH for preferences, task POST/PATCH for sort_order), and specifies the
+sort_order migration.
+
+## `PATCH /tasks/{id}` — F-008 / F-009 amendments
+
+**`TASK_PATCH_FIELDS` gains `list_id` and `sort_order`.** The full list is
+now: `title`, `note`, `due_at`, `due_all_day`, `reminder_at`, `priority`,
+`status`, `step_order`, `list_id`, `sort_order`, and the six ADR-011 repeat
+members.
+
+- **`list_id`** (F-008 AC-11, AC-12): `uuid | null`. Setting a uuid files the
+  task into that list. Setting `null` returns it to Inbox. Validation:
+  - The list must exist and belong to the caller → `404 NOT_FOUND` otherwise.
+  - The task must not be a step (`parent_id` non-null) → `400 VALIDATION`,
+    `field: "list_id"`, message: *"A step's filing follows its parent"*
+    (F-008 AC-13).
+  - A deleted list id → `404 NOT_FOUND`.
+- **`sort_order`** (F-009 AC-6): `integer`. Written by drag-reorder. Uses
+  the same sparse-integer scheme as `list.position`. The response `prior`
+  field carries the previous `sort_order` (same pattern as F-005 ADR-015).
+
+## `POST /tasks` — F-009 amendment
+
+**`TASK_CREATE_FIELDS` gains `sort_order`.** A create supplying `sort_order`
+keeps it (the offline replay case). A create supplying none is appended last:
+the server assigns `max(sort_order in filing cell) + 1024`, or `0` if the cell
+is empty.
+
+`list_id` is **not** in `TASK_CREATE_FIELDS`. A created task lands in Inbox.
+
+## `Task` on the wire — F-008 / F-009 additions
+
+`serializeTask` gains two fields:
+
+```yaml
+list_id:    uuid | null            # F-008 AC-10; null = Inbox
+sort_order: integer                # F-009 AC-5; assigned on every row
+```
+
+Both are present on every row in `GET /tasks` responses.
+
+---
+
+## `POST /lists`
+
+**Feature**: F-008 lists
+**Added**: 2026-08-23 by architect-agent
+**Auth required**: yes (`X-User-Id`)
+
+Creates a personal list.
+
+### Request
+
+```json
+{
+  "name":  "string — required, 1–100 chars after trim; whitespace-only rejected",
+  "color": "integer — optional, 0–6, default 0 (Grey)"
+}
+```
+
+### Response 201
+
+```json
+{
+  "list": {
+    "id":         "uuid — server-generated",
+    "user_id":    "uuid",
+    "name":       "string — trimmed",
+    "color":      0,
+    "position":   1024,
+    "task_count": 0,
+    "created_at": "iso8601",
+    "updated_at": "iso8601"
+  }
+}
+```
+
+`position` is assigned as `max(position of user's lists) + 1024`, or `1024` if
+the user has no lists.
+
+`task_count` is a computed field on every list response — the count of non-deleted,
+non-step tasks with `list_id = this list's id`. It is not stored; it is computed
+at read time.
+
+### Errors
+
+| Status | Code | Reason |
+|---|---|---|
+| 400 | VALIDATION | name empty/whitespace-only, name > 100 chars, color outside 0–6, unknown fields |
+| 401 | UNAUTHENTICATED | missing `X-User-Id` |
+| 409 | DUPLICATE_NAME | a list with this name (case-insensitive, trimmed) already exists for this user (F-008 AC-3) |
+| 409 | LIST_LIMIT_REACHED | user already has 50 lists (F-008 AC-23) |
+
+---
+
+## `GET /lists`
+
+**Feature**: F-008 lists
+**Added**: 2026-08-23 by architect-agent
+**Auth required**: yes (`X-User-Id`)
+
+Returns all personal lists for the authenticated user, ordered by `position`.
+
+### Response 200
+
+```json
+{
+  "lists": [
+    {
+      "id":         "uuid",
+      "user_id":    "uuid",
+      "name":       "string",
+      "color":      0,
+      "position":   1024,
+      "task_count": 3,
+      "created_at": "iso8601",
+      "updated_at": "iso8601"
+    }
+  ]
+}
+```
+
+`task_count` is computed: the count of tasks where `list_id = list.id` and
+`deleted_at` is null and `parent_id` is null.
+
+### Errors
+
+| Status | Code | Reason |
+|---|---|---|
+| 401 | UNAUTHENTICATED | missing `X-User-Id` |
+
+---
+
+## `PATCH /lists/{id}`
+
+**Feature**: F-008 lists
+**Added**: 2026-08-23 by architect-agent
+**Auth required**: yes (`X-User-Id`)
+
+Rename, recolour, or reposition a list. Field-level: the body carries only the
+fields being changed.
+
+### Request
+
+```json
+{
+  "name":     "string — optional, 1–100 chars after trim",
+  "color":    "integer — optional, 0–6",
+  "position": "integer — optional, sparse"
+}
+```
+
+### Response 200
+
+```json
+{
+  "list": { "...full list object..." }
+}
+```
+
+`updated_at` advances on every accepted change.
+
+### Errors
+
+| Status | Code | Reason |
+|---|---|---|
+| 400 | VALIDATION | name empty/whitespace-only, name > 100 chars, color outside 0–6, unknown fields |
+| 401 | UNAUTHENTICATED | missing `X-User-Id` |
+| 404 | NOT_FOUND | unknown list id, or belongs to another user |
+| 409 | DUPLICATE_NAME | new name collides (case-insensitive) with another list of the same user (F-008 AC-3, AC-4) |
+
+---
+
+## `DELETE /lists/{id}`
+
+**Feature**: F-008 lists
+**Added**: 2026-08-23 by architect-agent
+**Auth required**: yes (`X-User-Id`)
+
+Deletes a personal list. Deletion is permanent (no soft delete, no trash —
+F-008 AC-9).
+
+### Request
+
+```json
+{
+  "confirm": "boolean — required when the list has tasks; true = proceed"
+}
+```
+
+The body may be empty or absent when the list is empty.
+
+### Response 200
+
+```json
+{
+  "deleted":    true,
+  "tasks_moved": 3
+}
+```
+
+`tasks_moved` is the number of tasks whose `list_id` was set to `null` (moved
+to Inbox) by this delete.
+
+### Processing
+
+1. Count tasks in the list: non-deleted, non-step rows with
+   `list_id = list.id`.
+2. If count > 0 and `confirm` is not `true`:
+   return `409 LIST_NOT_EMPTY` with `{task_count, list_name}`.
+3. If count > 0 and `confirm` is `true`:
+   set `list_id = null` on every task in the list, then delete the list row.
+   Both writes in one transaction.
+4. If count === 0: delete the list row immediately. `confirm` is ignored.
+
+**The count is computed at delete time, not cached.** A client shows the
+confirmation dialog using its own local task data (it already holds all tasks
+and can count `tasks.filter(t => t.list_id === listId)`). The server recomputes
+at execution, so the actual move covers whatever is in the list at that moment.
+A discrepancy between the client's displayed count and the server's actual
+count is acceptable: the operation is "move all tasks to Inbox", not "move
+exactly N tasks".
+
+### Errors
+
+| Status | Code | Reason |
+|---|---|---|
+| 401 | UNAUTHENTICATED | missing `X-User-Id` |
+| 404 | NOT_FOUND | unknown list id, or belongs to another user |
+| 409 | LIST_NOT_EMPTY | list has tasks and `confirm` is missing or false; body: `{task_count: N, list_name: "string"}` |
+
+### Notes
+
+A deleted list is **not** sent to F-006's trash. The list entity has no
+soft-delete lifecycle; deletion is permanent and immediate (F-008 AC-9). The
+tasks it held survive in Inbox.
+
+---
+
+## `PATCH /tasks/bulk`
+
+**Feature**: F-009 list-actions
+**Added**: 2026-08-23 by architect-agent
+**Auth required**: yes (`X-User-Id`)
+
+Bulk operations from multi-select mode. **All-or-nothing**: the entire batch
+succeeds or the entire batch is refused. No partial results.
+
+### Request
+
+```json
+{
+  "action":   "complete | delete | move",
+  "task_ids": ["uuid — 1 to 200, non-empty"],
+  "list_id":  "uuid | null — required for action 'move'; null = Inbox",
+  "confirm":  "boolean — required for action 'delete' when task_ids.length > 1"
+}
+```
+
+### Response 200
+
+```json
+{
+  "tasks":   ["Task — every addressed task in its new state"],
+  "changed": ["Task — other rows changed as a side effect (e.g. steps cascaded by complete)"],
+  "removed": ["uuid — rows hard-removed, if any"]
+}
+```
+
+### Processing by action
+
+**`complete`** (F-009 AC-11):
+
+- Sets `status: 'done'` on every task. Applied uniformly regardless of current
+  status — an already-done task receives the same write.
+- F-005 AC-19 cascade applies: completing a parent ticks its undone steps.
+  Cascaded steps appear in `changed`.
+- F-005 AC-26 successor generation applies: completing a repeating task spawns
+  a successor. The successor appears in `changed`.
+- No confirmation required.
+
+**`delete`** (F-009 AC-12):
+
+- Soft-deletes every task (writes `deleted_at`). Tasks enter F-006's trash.
+- **All tasks in the batch share one `delete_gesture_id`** (ADR-012), so
+  restoring any one of them via `POST /tasks/{id}/restore` restores the entire
+  cluster.
+- Deleting a parent also soft-deletes its steps. Steps appear in `changed`.
+- If `task_ids.length > 1` and `confirm` is not `true`:
+  return `409 BULK_UNCONFIRMED` with `{task_count, task_titles}`.
+- If `task_ids.length === 1`: proceeds immediately, no confirmation. Matches
+  the single-delete behaviour with undo via trash (F-005 AC-42).
+
+**`move`** (F-009 AC-13):
+
+- Sets `list_id` on every task. `list_id: null` moves to Inbox.
+- Step constraint applies: if any task_id names a step (`parent_id` non-null),
+  the entire batch is refused → `400 VALIDATION` (F-008 AC-13).
+- If `list_id` is a uuid, the list must exist and belong to the caller →
+  `404 NOT_FOUND` otherwise.
+- No confirmation required.
+
+### All-or-nothing semantics
+
+**Why all-or-nothing, not per-item.** The undo model is simpler: a bulk delete
+produces one `delete_gesture_id` covering the whole batch, so restore is one
+action. Partial results ("3 of 5 deleted") would require the client to track
+which succeeded and offer partial undo, which no surface draws and no spec
+describes. The failure modes are narrow — a task_id that is not found, not
+owned, or is a step — and the client holds fresh data, so a validation failure
+is a programming bug, not a user-facing race.
+
+**Idempotency.** Each action is naturally idempotent: completing an
+already-done task is a no-op in effect; deleting an already-deleted task
+is a no-op; moving a task to the list it is already in is a no-op. A network
+retry that replays the same request produces the same result. No explicit
+`client_action_id` is needed.
+
+### Errors
+
+| Status | Code | Reason |
+|---|---|---|
+| 400 | VALIDATION | unknown action, empty task_ids, task_ids > 200, unknown fields, a task_id is a step (for `move`), `list_id` missing for `move` |
+| 401 | UNAUTHENTICATED | missing `X-User-Id` |
+| 404 | NOT_FOUND | any task_id unknown or not owned by this user; or `list_id` unknown (for `move`) |
+| 409 | BULK_UNCONFIRMED | `delete` with > 1 task and `confirm` missing or false; body: `{task_count: N, task_titles: [string]}` |
+
+---
+
+## `GET /account` — F-009 amendments
+
+Two fields added to the response:
+
+```yaml
+hide_completed:   boolean          # default false; F-009 AC-7
+sort_preferences: Record<string, "due_date" | "priority" | "manual">
+                                   # default {}; F-009 AC-4
+                                   # key = collection id (static name or list uuid)
+                                   # absent key = "due_date"
+```
+
+## `PATCH /account` — F-009 amendments
+
+Two fields added to the accepted body:
+
+```yaml
+hide_completed:   boolean          # optional
+sort_preferences: Record<string, "due_date" | "priority" | "manual">
+                                   # optional; MERGES with existing preferences
+                                   # (a key in the body overwrites that key;
+                                   # keys not in the body are unchanged)
+```
+
+**Validation:**
+
+- `sort_preferences` with `'manual'` on a date-axis or gate collection
+  (`today`, `upcoming`, `done`) → `400 VALIDATION`, field:
+  `"sort_preferences"`, message naming the collection and the constraint.
+- Unknown collection ids are accepted — a preference set for a list that is
+  later deleted is harmless; the client ignores keys it cannot resolve.
+
+---
+
+## `POST /assistant/turn` — F-008 amendments
+
+### TURN_WRITE_FIELDS gains `list_id`
+
+The full list is now: `title`, `note`, `due_at`, `reminder_at`, `priority`,
+`status`, `list_id`.
+
+`list_id` is the assistant's filing verb (F-008 AC-18, AC-19): *"move this to
+Work"* writes `list_id` on the resolved task. The step constraint (F-008
+AC-13) applies through the turn path too — a turn attempting to set `list_id`
+on a step produces a `refused` outcome with
+`reason: "structural_field_not_settable"`.
+
+### ContextTask gains `list_id`
+
+The interpreter must see where a task is filed to resolve *"move this to
+Work"* (F-008 AC-18) and to avoid a no-op filing (*"it's already in Work"*).
+
+### DIFF_FIELDS gains `list_id`
+
+A voice filing produces a diff row: `{task_id, field: "list_id", old: null,
+new: "<list-uuid>"}`. Undo of a voice filing restores the previous `list_id`
+(F-008 AC-25).
+
+### Interpreter: two new verb classes
+
+**`list_create`** (F-008 AC-17): the interpreter recognises *"make a list
+called Groceries"* and produces an action that creates a list. The list is
+created with default colour (index 0). The outcome is `kind: "applied"` with
+the created list named in the message. The `list_create` action writes to the
+`list` store, not the `task` store — `changed_task_ids` is empty, no
+`undo_snapshot` of tasks is captured. Undo removes the created list and
+unfiles any tasks that were filed into it (F-008 AC-26), matching `DELETE
+/lists/{id}` with `confirm: true` semantics.
+
+**`list_move`** (F-008 AC-18, AC-19): the interpreter recognises *"move this
+to Work"* and resolves the list name (case-insensitive exact match). The action
+writes `list_id` on the resolved task. Name resolution:
+
+- Exact match (one list) → file the task (AC-11 / AC-12).
+- Zero matches → `no_match` outcome naming the list the user said (AC-21).
+  No list is created — creating requires an explicit create verb (AC-17).
+- Multiple matches → clarify question per F-001 AC-13.
+
+**`list_refuse`** (F-008 AC-20): a turn attempting to rename, recolour, or
+delete a list produces a `refused` outcome with
+`reason: "list_operation_not_permitted"`. The refusal is expressed, not silent.
+
+### `undo_snapshot` and `turn.diff` for list operations
+
+**Filing a task by voice** is an ordinary applying turn. `undo_snapshot`
+captures the task's state before the `list_id` change. `diff` records the
+`list_id` field change. Undo restores the previous `list_id` (F-008 AC-25).
+
+**Creating a list by voice** captures the created list's id in `created_ids`
+(extended from task-only to include list ids). Undo removes the list and
+unfiles its tasks (F-008 AC-26). The `undo_snapshot` contains no task rows
+(no task was changed at creation time); the unfile-on-undo is the delete
+semantics, not a snapshot replay.
+
+---
+
+## `POST /__qa__/seed` — F-008 / F-009 additions
+
+The seed path gains:
+
+```yaml
+lists:       [ <raw list row> ]     # written verbatim, bypassing validation
+preferences: [ { user_id, hide_completed?, sort_preferences? } ]
+                                    # merged into account rows
+```
+
+A test that needs a pre-populated list (for filing scenarios) or a specific
+sort preference (for manual-sort scenarios) uses the seed path.
+
+---
+
+## Harness: `POST /__qa__/seed` — `sort_order` on task rows
+
+Task rows in the seed path may carry `sort_order`. When absent, the
+initialisation pass assigns it (same as production). When present, it is kept
+verbatim — a test that needs a specific sort order for a drag-reorder scenario
+can set it explicitly.
+
+---
+
+## New and changed error codes (F-008 / F-009)
+
+| Status | Code | Reason |
+|---|---|---|
+| 400 | VALIDATION | as before, plus: `list_id` on a step, `sort_order` out of range, `sort_preferences` with `manual` on a date-axis collection, unknown fields on list endpoints, bulk endpoint validation |
+| 404 | NOT_FOUND | as before, plus: `list_id` referencing a non-existent or other-user's list |
+| 409 | DUPLICATE_NAME | list create or rename collides with an existing name (case-insensitive, same user) |
+| 409 | LIST_LIMIT_REACHED | user already has 50 lists |
+| 409 | LIST_NOT_EMPTY | deleting a non-empty list without `confirm: true` |
+| 409 | BULK_UNCONFIRMED | bulk delete of > 1 task without `confirm: true` |
