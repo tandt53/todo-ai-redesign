@@ -1,4 +1,8 @@
-# Build the single self-contained UAT page from manifest.json + flows.json.
+# Build the single self-contained DESIGN-MOCKUP book from manifest.json + flows.json.
+#
+# This photographs docs/design/assistant/screens/*.html — drawings, not the built
+# product. It is NOT the UAT document: signing off on a drawing proves nothing
+# about what shipped. The UAT book is render-real.py, built from the running app.
 # Refuses to finish on an unmapped state or a flow pointing at a state that does
 # not exist: silent coverage loss is the failure this document exists to avoid.
 import json, html, base64, os, sys
@@ -46,13 +50,13 @@ legend=("Mỗi luồng đọc từ trái sang phải theo mũi tên. Chọn nề
         "<b>✓ Đạt</b> / <b>✕ Lỗi</b> / <b>– Bỏ qua</b> dưới mỗi bước; kết quả lưu trong trình duyệt này, không gửi đi đâu.")
 H=("<!doctype html><html lang=\"vi\"><head><meta charset=\"utf-8\">"
    "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
-   "<title>UAT — Todo AI · " + str(len(F["flows"])) + " luồng</title><style>" + CSS + "</style></head><body>"
-   "<div class=\"top\"><h1>UAT — Todo AI</h1><span class=\"m\">" + str(len(F["flows"])) + " luồng · " + str(total) + " trạng thái</span>"
+   "<title>Bản vẽ màn hình — Todo AI · " + str(len(F["flows"])) + " luồng</title><style>" + CSS + "</style></head><body>"
+   "<div class=\"top\"><h1>Bản vẽ màn hình — Todo AI</h1><span class=\"m\">" + str(len(F["flows"])) + " luồng · " + str(total) + " trạng thái</span>"
    "<div class=\"seg\">" + seg + "</div>"
    "<span id=\"prog\">0 / " + str(total) + "</span><button class=\"exp\" id=\"exp\">Xuất kết quả</button></div>"
    "<div class=\"toc\">" + "".join(toc) + "</div>"
    "<p class=\"legend\">" + legend + "</p>"
    + "".join(flows) + "<div id=\"lb\"><img alt=\"\"></div>"
    "<script>const TOTAL=" + str(total) + ";" + JS + "</script></body></html>")
-open(f'{D}/uat-flows.html','w').write(H)
+open(f'{D}/design-mockups.html','w').write(H)
 print(f'      {len(H)/1e6:.1f} MB · {total} bước · {len(F["flows"])} luồng')
