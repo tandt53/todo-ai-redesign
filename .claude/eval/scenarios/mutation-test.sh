@@ -430,6 +430,41 @@ run_case R16 "committing to a named design movement stops being barred" \
 run_case R16 "a movement catalogue is re-added to the design skills" \
   "printf '\\n## 3. Brutalist\\n\\nPure primaries, system fonts, hard offset shadows.\\n' >> .claude/skills/design/screen-content.md"
 
+# R18 — the communication contract goes back to being unreachable. This is the
+# exact state that produced the complaint: the rules existed, ORCHESTRATION did
+# not name them, and the orchestrator reported in the only vocabulary it had.
+run_case R18 "the contract stops being reachable from ORCHESTRATION" \
+  "perl -0777 -i -pe 's/_communication\\.md/_nowhere.md/g' .claude/ORCHESTRATION.md"
+
+# R18 — the bare instruction returns alongside the contract. Having both is worse
+# than having neither: the path the orchestrator actually follows says nothing.
+run_case R18 "a bare 'Report to user' step returns" \
+  "printf '\n13. Report to user\n' >> .claude/ORCHESTRATION.md"
+
+# R18 — the contract goes back to stripping ids from anything the person reads.
+# Cryptic and unciteable are both failures, and this is the second one: the
+# report becomes readable prose the person cannot point at.
+run_case R18 "the contract drops ids instead of glossing them" \
+  "perl -0777 -i -pe 's/not to remove ids/to remove ids/' .claude/agents/_communication.md"
+
+# R18 — the code guidance splits back into two tables. Same shape, opposite
+# lessons, reason nowhere: the reader follows whichever table they read last.
+run_case R18 "code guidance splits into two tables again" \
+  "perl -0777 -i -pe 's/\\| Raw \\| To the person \\| The code \\|/| Raw | Say |/' .claude/agents/_communication.md"
+
+# R18 — the file goes back to claiming every agent reads it. Under this
+# template's own dispatch rule that reach does not exist, and R6 cannot catch the
+# overclaim because ORCHESTRATION.md counts as a referrer.
+run_case R18 "the contract claims a reach dispatch will not give it" \
+  "perl -0777 -i -pe 's/\\*\\*Only the orchestrator reads this today\\.\\*\\*/Every agent reads this./' .claude/agents/_communication.md"
+
+# R18 — the reviewer card points back at _review-protocol.md, which is the Gate 1
+# lens contract and defines no report shape. A pointer that resolves to a real
+# file and the wrong content fails silently: nothing errors, the reader just
+# looks in the wrong place.
+run_case R18 "the reviewer card points at the wrong file for the report shape" \
+  "perl -0777 -i -pe 's/reviewer-agent\\.md ## Output/_review-protocol.md/' .claude/agents/_communication.md"
+
 echo
 echo "─── ${PROVEN} proven fallible, ${UNPROVEN} unproven ───"
 if [ "$UNPROVEN" -gt 0 ]; then
