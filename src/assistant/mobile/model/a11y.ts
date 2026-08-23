@@ -255,8 +255,6 @@ export const SHELL_IDS_BLOCKED: Partial<Record<ShellA11yId, string>> = {
     'T-227/T-244 — Search icon button in the Tasks header; drawn, not yet built',
   [SHELL_A11Y_IDS.shellOverflowButton]:
     'T-227/T-244 — Overflow icon button in the Tasks header; drawn, not yet built',
-  [SHELL_A11Y_IDS.tasksInlineAdd]:
-    'T-227 — the inline add row replacing the header Add task button; drawn, not yet built',
   [SHELL_A11Y_IDS.tasksDragHandle]:
     'T-247 — drag handle for manual reorder, visible only in manual sort; drawn, not yet built',
   [SHELL_A11Y_IDS.tasksSearchInput]:
@@ -508,6 +506,9 @@ export function expectedShellIds(
     // touch is not hover: the delete control is ALWAYS visible in the row's
     // trailing slot (components.md § Platform variants)
     ids.add(SHELL_A11Y_IDS.tasksDeleteButton)
+    // T-285: the inline add row renders at the end of the list whenever the
+    // list has content. The empty state keeps its own CTA instead.
+    ids.add(SHELL_A11Y_IDS.tasksInlineAdd)
     const renaming = ui.renaming ?? null
     if (renaming !== null && tasks.tasks.some((t) => t.id === renaming)) {
       ids.add(SHELL_A11Y_IDS.tasksRenameInput)

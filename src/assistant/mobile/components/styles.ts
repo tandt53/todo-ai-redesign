@@ -814,6 +814,48 @@ export function makeStyles(c: Palette) {
     },
     // AC-31's arrival cue — AC-4's own diff-flash tint, at the moment it informs
     rowArrived: { backgroundColor: c.accentTint },
+    // § InlineAdd — the `+ Add a task` row at the end of the task list (T-285).
+    // Resting state: a plus icon and the label, full-width, tappable.
+    // Editing state: the label is replaced by a text input.
+    inlineAdd: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.gutter_mobile,
+    },
+    inlineAddEditing: {
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.bg.hairline,
+    },
+    inlineAddLabel: {
+      fontFamily: font.family.ui,
+      fontSize: font.size.body,
+      color: c.text.muted,
+    },
+    inlineAddInput: {
+      flex: 1,
+      minWidth: 0,
+      fontFamily: font.family.ui,
+      fontSize: font.size.body,
+      color: c.text.primary,
+      paddingVertical: 0,
+    },
+    // The empty-state standalone add field. NOT `renameInput`: that style
+    // carries `flex: 1`, which inside a column parent means "take all remaining
+    // height" and renders a 500px-tall field. This one uses explicit padding
+    // instead, matching the same visual height without the flex stretch.
+    emptyAddInput: {
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.sm,
+      borderRadius: radius.sm,
+      borderWidth: 1,
+      borderColor: c.accent,
+      backgroundColor: c.bg.raised,
+      fontFamily: font.family.ui,
+      fontSize: font.size.body,
+      color: c.text.primary,
+    },
     // § ListsMenu — a slide-over panel with a scrim at every width
     // The mockups declare `--scrim` as `bg.base` at 66% (dark) — the COLOUR is
     // the token; only the alpha is transcribed, because `tokens.json` publishes
