@@ -131,3 +131,55 @@ the query.** The check would have confirmed the defect rather than caught it.
 
 Filed as T-258, including the instruction to tell qa-web-agent that the test must assert every
 visible row contains the query, not that the count fell.
+
+---
+
+# Third pass — the Talk surface, and what the sweeps are worth
+
+## Scorecard for the method, stated plainly
+
+| approach | real findings |
+|---|---|
+| four mechanical sweeps (grounds, columns, clipping, edges; dark contrast; header counts) | **0** |
+| opening a render and looking, then measuring the suspicion | **3** (F3, F4, F5) |
+
+Three of the four sweeps produced false positives **because the probe was wrong**, each time by
+measuring the wrong thing: left edges of right-aligned text; rows inside a `.group` element that
+only ever contains its `<h3>`, with the rows as siblings; deliberate off-canvas content read as
+clipping. The dark-theme sweep was the one clean run, and its value was a **negative** result.
+
+**The sweeps are worth keeping for confirming a fix held** — the zero on adjacent-grounds proved
+T-251 held across 307 states, which no amount of looking could have established. They are not
+worth anything for finding defects.
+
+## F4 — the `NEW` badge wears the colour rule 6 retired (10 of 12 mockups)
+
+`DESIGN.md ## Colour rules` 6 retired green/`success`, reasoning that *"the label `NEW` was doing
+the work and the hue was decoration"*, and that added values now read in `text.primary` at
+semibold.
+
+Measured in `voice-assistant-view.html`: the badge renders `rgb(0,47,167)` on `rgb(230,234,246)` —
+accent on accent-tint. `.tag{background:var(--accent-tint); color:var(--accent)}` appears in **10
+of the 12 mockups**.
+
+The tell is one line below it: `.tag.edited{background:var(--bg-sunken);
+color:var(--text-secondary)}` follows rule 6 correctly. **EDITED obeys and NEW does not, in the
+same CSS block.**
+
+**The drift runs the unusual way: the client is right and the drawing is stale.** T-232 corrected
+mobile today — `styles.ts:217` now sets `badgeNew` to `text.primary` at semibold with no ground.
+Mobile follows `DESIGN.md`; ten mockups do not. Filed as T-259, with the instruction not to
+"fix" mobile back.
+
+## F5 — Send is drawn active over an empty field (`voice-assistant-view.html`)
+
+`components.md § Composer` lists the states as *empty* and *with-text (send activates)*. Measured
+in the default state: input value `""`, and `.composer-send` has `disabled: false`, no
+`aria-disabled`, `opacity: 1`. An implementer reading this ships a Send that appears to work on
+nothing. Rule 3 applies too — a disabled control loses opacity **and** its border, so the empty
+state needs two signals and currently has none. Filed as T-260.
+
+## Still not covered
+
+iOS and Android variants beyond the sweeps; most non-default states of `task-detail.html`; the
+`lists` operation states (rename, recolour, delete-confirm); breakpoints between 390 and 1440.
