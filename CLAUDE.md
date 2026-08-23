@@ -12,8 +12,7 @@
 <!-- A line still in brackets is unanswered, and the orchestrator stops and asks -->
 <!-- rather than guessing. -->
 
-<!-- DRAFT 2026-08-23, read out of docs/specs/_source/todo-ai/02-use-cases.md and -->
-<!-- F-001's ## Out of Scope. Not confirmed by the owner. -->
+<!-- Confirmed by the owner 2026-08-23. -->
 
 - **Is** — a todo app where saying one sentence does what filling in several
   fields would; typing does everything too, and always has.
