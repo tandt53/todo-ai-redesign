@@ -183,3 +183,64 @@ state needs two signals and currently has none. Filed as T-260.
 
 iOS and Android variants beyond the sweeps; most non-default states of `task-detail.html`; the
 `lists` operation states (rename, recolour, delete-confirm); breakpoints between 390 and 1440.
+
+---
+
+# Fourth pass — the phone, and a correction to the scorecard above
+
+## F6 — on iOS a swiped row loses the front of its title (`app-shell-ios.html` @390)
+
+State `phone-tasks`, the swipe-revealed row: `.row-title` sits at **x = −16** while the row's own
+left edge is **16**, so the title starts **32px outside its container** and the front of the string
+is clipped by `overflow:hidden`. Every other row on that screen has its title at **64**.
+
+**"Gọi nha sĩ đặt lịch khám răng" renders as "nha sĩ đặt lịch / m răng".** The first word is gone
+and the second line starts mid-syllable. This is worse in Vietnamese than the sample looks: the
+identifying word is usually first, and the clip lands on stacked diacritics.
+
+Filed as T-261.
+
+## F7 — the same named state draws differently on the three platforms
+
+`phone-tasks` shows that row **swipe-revealed on iOS** and **not swiped on Android or web**. Same
+state name, three different pictures.
+
+The a11y suite asserts all three shell mockups declare the same **ids**, and passes — ids are all
+it compares. **Nothing checks that a named state shows the same thing on each platform.** That is
+how F6 survived: it is not reachable in the two mockups most people open. Filed as T-262.
+
+## Correction to the scorecard
+
+The third pass reported four mechanical sweeps and zero real findings. **That was wrong by one.**
+
+The second sweep flagged `.row` hiding 80px of content and **I dismissed it** as the swipe reveal
+being deliberately positioned off-row. The reveal is deliberate. **The clipped title is not** — and
+it is F6, found four hours later by opening the render instead.
+
+| approach | real findings | corrected |
+|---|---|---|
+| mechanical sweeps | 0 | **1 — flagged and then explained away by me** |
+| render, suspect, measure | 3 | **5** |
+
+The lesson is not that the sweeps work after all; one true positive in four sweeps is still a poor
+rate. It is that **a sweep's output is worth as much scepticism when I dismiss it as when I accept
+it** — and I applied scepticism in only one direction.
+
+## Queue hygiene done in this pass
+
+**T-217 cancelled as stale, verified not assumed.** It claimed the repeat editor shows *Never*
+pressed while an until-date is displayed. Measured: `detail-repeat` → Never pressed, no date field;
+`detail-repeat-until` → On a date pressed, date `2026-12-18`; `detail-repeat-count` → After
+pressed, no date field. Consistent in all three.
+
+**T-254 and T-257 annotated: neither is blocked on design.** `assistant-voice-fab` **is drawn** — a
+`voice-fab` element carrying that id renders at 390px on iOS, with no `shell-talk-button` at that
+width. Both rows can be built against an existing drawing.
+
+## One inconsistency noted but not filed
+
+The seeded task in `task-detail.html` has **Deadline Fri 21 Aug 2026** and repeats **every week on
+Thursday** (day-picker T selected; next three occurrences Thu 27 Aug, Thu 3 Sep, Thu 10 Sep;
+until Fri 18 Dec). The deadline's weekday and the recurrence rule contradict each other. It is
+seed data rather than layout, and low severity — but QA authors read these mockups, and a repeat
+rule that disagrees with its own deadline is how a confused test gets written.
