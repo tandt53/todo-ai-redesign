@@ -17,6 +17,7 @@ import { ClientStores } from '../../_shared/model/client-stores.ts'
 import type { PermissionState } from '../../_shared/model/client-stores.ts'
 import { FakeServer, T0 } from '../../_shared/testing/fixtures.ts'
 import { MobileAssistantController } from '../controller.ts'
+import type { Action } from '../../_shared/model/reducer.ts'
 import type { MobilePlatform } from '../model/permissions.ts'
 import {
   FakeAppLifecycle,
@@ -43,8 +44,20 @@ export {
   FakeServer,
 } from '../../_shared/testing/fixtures.ts'
 
+/**
+ * Test-only subclass that exposes `dispatch` as a public method. Same pattern
+ * as web's `TestController.push()`, but generalised to any action because
+ * offline tests need to put tasks into state without going through the server
+ * seam (the protected `dispatch` is inaccessible from outside the class).
+ */
+export class TestMobileController extends MobileAssistantController {
+  injectAction(action: Action): void {
+    this.dispatch(action)
+  }
+}
+
 export interface MobileHarness {
-  controller: MobileAssistantController
+  controller: TestMobileController
   server: FakeServer
   speech: FakeMobileTranscriptSource
   lifecycle: FakeAppLifecycle
@@ -117,7 +130,7 @@ export async function mobileHarness(opts: Partial<HarnessOptions> = {}): Promise
   const stores = new ClientStores(store, userId)
   const ids: string[] = []
 
-  const controller = new MobileAssistantController({
+  const controller = new TestMobileController({
     api: new AssistantApi({ userId, fetchFn: server.fetchFn }),
     speech,
     stores,

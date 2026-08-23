@@ -172,6 +172,105 @@ if (!tokens) {
     if (drift === 0) pass('token-drift', `${file}: ${used.size} variables match tokens.json`);
   }
 }
+
+// ── Half 1b: token-literal check ──────────────────────────────────────────
+// A CSS variable named --color-* or --motion-* that holds a raw literal (#hex,
+// rgb(), a bare number) instead of a value that exists in tokens.json.  This
+// catches the defect class where a token is removed from tokens.json and its
+// value reappears as a hardcoded literal in a client or mockup stylesheet.
+//
+// This check reads CSS files under src/ as well as mockup :root blocks — it is
+// deliberately broader than the existing token-drift check, which only reads
+// mockups.  The patterns it looks for:
+//   --color-*  holding #hex or rgb()/rgba() that is not a tokens.json value
+//   --motion-* holding a bare number that is not a tokens.json value
+//
+// Static — no browser required.
+
+const tokenColorValues = new Set();
+const tokenMotionValues = new Set();
+if (tokens) {
+  for (const [k, v] of declared) {
+    const nv = norm(v);
+    if (k.startsWith('--color')) tokenColorValues.add(nv);
+    if (k.startsWith('--motion')) tokenMotionValues.add(nv);
+  }
+}
+
+function findCssFiles(dir) {
+  const out = [];
+  if (!fs.existsSync(dir)) return out;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory() && entry.name !== 'node_modules' && entry.name !== '.git') {
+      out.push(...findCssFiles(full));
+    } else if (entry.isFile() && entry.name.endsWith('.css')) {
+      out.push(full);
+    }
+  }
+  return out;
+}
+
+// Collect all CSS variable declarations from :root or top-level rule blocks
+function cssVarDecls(cssText) {
+  const out = [];
+  // Match --variable: value patterns across the entire file (inside any rule)
+  for (const m of cssText.matchAll(/(--(?:color|motion)[A-Za-z0-9_-]*)\s*:\s*([^;}\n]+)/g)) {
+    out.push({ name: m[1].trim(), value: m[2].trim() });
+  }
+  return out;
+}
+
+const HEX_RE = /^#[0-9a-fA-F]{3,8}$/;
+const RGB_RE = /^rgba?\(/;
+const BARE_NUMBER_RE = /^[0-9]+(?:\.[0-9]+)?$/;
+
+if (!tokens) {
+  skip('token-literal', 'no tokens.json — cannot check for escaped literals');
+} else {
+  // Check CSS files under src/
+  const srcCss = findCssFiles('src');
+  // Also check mockup files (they may inline <style> with var decls)
+  const allTargets = [...srcCss, ...mockups];
+  let totalLiterals = 0;
+  const literalFindings = [];
+
+  for (const file of allTargets) {
+    const content = fs.readFileSync(file, 'utf8');
+    const decls = cssVarDecls(content);
+    for (const { name, value } of decls) {
+      const nv = norm(value);
+      if (name.match(/--color/i)) {
+        // A color variable holding a literal hex or rgb that is NOT in tokens
+        if ((HEX_RE.test(value) || RGB_RE.test(value)) && !tokenColorValues.has(nv)) {
+          totalLiterals++;
+          if (literalFindings.length < 10) {
+            literalFindings.push({ file, name, value });
+          }
+        }
+      } else if (name.match(/--motion/i)) {
+        // A motion variable holding a bare number not in tokens
+        if (BARE_NUMBER_RE.test(value) && !tokenMotionValues.has(nv)) {
+          totalLiterals++;
+          if (literalFindings.length < 10) {
+            literalFindings.push({ file, name, value });
+          }
+        }
+      }
+    }
+  }
+
+  if (totalLiterals > 0) {
+    for (const f of literalFindings) {
+      fail('token-literal', `${f.file}: ${f.name} holds literal "${f.value}" which is not in tokens.json`);
+    }
+    if (totalLiterals > literalFindings.length) {
+      fail('token-literal', `… and ${totalLiterals - literalFindings.length} more literal(s) not shown`);
+    }
+  } else if (allTargets.length > 0) {
+    pass('token-literal', `${allTargets.length} file(s) checked: no --color-* / --motion-* literals outside tokens.json`);
+  }
+}
 function norm(v) {
   return String(v).trim().toLowerCase().replace(/\s+/g, ' ');
 }
@@ -358,6 +457,195 @@ try {
         fail('contrast', `${file}: ${bad.length}+ text node(s) below ${CONTRAST_MIN}:1 — e.g. "${bad[0].text}" at ${bad[0].ratio}:1`);
       } else {
         pass('contrast', `${file}: all text meets the declared ${CONTRAST_MIN}:1`);
+      }
+    }
+
+    // ── Check (a): adjacent painted grounds fusing ──────────────────────────
+    // Two sibling elements within the app frame that both paint a
+    // non-transparent background on their ::before pseudo must have at least
+    // space.2 (8px) vertical gap between them.  This catches the "fused blob"
+    // defect where two selected rows touch and read as one shape.
+    //
+    // Scope: only elements INSIDE .app (the mockup frame), so the dev toolbar
+    // and stage wrappers are excluded.  Only checks ::before pseudo grounds,
+    // which is how rows paint their hover/selected/focus backgrounds.
+    {
+      const spaceFloor = typeof (tokens?.space?.['2']) === 'string' ? parseInt(tokens.space['2']) : (tokens?.space?.['2'] ?? 8);
+      const statesToCheck = states.length ? states : [null];
+      let fusedPairs = 0;
+      const fusedExamples = [];
+
+      for (const s of statesToCheck) {
+        if (s) await page.evaluate(st => typeof window.showState === 'function' && window.showState(st), s);
+
+        const fused = await page.evaluate((floor) => {
+          const appEl = document.querySelector('.app, [id="app"]');
+          if (!appEl) return [];
+
+          // Find elements inside the app whose ::before has a painted ground
+          const painted = [];
+          for (const el of appEl.querySelectorAll('*')) {
+            const r = el.getBoundingClientRect();
+            if (r.width === 0 || r.height === 0) continue;
+            const cs = getComputedStyle(el);
+            if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+            // Check ::before pseudo background (the row ground pattern)
+            const bcs = getComputedStyle(el, '::before');
+            const bbg = bcs?.backgroundColor;
+            const hasPseudoBg = bbg && bbg !== 'rgba(0, 0, 0, 0)' && bbg !== 'transparent';
+            if (!hasPseudoBg) continue;
+            // Verify the pseudo is actually rendered (has content)
+            const bc = bcs?.content;
+            if (!bc || bc === 'none') continue;
+
+            // The painted ground is the pseudo, not the element.  If the
+            // pseudo is position:absolute with top/bottom insets, the painted
+            // area is smaller than the element's bounding box.  Compute the
+            // pseudo's rendered vertical extent.
+            let groundTop = r.top;
+            let groundBottom = r.bottom;
+            if (bcs.position === 'absolute') {
+              const insetTop = parseFloat(bcs.top);
+              const insetBottom = parseFloat(bcs.bottom);
+              if (Number.isFinite(insetTop)) groundTop = r.top + insetTop;
+              if (Number.isFinite(insetBottom)) groundBottom = r.bottom - insetBottom;
+            }
+
+            painted.push({ el, groundTop, groundBottom, cls: el.className || el.tagName });
+          }
+
+          // Group by parent and check adjacency
+          const byParent = new Map();
+          for (const p of painted) {
+            if (!p.el.parentElement) continue;
+            if (!byParent.has(p.el.parentElement)) byParent.set(p.el.parentElement, []);
+            byParent.get(p.el.parentElement).push(p);
+          }
+
+          const results = [];
+          for (const [parent, children] of byParent) {
+            if (children.length < 2) continue;
+            children.sort((a, b) => a.groundTop - b.groundTop);
+            for (let i = 0; i < children.length - 1; i++) {
+              const gap = children[i + 1].groundTop - children[i].groundBottom;
+              // Flag when the gap between painted grounds is too small
+              if (gap >= 0 && gap < floor) {
+                results.push({
+                  gap: Math.round(gap * 10) / 10,
+                  a: children[i].cls,
+                  b: children[i + 1].cls,
+                });
+              }
+            }
+          }
+          return results.slice(0, 5);
+        }, spaceFloor);
+
+        if (fused.length > 0) {
+          fusedPairs += fused.length;
+          if (fusedExamples.length < 3) {
+            fusedExamples.push(...fused.map(f => ({ ...f, state: s })));
+          }
+        }
+      }
+
+      if (fusedPairs > 0) {
+        for (const ex of fusedExamples.slice(0, 3)) {
+          fail('ground-fuse', `${file} state "${ex.state}": adjacent painted grounds gap ${ex.gap}px < ${spaceFloor}px (${ex.a} / ${ex.b})`);
+        }
+      } else {
+        pass('ground-fuse', `${file}: no adjacent painted grounds fusing`);
+      }
+    }
+
+    // ── Check (b): overlay container with no visible content ────────────
+    // An overlay CONTAINER is an element that:
+    //   1. covers a large area (position:fixed/absolute, inset:0 or similar)
+    //   2. has a scrim background (semi-transparent)
+    //   3. has children in the DOM (it wraps content, unlike a bare scrim div)
+    //
+    // The defect: the container is visible but none of its children render.
+    // This catches the case where a confirm dialog's scrim draws and the
+    // dialog itself does not — the scrim is part of the container, and the
+    // dialog is a child that should be visible.
+    //
+    // A standalone scrim element with NO children (like <div class="scrim">)
+    // is a deliberate dimming layer whose content is a SIBLING, and is
+    // excluded from this check.
+    {
+      const statesToCheck = states.length ? states : [null];
+      let emptyOverlays = 0;
+      const emptyExamples = [];
+
+      for (const s of statesToCheck) {
+        if (s) await page.evaluate(st => typeof window.showState === 'function' && window.showState(st), s);
+
+        const empty = await page.evaluate(() => {
+          const results = [];
+          // Look for overlay containers: elements with scrim background that
+          // HAVE children (i.e. they wrap content, not just dim).
+          for (const el of document.querySelectorAll('*')) {
+            const cs = getComputedStyle(el);
+            if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+            // Must be full-screen-ish (position fixed/absolute)
+            if (cs.position !== 'fixed' && cs.position !== 'absolute') continue;
+            const r = el.getBoundingClientRect();
+            if (r.width < 200 || r.height < 200) continue;
+
+            // Must have a scrim-like background (semi-transparent or opaque)
+            const bg = cs.backgroundColor;
+            if (!bg || bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent') continue;
+
+            // Must have DOM children — a bare <div class="scrim"></div> with
+            // zero children is a deliberate dimming backdrop, not a container
+            if (el.children.length === 0) continue;
+
+            // Now check: does any child actually render visible content?
+            let hasVisibleChild = false;
+            for (const child of el.querySelectorAll('*')) {
+              const cr = child.getBoundingClientRect();
+              if (cr.width === 0 || cr.height === 0) continue;
+              const ccs = getComputedStyle(child);
+              if (ccs.display === 'none' || ccs.visibility === 'hidden') continue;
+              // Leaf text node with content
+              const text = (child.textContent || '').trim();
+              if (text && child.children.length === 0) {
+                hasVisibleChild = true;
+                break;
+              }
+              // Interactive element
+              if (child.matches('button, input, select, textarea, img, svg, [role="dialog"]')) {
+                hasVisibleChild = true;
+                break;
+              }
+            }
+
+            if (!hasVisibleChild) {
+              results.push({
+                selector: el.className || el.tagName,
+                childCount: el.children.length,
+              });
+            }
+          }
+          return results.slice(0, 5);
+        });
+
+        if (empty.length > 0) {
+          emptyOverlays += empty.length;
+          for (const ex of empty) {
+            if (emptyExamples.length < 5) {
+              emptyExamples.push({ ...ex, state: s });
+            }
+          }
+        }
+      }
+
+      if (emptyOverlays > 0) {
+        for (const ex of emptyExamples) {
+          fail('empty-overlay', `${file} state "${ex.state}": overlay ".${ex.selector}" (${ex.childCount} children) renders scrim with no visible content inside`);
+        }
+      } else {
+        pass('empty-overlay', `${file}: no overlay containers render with empty content`);
       }
     }
 

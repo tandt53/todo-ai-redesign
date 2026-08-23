@@ -173,8 +173,9 @@ describe('AC-45 — where the detail lives, and the close that is always availab
     const { container } = mount(seed({ tasks: [PLAIN] }))
     goToTasks()
     openDetail('t1')
+    // shell-talk-button retired (T-254); VoiceFab is its replacement.
     act(() => {
-      fireEvent.click(screen.getByTestId('shell-talk-button'))
+      fireEvent.click(screen.getByTestId('assistant-voice-fab'))
     })
     expect(surfaceOf(container)).toBe('talk')
     goToTasks()
@@ -1235,9 +1236,10 @@ describe('AC-47 — § CarriedNotice renders at the frame, on every surface', ()
       fireEvent.blur(screen.getByTestId('detail-note-input'))
     })
     // Navigating does not clear it — which is § SaveNotice's lifetime rule 3 and
-    // exactly what AC-47 forbids.
+    // exactly what AC-47 forbids. shell-talk-button retired (T-254); VoiceFab
+    // is its replacement.
     act(() => {
-      fireEvent.click(screen.getByTestId('shell-talk-button'))
+      fireEvent.click(screen.getByTestId('assistant-voice-fab'))
     })
     expect(screen.getByTestId('shell-carried-notice')).toBeTruthy()
     act(() => {

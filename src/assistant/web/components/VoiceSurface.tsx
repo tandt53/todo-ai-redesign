@@ -22,7 +22,6 @@ export function VoiceSurface({
   const listening = state.surface === 'listening'
   return (
     <div className="voice-surface">
-      <div className="aurora-band" />
       <div className="state-indicator" data-testid="assistant-state-indicator" aria-live="polite">
         {listening ? (
           <span className="si-listening">

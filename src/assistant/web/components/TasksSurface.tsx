@@ -45,7 +45,8 @@ import {
   RepeatIcon,
   TrashIcon,
 } from './icons.tsx'
-import { PathSwitch } from './Chrome.tsx'
+// PathSwitch removed from Tasks header: the Talk direction is now VoiceFab
+// (T-254), rendered at the app root in App.tsx.
 
 /**
  * § TaskRow § The row's mark budget — **three marks, one line, one decision.**
@@ -445,8 +446,6 @@ export function TasksSurface({
           <MenuIcon />
         </button>
         <h1>{collectionName(collection)}</h1>
-        <span className="spacer" />
-        <PathSwitch to="talk" onGo={() => shell.go('talk')} />
       </header>
 
       {failedWithContent && (

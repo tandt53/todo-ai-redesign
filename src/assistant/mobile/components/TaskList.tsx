@@ -146,7 +146,7 @@ function TaskRow({
         onPress={() => void controller.toggleTask(task.id)}
       >
         {done ? (
-          <Check size={tokens.icon.size.sm} color={colors.success} strokeWidth={tokens.icon.stroke} />
+          <Check size={tokens.icon.size.sm} color={colors.bg.base} strokeWidth={tokens.icon.stroke} />
         ) : null}
       </Pressable>
 
