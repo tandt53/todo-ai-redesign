@@ -35,6 +35,13 @@ export type FixtureResult =
         | { type: 'selection'; target: string }
     }
   | { kind: 'fail'; message?: string }
+  /** F-008 AC-17: create a list by voice */
+  | { kind: 'list_create'; name: string }
+  /** F-008 AC-18/AC-19: move a task to a named list or Inbox. `target` is a
+   * task title, `list_name` is the spoken list name (null = Inbox). */
+  | { kind: 'list_move'; target: string; list_name: string | null }
+  /** F-008 AC-20: refuse rename/recolour/delete a list */
+  | { kind: 'list_refuse' }
 
 export interface FixtureRow {
   /** matched against the normalized transcript */
@@ -158,6 +165,15 @@ export class FixtureInterpreter implements Interpreter {
             : { type: 'unclassifiable' }
         return { kind: 'answer', answer }
       }
+      case 'list_create':
+        return { kind: 'list_create', name: result.name }
+      case 'list_move': {
+        const handles = this.toHandles([result.target], ctx)
+        if (handles.length === 0) return { kind: 'no_match' }
+        return { kind: 'list_move', handle: handles[0]!, list_name: result.list_name }
+      }
+      case 'list_refuse':
+        return { kind: 'list_refuse' }
     }
   }
 

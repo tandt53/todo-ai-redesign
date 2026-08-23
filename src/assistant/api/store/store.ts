@@ -5,6 +5,7 @@
 
 import type {
   AccountRow,
+  ListRow,
   SessionRow,
   TaskRow,
   TurnRow,
@@ -44,6 +45,8 @@ export interface StoreState {
    * migrations, none).
    */
   accounts?: Record<string, AccountRow>
+  /** F-008 — personal lists, keyed by list id. Optional (predates the entity). */
+  lists?: Record<string, ListRow>
 }
 
 export const emptyState = (): StoreState => ({
@@ -52,6 +55,7 @@ export const emptyState = (): StoreState => ({
   tasks: {},
   undo_records: {},
   accounts: {},
+  lists: {},
 })
 
 export interface Store {

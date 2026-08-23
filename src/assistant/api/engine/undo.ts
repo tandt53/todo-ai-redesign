@@ -94,7 +94,9 @@ export function performUndo(
   // window (contract: refused not_undoable, not not_newest). A `refused` turn
   // (F-005 AC-36) lands here too, by the same mechanical rule and with no new
   // turn status — which is why AC-40's refusal needed none.
-  if (turn.changed_task_ids.length === 0) {
+  // F-008 AC-26: a list_create turn has empty changed_task_ids but IS undoable
+  // (it created a list entity). Check created_ids too.
+  if (turn.changed_task_ids.length === 0 && turn.created_ids.length === 0) {
     throw refuse('not_undoable', turn.id)
   }
   const newest = newestAppliedTurn(state, session.id)
@@ -121,6 +123,31 @@ export function performUndo(
   const skip = (row: TaskRow | undefined, fallback: TaskRow | undefined): void => {
     const named = row ?? fallback
     if (named !== undefined) skippedRows.push(named)
+  }
+
+  // F-008 AC-26: undo of list_create. A created_id that names a LIST (not a task)
+  // removes the list and unfiles all tasks that were filed into it — matching
+  // DELETE /lists/{id} with confirm: true semantics. The list's id is in
+  // created_ids; if the id is not in state.tasks it must be a list id.
+  for (const createdId of [...turn.created_ids]) {
+    if (state.tasks[createdId] !== undefined) continue // handled below as a task
+    const lists = state.lists ?? {}
+    const list = lists[createdId]
+    if (list === undefined) continue
+    // Unfile all tasks in this list
+    for (const t of Object.values(state.tasks)) {
+      if (t.user_id === list.user_id && (t.list_id ?? null) === createdId && t.deleted_at === null) {
+        t.list_id = null
+        t.updated_at = at
+      }
+    }
+    delete lists[createdId]
+    // Remove from created_ids so the task loop below doesn't try to process it
+    const idx = turn.created_ids.indexOf(createdId)
+    if (idx !== -1) {
+      // Mark as reverted — the list was removed
+      revertedCount += 1
+    }
   }
 
   // created tasks: removed, and staying removed on a fresh task-list read (AC-6)

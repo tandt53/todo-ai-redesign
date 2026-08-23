@@ -203,6 +203,17 @@ export function enforceFieldRules(changes: TaskChanges, ctx: FieldRulesContext):
 
   if (changes.parent_id !== undefined) out.parent_id = changes.parent_id
 
+  // ---- list_id (F-008 AC-10): uuid or null. Value validation (existence and
+  // step constraint) is in plan.ts, where the store is available; this layer
+  // handles type.
+  if (changes.list_id !== undefined) {
+    const raw = changes.list_id
+    if (raw !== null && (typeof raw !== 'string' || isBlank(raw))) {
+      return bad('note_not_text', 'list_id', 'list_id must be a uuid or null')
+    }
+    out.list_id = raw
+  }
+
   // ---- recurrence (AC-21, AC-25, ADR-011)
   //
   // Shape violations carry `structural_field_not_settable`, and that reason is

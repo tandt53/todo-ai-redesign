@@ -190,6 +190,7 @@ const TASK_PATCH_FIELDS = [
   'priority',
   'status',
   'step_order',
+  'list_id',
   ...RECURRENCE_MEMBERS,
 ] as const
 
@@ -498,6 +499,20 @@ export function createApp(deps: AppDeps): RequestListener {
           if (cur === undefined || cur.user_id !== userId || cur.deleted_at !== null) {
             throw notFound('unknown task id')
           }
+          // F-008 AC-13: step constraint for list_id. F-008 AC-11: list existence.
+          // These checks live here (not in planEdits) so the HTTP path can throw
+          // the contract's 400/404 directly — the turn path resolves lists by name
+          // and handles the constraints in its own code path.
+          if (changes.list_id !== undefined && changes.list_id !== null) {
+            const lists = s.lists ?? {}
+            const list = lists[changes.list_id as string]
+            if (list === undefined || list.user_id !== userId) {
+              throw notFound('unknown list_id')
+            }
+          }
+          if (changes.list_id !== undefined && (cur.parent_id ?? null) !== null) {
+            throw validation("A step's filing follows its parent", 'list_id')
+          }
           const ctx = plans(s, userId)
           const planned = planEdits(ctx, [{ task_id: taskId, changes }], { door: 'http' })
           if (!planned.ok) throw violationToApiError(planned.violation)
@@ -529,6 +544,197 @@ export function createApp(deps: AppDeps): RequestListener {
         if (!planned.ok) throw violationToApiError(planned.violation)
         const executed = executePlan(ctx, planned.plan)
         return writeResponse(s, userId, executed)
+      })
+      return json(res, 200, out)
+    }
+
+    // ---- LIST CRUD (F-008) ----
+
+    // ---- POST /lists (AC-1, AC-2, AC-3, AC-23, AC-24) ----
+    if (path === '/lists' && method === 'POST') {
+      const body = await readBody(req)
+      rejectUnknownFields(body, ['name', 'color'])
+      const nameRaw = body.name
+      if (typeof nameRaw !== 'string' || nameRaw.trim() === '') {
+        throw validation('name is required and must be a non-empty string', 'name')
+      }
+      const name = nameRaw.trim()
+      if (name.length > 100) {
+        throw validation('name exceeds 100 characters', 'name')
+      }
+      let color = 0
+      if (body.color !== undefined) {
+        if (typeof body.color !== 'number' || !Number.isInteger(body.color) || body.color < 0 || body.color > 6) {
+          throw validation('color must be an integer 0–6', 'color')
+        }
+        color = body.color
+      }
+      const out = store.transact((s) => {
+        const lists = s.lists ?? (s.lists = {})
+        const userLists = Object.values(lists).filter((l) => l.user_id === userId)
+        // AC-23: 50 list limit
+        if (userLists.length >= 50) {
+          throw new ApiError(409, 'LIST_LIMIT_REACHED', 'user already has 50 lists')
+        }
+        // AC-3: duplicate name check (case-insensitive)
+        const nameLower = name.toLowerCase()
+        if (userLists.some((l) => l.name.toLowerCase() === nameLower)) {
+          throw new ApiError(409, 'DUPLICATE_NAME', `a list with this name already exists`)
+        }
+        // position: max + 1024, or 1024 if none
+        const maxPos = userLists.length > 0 ? Math.max(...userLists.map((l) => l.position)) : 0
+        const at = nowIso(clock)
+        const id = uuid()
+        const row = {
+          id,
+          user_id: userId,
+          name,
+          color,
+          position: maxPos + 1024,
+          created_at: at,
+          updated_at: at,
+        }
+        lists[id] = row
+        // task_count is computed: tasks where list_id = this list and not deleted and not step
+        return {
+          list: {
+            ...row,
+            task_count: 0,
+          },
+        }
+      })
+      return json(res, 201, out)
+    }
+
+    // ---- GET /lists (AC-14) ----
+    if (path === '/lists' && method === 'GET') {
+      const out = store.read((s) => {
+        const lists = s.lists ?? {}
+        const userLists = Object.values(lists)
+          .filter((l) => l.user_id === userId)
+          .sort((a, b) => a.position - b.position)
+        return {
+          lists: userLists.map((l) => ({
+            ...l,
+            task_count: Object.values(s.tasks).filter(
+              (t) =>
+                t.user_id === userId &&
+                t.deleted_at === null &&
+                (t.parent_id ?? null) === null &&
+                (t.list_id ?? null) === l.id,
+            ).length,
+          })),
+        }
+      })
+      return json(res, 200, out)
+    }
+
+    // ---- PATCH /lists/{id} (AC-4, AC-5) ----
+    const listMatch = path.match(/^\/lists\/([^/]+)$/)
+    if (listMatch !== null && method === 'PATCH') {
+      const listId = listMatch[1]!
+      const body = await readBody(req)
+      rejectUnknownFields(body, ['name', 'color', 'position'])
+      if (Object.keys(body).length === 0) {
+        throw validation('at least one field is required')
+      }
+      const out = store.transact((s) => {
+        const lists = s.lists ?? {}
+        const list = lists[listId]
+        if (list === undefined || list.user_id !== userId) {
+          throw notFound('unknown list id')
+        }
+        // name validation
+        if (body.name !== undefined) {
+          if (typeof body.name !== 'string' || (body.name as string).trim() === '') {
+            throw validation('name must be a non-empty string', 'name')
+          }
+          const newName = (body.name as string).trim()
+          if (newName.length > 100) {
+            throw validation('name exceeds 100 characters', 'name')
+          }
+          const nameLower = newName.toLowerCase()
+          const dup = Object.values(lists).find(
+            (l) => l.user_id === userId && l.id !== listId && l.name.toLowerCase() === nameLower,
+          )
+          if (dup !== undefined) {
+            throw new ApiError(409, 'DUPLICATE_NAME', 'a list with this name already exists')
+          }
+          list.name = newName
+        }
+        // color validation
+        if (body.color !== undefined) {
+          if (typeof body.color !== 'number' || !Number.isInteger(body.color) || body.color < 0 || body.color > 6) {
+            throw validation('color must be an integer 0–6', 'color')
+          }
+          list.color = body.color
+        }
+        // position
+        if (body.position !== undefined) {
+          if (typeof body.position !== 'number' || !Number.isInteger(body.position)) {
+            throw validation('position must be an integer', 'position')
+          }
+          list.position = body.position
+        }
+        list.updated_at = nowIso(clock)
+        return {
+          list: {
+            ...list,
+            task_count: Object.values(s.tasks).filter(
+              (t) =>
+                t.user_id === userId &&
+                t.deleted_at === null &&
+                (t.parent_id ?? null) === null &&
+                (t.list_id ?? null) === list.id,
+            ).length,
+          },
+        }
+      })
+      return json(res, 200, out)
+    }
+
+    // ---- DELETE /lists/{id} (AC-6, AC-7, AC-9) ----
+    if (listMatch !== null && method === 'DELETE') {
+      const listId = listMatch[1]!
+      const body = await readBody(req)
+      rejectUnknownFields(body, ['confirm'])
+      const out = store.transact((s) => {
+        const lists = s.lists ?? {}
+        const list = lists[listId]
+        if (list === undefined || list.user_id !== userId) {
+          throw notFound('unknown list id')
+        }
+        // count tasks in the list: non-deleted, non-step rows
+        const tasksInList = Object.values(s.tasks).filter(
+          (t) =>
+            t.user_id === userId &&
+            t.deleted_at === null &&
+            (t.parent_id ?? null) === null &&
+            (t.list_id ?? null) === listId,
+        )
+        const count = tasksInList.length
+        if (count > 0 && body.confirm !== true) {
+          throw new ApiError(409, 'LIST_NOT_EMPTY', 'list has tasks and confirm is missing or false', {
+            detail: { task_count: count, list_name: list.name },
+          })
+        }
+        // AC-7: set list_id = null on every task in the list (same transaction)
+        let tasksMoved = 0
+        if (count > 0) {
+          const at = nowIso(clock)
+          // Unfile ALL tasks in the list (not just non-step), because a step's
+          // list_id should follow parent, but we clean up any stale refs too
+          for (const t of Object.values(s.tasks)) {
+            if (t.user_id === userId && (t.list_id ?? null) === listId && t.deleted_at === null) {
+              t.list_id = null
+              t.updated_at = at
+              tasksMoved += 1
+            }
+          }
+        }
+        // AC-9: permanent delete — no soft delete, no trash
+        delete lists[listId]
+        return { deleted: true, tasks_moved: tasksMoved }
       })
       return json(res, 200, out)
     }
