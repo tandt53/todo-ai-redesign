@@ -283,6 +283,77 @@ function EmptyState({
   )
 }
 
+/**
+ * § InlineAdd — the `+ Add a task` row at the END of the task list.
+ *
+ * Ported from web's `TasksSurface.tsx § InlineAdd`. In its resting state it is
+ * a tappable row with a plus icon and the label "Add a task". Tapping replaces
+ * the label with a text input. Submit (keyboard return) commits if non-empty;
+ * blur-with-empty cancels and returns to the resting state; blur-with-content
+ * commits — the same rule the existing rename uses.
+ *
+ * Empty, whitespace-only and newline-only are all refused (web parity).
+ *
+ * Testid: `tasks-inline-add` — from `SHELL_A11Y_IDS`, never invented.
+ */
+function InlineAdd({
+  adding,
+  draft,
+  setDraft,
+  onCommit,
+  onCancel,
+  onActivate,
+  platform,
+}: {
+  adding: boolean
+  draft: string
+  setDraft: (v: string) => void
+  onCommit: () => void
+  onCancel: () => void
+  onActivate: () => void
+  platform: MobilePlatform
+}) {
+  const { styles, colors } = useStyles()
+
+  if (adding) {
+    return (
+      <View
+        {...a11yProps(SHELL_A11Y_IDS.tasksInlineAdd, { label: 'New task name' })}
+        style={[styles.inlineAdd, styles.inlineAddEditing]}
+      >
+        <Plus size={tokens.icon.size.sm} color={colors.text.muted} strokeWidth={tokens.icon.stroke} />
+        <TextInput
+          accessibilityLabel="New task name"
+          placeholder="Task name…"
+          placeholderTextColor={colors.text.muted}
+          style={styles.inlineAddInput}
+          value={draft}
+          autoFocus
+          onChangeText={setDraft}
+          onSubmitEditing={onCommit}
+          onBlur={() => {
+            // Blur with content commits; blur with empty cancels — the same
+            // rule the existing rename uses (web parity).
+            if (draft.trim() === '') onCancel()
+            else onCommit()
+          }}
+        />
+      </View>
+    )
+  }
+
+  return (
+    <Pressable
+      {...a11yProps(SHELL_A11Y_IDS.tasksInlineAdd, { label: 'Add a task', role: 'button' })}
+      style={[styles.inlineAdd, minTouchSize(platform)]}
+      onPress={onActivate}
+    >
+      <Plus size={tokens.icon.size.sm} color={colors.text.muted} strokeWidth={tokens.icon.stroke} />
+      <Text style={styles.inlineAddLabel}>Add a task</Text>
+    </Pressable>
+  )
+}
+
 export function TaskList({
   state,
   view,
@@ -290,6 +361,12 @@ export function TaskList({
   controller,
   platform,
   arrivedTaskId,
+  adding,
+  draft,
+  setDraft,
+  onCommit,
+  onCancel,
+  onActivate,
   onAdd,
 }: {
   state: AppState
@@ -300,9 +377,17 @@ export function TaskList({
   /** AC-31's arrival target — flashed once, then cleared by the surface after
    * `flashDurationMs()`. */
   arrivedTaskId: string | null
+  /** Whether the inline add row is in editing mode. */
+  adding: boolean
+  draft: string
+  setDraft: (v: string) => void
+  onCommit: () => void
+  onCancel: () => void
+  onActivate: () => void
   onAdd: () => void
 }) {
   const { styles } = useStyles()
+  const scrollRef = useRef<ScrollViewType>(null)
   // ONE clock for this render. The grouping is day-sensitive since ADR-009
   // § Amendment — `Overdue` and `Today · {date}` are decided by which calendar
   // day it is — and this file used to mint a second `new Date()` inline for the
@@ -336,13 +421,25 @@ export function TaskList({
   if (view.tasks.length === 0) {
     return (
       <ScrollView keyboardShouldPersistTaps="handled">
-        <EmptyState view={view} collection={collection} platform={platform} onAdd={onAdd} />
+        {/* Hide the empty state while the standalone add field is open: a CTA
+            offering to do the thing the user is already doing is noise. */}
+        {!adding && (
+          <EmptyState view={view} collection={collection} platform={platform} onAdd={onAdd} />
+        )}
       </ScrollView>
     )
   }
 
   return (
-    <ScrollView keyboardShouldPersistTaps="handled">
+    <ScrollView
+      ref={scrollRef}
+      keyboardShouldPersistTaps="handled"
+      onContentSizeChange={() => {
+        // When the inline add input opens, scroll to the bottom so the row
+        // stays visible above the keyboard.
+        if (adding) scrollRef.current?.scrollToEnd({ animated: true })
+      }}
+    >
       {/* Grouping is per collection: Today gets `Overdue` + `Today · {date}`,
           Upcoming gets `Tomorrow · {date}` + `Later`, and Inbox and Done render
           FLAT — one unlabelled group and no headings at all (components.md
@@ -363,6 +460,19 @@ export function TaskList({
           ))}
         </View>
       ))}
+      {/* Inline new-task row — at the END of the list, matching the web
+          surface. Only shown when the list has content; the empty state keeps
+          its own CTA because an end-of-list row has no list to sit at the end
+          of. */}
+      <InlineAdd
+        adding={adding}
+        draft={draft}
+        setDraft={setDraft}
+        onCommit={onCommit}
+        onCancel={onCancel}
+        onActivate={onActivate}
+        platform={platform}
+      />
     </ScrollView>
   )
 }

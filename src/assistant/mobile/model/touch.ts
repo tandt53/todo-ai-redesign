@@ -217,6 +217,14 @@ export const PAINTED: Record<InteractiveId, Size> = {
     width: MIN_TOUCH_TARGET.android,
     height: textControlHeight(font.size.body, spacing.sm),
   },
+  // T-285: the inline add row at the end of the task list. Full-width row
+  // with sm vertical padding around body-size text, same height as a task row.
+  // Width placeholder: the platform maximum minimum, same rule as other shell
+  // controls whose content-width floor design has not published.
+  [SHELL_A11Y_IDS.tasksInlineAdd]: {
+    width: MIN_TOUCH_TARGET.android,
+    height: textControlHeight(font.size.body, spacing.sm),
+  },
 }
 
 /** The catalogue ids a finger can activate. The rest of the catalogue is
@@ -270,6 +278,7 @@ export const SHELL_INTERACTIVE_IDS = [
   SHELL_A11Y_IDS.tasksDeleteButton,
   SHELL_A11Y_IDS.talkTaskLink,
   SHELL_A11Y_IDS.tasksRenameInput,
+  SHELL_A11Y_IDS.tasksInlineAdd,
 ] as const
 
 /** Both halves, for anything that means "every control a finger can hit". */

@@ -161,21 +161,20 @@ export function TasksSurface({
         <>
           <View style={styles.listHead}>
             <Text style={styles.listCount}>{tasksHeadline(openTodayCount(state.tasks))}</Text>
-            <Pressable
-              {...a11yProps(A11Y_IDS.addTaskButton, { label: 'Add task', role: 'button' })}
-              hitSlop={addTouch.hitSlop}
-              style={styles.addButton}
-              onPress={() => setAdding(true)}
-            >
-              <Text style={styles.addButtonText}>Add task</Text>
-            </Pressable>
           </View>
-          {adding && (
+          {/* The standalone add-form stays for the empty/failedBlank states
+              where the inline row is not visible (inline lives inside the list
+              body, which requires tasks). The empty-state CTA sets
+              `adding=true`, and this form catches it.
+              NOT `renameInput` — that style carries `flex: 1`, which in this
+              column parent means "take all remaining height". This field gets
+              its own single-line style instead. */}
+          {adding && view.tasks.length === 0 && (
             <TextInput
               accessibilityLabel="New task name"
               placeholder="Task name…"
               placeholderTextColor={colors.text.muted}
-              style={[styles.renameInput, { marginHorizontal: spacing.gutter_mobile }]}
+              style={[styles.emptyAddInput, { marginHorizontal: spacing.gutter_mobile }]}
               value={draft}
               autoFocus
               onChangeText={setDraft}
@@ -190,6 +189,12 @@ export function TasksSurface({
             controller={controller}
             platform={platform}
             arrivedTaskId={revealTaskId}
+            adding={adding}
+            draft={draft}
+            setDraft={setDraft}
+            onCommit={commit}
+            onCancel={() => { setDraft(''); setAdding(false) }}
+            onActivate={() => setAdding(true)}
             onAdd={() => setAdding(true)}
           />
         </>
