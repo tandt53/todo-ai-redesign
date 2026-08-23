@@ -541,6 +541,30 @@ run_case R19 "an ambiguous message defaults to being acted on" \
 run_case R19 "the communication contract drops the question rule" \
   "perl -0777 -i -pe 's/A question is answered, not acted on/Answer promptly/' .claude/agents/_communication.md"
 
+# R20 — the feature-close review. The two properties that die separately: the
+# review sliding to after sign-off (where it documents a decision already taken),
+# and it acting on its own findings instead of handing them to the owner.
+run_case R20 "the review moves to after sign-off" \
+  "perl -0777 -i -pe 's/before you ask the owner to sign/after the owner signs/' .claude/ORCHESTRATION.md"
+
+run_case R20 "a half-done row stops blocking a clean sign-off" \
+  "perl -0777 -i -pe 's/signed off on a false claim/signed off with a note/' .claude/ORCHESTRATION.md"
+
+run_case R20 "the review cancels pending work without asking" \
+  "perl -0777 -i -pe 's/Nothing here edits/You may edit/' .claude/ORCHESTRATION.md"
+
+run_case R20 "the blocked-row question disappears" \
+  "perl -0777 -i -pe 's/What is the owner blocking/What is left over/' .claude/ORCHESTRATION.md"
+
+run_case R20 "the review stops saying what it does not measure" \
+  "perl -0777 -i -pe 's/summarises the queue, not the project/summarises the project/' .claude/ORCHESTRATION.md"
+
+run_case R20 "the sign-off row stops pointing at the review" \
+  "perl -0777 -i -pe 's/preceded by .## When a feature closes./human/' .claude/ORCHESTRATION.md"
+
+run_case R20 "the shell block loses a done and stops parsing" \
+  "perl -0777 -i -pe 's/  \\[ \"\\\$\\(tasks_get \"\\\$r\" Status\\)\" = \"BLOCKED\" \\] \\|\\| continue/  if true; then/' .claude/ORCHESTRATION.md"
+
 echo
 echo "─── ${PROVEN} proven fallible, ${UNPROVEN} unproven ───"
 if [ "$UNPROVEN" -gt 0 ]; then

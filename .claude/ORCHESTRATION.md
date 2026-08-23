@@ -467,7 +467,7 @@ dashboard, so silently accepting it corrupts the metrics.
 | 5 | QA execution | qa-api/qa-web/qa-mobile agents | yes — after harness is up |
 | 6 | **Gate 2**: Structural review | reviewer-agent (C1–C16 deterministic checks) | — |
 | 7 | **Gate 3**: Final product review (optional) | product-agent (review-final) | — |
-| 8 | Sign-off | human | — |
+| 8 | Sign-off | human — preceded by `## When a feature closes` | — |
 
 **Phase 3 sequencing (design):** dispatch `design-agent` with `phase: system`
 **only** when `{design}/_shared/tokens.json` is missing, or when this feature
@@ -793,6 +793,88 @@ the parts that did not change. Re-dispatch a lens only where the change touches
 what that lens found.
 
 ---
+
+## When a feature closes
+
+Runs when a feature's last gate passes and **before you ask the owner to sign
+off**. Four questions, answered from `TASKS.md` alone — no agent runs, no
+dispatch.
+
+It exists because the queue is only ever read one row at a time. Selection takes
+the head of the PENDING list, so a row that stops being picked is never picked
+again, and nothing says so. Measured on a real project: sixteen rows sat
+half-finished, four of them abandoned around two hundred and eighty rows earlier,
+and three were waiting on the owner who had not been told they were waiting.
+
+### The four questions
+
+**1. What of this feature is still half-done?** Every PARTIAL, IN_PROGRESS or
+BLOCKED row whose `Feature` names it. **A feature signed off with a PARTIAL row
+inside it is signed off on a false claim** — either the row finishes, or it is
+cancelled with a reason, or the sign-off says what is missing.
+
+**2. What did it leave behind?** Rows raised during this feature from agents'
+`unresolved:` returns and from gate findings, still PENDING. These are the
+follow-ups that were correct to defer and are now nobody's.
+
+**3. What did it make unnecessary?** PENDING rows whose artifact this feature
+replaced. Recommend CANCELLED with the reason; **the owner confirms**. Cancelling
+work they asked for is not yours to do silently.
+
+**4. What is the owner blocking?** Every BLOCKED row, this feature's or not, with
+what it waits for. These accumulate invisibly — a BLOCKED row costs nothing to
+leave and blocks everything behind it.
+
+### Age without a date column
+
+`TASKS.md` has no date column and adding one is expensive: R9 holds four parsers
+to one column order and all four would have to move together.
+
+Use **ID distance** instead. `T-060` blocked while the queue is at `T-302` is
+242 rows of drift, and that number says the thing that matters — how much has
+happened since anyone touched it. Read every field through `.claude/lib/tasks.sh`;
+never re-derive column positions.
+
+```bash
+. .claude/lib/tasks.sh
+tasks_init .claude/state/TASKS.md || exit 1
+F="${1:?feature id}"
+num() { printf '%s' "$1" | sed 's/^T-0*//; s/[a-z]*$//'; }
+HEAD_N="$(num "$(tasks_rows | tail -1 | cut -d'|' -f2 | tr -d ' ')")"
+
+echo "── still half-done inside $F ──"
+tasks_rows | while IFS= read -r r; do
+  st="$(tasks_get "$r" Status)"
+  case "$st" in PARTIAL|IN_PROGRESS|BLOCKED) ;; *) continue ;; esac
+  [ "$(tasks_get "$r" Feature)" = "$F" ] || continue
+  id="$(tasks_get "$r" ID)"
+  printf '  %-8s %-12s %3d rows ago  %s\n' "$id" "$st" "$((HEAD_N - $(num "$id")))" "$(tasks_get "$r" Title)"
+done
+
+echo "── waiting on the owner (any feature) ──"
+tasks_rows | while IFS= read -r r; do
+  [ "$(tasks_get "$r" Status)" = "BLOCKED" ] || continue
+  id="$(tasks_get "$r" ID)"
+  printf '  %-8s %3d rows ago  %s\n' "$id" "$((HEAD_N - $(num "$id")))" "$(tasks_get "$r" Title)"
+done
+```
+
+### What it is not
+
+**This summarises the queue, not the project.** A row saying DONE says a task was
+recorded as finished; it does not say the feature works. The independent signal
+for that is Layer 2, and where Layer 2 is empty there is none.
+
+**Say so in the report.** "F-005: 13 done, 2 half-done, 13 pending" reads like
+progress and answers nothing about whether F-005 works. A count you wrote down
+yourself, presented as a status, is the self-assessment the two-layer design
+exists to avoid.
+
+### Then present it, and wait
+
+Per `.claude/agents/_communication.md`. You recommend; **the owner decides what
+gets cancelled, deferred or finished first**, exactly as at intake.
+Nothing here edits `TASKS.md` on its own.
 
 ## Optional: qa-explorer-agent (exploratory crawl)
 
