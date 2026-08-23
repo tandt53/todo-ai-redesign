@@ -279,3 +279,4 @@
 {"ts":"2026-08-23T03:13:30.969Z","event":"session_stop","session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
 {"ts":"2026-08-23T03:14:15.080Z","event":"session_stop","session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
 {"ts":"2026-08-23T03:20:21.090Z","event":"agent_return","task":null,"agent":"web-agent","status":"UNKNOWN","artifacts":[],"evidence_conflict":null,"session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
+{"ts":"2026-08-23T03:21:17.013Z","event":"session_stop","session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
