@@ -33,3 +33,34 @@ in a tone of complete confidence. Nothing errored.
 Use `.claude/lib/tasks.sh` / `tasks.cjs`, which resolve columns by header name. That reader
 exists because three hand-rolled copies of "Status is field 9" broke silently once before;
 writing a fourth by hand in a throwaway script is the same mistake wearing a smaller hat.
+
+## 2026-08-23 — A grant mechanism must be built to be narrow, and proved narrow
+
+Two C6 violations stood all day because both were **true**: an implementer had written a
+file under `{tests}/`, and the three ways to make the check pass were to widen that
+agent's map permanently (the one crossing most worth keeping closed), to move the citation
+to an agent that did not do the work (a false record), or to leave the gate red forever.
+
+The fourth option was to give the check a way to say *sanctioned once* — which MANIFEST
+had already identified as the missing thing, in those words.
+
+**What made it safe is not the register, it is what the register refuses.** One exact
+`task + agent + path` triple per row. A prefix licenses nothing: `tests/` does not cover
+`tests/auth/a.spec.ts`, because a mechanism that accepts prefixes is a mechanism that
+licenses trees. A grant naming the wrong agent licenses nothing. A grant whose task no
+longer names that path **fails** rather than lingering, because nobody removes a row that
+costs nothing to leave. And a sanctioned crossing prints as `sanc` and is counted in the
+verdict line — never as `ok`, because a grant that reads like a pass is how the next one
+gets issued without anyone deciding to.
+
+All six properties are asserted by scenario, each made to fail first. **Two of this repo's
+own recorded hazards were walked straight into while building it:** matching `T-[0-9]+`
+drops lettered sub-tasks (R9 says this has bitten the queue twice — it would have turned a
+granted sanction into an unexplainable violation), and `OUT="$(validator)"` under `set -e`
+**aborted the scenario mid-block while the suite still printed PASS for the checks that had
+already run.** That second one is the shape of every green-over-broken finding this project
+has hit: the harness did not lie, it stopped, and stopping looked like success.
+
+The rule: when you build the thing that lets a check be bypassed, spend the effort on the
+bypass's *limits*, and prove each limit by breaking it. The permissive case works by
+construction; only the refusals need evidence.

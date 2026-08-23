@@ -290,6 +290,87 @@ else
   _record_pass "C3 resolves a dependency on an archived task"
 fi
 
+# ── C6's sanction register is narrow, visible, and cannot go stale ─────────
+# T-282. A crossing that already happened cannot be un-happened, and rewriting the
+# artifact list to make C6 pass would replace a true record with a false one. The
+# register closes the gap MANIFEST names in its own words — "the map cannot express
+# 'sanctioned once'" — but a grant mechanism is exactly the kind of thing that widens
+# quietly, so all four properties are asserted here rather than trusted.
+FIX4="$(mktemp -d)"
+trap 'rm -rf "$FIXTURE" "$FIX2" "$FIX3" "$FIX4"' EXIT
+mkdir -p "$FIX4/.claude/state" "$FIX4/.claude/hooks" "$FIX4/.claude/lib"
+cp "$VALIDATOR" "$FIX4/.claude/hooks/"
+cp "$LIB_SH" "$FIX4/.claude/lib/"
+cp "$MANIFEST" "$FIX4/MANIFEST.md"
+cat > "$FIX4/.claude/state/TASKS.md" <<'FIX4_EOF'
+| ID | Title | Module | Feature | Agent | Pri | Depends | Status | Artifacts | Outcome |
+|----|-------|--------|---------|-------|-----|---------|--------|-----------|---------|
+| T-600 | Implementer edited a test | auth | F-001 | mobile-agent | P1 | — | DONE | `tests/auth/a.spec.ts` | done |
+FIX4_EOF
+_sanc() { printf '| Task | Agent | Path | Granted | Why |\n|---|---|---|---|---|\n%s\n' "$1" > "$FIX4/.claude/state/SANCTIONS.md"; }
+
+# 1 · with no register at all, the crossing is a violation
+rm -f "$FIX4/.claude/state/SANCTIONS.md"
+if bash "$FIX4/.claude/hooks/validate-state.sh" 2>&1 | grep -q "outside its declared subtree"; then
+  _record_pass "C6 still fails a cross-subtree write when nothing sanctions it"
+else
+  _record_fail "C6 no longer catches an unsanctioned cross-subtree write"
+fi
+
+# 2 · an exact (task, agent, path) triple licenses it — and prints as `sanc`, not `ok`
+_sanc '| T-600 | mobile-agent | tests/auth/a.spec.ts | 2026-01-01 | recorded |'
+# `|| true`: the validator exits non-zero on any violation, and under `set -e` a
+# bare assignment from it aborts the scenario silently — measured here, the block
+# below simply stopped running and the suite still reported PASS on what had run.
+OUT4="$(bash "$FIX4/.claude/hooks/validate-state.sh" 2>&1 || true)"
+if printf '%s' "$OUT4" | grep -q "^  sanc  T-600"; then
+  _record_pass "a sanctioned crossing is licensed and labelled 'sanc', not 'ok'"
+else
+  _record_fail "the sanction register does not license the exact crossing it names"
+fi
+if printf '%s' "$OUT4" | grep -q "sanctioned crossing(s)"; then
+  _record_pass "the verdict line reports sanctioned crossings so they are never invisible"
+else
+  _record_fail "sanctioned crossings do not appear in the verdict — a grant that reads as a clean pass"
+fi
+
+# 3 · THE BACK DOOR. A prefix must not license the tree beneath it.
+_sanc '| T-600 | mobile-agent | tests/ | 2026-01-01 | too wide |'
+if bash "$FIX4/.claude/hooks/validate-state.sh" 2>&1 | grep -q "outside its declared subtree"; then
+  _record_pass "a prefix sanction does NOT license the paths beneath it"
+else
+  _record_fail "a prefix in SANCTIONS.md licenses a whole subtree — the register is a back door"
+fi
+
+# 4 · a grant naming the wrong agent licenses nothing
+_sanc '| T-600 | web-agent | tests/auth/a.spec.ts | 2026-01-01 | wrong agent |'
+if bash "$FIX4/.claude/hooks/validate-state.sh" 2>&1 | grep -q "outside its declared subtree"; then
+  _record_pass "a sanction naming a different agent does not license the crossing"
+else
+  _record_fail "SANCTIONS.md matches on path alone — any agent inherits any grant"
+fi
+
+# 5 · a grant the task no longer describes is a dead grant, and dead grants widen
+_sanc '| T-600 | mobile-agent | tests/auth/GONE.spec.ts | 2026-01-01 | stale |'
+if bash "$FIX4/.claude/hooks/validate-state.sh" 2>&1 | grep -q "remove the dead grant"; then
+  _record_pass "a sanction whose task no longer names the path fails as a dead grant"
+else
+  _record_fail "a dead grant sits in SANCTIONS.md indefinitely — nobody removes what costs nothing to leave"
+fi
+
+# 6 · lettered sub-tasks are real rows; a T-[0-9]+ reader silently drops them
+cat > "$FIX4/.claude/state/TASKS.md" <<'FIX4_EOF'
+| ID | Title | Module | Feature | Agent | Pri | Depends | Status | Artifacts | Outcome |
+|----|-------|--------|---------|-------|-----|---------|--------|-----------|---------|
+| T-600b | Lettered sub-task | auth | F-001 | mobile-agent | P1 | — | DONE | `tests/auth/a.spec.ts` | done |
+FIX4_EOF
+_sanc '| T-600b | mobile-agent | tests/auth/a.spec.ts | 2026-01-01 | lettered |'
+if bash "$FIX4/.claude/hooks/validate-state.sh" 2>&1 | grep -q "^  sanc  T-600b"; then
+  _record_pass "the sanction reader keeps lettered sub-tasks (T-600b)"
+else
+  _record_fail "the sanction reader drops LETTERED sub-tasks — the T-\\d+ hazard, third occurrence"
+fi
+
 # The lettered-sub-task hazard has bitten this queue twice: a reader matching
 # T-[0-9]+ silently drops T-070b and every one of its siblings.
 if bash "$FIX3/.claude/hooks/validate-state.sh" 2>&1 | grep -q "depends on 'T-401b'"; then
