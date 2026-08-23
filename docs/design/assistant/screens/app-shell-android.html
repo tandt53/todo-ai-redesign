@@ -1113,12 +1113,17 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 
 /* ── Inline new-task row — visible at all widths ── */
 /* T-305/306: position:sticky pins the row to the scrollport bottom when
-   scrolled out of view. Short lists: no effect. Cost: ~2 rows occluded. */
+   scrolled out of view. Short lists: no effect.
+   T-318: restructured to column layout so the system indicator (gesturebar)
+   sits below the content row, same treatment as § TaskBottomBar. */
 .inline-new{
+  display:flex; flex-direction:column;
+  position:sticky; bottom:0; z-index:5; background:var(--bg-base);
+  cursor:pointer; color:var(--text-muted);
+}
+.inline-new-in{
   display:flex; align-items:center; gap:var(--s3);
   min-height:var(--h-lg); padding:var(--s1) var(--gutter);
-  color:var(--text-muted); cursor:pointer;
-  position:sticky; bottom:0; z-index:5; background:var(--bg-base);
 }
 .inline-new .plus{
   width:calc(var(--icon-size-md) * 1px); height:calc(var(--icon-size-md) * 1px); flex:none;
@@ -1128,17 +1133,32 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .inline-new:hover .inline-label{color:var(--text-secondary)}
 .inline-new:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
 @container (max-width:1023px){
-  .inline-new{padding:var(--s1) var(--gutter); padding-right:calc(var(--h-lg) + var(--s4) + var(--s2))}
+  .inline-new-in{padding:var(--s1) var(--gutter); padding-right:calc(var(--h-lg) + var(--s4) + var(--s2))}
 }
 
+/* ── Option A typing state (T-319) ── */
+.inline-input{
+  display:none; flex:1 1 auto; min-width:0; height:var(--field-h); min-height:var(--min-target);
+  border:var(--b-hairline) solid var(--accent); border-radius:var(--r-sm);
+  background:var(--bg-base); padding:0 var(--field-px);
+  font-size:var(--fs-body); color:var(--text-primary);
+  outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px;
+}
+.app[data-opta="typing"] .inline-new .plus{display:none}
+.app[data-opta="typing"] .inline-new .inline-label{display:none}
+.app[data-opta="typing"] .inline-new .inline-input{display:block}
+.app[data-opta="typing"] .inline-new{cursor:text}
+
 /* ── Floating voice button — below split only ── */
+/* T-318: bottom raised from 0 to 23px to clear the system gesture bar
+   (gesturebar, 23px on Android) now that the inline-new reserves it. */
 .voice-fab{
   display:grid; position:absolute; z-index:6; cursor:pointer;
   width:var(--h-lg); height:var(--h-lg); min-width:var(--min-target); min-height:var(--min-target);
   border-radius:var(--r-circle); border:0;
   background:var(--accent); color:var(--text-on-accent);
   place-items:center;
-  right:var(--s4); bottom:0;
+  right:var(--s4); bottom:23px;
   box-shadow:0 4px 12px rgba(0,0,0,0.15);
 }
 .voice-fab:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
@@ -1146,6 +1166,10 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 @container (min-width:1024px){
   .voice-fab{display:none}
 }
+
+/* ── Option A keyboard: FAB above keyboard, inline-new indicator hidden (T-319) ── */
+.app[data-kb="on"]:not([data-optb]) .inline-new .gesturebar{display:none}
+.app[data-kb="on"]:not([data-optb]) .voice-fab{bottom:312px}
 
 /* ══════════════════════════════════════════════════════════════════════════
    OPTION B: Fixed bottom task bar — field + morphing mic/send (T-311)
@@ -1444,6 +1468,8 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   <button data-s="optb-long-list-bottom" onclick="showState('optb-long-list-bottom')">B: long-btm</button>
   <button data-s="optb-typing-kb-short" onclick="showState('optb-typing-kb-short')">B: kb-short</button>
   <button data-s="optb-typing-kb-long" onclick="showState('optb-typing-kb-long')">B: kb-long</button>
+  <button data-s="opta-typing-kb-short" onclick="showState('opta-typing-kb-short')">A: kb-short</button>
+  <button data-s="opta-typing-kb-long" onclick="showState('opta-typing-kb-long')">A: kb-long</button>
   <button data-s="search-open" onclick="showState('search-open')">search-open</button>
   <button data-s="search-filtering" onclick="showState('search-filtering')">search-filtering</button>
   <button data-s="search-no-results" onclick="showState('search-no-results')">search-no-results</button>
@@ -1646,10 +1672,14 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
           <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
         </div>
-        <!-- Inline new-task row -->
+        <!-- Inline new-task row. T-318: gesturebar. T-319: inline-input. -->
         <div class="inline-new" role="button" tabindex="0" data-testid="tasks-inline-add" resource-id="tasks-inline-add" aria-label="Add a task">
-          <span class="plus"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
-          <span class="inline-label">Add a task</span>
+          <div class="inline-new-in">
+            <span class="plus"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
+            <span class="inline-label">Add a task</span>
+            <input class="inline-input" type="text" placeholder="Add a task" aria-label="New task title">
+          </div>
+          <div class="gesturebar"></div>
         </div>
       </div></div>
             <div class="v v-collection-upcoming">
@@ -1691,8 +1721,12 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
         </div>
         <!-- Inline new-task row -->
         <div class="inline-new" role="button" tabindex="0" aria-label="Add a task">
-          <span class="plus"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
-          <span class="inline-label">Add a task</span>
+          <div class="inline-new-in">
+            <span class="plus"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
+            <span class="inline-label">Add a task</span>
+            <input class="inline-input" type="text" placeholder="Add a task" aria-label="New task title">
+          </div>
+          <div class="gesturebar"></div>
         </div>
       </div></div>
             <div class="v v-collection-inbox">
@@ -1769,8 +1803,12 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
         </div>
         <!-- Inline new-task row -->
         <div class="inline-new" role="button" tabindex="0" aria-label="Add a task">
-          <span class="plus"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
-          <span class="inline-label">Add a task</span>
+          <div class="inline-new-in">
+            <span class="plus"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
+            <span class="inline-label">Add a task</span>
+            <input class="inline-input" type="text" placeholder="Add a task" aria-label="New task title">
+          </div>
+          <div class="gesturebar"></div>
         </div>
       </div></div>
             <div class="v v-collection-done">
@@ -2030,8 +2068,12 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
         </div>
         <div class="inline-new" role="button" tabindex="0" aria-label="Add a task">
-          <span class="plus"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
-          <span class="inline-label">Add a task</span>
+          <div class="inline-new-in">
+            <span class="plus"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
+            <span class="inline-label">Add a task</span>
+            <input class="inline-input" type="text" placeholder="Add a task" aria-label="New task title">
+          </div>
+          <div class="gesturebar"></div>
         </div>
       </div></div>
 
@@ -2902,9 +2944,34 @@ var STATES = {
     "frame": "phone",
     "optb": "typing",
     "kb": "on"
+  },
+  "opta-typing-kb-short": {
+    "collection": "today",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "frame": "phone",
+    "opta": "typing",
+    "kb": "on"
+  },
+  "opta-typing-kb-long": {
+    "collection": "long",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "title": "Upcoming",
+    "count": "<b>18</b> open · <span class=\"late\">2 overdue</span>",
+    "scrollTo": "bottom",
+    "frame": "phone",
+    "opta": "typing",
+    "kb": "on"
   }
 };
-var KEYS = ["surface","collection","tasks","talk","mic","banner","row","carried","menu","settings","sheet","search","overflow","selection","confirm","sort","optb","kb"];
+var KEYS = ["surface","collection","tasks","talk","mic","banner","row","carried","menu","settings","sheet","search","overflow","selection","confirm","sort","optb","opta","kb"];
 
 function showState(name){
   var cfg = STATES[name]; if(!cfg) return;
@@ -3062,6 +3129,12 @@ function paint(cfg){
       tbarAction.classList.remove('tbar-active');
       tbarInput.value = '';
     }
+  }
+
+  /* ── Option A inline-new typing (T-319) ── */
+  var inlineInputs = document.querySelectorAll('.inline-input');
+  for (var ii = 0; ii < inlineInputs.length; ii++) {
+    inlineInputs[ii].value = cfg.opta === 'typing' ? 'Buy flowers for Lan' : '';
   }
 
   /* ── Long list scroll position (T-305/306) ── */
