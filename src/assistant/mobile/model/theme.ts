@@ -83,6 +83,15 @@ export const font = {
     // `stateLabel` — section heading / voice indicator — mapped to `lead` (20).
     stateLabel: tokens.font.size.lead,
   },
+  /** T-298: tokens.json declares `size_ios` and `size_android` with platform
+   * floors (iOS body 17, Android meta 14). The base `font.size` is the cross-
+   * platform ramp; this function merges the platform overrides so every
+   * `fontSize` in the stylesheet reads the correct value. */
+  sizeFor: (platform: 'ios' | 'android') => ({
+    ...tokens.font.size,
+    ...(platform === 'ios' ? tokens.font.size_ios : tokens.font.size_android),
+    stateLabel: tokens.font.size.lead,
+  }),
   weight: {
     ...tokens.font.weight,
     // v2 uses standard CSS names; the old semantic aliases are preserved here

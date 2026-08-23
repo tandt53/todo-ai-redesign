@@ -9,7 +9,7 @@
 // this file's — the same function `expectedShellIds` reads, so the id contract
 // and the rendering are one source.
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Pressable, Text, TextInput, View } from 'react-native'
 import { Menu, Plus, TriangleAlert } from 'lucide-react-native'
 import type { AppState } from '../../_shared/model/reducer.ts'
@@ -75,7 +75,15 @@ export function TasksSurface({
     return () => clearTimeout(t)
   }, [revealTaskId, onRevealConsumed])
 
+  // Guard: on Android, pressing Enter fires `onSubmitEditing` and then the
+  // field loses focus, firing `onBlur` — both wired to `commit`. The ref lets
+  // whichever event arrives first commit; the second is a no-op.
+  const addCommitted = useRef(false)
+  useEffect(() => { addCommitted.current = false }, [adding])
+
   const commit = () => {
+    if (addCommitted.current) return
+    addCommitted.current = true
     // Add-in-context (ADR-009 §4) — the same call the web surface makes, with
     // the same collection argument. F-003 AC-1's parity claim is only true if
     // both clients date the row identically, which is why the instant is fixed
@@ -98,16 +106,17 @@ export function TasksSurface({
             <Menu size={tokens.icon.size.md} color={colors.accent} strokeWidth={tokens.icon.stroke} />
           </Pressable>
         }
+        title={
+          <Text style={styles.barTitle} accessibilityRole="header">
+            {collectionName(collection)}
+          </Text>
+        }
       >
         {/* T-257: the Talk affordance on the Tasks surface is the voice FAB,
             not a path switch button in the header. The bar's right slot is
             empty here; the FAB floats at the bottom of the surface. */}
         <View />
       </ShellBar>
-
-      <Text style={styles.largeTitle} accessibilityRole="header">
-        {collectionName(collection)}
-      </Text>
 
       {/* § InlineRetryBanner — the list is NEVER replaced by an error while
           anything is known. This strip sits above rows that are all still

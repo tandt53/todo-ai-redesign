@@ -52,11 +52,18 @@ const MIN_BUTTON_HEIGHT = MIN_TOUCH_TARGET.ios
  * `tokens.json`; see the note on `scrim` below. */
 const SCRIM_OPACITY = 0.66
 
-export function makeStyles(c: Palette) {
+export function makeStyles(c: Palette, platform: 'ios' | 'android' = 'ios') {
+  // T-298: tokens.json declares per-platform font-size overrides (iOS body 17,
+  // Android meta 14). The base `font.size` is the fallback; `fs` is the
+  // resolved set for this device.
+  const fs = font.sizeFor(platform)
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: c.bg.base },
 
     // ---- chrome ----
+    // T-298: the topbar's bottom hairline is RETIRED — `border.primary_tool`:
+    // space and ground are the primary structuring tools, and the panel pattern
+    // replaces the three long structural borders between layout regions.
     topBar: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -64,8 +71,6 @@ export function makeStyles(c: Palette) {
       paddingHorizontal: spacing.gutter_mobile,
       paddingVertical: spacing.sm,
       backgroundColor: c.bg.raised,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: c.bg.hairline,
     },
     iconButton: {
       ...drawerBox,
@@ -75,14 +80,14 @@ export function makeStyles(c: Palette) {
     },
     wordmark: {
       fontFamily: font.family.ui,
-      fontSize: font.size.title,
+      fontSize: fs.title,
       fontWeight: String(font.weight.title) as '600',
       color: c.text.primary,
     },
     topDate: {
       marginLeft: 'auto',
       fontFamily: font.family.numeric,
-      fontSize: font.size.meta,
+      fontSize: fs.meta,
       color: c.text.muted,
     },
     offlineBanner: {
@@ -95,14 +100,15 @@ export function makeStyles(c: Palette) {
     },
     offlineText: {
       fontFamily: font.family.ui,
-      fontSize: font.size.meta,
-      lineHeight: lineHeightFor(font.size.meta, 'meta'),
+      fontSize: fs.meta,
+      lineHeight: lineHeightFor(fs.meta, 'meta'),
       color: c.attention,  // rule 1: attention = "this needs your answer" (offline)
       flexShrink: 1,
     },
 
     // ---- task list ----
-    listPane: { maxHeight: '36%', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.bg.hairline },
+    // T-298: listPane bottom hairline retired — same structural border class.
+    listPane: { maxHeight: '36%' },
     listHead: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -112,11 +118,11 @@ export function makeStyles(c: Palette) {
     },
     listTitle: {
       fontFamily: font.family.ui,
-      fontSize: font.size.stateLabel,
+      fontSize: fs.stateLabel,
       fontWeight: String(font.weight.title) as '600',
       color: c.text.primary,
     },
-    listCount: { fontFamily: font.family.numeric, fontSize: font.size.meta, color: c.text.muted },
+    listCount: { fontFamily: font.family.numeric, fontSize: fs.meta, color: c.text.muted },
     addButton: {
       marginLeft: 'auto',
       paddingVertical: spacing.xs,
@@ -125,7 +131,7 @@ export function makeStyles(c: Palette) {
     },
     addButtonText: {
       fontFamily: font.family.ui,
-      fontSize: font.size.meta,
+      fontSize: fs.meta,
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.accent,   // pure rename: primary → accent ($meta.replaces)
     },
@@ -134,12 +140,16 @@ export function makeStyles(c: Palette) {
       paddingTop: spacing.md,
       paddingBottom: spacing.xs,
       fontFamily: font.family.ui,
-      fontSize: font.size.label,
+      fontSize: fs.label,
       fontWeight: String(font.weight.label) as '700',
       letterSpacing: 0.6,
       textTransform: 'uppercase',
       color: c.text.muted,
     },
+    // T-298: row separator hairline REMOVED. `border.when_a_line_earns_it`:
+    // "The task row is `time · checkbox · title`, which is not a table." Things 3
+    // and Apple Reminders draw nothing between task rows. Separation is space;
+    // the row's ground arrives on press at `radius.md`.
     taskRow: {
       flexDirection: 'row',
       alignItems: 'flex-start',
@@ -147,12 +157,14 @@ export function makeStyles(c: Palette) {
       paddingHorizontal: spacing.gutter_mobile,
       paddingVertical: spacing.sm,
       borderRadius: radius.taskRow,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: c.bg.hairline,
     },
+    // T-298: checkbox from `radius.pill` (circle) to `radius.sm` (squircle).
+    // `radius.assign.sm_note_checkbox`: "4px on 20px looked square, 8px reads
+    // as a pressable squircle. One shape on all three platforms; the iOS circle
+    // is dropped."
     checkbox: {
       ...checkboxBox,
-      borderRadius: radius.pill,
+      borderRadius: radius.sm,
       borderWidth: 2,
       borderColor: c.text.muted,
       alignItems: 'center',
@@ -163,15 +175,15 @@ export function makeStyles(c: Palette) {
     checkboxDone: { backgroundColor: c.text.primary, borderColor: c.text.primary },
     taskTitle: {
       fontFamily: font.family.ui,
-      fontSize: font.size.body,
-      lineHeight: lineHeightFor(font.size.body),
+      fontSize: fs.body,
+      lineHeight: lineHeightFor(fs.body),
       color: c.text.primary,
     },
     taskTitleDone: { textDecorationLine: 'line-through', color: c.text.muted },
     taskMeta: {
       fontFamily: font.family.ui,
-      fontSize: font.size.meta,
-      lineHeight: lineHeightFor(font.size.meta, 'meta'),
+      fontSize: fs.meta,
+      lineHeight: lineHeightFor(fs.meta, 'meta'),
       color: c.text.muted,
     },
     /**
@@ -191,14 +203,14 @@ export function makeStyles(c: Palette) {
       gap: spacing.xs,
     },
     /**
-     * TR-URGENCY — `font.size.meta`, `font.weight.emphasis`, **`text.primary`**:
+     * TR-URGENCY — `fs.meta`, `font.weight.emphasis`, **`text.primary`**:
      * the one item on this line that is not muted, which is the "weight" half of
      * design's *shape, weight, name*. No colour (§ Colour rules 5).
      */
     urgencyMark: {
       fontFamily: font.family.ui,
-      fontSize: font.size.meta,
-      lineHeight: lineHeightFor(font.size.meta, 'meta'),
+      fontSize: fs.meta,
+      lineHeight: lineHeightFor(fs.meta, 'meta'),
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.text.primary,
     },
@@ -207,7 +219,7 @@ export function makeStyles(c: Palette) {
       paddingHorizontal: spacing.xs,
       borderRadius: radius.sm,
       fontFamily: font.family.ui,
-      fontSize: font.size.label,
+      fontSize: fs.label,
       fontWeight: String(font.weight.label) as '700',
       textTransform: 'uppercase',
       overflow: 'hidden',
@@ -227,15 +239,15 @@ export function makeStyles(c: Palette) {
     invite: { paddingVertical: spacing.xxl, gap: spacing.sm },
     inviteTitle: {
       fontFamily: font.family.ui,
-      fontSize: font.size.display,
-      lineHeight: lineHeightFor(font.size.display, 'display'),
+      fontSize: fs.display,
+      lineHeight: lineHeightFor(fs.display, 'display'),
       fontWeight: String(font.weight.display) as '700',
       color: c.text.primary,
     },
     inviteBody: {
       fontFamily: font.family.ui,
-      fontSize: font.size.body,
-      lineHeight: lineHeightFor(font.size.body),
+      fontSize: fs.body,
+      lineHeight: lineHeightFor(fs.body),
       color: c.text.secondary,
     },
     msgUser: { alignSelf: 'flex-end', maxWidth: '86%', gap: spacing.xs },
@@ -253,29 +265,29 @@ export function makeStyles(c: Palette) {
     bubbleUndone: { opacity: 0.7 },
     bubbleHead: {
       fontFamily: font.family.ui,
-      fontSize: font.size.body,
-      lineHeight: lineHeightFor(font.size.body),
+      fontSize: fs.body,
+      lineHeight: lineHeightFor(fs.body),
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.text.primary,
     },
     bubbleHeadError: { color: c.danger },
     bubbleText: {
       fontFamily: font.family.ui,
-      fontSize: font.size.body,
-      lineHeight: lineHeightFor(font.size.body),
+      fontSize: fs.body,
+      lineHeight: lineHeightFor(fs.body),
       color: c.text.primary,
     },
     msgMeta: {
       fontFamily: font.family.ui,
-      fontSize: font.size.meta,
-      lineHeight: lineHeightFor(font.size.meta, 'meta'),
+      fontSize: fs.meta,
+      lineHeight: lineHeightFor(fs.meta, 'meta'),
       color: c.text.muted,
     },
     diffRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.xs },
     diffTask: {
       fontFamily: font.family.ui,
-      fontSize: font.size.body,
-      lineHeight: lineHeightFor(font.size.body),
+      fontSize: fs.body,
+      lineHeight: lineHeightFor(fs.body),
       color: c.text.primary,
     },
     // DESIGN.md colour rule 6: "added values now read in text.primary at semibold
@@ -288,7 +300,7 @@ export function makeStyles(c: Palette) {
       color: c.text.muted,
       textDecorationLine: 'line-through',
       fontFamily: font.family.ui,
-      fontSize: font.size.meta,
+      fontSize: fs.meta,
       overflow: 'hidden',
     },
     // Rule 6: added values read in text.primary at semibold — the label does
@@ -299,12 +311,12 @@ export function makeStyles(c: Palette) {
       color: c.text.primary,
       fontWeight: String(font.weight.semibold) as '600',
       fontFamily: font.family.ui,
-      fontSize: font.size.meta,
+      fontSize: fs.meta,
       overflow: 'hidden',
     },
     miniLabel: {
       fontFamily: font.family.ui,
-      fontSize: font.size.label,
+      fontSize: fs.label,
       fontWeight: String(font.weight.label) as '700',
       textTransform: 'uppercase',
       color: c.text.muted,
@@ -321,7 +333,7 @@ export function makeStyles(c: Palette) {
     chipDisabled: { borderColor: c.bg.hairline },
     chipText: {
       fontFamily: font.family.ui,
-      fontSize: font.size.body,
+      fontSize: fs.body,
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.accent,
     },
@@ -336,7 +348,7 @@ export function makeStyles(c: Palette) {
     },
     undoButtonText: {
       fontFamily: font.family.ui,
-      fontSize: font.size.body,
+      fontSize: fs.body,
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.accent,
     },
@@ -358,7 +370,7 @@ export function makeStyles(c: Palette) {
     selfCenter: { alignSelf: 'center' },
     primaryButtonText: {
       fontFamily: font.family.ui,
-      fontSize: font.size.body,
+      fontSize: fs.body,
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.text.onAccent,
     },
@@ -370,8 +382,8 @@ export function makeStyles(c: Palette) {
     },
     boundaryText: {
       fontFamily: font.family.ui,
-      fontSize: font.size.meta,
-      lineHeight: lineHeightFor(font.size.meta, 'meta'),
+      fontSize: fs.meta,
+      lineHeight: lineHeightFor(fs.meta, 'meta'),
       color: c.text.muted,
     },
     queuedNotice: {
@@ -381,7 +393,7 @@ export function makeStyles(c: Palette) {
     },
     queuedNoticeText: {
       fontFamily: font.family.ui,
-      fontSize: font.size.meta,
+      fontSize: fs.meta,
       color: c.attention,  // rule 1: attention = "this needs your answer"
     },
 
@@ -425,8 +437,8 @@ export function makeStyles(c: Palette) {
     nmLabel: {
       flexShrink: 1,
       fontFamily: font.family.ui,
-      fontSize: font.size.body,
-      lineHeight: lineHeightFor(font.size.body),
+      fontSize: fs.body,
+      lineHeight: lineHeightFor(fs.body),
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.text.primary,
     },
@@ -448,7 +460,7 @@ export function makeStyles(c: Palette) {
     },
     stateWord: {
       fontFamily: font.family.ui,
-      fontSize: font.size.stateLabel,
+      fontSize: fs.stateLabel,
       fontWeight: String(font.weight.title) as '600',
       color: c.text.primary,
     },
@@ -462,12 +474,14 @@ export function makeStyles(c: Palette) {
     },
     cancelButtonText: {
       fontFamily: font.family.ui,
-      fontSize: font.size.meta,
+      fontSize: fs.meta,
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.accent,
     },
 
     // ---- composer ----
+    // T-298: the composer's top hairline is RETIRED with the topbar's —
+    // same structural border the panel pattern replaces.
     composer: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -475,8 +489,6 @@ export function makeStyles(c: Palette) {
       paddingHorizontal: spacing.gutter_mobile,
       paddingVertical: spacing.sm,
       backgroundColor: c.bg.raised,
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: c.bg.hairline,
     },
     composerInput: {
       flex: 1,
@@ -491,7 +503,7 @@ export function makeStyles(c: Palette) {
       backgroundColor: c.bg.base,
       paddingHorizontal: spacing.lg,
       fontFamily: font.family.ui,
-      fontSize: font.size.body,
+      fontSize: fs.body,
       color: c.text.primary,
     },
     // Rule 6: one accent means "the assistant", on both halves of its turn.
@@ -509,7 +521,7 @@ export function makeStyles(c: Palette) {
     micListening: { borderColor: c.accent },   // rule 6: accent = the assistant
     micThinking: { borderColor: c.accent },    // rule 6: accent = the assistant
     micDimmed: { opacity: 0.4 },
-    micGlyph: { fontFamily: font.family.ui, fontSize: font.size.title, color: c.text.primary },
+    micGlyph: { fontFamily: font.family.ui, fontSize: fs.title, color: c.text.primary },
     send: {
       ...sendBox,
       borderRadius: orbRadius(sendBox.width),
@@ -520,7 +532,7 @@ export function makeStyles(c: Palette) {
     sendDisabled: { opacity: 0.4 },
     sendGlyph: {
       fontFamily: font.family.ui,
-      fontSize: font.size.body,
+      fontSize: fs.body,
       color: c.text.onAccent,
     },
 
@@ -539,7 +551,7 @@ export function makeStyles(c: Palette) {
     },
     pathLabel: {
       fontFamily: font.family.ui,
-      fontSize: font.size.body,
+      fontSize: fs.body,
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.text.primary,
     },
@@ -552,7 +564,7 @@ export function makeStyles(c: Palette) {
       overflow: 'hidden',
       textAlign: 'center',
       fontFamily: font.family.numeric,
-      fontSize: font.size.meta,
+      fontSize: fs.meta,
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.accent,
     },
@@ -570,14 +582,24 @@ export function makeStyles(c: Palette) {
       backgroundColor: c.accent,
       zIndex: 5,
     },
+    // T-298: the hero `largeTitle` in the content column is replaced by
+    // `barTitle` inside the bar. Kept for other surfaces that may still use it.
     largeTitle: {
       paddingHorizontal: spacing.gutter_mobile,
       paddingTop: spacing.sm,
       paddingBottom: spacing.md,
       fontFamily: font.family.ui,
-      fontSize: font.size.display,
-      lineHeight: lineHeightFor(font.size.display, 'display'),
+      fontSize: fs.display,
+      lineHeight: lineHeightFor(fs.display, 'display'),
       fontWeight: String(font.weight.title) as '600',
+      color: c.text.primary,
+    },
+    // `bar-surface-title` in the design mockup: body size, semibold, inside the
+    // bar beside the Lists button. On Android the mockup uses `lead` / `medium`.
+    barTitle: {
+      fontFamily: font.family.ui,
+      fontSize: fs.body,
+      fontWeight: String(font.weight.emphasis) as '600',
       color: c.text.primary,
     },
     // § SurfaceError — "It looks calm: body-size supporting text, one accent,
@@ -591,15 +613,15 @@ export function makeStyles(c: Palette) {
     },
     surfaceErrorTitle: {
       fontFamily: font.family.ui,
-      fontSize: font.size.title,
+      fontSize: fs.title,
       fontWeight: String(font.weight.title) as '600',
       color: c.text.primary,
       textAlign: 'center',
     },
     surfaceErrorBody: {
       fontFamily: font.family.ui,
-      fontSize: font.size.body,
-      lineHeight: lineHeightFor(font.size.body),
+      fontSize: fs.body,
+      lineHeight: lineHeightFor(fs.body),
       color: c.text.secondary,
       textAlign: 'center',
     },
@@ -614,7 +636,7 @@ export function makeStyles(c: Palette) {
     },
     ghostButtonText: {
       fontFamily: font.family.ui,
-      fontSize: font.size.body,
+      fontSize: fs.body,
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.accent,
     },
@@ -634,8 +656,8 @@ export function makeStyles(c: Palette) {
     retryBannerText: {
       flexShrink: 1,
       fontFamily: font.family.ui,
-      fontSize: font.size.meta,
-      lineHeight: lineHeightFor(font.size.meta, 'meta'),
+      fontSize: fs.meta,
+      lineHeight: lineHeightFor(fs.meta, 'meta'),
       color: c.text.primary,
     },
     // ── § CarriedNotice (T-152) ────────────────────────────────────────────
@@ -667,34 +689,34 @@ export function makeStyles(c: Palette) {
     cnBody: { flex: 1, gap: spacing.xs },
     cnSentence: {
       fontFamily: font.family.ui,
-      fontSize: font.size.body,
-      lineHeight: lineHeightFor(font.size.body),
+      fontSize: fs.body,
+      lineHeight: lineHeightFor(fs.body),
       color: c.text.primary,
     },
     cnBlock: { gap: spacing.xs },
     cnFieldLabel: {
       fontFamily: font.family.ui,
-      fontSize: font.size.meta,
-      lineHeight: lineHeightFor(font.size.meta, 'meta'),
+      fontSize: fs.meta,
+      lineHeight: lineHeightFor(fs.meta, 'meta'),
       color: c.text.muted,
     },
     // Three lines of the value, then it scrolls inside itself. Never truncated
     // with an ellipsis — *carries the user's value* is the component's reason to
     // exist, and a value the user cannot read back is not carried.
-    cnValueScroll: { maxHeight: lineHeightFor(font.size.body) * 3 },
+    cnValueScroll: { maxHeight: lineHeightFor(fs.body) * 3 },
     // **The user's own words are not chrome and are never muted** — `text.primary`
     // while the label above it is `text.muted`, which is the opposite of the usual
     // emphasis and is design's point.
     cnValue: {
       fontFamily: font.family.ui,
-      fontSize: font.size.body,
-      lineHeight: lineHeightFor(font.size.body),
+      fontSize: fs.body,
+      lineHeight: lineHeightFor(fs.body),
       color: c.text.primary,
     },
     cnSuperseded: {
       fontFamily: font.family.ui,
-      fontSize: font.size.meta,
-      lineHeight: lineHeightFor(font.size.meta, 'meta'),
+      fontSize: fs.meta,
+      lineHeight: lineHeightFor(fs.meta, 'meta'),
       color: c.text.muted,
     },
     // `Retry` keeps § Buttons' `ghost` variant — retry is not an undo, and
@@ -710,7 +732,7 @@ export function makeStyles(c: Palette) {
     },
     cnGhostButtonText: {
       fontFamily: font.family.ui,
-      fontSize: font.size.body,
+      fontSize: fs.body,
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.accent,
     },
@@ -731,7 +753,7 @@ export function makeStyles(c: Palette) {
     },
     cnNeutralButtonText: {
       fontFamily: font.family.ui,
-      fontSize: font.size.body,
+      fontSize: fs.body,
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.text.primary,
     },
@@ -740,19 +762,19 @@ export function makeStyles(c: Palette) {
     emptyState: { padding: spacing.gutter_mobile, gap: spacing.sm, alignItems: 'flex-start' },
     emptyHead: {
       fontFamily: font.family.ui,
-      fontSize: font.size.title,
+      fontSize: fs.title,
       fontWeight: String(font.weight.title) as '600',
       color: c.text.primary,
     },
     emptyBody: {
       fontFamily: font.family.ui,
-      fontSize: font.size.body,
-      lineHeight: lineHeightFor(font.size.body),
+      fontSize: fs.body,
+      lineHeight: lineHeightFor(fs.body),
       color: c.text.secondary,
     },
     secondDoor: {
       fontFamily: font.family.ui,
-      fontSize: font.size.meta,
+      fontSize: fs.meta,
       color: c.text.muted,
     },
     // § Skeletons — no text, no testid, `bg.hairline` on `bg.raised`
@@ -771,14 +793,14 @@ export function makeStyles(c: Palette) {
       marginTop: spacing.md,
       marginBottom: spacing.xs,
       width: 96,
-      height: font.size.label,
+      height: fs.label,
       borderRadius: radius.sm,
       backgroundColor: c.bg.hairline,
     },
     skeletonBox: { ...checkboxBox, borderRadius: radius.sm, backgroundColor: c.bg.hairline },
-    skeletonBar: { height: lineHeightFor(font.size.body), borderRadius: radius.sm, backgroundColor: c.bg.hairline },
+    skeletonBar: { height: lineHeightFor(fs.body), borderRadius: radius.sm, backgroundColor: c.bg.hairline },
     skeletonBubble: {
-      height: lineHeightFor(font.size.body) * 2,
+      height: lineHeightFor(fs.body) * 2,
       marginHorizontal: spacing.gutter_mobile,
       marginBottom: spacing.md,
       borderRadius: radius.bubble,
@@ -787,7 +809,7 @@ export function makeStyles(c: Palette) {
     // § MessageTaskLink — underline in `text.muted`, no colour change
     taskLink: {
       fontFamily: font.family.ui,
-      fontSize: font.size.body,
+      fontSize: fs.body,
       color: c.text.primary,
       textDecorationLine: 'underline',
       textDecorationColor: c.text.muted,
@@ -809,7 +831,7 @@ export function makeStyles(c: Palette) {
       borderColor: c.accent,
       backgroundColor: c.bg.raised,
       fontFamily: font.family.ui,
-      fontSize: font.size.body,
+      fontSize: fs.body,
       color: c.text.primary,
     },
     // AC-31's arrival cue — AC-4's own diff-flash tint, at the moment it informs
@@ -824,20 +846,19 @@ export function makeStyles(c: Palette) {
       paddingVertical: spacing.sm,
       paddingHorizontal: spacing.gutter_mobile,
     },
-    inlineAddEditing: {
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: c.bg.hairline,
-    },
+    // T-298: inline-add editing hairline retired with the row separators —
+    // same reasoning: space separates, not a line.
+    inlineAddEditing: {},
     inlineAddLabel: {
       fontFamily: font.family.ui,
-      fontSize: font.size.body,
+      fontSize: fs.body,
       color: c.text.muted,
     },
     inlineAddInput: {
       flex: 1,
       minWidth: 0,
       fontFamily: font.family.ui,
-      fontSize: font.size.body,
+      fontSize: fs.body,
       color: c.text.primary,
       paddingVertical: 0,
     },
@@ -853,7 +874,7 @@ export function makeStyles(c: Palette) {
       borderColor: c.accent,
       backgroundColor: c.bg.raised,
       fontFamily: font.family.ui,
-      fontSize: font.size.body,
+      fontSize: fs.body,
       color: c.text.primary,
     },
     // § ListsMenu — a slide-over panel with a scrim at every width
@@ -903,14 +924,14 @@ export function makeStyles(c: Palette) {
     menuFilingGroup: { marginTop: spacing.lg },
     menuRowText: {
       fontFamily: font.family.ui,
-      fontSize: font.size.body,
+      fontSize: fs.body,
       color: c.text.primary,
     },
     menuRowTextActive: { color: c.accent },
     menuCount: {
       marginLeft: 'auto',
       fontFamily: font.family.numeric,
-      fontSize: font.size.meta,
+      fontSize: fs.meta,
       color: c.text.muted,
     },
     menuFoot: { marginTop: 'auto' },
@@ -926,12 +947,12 @@ export function makeStyles(c: Palette) {
     },
     settingsLabel: {
       fontFamily: font.family.ui,
-      fontSize: font.size.body,
+      fontSize: fs.body,
       color: c.text.primary,
     },
     settingsSub: {
       fontFamily: font.family.ui,
-      fontSize: font.size.meta,
+      fontSize: fs.meta,
       color: c.text.muted,
     },
     segment: {
@@ -952,7 +973,7 @@ export function makeStyles(c: Palette) {
     segmentButtonOn: { backgroundColor: c.accentTint },
     segmentText: {
       fontFamily: font.family.ui,
-      fontSize: font.size.meta,
+      fontSize: fs.meta,
       color: c.text.secondary,
     },
     segmentTextOn: { color: c.accent, fontWeight: String(font.weight.emphasis) as '600' },
@@ -973,13 +994,19 @@ export type ThemeChoice = ThemeName | 'system'
  * question differently. */
 export const ThemeChoiceContext = createContext<ThemeChoice>('system')
 
+/** T-298: platform-specific font sizes require `makeStyles` to know the
+ * platform. Set once by the app shell — the platform never changes during a
+ * session, so memoization keys on (scheme, choice, platform). */
+export const PlatformContext = createContext<'ios' | 'android'>('ios')
+
 export function useStyles(): { styles: Styles; colors: Palette } {
   const scheme = useColorScheme()
   const choice = useContext(ThemeChoiceContext)
+  const platform = useContext(PlatformContext)
   return useMemo(() => {
     const resolved: ThemeName =
       choice === 'system' ? (scheme === 'light' ? 'light' : 'dark') : choice
     const colors = palette(resolved)
-    return { styles: makeStyles(colors), colors }
-  }, [scheme, choice])
+    return { styles: makeStyles(colors, platform), colors }
+  }, [scheme, choice, platform])
 }

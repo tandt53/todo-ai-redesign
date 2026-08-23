@@ -62,7 +62,7 @@
   --font-size-display: 34;
   --font-size-title: 22;
   --font-size-stateLabel: 17;
-  --font-size-body: 15;
+  --font-size-body: 16;
   --font-size-meta: 13;
   --font-size-label: 11;
   --font-weight-display: 700;
@@ -86,8 +86,8 @@
   --spacing-gutter_mobile: 20;
   --spacing-gutter_web: 24;
   --radius-sm: 8;
-  --radius-md: 14;
-  --radius-bubble: 18;
+  --radius-md: 12;
+  --radius-bubble: 12;
   --radius-sheet: 20;
   --radius-pill: 999;
   --radius-orb: 50%;
@@ -238,10 +238,13 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 .topbar {
   flex: none; display: flex; align-items: center; gap: var(--sp-md);
   min-height: 56px; padding: 0 var(--sp-lg);
-  background: var(--bg-base); border-bottom: 1px solid var(--hairline);
+  background: var(--bg-base);
 }
 .topbar .wordmark { font-family: var(--font-family-display); font-weight: var(--font-weight-display); font-size: var(--fs-state); letter-spacing: var(--font-letterSpacing-display); }
-.topbar h1 { font-family: var(--font-family-display); font-size: var(--fs-title); font-weight: var(--font-weight-title); line-height: var(--font-lineHeight-title); letter-spacing: var(--font-letterSpacing-display); }
+/* bar-surface-title — the collection name in the topbar, at body size (mockup
+   T-227). Replaces the hero h1 that sat in the content column. */
+.bar-surface-title { font-weight: var(--font-weight-emphasis); font-size: var(--fs-body); }
+.topbar h1 { font-weight: var(--font-weight-emphasis); font-size: var(--fs-body); line-height: var(--font-lineHeight-body); }
 /* The panel's own name — hidden below the split, where Talk IS the app. */
 .panel-title { display: none; font-weight: var(--font-weight-emphasis); color: var(--tx-2); }
 .spacer { flex: 1; }
@@ -353,12 +356,10 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
   display: flex; align-items: flex-start; gap: var(--sp-md);
   padding: var(--sp-md) 0;
   border-radius: var(--r-row); /* flat rows, carried from v3 */
-  border-bottom: 1px solid var(--hairline);
 }
-.task-row:last-child { border-bottom: 0; }
 .checkbox {
   flex: none; width: 20px; height: 20px; margin-top: 1px;
-  border: 1.8px solid var(--tx-muted); border-radius: 6px;
+  border: 1.8px solid var(--tx-muted); border-radius: var(--r-sm);
   display: inline-flex; align-items: center; justify-content: center; color: transparent;
   transition: border-color var(--dur-micro) var(--motion-easing-standard);
 }

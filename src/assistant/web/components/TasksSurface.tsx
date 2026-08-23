@@ -40,9 +40,11 @@ import {
   CheckIcon,
   ListChecksIcon,
   MenuIcon,
+  MoreHorizontalIcon,
   PencilIcon,
   PlusIcon,
   RepeatIcon,
+  SearchIcon,
   TrashIcon,
 } from './icons.tsx'
 // PathSwitch removed from Tasks header: the Talk direction is now VoiceFab
@@ -445,7 +447,26 @@ export function TasksSurface({
         >
           <MenuIcon />
         </button>
-        <h1>{collectionName(collection)}</h1>
+        <h1 className="bar-surface-title">{collectionName(collection)}</h1>
+        <span className="spacer" />
+        {/* shell-search-button and shell-overflow-button: the controls are placed in
+            the bar per the mockup (T-227); what sits BEHIND them — the search field,
+            the overflow menu — is NOT_BUILT and belongs to a later surface. The buttons
+            are inert until that surface ships. */}
+        <button
+          className="icon-btn"
+          data-testid="shell-search-button"
+          aria-label="Search"
+        >
+          <SearchIcon />
+        </button>
+        <button
+          className="icon-btn"
+          data-testid="shell-overflow-button"
+          aria-label="More"
+        >
+          <MoreHorizontalIcon />
+        </button>
       </header>
 
       {failedWithContent && (
@@ -598,18 +619,18 @@ function TasksEmpty({
     )
   }
   if (nothingAnywhere) {
-    // ET-FIRST — both doors: a user who arrived from a broken assistant needs
-    // the hand path, a user who arrived by curiosity needs to know the fast one
-    // exists.
+    // ET-FIRST — voice is the primary path. A user who arrived from a broken
+    // assistant needs the hand path too, but speaking must not read as the
+    // fallback: this is a voice-first app and the first screen should lead
+    // with it (T-297, owner note).
     return (
       <div className="empty">
         <h2>No tasks yet</h2>
-        <p>Add one by hand and it lands right here.</p>
+        <p>Add your first one — or say one, on Talk.</p>
         <button className="btn-primary" data-testid="tasks-empty-add-button" onClick={onAdd}>
           <PlusIcon />
           Add task
         </button>
-        <p className="second-door">Or say one, on Talk.</p>
       </div>
     )
   }
