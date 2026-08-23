@@ -24,7 +24,8 @@
 
 | Task | Agent | Module | Feature | Subtree | Started |
 |---|---|---|---|---|---|
-| T-321 | design-agent | assistant | — | `docs/design/` | 2026-08-23 15:4Z |
+| T-324 | web-agent | assistant | F-001 | `src/assistant/web/` | 2026-08-23 16:0Z |
+| T-325 | mobile-agent | assistant | F-001 | `src/assistant/mobile/` | 2026-08-23 16:0Z |
 
 ## Blockers
 <!-- Anything stopping progress. Orchestrator resolves these. -->
@@ -46,6 +47,7 @@
 <!-- Recent entries only — archive old results when the file grows. -->
 | Date | Agent | Task | Status | Summary | Next Action |
 |------|-------|------|--------|---------|-------------|
+| 2026-08-23 | design-agent | T-321 | DONE | Option B is canonical: FAB gone, testids restored, catalogue 148. A survives at split+ only, which components.md states and the return understated. 3 client tests red on purpose. | T-324, T-325 |
 | 2026-08-23 | spec-agent | T-322 | DONE | F-001 rev 10. AC-37 restated for the bar with both accessible names and the name-tracks-function rule; AC-36 confirmed. 37 ACs unchanged, spec-check 0. | T-321 |
 | 2026-08-23 | qa-api-agent | T-313+T-307 | DONE | Both stale fixtures fixed; suite 1311/1311. Declined to derive WIRE_FIELDS and the reason was a finding: the contract declares sort_order, the backend emits it nowhere. | T-323 |
 | 2026-08-23 | design-agent | T-314+T-315+T-316 | DONE | B raised off the bottom with the system indicator reserved; keyboard drawn (38%, list keeps ~50%); B testids pulled back out of the contract, 82/82. B now 1.3 rows — but A has not reserved the indicator at all: T-318. | T-318 |

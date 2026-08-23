@@ -1075,9 +1075,9 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   OPTION C — BELOW-SPLIT LAYOUT
+   PHONE / BELOW-SPLIT LAYOUT
    No time rail. Checkbox + title flush left. Due date right. Swipe-to-delete.
-   Inline "Add a task" row. Floating voice button. Header simplified.
+   TaskBottomBar replaces inline-new and voice FAB below split (T-321).
    The rail STAYS at tablet and desktop — this is a phone/narrow-web layout.
    ══════════════════════════════════════════════════════════════════════════ */
 
@@ -1094,10 +1094,10 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   .group{padding-left:var(--gutter)}
   /* Swipe-to-delete replaces always-visible delete button */
   .row-trail{display:none}
-  /* FAB clearance: pseudo on content-col, not padding on the pane (padding
-     offsets sticky bottom:0). pane padding-bottom zeroed below split. */
+  /* T-321: FAB clearance pseudo removed — the voice FAB is retired */
   .pane-tasks{padding-bottom:0}
-  .content-col::after{content:''; display:block; height:calc(var(--h-lg) + var(--s7) + var(--s4))}
+  /* T-321: inline-new hidden below split — the TaskBottomBar replaces it */
+  .inline-new{display:none !important}
   /* Header: hide Talk and Add buttons below split */
   .bar-talk-btn{display:none}
   .bar-add-btn{display:none}
@@ -1145,64 +1145,17 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .inline-new span.inline-label{font-size:var(--fs-body); color:var(--text-muted)}
 .inline-new:hover .inline-label{color:var(--text-secondary)}
 .inline-new:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
-@container (max-width:1023px){
-  .inline-new-in{padding:var(--s1) var(--gutter); padding-right:calc(var(--h-lg) + var(--s4) + var(--s2))}
-}
-
-/* ── Option A typing state (T-319) ─────────────────────────────────────────
-   When the user taps the inline-new row, it transforms into a text input in
-   place. The row stays pinned (sticky bottom:0) and the keyboard appears below.
-   The voice FAB remains visible and reachable above the keyboard — this is A's
-   clearest advantage over B, which morphs the mic into the send arrow. ────── */
-.inline-input{
-  display:none; flex:1 1 auto; min-width:0; height:var(--field-h); min-height:var(--min-target);
-  border:var(--b-hairline) solid var(--accent); border-radius:var(--r-sm);
-  background:var(--bg-base); padding:0 var(--field-px);
-  font-size:var(--fs-body); color:var(--text-primary);
-  outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px;
-}
-.app[data-opta="typing"] .inline-new .plus{display:none}
-.app[data-opta="typing"] .inline-new .inline-label{display:none}
-.app[data-opta="typing"] .inline-new .inline-input{display:block}
-.app[data-opta="typing"] .inline-new{cursor:text}
-
-/* ── Floating voice button — below split only ── */
-/* T-318: bottom raised from 0 to 25px to clear the system home indicator
-   (homebar, 25px on iOS) now that the inline-new reserves it. Without this,
-   the FAB sits in the indicator zone and is partially occluded. */
-.voice-fab{
-  display:grid; position:absolute; z-index:6; cursor:pointer;
-  width:var(--h-lg); height:var(--h-lg); min-width:var(--min-target); min-height:var(--min-target);
-  border-radius:var(--r-circle); border:0;
-  background:var(--accent); color:var(--text-on-accent);
-  place-items:center;
-  right:var(--s4); bottom:25px;
-  box-shadow:0 4px 12px rgba(0,0,0,0.15);
-}
-.voice-fab:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
-/* At split and above, Talk column is visible — no floating button needed */
-@container (min-width:1024px){
-  .voice-fab{display:none}
-}
-
-/* ── Option A keyboard: FAB above keyboard, inline-new indicator hidden (T-319)
-   When the keyboard is up in option A (not optb), the home indicator is behind
-   the keyboard, so the inline-new's homebar hides. The FAB repositions to ride
-   above the keyboard at the same level as the inline-new input. ──────────── */
-.app[data-kb="on"]:not([data-optb]) .inline-new .homebar{display:none}
-.app[data-kb="on"]:not([data-optb]) .voice-fab{bottom:312px}
+/* T-321: voice-fab CSS removed — the FAB is retired from the Tasks surface.
+   The TaskBottomBar's morphing action button replaces both the FAB and the
+   inline-new row below split. Option A typing state and keyboard CSS removed
+   (option A retired). */
 
 /* ══════════════════════════════════════════════════════════════════════════
-   OPTION B: Fixed bottom task bar — field + morphing mic/send (T-311)
-   T-314: raised the bar; homebar reserves the system indicator the same
-   way .composer already does. Height: s1 + h-md + s2 + homebar (25px)
-   = 4+44+8+25 = 81px total, 33px gap below content (4.0%).
+   TASKBOTTOMBAR — fixed field + morphing mic/send (T-311, canonical T-321)
+   Owner chose option B 2026-08-23. Height: s1 + h-md + s2 + homebar (25px)
+   = 4+44+8+25 = 81px total. Hidden at split+ (Talk panel is permanent).
    ══════════════════════════════════════════════════════════════════════════ */
-.task-bar{display:none; flex:none; background:var(--bg-base)}
-.app[data-optb] .task-bar{display:block}
-.app[data-optb] .inline-new{display:none !important}
-.app[data-optb] .voice-fab{display:none !important}
-.app[data-optb] .content-col::after{display:none}
+.task-bar{flex:none; background:var(--bg-base)}
 .task-bar-in{
   display:flex; align-items:center; gap:var(--s3);
   padding:var(--s1) var(--gutter) var(--s2);
@@ -1230,7 +1183,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .tbar-action.tbar-active{background:var(--accent); color:var(--text-on-accent); border-color:transparent}
 .tbar-action:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
 @container (min-width:1024px){
-  .app[data-optb] .task-bar{display:none !important}
+  .task-bar{display:none !important}
 }
 
 /* ── Keyboard mock — iOS (T-314) ─────────────────────────────────────────
@@ -1301,7 +1254,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .app[data-search="no-results"] .overflow-anchor{display:none}
 .app[data-search="no-results"] .btn-search{display:none}
 .app[data-search="no-results"] .list{display:none}
-.app[data-search="no-results"] .inline-new{display:none}
+/* T-321: inline-new hidden below split; no extra search/selection hide needed */
 /* When search is filtering, JS hides rows whose title does not contain the
    query (AC-2: live filtering by title). The CSS below shows the search UI
    chrome; the actual row visibility is set by showState's searchQuery handler.
@@ -1372,7 +1325,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .app[data-selection] .row-open{pointer-events:none}
 .app[data-selection] .row-trail{display:none!important}
 .app[data-selection] .row-due{display:none}
-.app[data-selection] .inline-new{display:none}
+/* T-321: inline-new hidden by phone layout; voice-fab retired */
 /* Selected row ground — painted on ::before, same pseudo as .row:hover.
    Inset vertically by space.1 (4px) so adjacent selected rows show an 8px
    gap between their painted grounds. No padding override — cbLeft and titleLeft
@@ -1383,7 +1336,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   border-top:var(--b-hairline) solid var(--bg-hairline); padding:var(--s3) var(--gutter);
 }
 .app[data-selection] .bulk-toolbar{display:flex}
-.app[data-selection] .voice-fab{display:none}
+/* T-321: voice-fab retired — selection does not need to hide it */
 .bulk-toolbar-in{
   display:flex; align-items:center; gap:var(--s3);
   width:100%; max-width:var(--list-max); margin:0 auto;
@@ -1483,15 +1436,9 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   <button data-s="tasks-long-list" onclick="showState('tasks-long-list')">long-list-top</button>
   <button data-s="tasks-long-list-mid" onclick="showState('tasks-long-list-mid')">long-list-mid</button>
   <button data-s="tasks-long-list-bottom" onclick="showState('tasks-long-list-bottom')">long-list-bottom</button>
-  <button data-s="optb-short-list" onclick="showState('optb-short-list')">B: short</button>
-  <button data-s="optb-typing" onclick="showState('optb-typing')">B: typing</button>
-  <button data-s="optb-long-list" onclick="showState('optb-long-list')">B: long-top</button>
-  <button data-s="optb-long-list-mid" onclick="showState('optb-long-list-mid')">B: long-mid</button>
-  <button data-s="optb-long-list-bottom" onclick="showState('optb-long-list-bottom')">B: long-btm</button>
-  <button data-s="optb-typing-kb-short" onclick="showState('optb-typing-kb-short')">B: kb-short</button>
-  <button data-s="optb-typing-kb-long" onclick="showState('optb-typing-kb-long')">B: kb-long</button>
-  <button data-s="opta-typing-kb-short" onclick="showState('opta-typing-kb-short')">A: kb-short</button>
-  <button data-s="opta-typing-kb-long" onclick="showState('opta-typing-kb-long')">A: kb-long</button>
+  <button data-s="tasks-typing" onclick="showState('tasks-typing')">typing</button>
+  <button data-s="tasks-typing-kb-short" onclick="showState('tasks-typing-kb-short')">kb-short</button>
+  <button data-s="tasks-typing-kb-long" onclick="showState('tasks-typing-kb-long')">kb-long</button>
   <button data-s="search-open" onclick="showState('search-open')">search-open</button>
   <button data-s="search-filtering" onclick="showState('search-filtering')">search-filtering</button>
   <button data-s="search-no-results" onclick="showState('search-no-results')">search-no-results</button>
@@ -2145,13 +2092,13 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           </div>
         </main>
 
-        <!-- OPTION B: Fixed bottom task bar (T-311, raised T-314).
-             Testids removed T-315 — option B is provisional; ids re-enter
-             the contract when the owner chooses and implementation begins. -->
+        <!-- TaskBottomBar — canonical (T-321, owner chose option B 2026-08-23).
+             Mic morphs to send arrow when field has text. "Talk" when empty,
+             "Add task" when field has text (AC-37). Hidden at split+ by CSS. -->
         <div class="task-bar">
           <div class="task-bar-in">
-            <input class="tbar-input" id="tbarInput" type="text" placeholder="Add a task" aria-label="Add a task">
-            <button class="tbar-action" id="tbarAction" aria-label="Talk">
+            <input class="tbar-input" id="tbarInput" type="text" placeholder="Add a task" aria-label="Add a task" data-testid="tasks-bar-input" accessibilityIdentifier="tasks-bar-input">
+            <button class="tbar-action" id="tbarAction" aria-label="Talk" data-testid="tasks-bar-action" accessibilityIdentifier="tasks-bar-action">
               <span class="tbar-ico-mic"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></span>
               <span class="tbar-ico-send" style="display:none"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></span>
             </button>
@@ -2185,8 +2132,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           </div>
         </div>
 
-        <!-- Floating voice mic — phone only (iOS: solid fill, no Material shadow) -->
-        <button class="voice-fab" data-testid="assistant-voice-fab" accessibilityIdentifier="assistant-voice-fab" aria-label="Talk"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></button>
+        <!-- T-321: voice-fab retired — TaskBottomBar's action button replaces it -->
 
         <div class="settings-panel" style="position:absolute; inset:0; background:var(--bg-base); z-index:15">
           <header class="topbar"><div class="bar-in">
@@ -2886,7 +2832,7 @@ var STATES = {
     "confirm": "delete",
     "selectCount": 3
   },
-  "optb-short-list": {
+  "tasks-typing": {
     "collection": "today",
     "tasks": "list",
     "talk": "idle",
@@ -2894,9 +2840,9 @@ var STATES = {
     "row": "normal",
     "surface": "tasks",
     "frame": "phone",
-    "optb": "idle"
+    "bar": "typing"
   },
-  "optb-typing": {
+  "tasks-typing-kb-short": {
     "collection": "today",
     "tasks": "list",
     "talk": "idle",
@@ -2904,9 +2850,10 @@ var STATES = {
     "row": "normal",
     "surface": "tasks",
     "frame": "phone",
-    "optb": "typing"
+    "bar": "typing",
+    "kb": "on"
   },
-  "optb-long-list": {
+  "tasks-typing-kb-long": {
     "collection": "long",
     "tasks": "list",
     "talk": "idle",
@@ -2917,86 +2864,11 @@ var STATES = {
     "count": "<b>18</b> open · <span class=\"late\">2 overdue</span>",
     "scrollTo": "top",
     "frame": "phone",
-    "optb": "idle"
-  },
-  "optb-long-list-mid": {
-    "collection": "long",
-    "tasks": "list",
-    "talk": "idle",
-    "mic": "idle",
-    "row": "normal",
-    "surface": "tasks",
-    "title": "Upcoming",
-    "count": "<b>18</b> open · <span class=\"late\">2 overdue</span>",
-    "scrollTo": "mid",
-    "frame": "phone",
-    "optb": "idle"
-  },
-  "optb-long-list-bottom": {
-    "collection": "long",
-    "tasks": "list",
-    "talk": "idle",
-    "mic": "idle",
-    "row": "normal",
-    "surface": "tasks",
-    "title": "Upcoming",
-    "count": "<b>18</b> open · <span class=\"late\">2 overdue</span>",
-    "scrollTo": "bottom",
-    "frame": "phone",
-    "optb": "idle"
-  },
-  "optb-typing-kb-short": {
-    "collection": "today",
-    "tasks": "list",
-    "talk": "idle",
-    "mic": "idle",
-    "row": "normal",
-    "surface": "tasks",
-    "frame": "phone",
-    "optb": "typing",
-    "kb": "on"
-  },
-  "optb-typing-kb-long": {
-    "collection": "long",
-    "tasks": "list",
-    "talk": "idle",
-    "mic": "idle",
-    "row": "normal",
-    "surface": "tasks",
-    "title": "Upcoming",
-    "count": "<b>18</b> open · <span class=\"late\">2 overdue</span>",
-    "scrollTo": "top",
-    "frame": "phone",
-    "optb": "typing",
-    "kb": "on"
-  },
-  "opta-typing-kb-short": {
-    "collection": "today",
-    "tasks": "list",
-    "talk": "idle",
-    "mic": "idle",
-    "row": "normal",
-    "surface": "tasks",
-    "frame": "phone",
-    "opta": "typing",
-    "kb": "on"
-  },
-  "opta-typing-kb-long": {
-    "collection": "long",
-    "tasks": "list",
-    "talk": "idle",
-    "mic": "idle",
-    "row": "normal",
-    "surface": "tasks",
-    "title": "Upcoming",
-    "count": "<b>18</b> open · <span class=\"late\">2 overdue</span>",
-    "scrollTo": "bottom",
-    "frame": "phone",
-    "opta": "typing",
+    "bar": "typing",
     "kb": "on"
   }
 };
-var KEYS = ["surface","collection","tasks","talk","mic","banner","row","carried","menu","settings","sheet","search","overflow","selection","confirm","sort","optb","opta","kb"];
+var KEYS = ["surface","collection","tasks","talk","mic","banner","row","carried","menu","settings","sheet","search","overflow","selection","confirm","sort","bar","kb"];
 
 function showState(name){
   var cfg = STATES[name]; if(!cfg) return;
@@ -3137,11 +3009,11 @@ function paint(cfg){
     else swipeRow.classList.remove('row-swiped');
   }
 
-  /* ── Option B task bar morph (T-311) ── */
+  /* ── TaskBottomBar morph (T-311, canonical T-321) ── */
   var tbarAction = document.getElementById('tbarAction');
   var tbarInput = document.getElementById('tbarInput');
   if (tbarAction && tbarInput) {
-    if (cfg.optb === 'typing') {
+    if (cfg.bar === 'typing') {
       tbarAction.querySelector('.tbar-ico-mic').style.display = 'none';
       tbarAction.querySelector('.tbar-ico-send').style.display = '';
       tbarAction.setAttribute('aria-label', 'Add task');
@@ -3154,12 +3026,6 @@ function paint(cfg){
       tbarAction.classList.remove('tbar-active');
       tbarInput.value = '';
     }
-  }
-
-  /* ── Option A inline-new typing (T-319) ── */
-  var inlineInputs = document.querySelectorAll('.inline-input');
-  for (var ii = 0; ii < inlineInputs.length; ii++) {
-    inlineInputs[ii].value = cfg.opta === 'typing' ? 'Buy flowers for Lan' : '';
   }
 
   /* ── Long list scroll position (T-305/306) ── */

@@ -22,12 +22,16 @@
    · .inline-new gets position:sticky; bottom:0 — pins to the bottom of the
      scrollport when scrolled out of view, releases at the wrapper's bottom edge.
    · Group headings (.group) get position:sticky; top:0 so the date stays visible.
-   · Voice FAB stays at its original position (bottom:s4, right:s4). The bar
-     insets its right edge on mobile to clear the FAB. Moving the FAB higher
-     covered 2 rows of content — worse than the inset.
    · Long list expanded from 12 to 20 rows. Three scroll states: top, mid, bottom.
-   · Rejected FAB options: (1) FAB above bar — covers 2 rows of readable content;
-     (2) FAB hides while pinned — removes only Talk navigation on mobile.
+
+  REVISED T-321 (2026-08-23): OPTION B PROMOTED TO CANONICAL.
+   · Owner chose option B: TaskBottomBar replaces inline-new and voice FAB below
+     split. The bar holds a text field and one morphing action button.
+   · .inline-new hidden below split (display:none in the phone layout rule).
+   · .voice-fab removed from the DOM — TaskBottomBar's mic-state button replaces it.
+   · data-optb gating removed — the task bar shows by default below split.
+   · optb-* states retired; tasks-typing is the canonical typing state.
+   · testids tasks-bar-input and tasks-bar-action restored to the contract.
 
   REDRAWN TO VISUAL LANGUAGE v2 (Swiss) in T-204. Colour, type, spacing, shape
   and layout from tokens.json. NOT ONE ELEMENT ID CHANGED from v1's 36 except
@@ -1074,9 +1078,9 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   OPTION C — PHONE / BELOW-SPLIT LAYOUT
+   PHONE / BELOW-SPLIT LAYOUT
    No time rail. Checkbox + title flush left. Due date right. Swipe-to-delete.
-   Inline "Add a task" row. Floating voice button.
+   TaskBottomBar replaces inline-new and voice FAB below split (T-321).
    The rail STAYS at tablet and desktop.
    ══════════════════════════════════════════════════════════════════════════ */
 
@@ -1092,12 +1096,12 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   .group{padding-left:var(--gutter)}
   /* Swipe-to-delete replaces always-visible delete button */
   .row-trail{display:none}
-  /* FAB clearance: a pseudo on the content column, not padding on the pane.
-     padding-bottom on the scroll container offsets sticky bottom:0 by the
-     padding amount, pushing the bar above the true bottom. Moving the
-     clearance inside the content means sticky references the pane's real edge. */
+  /* T-321: FAB clearance pseudo removed — the voice FAB is retired; the
+     TaskBottomBar is a flex child outside the scroll container, so no
+     clearance pseudo is needed. */
   .pane-tasks{padding-bottom:0}
-  .content-col::after{content:''; display:block; height:calc(var(--h-lg) + var(--s7) + var(--s4))}
+  /* T-321: inline-new hidden below split — the TaskBottomBar replaces it */
+  .inline-new{display:none !important}
 }
 
 
@@ -1116,8 +1120,8 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .row.row-swiped .row-inner{transform:translateX(-80px)}
 .row.row-swiped .swipe-action{transform:translateX(0)}
 
-/* ── Inline new-task row — visible at all widths ── */
-/* ── Inline new-task row — visible at all widths, no rail indent (T-227) ── */
+/* ── Inline new-task row — visible at split+ only (T-321: hidden below split,
+   TaskBottomBar replaces it). No rail indent (T-227). ── */
 /* T-305/306: position:sticky pins the row to the scrollport bottom when
    scrolled out of view. Releases at the wrapper's (.list) bottom edge.
    Short lists: no effect (natural position is above the fold). Cost: ~2 rows
@@ -1135,53 +1139,24 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .inline-new span.inline-label{font-size:var(--fs-body); color:var(--text-muted)}
 .inline-new:hover .inline-label{color:var(--text-secondary)}
 .inline-new:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
-@container (max-width:1023px){
-  /* T-306: bar insets right to clear the FAB. The FAB stays at its original
-     position (bottom:s4, right:s4). Moving the FAB higher covered 2 rows of
-     readable content — that is worse than inlaying the bar text. At 390px
-     the bar has ~300px for "Add a task", which is ample. Rejected: (1) FAB
-     above bar — covers rows; (2) FAB hidden — removes Talk navigation. */
-  .inline-new{padding:var(--s1) var(--gutter); padding-right:calc(var(--h-lg) + var(--s4) + var(--s2))}
-}
-
-/* ── Floating voice button — below split only ── */
-/* T-306: FAB at bottom:0 sits at the same level as the pinned bar (both 52px).
-   The bar's right inset clears the FAB. Result: 0 rows covered by the FAB,
-   0 due times hidden. Tested: FAB at s4 from bottom covers 1 row's due time
-   because it protrudes 16px above the bar into the list. FAB at bar-height+s4
-   covers 2 rows. bottom:0 is the only position with zero row overlap. */
-.voice-fab{
-  display:grid; position:absolute; z-index:6; cursor:pointer;
-  width:var(--h-lg); height:var(--h-lg); min-width:var(--min-target); min-height:var(--min-target);
-  border-radius:var(--r-circle); border:0;
-  background:var(--accent); color:var(--text-on-accent);
-  place-items:center;
-  right:var(--s4); bottom:0;
-  box-shadow:0 4px 12px rgba(0,0,0,0.15);
-}
-.voice-fab:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
-/* At split and above, Talk column is visible — no floating button needed */
-@container (min-width:1024px){
-  .voice-fab{display:none}
-}
+/* T-321: voice-fab CSS removed — the FAB is retired from the Tasks surface.
+   The TaskBottomBar's morphing action button replaces both the FAB and the
+   inline-new row below split. The inline-new padding-right for FAB clearance
+   is also removed (the FAB is not rendered). */
 
 /* ══════════════════════════════════════════════════════════════════════════
-   OPTION B: Fixed bottom task bar — field + morphing mic/send (T-311)
-   The owner's alternative to A's pinned inline row. Both options coexist
-   in the mockup; A states are unchanged, B states set data-optb.
+   TASKBOTTOMBAR — fixed field + morphing mic/send (T-311, canonical T-321)
+   Owner chose option B 2026-08-23. The bar replaces both the inline-new row
+   and the floating voice FAB below split. At split+ the Talk panel is permanent
+   and the inline-new row in the list body is reachable.
    Bar height: s1 (4px) top pad + h-md (44px) content + s2 (8px) bottom pad
    = 56px painted, plus platform clearance below (web s5 24px / iOS homebar
    25px / Android gesturebar 23px). Total with clearance: web 80px, iOS 81px,
-   Android 79px — approximately 1.3 task rows (up from 0.85).
+   Android 79px — approximately 1.3 task rows.
    Mic (field empty) → "Talk", navigates to Talk surface.
    Send (field has text) → "Add task", commits the title via addTask.
-   T-314: raised the bar and reserved the system indicator on iOS/Android.
    ══════════════════════════════════════════════════════════════════════════ */
-.task-bar{display:none; flex:none; background:var(--bg-base); padding-bottom:var(--s5)}
-.app[data-optb] .task-bar{display:block}
-.app[data-optb] .inline-new{display:none !important}
-.app[data-optb] .voice-fab{display:none !important}
-.app[data-optb] .content-col::after{display:none}
+.task-bar{flex:none; background:var(--bg-base); padding-bottom:var(--s5)}
 .task-bar-in{
   display:flex; align-items:center; gap:var(--s3);
   padding:var(--s1) var(--gutter) var(--s2);
@@ -1213,7 +1188,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .tbar-action:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
 /* At split+ the Talk panel is permanent — no bar needed */
 @container (min-width:1024px){
-  .app[data-optb] .task-bar{display:none !important}
+  .task-bar{display:none !important}
 }
 
 /* ── Swipe action hidden at split+ (hover-reveal delete button instead) ── */
@@ -1263,7 +1238,9 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .app[data-search="no-results"] .overflow-anchor{display:none}
 .app[data-search="no-results"] .btn-search{display:none}
 .app[data-search="no-results"] .list{display:none}
-.app[data-search="no-results"] .inline-new{display:none}
+/* T-321: inline-new is hidden below split by the phone layout rule;
+   no extra search/selection hide needed. At split+ the search-no-results
+   state hides the list entirely so the inline-new is not visible anyway. */
 /* When search is filtering, JS hides rows whose title does not contain the
    query (AC-2: live filtering by title). The CSS below shows the search UI
    chrome; the actual row visibility is set by showState's searchQuery handler.
@@ -1346,7 +1323,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .app[data-selection] .row-open{pointer-events:none}
 .app[data-selection] .row-trail{display:none!important}
 .app[data-selection] .row-due{display:none}
-.app[data-selection] .inline-new{display:none}
+/* T-321: inline-new hidden by phone layout; voice-fab retired */
 /* Selected row ground — painted on ::before, same pseudo as .row:hover.
    Inset vertically by space.1 (4px) so adjacent selected rows show an 8px
    gap between their painted grounds. No padding override — cbLeft and titleLeft
@@ -1358,7 +1335,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   border-top:var(--b-hairline) solid var(--bg-hairline); padding:var(--s3) var(--gutter);
 }
 .app[data-selection] .bulk-toolbar{display:flex}
-.app[data-selection] .voice-fab{display:none}
+/* T-321: voice-fab retired — selection does not need to hide it */
 .bulk-toolbar-in{
   display:flex; align-items:center; gap:var(--s3);
   width:100%; max-width:var(--list-max); margin:0 auto;
@@ -1461,11 +1438,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   <button data-s="tasks-long-list" onclick="showState('tasks-long-list')">long-list-top</button>
   <button data-s="tasks-long-list-mid" onclick="showState('tasks-long-list-mid')">long-list-mid</button>
   <button data-s="tasks-long-list-bottom" onclick="showState('tasks-long-list-bottom')">long-list-bottom</button>
-  <button data-s="optb-short-list" onclick="showState('optb-short-list')">B: short</button>
-  <button data-s="optb-typing" onclick="showState('optb-typing')">B: typing</button>
-  <button data-s="optb-long-list" onclick="showState('optb-long-list')">B: long-top</button>
-  <button data-s="optb-long-list-mid" onclick="showState('optb-long-list-mid')">B: long-mid</button>
-  <button data-s="optb-long-list-bottom" onclick="showState('optb-long-list-bottom')">B: long-btm</button>
+  <button data-s="tasks-typing" onclick="showState('tasks-typing')">typing</button>
   <button data-s="search-open" onclick="showState('search-open')">search-open</button>
   <button data-s="search-filtering" onclick="showState('search-filtering')">search-filtering</button>
   <button data-s="search-no-results" onclick="showState('search-no-results')">search-no-results</button>
@@ -2091,15 +2064,15 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           </div>
         </main>
 
-        <!-- OPTION B: Fixed bottom task bar — field + morphing mic/send (T-311).
-             Visible only in optb-* states. The mic morphs into a send arrow when
-             the field has text: one button, two accessible names.
-             T-315: testids removed while option B is provisional — they re-enter
-             the contract in the same edit that implements whichever option wins. -->
+        <!-- TaskBottomBar — canonical (T-321, owner chose option B 2026-08-23).
+             The mic morphs into a send arrow when the field has text: one button,
+             two accessible names. "Talk" when empty, "Add task" when field has
+             text (AC-37). The morph fires on first character in / last character
+             out, not on focus or blur. Hidden at split+ by CSS. -->
         <div class="task-bar">
           <div class="task-bar-in">
-            <input class="tbar-input" id="tbarInput" type="text" placeholder="Add a task" aria-label="Add a task">
-            <button class="tbar-action" id="tbarAction" aria-label="Talk">
+            <input class="tbar-input" id="tbarInput" type="text" placeholder="Add a task" aria-label="Add a task" data-testid="tasks-bar-input">
+            <button class="tbar-action" id="tbarAction" aria-label="Talk" data-testid="tasks-bar-action">
               <span class="tbar-ico-mic"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></span>
               <span class="tbar-ico-send" style="display:none"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></span>
             </button>
@@ -2119,8 +2092,8 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           </div>
         </div>
 
-        <!-- Floating voice button — below split only -->
-        <button class="voice-fab" data-testid="assistant-voice-fab" aria-label="Talk"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></button>
+        <!-- T-321: voice-fab retired — TaskBottomBar's action button replaces it.
+             The testid `assistant-voice-fab` is retired in components.md. -->
 
         <div class="settings-panel" style="position:absolute; inset:0; background:var(--bg-base); z-index:15">
           <header class="topbar"><div class="bar-in">
@@ -2810,7 +2783,7 @@ var STATES = {
     "confirm": "delete",
     "selectCount": 3
   },
-  "optb-short-list": {
+  "tasks-typing": {
     "collection": "today",
     "tasks": "list",
     "talk": "idle",
@@ -2818,59 +2791,10 @@ var STATES = {
     "row": "normal",
     "surface": "tasks",
     "frame": "phone",
-    "optb": "idle"
-  },
-  "optb-typing": {
-    "collection": "today",
-    "tasks": "list",
-    "talk": "idle",
-    "mic": "idle",
-    "row": "normal",
-    "surface": "tasks",
-    "frame": "phone",
-    "optb": "typing"
-  },
-  "optb-long-list": {
-    "collection": "long",
-    "tasks": "list",
-    "talk": "idle",
-    "mic": "idle",
-    "row": "normal",
-    "surface": "tasks",
-    "title": "Upcoming",
-    "count": "<b>18</b> open · <span class=\"late\">2 overdue</span>",
-    "scrollTo": "top",
-    "frame": "phone",
-    "optb": "idle"
-  },
-  "optb-long-list-mid": {
-    "collection": "long",
-    "tasks": "list",
-    "talk": "idle",
-    "mic": "idle",
-    "row": "normal",
-    "surface": "tasks",
-    "title": "Upcoming",
-    "count": "<b>18</b> open · <span class=\"late\">2 overdue</span>",
-    "scrollTo": "mid",
-    "frame": "phone",
-    "optb": "idle"
-  },
-  "optb-long-list-bottom": {
-    "collection": "long",
-    "tasks": "list",
-    "talk": "idle",
-    "mic": "idle",
-    "row": "normal",
-    "surface": "tasks",
-    "title": "Upcoming",
-    "count": "<b>18</b> open · <span class=\"late\">2 overdue</span>",
-    "scrollTo": "bottom",
-    "frame": "phone",
-    "optb": "idle"
+    "bar": "typing"
   }
 };
-var KEYS = ["surface","collection","tasks","talk","mic","banner","row","carried","menu","settings","sheet","search","overflow","selection","confirm","sort","optb"];
+var KEYS = ["surface","collection","tasks","talk","mic","banner","row","carried","menu","settings","sheet","search","overflow","selection","confirm","sort","bar"];
 
 function showState(name){
   var cfg = STATES[name]; if(!cfg) return;
@@ -3010,11 +2934,11 @@ function paint(cfg){
   if (ct && sc > 0) ct.textContent = 'Delete ' + sc + ' tasks?';
   if (cd && sc > 0) cd.textContent = 'Delete ' + sc + ' tasks';
 
-  /* ── Option B task bar morph (T-311) ── */
+  /* ── TaskBottomBar morph (T-311, canonical T-321) ── */
   var tbarAction = document.getElementById('tbarAction');
   var tbarInput = document.getElementById('tbarInput');
   if (tbarAction && tbarInput) {
-    if (cfg.optb === 'typing') {
+    if (cfg.bar === 'typing') {
       tbarAction.querySelector('.tbar-ico-mic').style.display = 'none';
       tbarAction.querySelector('.tbar-ico-send').style.display = '';
       tbarAction.setAttribute('aria-label', 'Add task');
