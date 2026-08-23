@@ -3205,7 +3205,7 @@ confirmation whose sentence has already named what goes. `detail-delete-button` 
 | **DET-FIELD-FAILED** | one field's write failed (AC-2) | `detail-field-failure` **on the field**, the typed value kept, `detail-field-retry` beside it, the field's border `danger`. The surface does not close and never silently reverts. Concurrent failures aggregate into one announcement, not N |
 | **DET-OFFLINE** | AC-2's third state | § OfflineBanner above, and the field states the refusal. **It is not a queue** — no spinner, no pending badge, no timer, no replay on reconnection |
 | **DET-ERROR** | the detail's own read failed | § SurfaceError SE-DETAIL. Takes the **column**, not the frame, so the conversation stays beside it, and the close affordance stays live |
-| **DET-DELETED** | AC-4's terminal state | `detail-deleted` — the unsaved text legible in `detail-deleted-text`, a way back in `detail-back-button`, and **no retry**: a retry aimed at a deleted row is dead or a resurrection |
+| **DET-DELETED** | AC-4's terminal state | `detail-deleted` — the unsaved text legible in `detail-deleted-text`, `detail-copy-button` (secondary, "Copy text" — the last legible copy of the user's unsaved text can be kept, not just displayed), a way back in `detail-back-button`, and **no retry**: a retry aimed at a deleted row is dead or a resurrection |
 | **DET-STEPS-REFUSED**, **DET-REPEAT-REFUSED** | the task cannot take steps / a repeat | one `attention` line where the region would be. Not an error — nothing failed |
 
 **Not drawn, on purpose, and named so the omission is a decision:** the delete **confirmation**
