@@ -22,6 +22,13 @@
 <!-- Orchestrator's working set: sub-agents currently dispatched. -->
 <!-- Rule: orchestrator does not spawn two sub-agents whose {src}/{module}/ subtrees overlap. -->
 
+| Task | Agent | Module | Feature | Subtree | Started |
+|---|---|---|---|---|---|
+| T-273 | web-agent | assistant | — | `src/assistant/web/` | 2026-08-23 03:2Z |
+| T-275+T-271 | design-agent | assistant | — | `.claude/tools/design-check/` | 2026-08-23 04:0Z |
+| T-258 | design-agent | assistant | F-009 | `docs/design/assistant/screens/` | 2026-08-23 04:0Z |
+| T-268 | spec-agent | assistant | — | `docs/specs/assistant/` | 2026-08-23 04:0Z |
+
 | Task ID | Agent | Module | Feature | Subtree | Dispatched |
 |---------|-------|--------|---------|---------|------------|
 | T-263/264 +NEW | design-agent | assistant | F-008 | docs/design/.../lists*.html | 2026-08-22 |
