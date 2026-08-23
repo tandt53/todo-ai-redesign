@@ -112,7 +112,7 @@ assert_file_contains "$PROTO" 'Report the result, not the activity' \
 
 # A budget stated as a number. "Keep it short" is not enforceable by a reader
 # either, and this template has already learned what an unmeasured cap is worth.
-if grep -qE '\| Budget \| [0-9]+ lines' "$PROTO"; then
+if grep -qE '\| Budget \| [0-9]+ (lines|bullets)' "$PROTO"; then
   _record_pass "the owner card states its budget as a number"
 else
   _record_fail "the budget is prose — an unmeasured cap gets interpreted generously"

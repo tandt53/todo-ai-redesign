@@ -103,6 +103,32 @@ fi
 echo "Task: $TASK_ID | Agent: $AGENT | Module: $MODULE | Feature: $FEATURE_ID"
 ```
 
+### Step 2.5: Is this a dispatch at all?
+
+A dispatch costs a full agent run. Before writing a briefing, name the artifact
+the run will leave on disk.
+
+**If the answer is a list, a comparison, a set of options, or a recommendation —
+do not dispatch it.** Do it inline, or hand the question to the owner. Measured
+failure this rule exists for: an agent was dispatched to produce four colour
+options, ran for 25 minutes, wrote zero bytes, and the owner redid the work by
+hand in two minutes.
+
+Two shapes look like work and are not:
+
+- **"Compare A and B and list the differences."** The differences surface when
+  the thing is built, and the owner can measure them faster by hand than an
+  agent can enumerate them.
+- **"Propose options for X."** Options are a decision, and a decision belongs to
+  the owner. Put the question to them directly.
+
+**Every factual claim you put in a briefing must be one you just read, not one
+you remember.** A wrong claim about the current state is the most expensive
+mistake available to you, because the agent builds against it and the cost is
+paid in whole re-dispatches. Measured: three rounds on a checkbox, two on a time
+column, three on a keyboard — eight agent runs, all from declarations that were
+never checked. Open the file and confirm before you write the line.
+
 ### Step 3: Write the briefing
 
 The briefing reaches the agent **inside the dispatch prompt** (Step 4 concatenates
@@ -123,6 +149,28 @@ Write `BRIEFING.md` at project root with:
 - "Read these files first" (3-7 specific paths)
 - "Write to" (expected output files with absolute paths)
 - Success criteria
+
+**A briefing carries the task, not your understanding of it.** A longer briefing
+does not make an agent more accurate; it makes the task bigger, and the agent
+builds all of it. Three things bloat one, and none of them buys accuracy:
+
+- **Context the agent will read anyway.** You listed the files. Do not summarise
+  them — a summary is a second source that can disagree with the first, and the
+  agent has no way to know which one is current.
+- **Your reasoning.** Why the task exists, what you considered, how it fits the
+  plan. Nothing routes on it and nothing gets written differently because of it.
+- **Scope you added.** This is the expensive one. The owner asks for an inline
+  add-task row; the briefing asks for that plus keyboard handling plus an empty
+  state plus a transition. All three get built, none were requested, and the
+  owner pays once for the run and again for the removal.
+
+**Anything in the briefing the owner did not ask for is yours, and it is either
+marked as yours or dropped.** Put it under a `Not asked for — my call:` heading
+so one line of the agent's return tells them what to revert.
+
+The test before dispatching: read the briefing back and mark every line the
+owner would recognise as their own request. What is left is either in that
+marked list, or it should not be in the briefing.
 
 The 3–7 file budget covers **task inputs only**. The agent's protocol reads
 (`.claude/agents/_ethos.md`, `.claude/agents/_completion-protocol.md`, plus the role-specific
@@ -414,11 +462,30 @@ be done, so a human decides.
 Two lenses flagging the same AC for *different reasons* is **not** a conflict — it
 is agreement the AC is weak. Route it as one revision.
 
-### Step 4 — round cap
+### Step 4 — round cap, and who is in the second round
 
 One review round. After spec-agent revises, at most one re-review. A third round
 escalates to the human regardless of severity — without a cap, two lenses can
 trade revisions indefinitely.
+
+**The second round goes to the lenses whose ACs actually changed, not to all of
+them.** Diff the revised spec against what the lenses read. Then apply the same
+grading as `## When an artifact changes, its consumers re-review`:
+
+| What the revision did to an AC | Who re-reads |
+|---|---|
+| reworded, retagged, split, merged, or removed it | every lens covering that AC's platform tags |
+| added a new AC and moved nothing existing | the lenses for that AC's tags only |
+| touched prose, rationale or open questions and no AC | nobody — go straight to architect |
+
+A revision confined to api-tagged ACs does not re-dispatch the mobile lenses.
+They read the same document, find the same nothing, and cost a full run each to
+do it. Measured: F-005 ran nine lenses, then nine again on r3, when the revision
+did not reach every platform.
+
+The lens selection rule at Step 2 is unchanged and it is not a fixed list —
+it is the spec's future consumers, read off the AC platform tags. The second
+round narrows that set by what moved; it never widens it.
 
 ### Step 5 — present the decisions to the human
 
@@ -531,8 +598,8 @@ any implementer. Configured by `MANIFEST ## Product.design_review`:
 `full` (default) or `skip`. Contract: `.claude/agents/_review-protocol.md`
 § Reviewing a design.
 
-**Why it exists.** The spec gets five lenses before anything is built, the code
-gets fifteen deterministic checks, and the design used to get neither — it went
+**Why it exists.** The spec gets a lens for every role that will consume it, the
+code gets sixteen deterministic checks, and the design used to get neither — it went
 from its author straight to the implementers. That is backwards against cost: a
 design defect is cheapest before anyone builds on it, and the design is where a
 large share of a feature's consequential decisions are actually taken.

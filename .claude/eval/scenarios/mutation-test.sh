@@ -465,6 +465,33 @@ run_case R18 "the contract claims a reach dispatch will not give it" \
 run_case R18 "the reviewer card points at the wrong file for the report shape" \
   "perl -0777 -i -pe 's/reviewer-agent\\.md ## Output/_review-protocol.md/' .claude/agents/_communication.md"
 
+# R15 — the second review round goes back to re-dispatching every lens. This is
+# the state measured on F-005: nine lenses, then nine again on a revision that
+# did not reach every platform.
+run_case R15 "the re-review round stops being scoped to what changed" \
+  "perl -0777 -i -pe 's/lenses whose ACs actually changed/lenses/' .claude/ORCHESTRATION.md"
+
+run_case R15 "the second round may widen the consumer set again" \
+  "perl -0777 -i -pe 's/it never widens it/it may widen it/' .claude/ORCHESTRATION.md"
+
+# R19 — dispatch discipline. Each case restores one half of the state that
+# produced the measured waste: no gate before the briefing, a claim written from
+# memory, added scope going in unmarked, and a line budget standing in for it.
+run_case R19 "the gate before the briefing disappears" \
+  "perl -0777 -i -pe 's/Is this a dispatch at all\?/Write the briefing/' .claude/ORCHESTRATION.md"
+
+run_case R19 "dispatching for a list stops being refused" \
+  "perl -0777 -i -pe 's/do not dispatch it/consider whether to dispatch it/' .claude/ORCHESTRATION.md"
+
+run_case R19 "briefing claims may be written from memory again" \
+  "perl -0777 -i -pe 's/must be one you just read/may be one you recall/' .claude/ORCHESTRATION.md"
+
+run_case R19 "added scope stops being marked for the owner" \
+  "perl -0777 -i -pe 's/Not asked for/Extra scope/' .claude/ORCHESTRATION.md"
+
+run_case R19 "a line budget returns in place of the scope rule" \
+  "printf '\\n**Length budget: 40 lines.**\\n' >> .claude/ORCHESTRATION.md"
+
 echo
 echo "─── ${PROVEN} proven fallible, ${UNPROVEN} unproven ───"
 if [ "$UNPROVEN" -gt 0 ]; then
