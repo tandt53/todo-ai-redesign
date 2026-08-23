@@ -462,6 +462,7 @@ button,input,textarea{font:inherit; color:inherit}
 .btn-danger-quiet{background:transparent; color:var(--danger); border-color:var(--danger)}
 .btn-sm{height:var(--h-sm); font-size:var(--fs-meta); padding:0 var(--s3)}
 .btn[disabled]{opacity:.4; cursor:not-allowed; border-color:transparent}
+.composer-send[disabled]{color:var(--text-muted)}
 .btn-row{display:flex; flex-wrap:wrap; gap:var(--s3); align-items:center}
 .fab{
   position:absolute; right:var(--s4); bottom:var(--s4); z-index:5;
@@ -548,7 +549,7 @@ button,input,textarea{font:inherit; color:inherit}
 .row-marks{display:inline-flex; align-items:center; gap:var(--s2); margin-left:var(--s2); flex:none}
 .mark{font-family:var(--font-num); font-size:var(--fs-body); font-weight:var(--w-bold); color:var(--text-primary); line-height:1.35}
 .mark-quiet{color:var(--text-muted); display:inline-flex; align-self:center}
-.tag{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:var(--font-case-label); font-weight:var(--w-semibold); padding:2px 6px; border-radius:var(--r-xs); background:var(--accent-tint); color:var(--accent); white-space:nowrap}
+.tag{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:var(--font-case-label); font-weight:var(--w-semibold); padding:2px 6px; border-radius:var(--r-xs); background:var(--bg-sunken); color:var(--text-primary); white-space:nowrap}
 .tag.edited{background:var(--bg-sunken); color:var(--text-secondary)}
 .row-trail{display:flex; align-items:center; flex:none; gap:var(--s1)}
 .row-del{
@@ -1154,7 +1155,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
             <input class="cinput" data-testid="assistant-composer-input" resource-id="assistant-composer-input" placeholder="Say or type what needs doing." aria-label="Message">
             <span class="v v-flex v-mic-live v-mic-thinking state-ind" id="stateInd" data-testid="assistant-state-indicator" resource-id="assistant-state-indicator">Listening</span>
             <button class="v v-flex v-mic-live v-mic-thinking btn btn-sm btn-ghost" data-testid="assistant-cancel-button" resource-id="assistant-cancel-button">Cancel</button>
-            <button class="btn btn-sm btn-ghost composer-send" data-testid="assistant-composer-send" resource-id="assistant-composer-send" aria-label="Send"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button class="btn btn-sm btn-ghost composer-send" data-testid="assistant-composer-send" resource-id="assistant-composer-send" aria-label="Send" disabled><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button>
             <button class="mic" data-testid="assistant-mic-button" resource-id="assistant-mic-button" aria-label="Start listening"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></button>
           </div>
           <div class="gesturebar"></div>
