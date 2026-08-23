@@ -24,7 +24,8 @@
 
 | Task | Agent | Module | Feature | Subtree | Started |
 |---|---|---|---|---|---|
-| — | — | — | — | — | — |
+| T-287 | backend-agent | assistant | F-008 | `src/assistant/api/` | 2026-08-23 11:5Z |
+| T-200 | design-agent | assistant | — | `docs/design/` | 2026-08-23 11:5Z |
 
 ## Blockers
 <!-- Anything stopping progress. Orchestrator resolves these. -->
