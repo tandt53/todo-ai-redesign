@@ -22,3 +22,23 @@ a constant that hides one.
 **Current state, measured 2026-08-23:** `src/assistant/mobile/components/styles.ts` reads 112 values
 from tokens and holds 8 bare numbers, most of them `0`. The mobile side is close to clean; the web
 side is not (167 `px` literals in `styles.css`).
+
+## Two keyboard heights on Android, and the obvious one is wrong
+
+**2026-08-23, T-240, found by getting it wrong first.** `keyboardDidShow`'s
+`endCoordinates.height` reports **only the key area** — 312dp on this device. Gboard also draws a
+toolbar strip above the keys (grid, sticker, GIF, clipboard, settings, palette, mic), about 76dp,
+and that strip is part of the keyboard the user sees. Padding by `height` leaves the composer
+sliced in half by the strip, which looks almost right and is not.
+
+**`endCoordinates.screenY` is the value to use** — it comes from `getWindowVisibleDisplayFrame` and
+is the keyboard's true visual top, toolbar included.
+
+**iOS does not have this split**, so a fix verified only on iOS says nothing about Android.
+
+**See also [[the no-hardcoded-pixels entry]]:** the tempting repair here was to add the 76dp, which
+is correct on this emulator and wrong on every keyboard with a different strip.
+
+**And the reporting rule this produced:** when claiming one element sits above another, state both
+edges — this one's bottom, that one's top — and confirm the first is the smaller number. A
+screenshot that reads fine at thumbnail size hid a 26px overlap through two rounds.
