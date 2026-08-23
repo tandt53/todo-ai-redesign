@@ -345,3 +345,68 @@ A swatch row captioned *"Colour for Work"* sitting directly under **Home** reads
 Home; the caption is the only thing contradicting the position, and in a list, position wins.
 
 Filed as T-264.
+
+---
+
+# Seventh pass — finishing the surface
+
+## Coverage reached
+
+| axis | done |
+|---|---|
+| breakpoints | all 8 (375 → 1920), 4 web surfaces, testid presence per state — **no control vanishes and returns**; responsive hiding is monotonic everywhere |
+| dark theme | all 307 states — **clean at 4.5:1** |
+| cross-platform | all 4 families at 390 **and** 1440 |
+| states opened and looked at | app-shell (selection, search, overflow, phone, ultra, dark), task-detail (default, repeat ×3, blank, field-failed, deleted, repeat-unsupported), lists (default, recolour, rename, delete-confirm, menu), voice (default) |
+
+## F10 — the deleted-task screen rescues your typing, then discards it
+
+`detail-deleted` says **"This task was deleted."**, explains **"It went from another window while
+you were typing. There is nothing here to save it to."**, and shows the text under **YOU TYPED**.
+
+Then the only action is **"Back to your tasks"**. Measured on all three platforms:
+`actionsInPanel: ["Back to your tasks"]`, `editableFields: 0`, no copy/keep/save affordance.
+
+The design rescues the text, displays it, and the single exit throws it away. **Same shape as the
+search state in T-258: a state that exists to do something and stops one step short.** Filed as
+T-265, with the awkward sentence *"It went from another window"* raised as a question rather than
+asserted as a defect.
+
+## F11 — and a correction I have now made twice on the same item
+
+Measured with the dev toolbar removed, `.row-due` only, at 390, 1024 and 1440 — identical at all
+three:
+
+| | web | Android | iOS |
+|---|---|---|---|
+| overdue row | `Thu 5:00 PM` | `Thu 5:00 PM` | `Thu 5 PM` |
+| row in the Today group | `Fri 6:00 PM` | `Fri 6:00 PM` | `6 PM` |
+
+iOS drops `:00` on the hour and drops the weekday inside the `Today · Fri, Aug 21` group. **The
+iOS treatment is arguably better** — web and Android print `Fri` directly under a heading that
+just said `Fri, Aug 21`. The finding is not that one is wrong but that **nothing records which is
+intended**: there is a binding vocabulary table for words and no rule for time formatting.
+
+**I reported this, retracted it, and have now re-confirmed it.** The retraction was wrong. That
+probe used `querySelector('.row-due,.row-time')`, and `.row-time` is `display:none` carrying the
+full-format string — so on iOS it returned the hidden element. **I measured something other than
+what renders**, which is the identical mistake behind four of the failed sweeps.
+
+## Final tally
+
+| | |
+|---|---|
+| real findings | **11** (F1–F11), filed as T-255…T-266 |
+| queue rows closed as stale | 1, measured not assumed |
+| rows unblocked by finding the drawing already exists | 2 |
+| design-check blind spots identified, with proposed rules | 3 |
+| my own retractions and corrections | **4** |
+
+**Seven mechanical sweeps produced two real findings** (the cross-platform pair, F7/F8) and one
+useful negative (adjacent grounds clean across 307 states, proving T-251 held). **Looking produced
+the other nine.**
+
+Every sweep that failed, failed the same way: **the predicate was written from a guess about the
+markup rather than from the markup.** That is also what caused the one wrong retraction. The
+single reliable instruction I can leave for the next pass is — **compare two renderings of the
+same thing; never assert what the DOM ought to contain.**
