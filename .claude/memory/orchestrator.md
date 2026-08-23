@@ -64,3 +64,24 @@ has hit: the harness did not lie, it stopped, and stopping looked like success.
 The rule: when you build the thing that lets a check be bypassed, spend the effort on the
 bypass's *limits*, and prove each limit by breaking it. The permissive case works by
 construction; only the refusals need evidence.
+
+## 2026-08-23 — An artifact list is a claim about the present, not a record of the past
+
+C1 failed on T-278: it named `src/assistant/mobile/components/VoiceFab.tsx` and the file
+was gone. Both halves were correct — that row really did edit the file in the morning
+(setting the FAB's accessible name to "Talk"), and a later row really did delete it in the
+afternoon when the owner retired the control.
+
+The check is right and so is the history. What is wrong is putting one in the other's
+column. **`Artifacts` means "go and look at these", and C1 tests exactly that.** A file
+that existed when the work was done and was retired later belongs in `Outcome`, as prose,
+where it stays a true record without being asserted as a live path.
+
+The fix is one line and the rule is general: **when a later task deletes a file an earlier
+task claims, move the path into the earlier row's account and leave the surviving paths in
+its list.** Do not delete the sentence — the work happened — and do not weaken the check to
+accept absent files, which would cost every other row its existence guarantee to spare one.
+
+Same shape as the sanction register: a check that cannot express a legitimate history is
+fixed by recording the history somewhere the check does not read, not by teaching the check
+to accept anything.
