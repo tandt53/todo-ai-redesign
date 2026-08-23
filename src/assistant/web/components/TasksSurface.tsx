@@ -80,8 +80,8 @@ import {
 const PRIORITY_GLYPH: Record<Priority, string> = {
   none: '',
   low: '!',
-  medium: '!!',
-  high: '!!!',
+  medium: '!',
+  high: '!',
 }
 
 /** Three literals, never assembled from the level name (§ TaskRow). All four
@@ -439,7 +439,7 @@ export function TasksSurface({
     <div className="surface s-tasks">
       <header className="topbar">
         <button
-          className="icon-btn"
+          className="icon-btn hide-wide"
           data-testid="shell-lists-menu-button"
           aria-label="Lists"
           aria-expanded={shell.menuOpen}

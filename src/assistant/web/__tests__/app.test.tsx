@@ -266,7 +266,11 @@ const PROPOSED_IDS: Record<string, string> = {
   'detail-repeat-cancel': 'AC-20',
   'detail-delete-button': 'AC-31',
   'detail-delete-series-button': 'AC-30 — two controls, not one that asks sometimes',
-
+  // Lists rail — permanent sidebar at breakpoints.wide (T-299). Uses its own
+  // testids because the rail and the drawer coexist in the DOM (CSS decides
+  // which one is visible), so sharing ids would break getByTestId.
+  'rail-collection-row': 'Lists rail — the same collections as the drawer',
+  'rail-settings-row': 'Lists rail — settings at the bottom',
 }
 
 /** The ids this build may render that the mockups do not declare. */
@@ -777,7 +781,7 @@ describe('testid contract (design mockup catalogue)', () => {
     // check is against the SOURCE that renders them rather than against a render:
     // a text scan, and it says so, per L-002. The behavioural coverage for these
     // ids is `task-detail.test.tsx`.
-    const src = ['components/TaskDetail.tsx', 'components/CarriedNotices.tsx', 'components/PassedReminders.tsx', 'components/TasksSurface.tsx']
+    const src = ['components/TaskDetail.tsx', 'components/CarriedNotices.tsx', 'components/PassedReminders.tsx', 'components/TasksSurface.tsx', 'components/ListsRail.tsx']
       .map((f) => readFileSync(resolve(process.cwd(), 'src/assistant/web', f), 'utf8'))
       .join('\n')
     const orphans = Object.keys(PROPOSED_IDS).filter((id) => !src.includes(`"${id}"`))

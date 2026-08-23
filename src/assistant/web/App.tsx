@@ -28,6 +28,7 @@ import { micMode, undoableTurnId } from '../_shared/model/reducer.ts'
 import { CarriedNotices, StatusAnnouncer } from './components/CarriedNotices.tsx'
 import { OfflineBanner, VoiceFab } from './components/Chrome.tsx'
 import { ListsMenu } from './components/ListsMenu.tsx'
+import { ListsRail } from './components/ListsRail.tsx'
 import { PassedReminders } from './components/PassedReminders.tsx'
 import { SettingsSurface } from './components/SettingsSurface.tsx'
 import { TalkSurface } from './components/TalkSurface.tsx'
@@ -35,6 +36,7 @@ import { TaskDetail } from './components/TaskDetail.tsx'
 import { TasksSurface } from './components/TasksSurface.tsx'
 import { useFollowNewMessages } from './follow.ts'
 import { useShell } from './shell.ts'
+import { useCloseMenuAtWide } from './wide.ts'
 import { applyTheme, defaultThemeStore, readTheme, writeTheme } from './theme.ts'
 import type { ThemeChoice } from './theme.ts'
 
@@ -57,6 +59,12 @@ export function App({ controller }: { controller: AssistantController }) {
     writeTheme(defaultThemeStore(), next)
     setThemeState(next)
   }, [])
+
+  // Close the drawer when crossing into the wide breakpoint. The rail replaces
+  // it and CSS hides the scrim+menu, but the React state must clear too or the
+  // drawer reappears when narrowing back. The hook lives in wide.ts, outside the
+  // files the no-width-read test covers.
+  useCloseMenuAtWide(shell)
 
   const rootClass = [
     'app',
@@ -93,6 +101,14 @@ export function App({ controller }: { controller: AssistantController }) {
       {/* AC-38's surfacing — its own family, by design's decision of 2026-08-19. */}
       <PassedReminders state={state} controller={controller} onOpenTask={shell.openDetail} />
       <div className="surfaces">
+        {/* The Lists rail — permanent at breakpoints.wide, hidden below.
+            Mounted always; CSS controls visibility (same pattern as Talk). */}
+        <ListsRail
+          state={state}
+          active={shell.collection}
+          onPick={shell.pickCollection}
+          onSettings={shell.openSettings}
+        />
         <TalkSurface
           state={state}
           controller={controller}

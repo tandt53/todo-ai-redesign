@@ -749,20 +749,24 @@ describe('numbers this code does not own', () => {
     expect(FLASH_MS).toBe((hold as number) + (fade as number))
   })
 
-  it('the one layout branch is at tokens.json breakpoints.split', () => {
+  it('the layout branches are at tokens.json breakpoints.split and .wide', () => {
     const tokens = JSON.parse(
       readFileSync(resolve(ROOT, 'docs/design/_shared/tokens.json'), 'utf8'),
     ) as { breakpoints: Record<string, unknown> }
     const split = tokens.breakpoints['split']
+    const wide = tokens.breakpoints['wide']
     expect(split, 'tokens.json declares no breakpoints.split').toBeTypeOf('number')
+    expect(wide, 'tokens.json declares no breakpoints.wide').toBeTypeOf('number')
     const css = readFileSync(resolve(ROOT, 'src/assistant/web/styles.css'), 'utf8')
-    // The container query really exists, at that width, on that container…
+    // The container queries really exist, at those widths, on that container…
     expect(css).toContain('container-type: inline-size')
     expect(css).toContain('container-name: app')
     expect(css).toMatch(new RegExp(`@container app \\(min-width:\\s*${String(split)}px\\)`))
-    // …and there is exactly ONE of it. A second branch is the thing
-    // components.md § AppFrame says does not exist.
-    expect(css.match(/@container/g) ?? []).toHaveLength(1)
+    expect(css).toMatch(new RegExp(`@container app \\(min-width:\\s*${String(wide)}px\\)`))
+    // Two branches: split (Tasks+Talk) and wide (adds the Lists rail).
+    // The wide branch adds a COLUMN, never a behaviour fork — same pattern
+    // tokens.json layout.wide_rule names.
+    expect(css.match(/@container/g) ?? []).toHaveLength(2)
     // The two rules jsdom cannot exercise, asserted as the text they are.
     expect(css).toMatch(/\.app\[data-surface="settings"\]\s*\.s-tasks\s*\{\s*display:\s*none/)
     expect(css).toMatch(/\.path\s*\{\s*display:\s*none/)
