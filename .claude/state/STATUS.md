@@ -24,6 +24,10 @@
 
 | Task ID | Agent | Module | Feature | Subtree | Dispatched |
 |---------|-------|--------|---------|---------|------------|
+| T-263/264 +NEW | design-agent | assistant | F-008 | docs/design/.../lists*.html | 2026-08-22 |
+| T-265/260 +NEW | design-agent | assistant | — | docs/design/.../task-detail*, voice* | 2026-08-22 |
+| T-253/256/252 | design-agent | assistant | — | docs/design/_shared/, .claude/tools/design-check/ | 2026-08-22 |
+| T-267 | web-agent | assistant | — | src/assistant/web/ | 2026-08-22 |
 <!-- Example:
 -->
 | — | — | — | — | — | — |
