@@ -164,9 +164,9 @@ writers:
   # Cross-cutting records the orchestrator maintains, plus the landing place for a
   # ONE-OFF cross-subtree grant it issued: when a change must land as a single unit
   # (T-121 — splitting it would have left Today defined twice) the acting agent
-  # crosses lines under an explicit grant and the files are recorded on the
-  # orchestrator row rather than widening that agent permanently. The map cannot
-  # express "sanctioned once"; that is the gap, not the crossing.
+  # crosses lines under an explicit grant. That gap is now closed by
+  # `.claude/state/SANCTIONS.md` (T-282): one exact task+agent+path triple per row,
+  # read by C6, printed as `sanc` and never as `ok`. Prefixes license nothing.
   # `.claude/` added 2026-08-18. The pipeline's own tooling is owned by no agent,
   # and the orchestrator is the party that runs `upgrade-project.sh` — so
   # template-synced files land here under its name. This is not authorship: the
