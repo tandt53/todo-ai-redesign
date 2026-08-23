@@ -78,6 +78,9 @@ export function formatDue(
  * create, new=null for delete — AC-4). */
 export function formatValue(v: unknown, now: Date = nowDate()): string | null {
   if (v === null || v === undefined) return null
+  // Booleans are internal flags (e.g. due_all_day), not user-facing values —
+  // rendering `String(false)` is a leaked internal that reached the screen.
+  if (typeof v === 'boolean') return null
   const s = String(v)
   if (ISO_RE.test(s)) return formatDue(s, now)
   return s

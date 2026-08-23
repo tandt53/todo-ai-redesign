@@ -1,0 +1,31 @@
+{
+  "layer": 1,
+  "agent": "web-agent",
+  "task_id": "unknown",
+  "task_description": "Fix nine web defects on the task list",
+  "feature_id": "unknown",
+  "timestamp": "2026-08-23T07:49:04Z",
+  "status": "unknown",
+  "duration_seconds": 0,
+  "files_created": [],
+  "files_created_count": 0,
+  "project_stats": {
+    "spec_files": 0,
+    "source_files": 141,
+    "test_files": 37,
+    "qa_files": 0,
+    "total_loc": 45496
+  },
+  "confidence": "unknown",
+  "tests": {
+    "passing": 0,
+    "failing": 0,
+    "total": 0
+  },
+  "acs_covered": "none",
+  "blockers": "none",
+  "bugs_filed": [],
+  "summary": "No summary available",
+  "capture_method": "hook:PostToolUse",
+  "project": "todo-ai-redesign"
+}

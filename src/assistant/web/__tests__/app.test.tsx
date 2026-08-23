@@ -148,6 +148,11 @@ const NOT_BUILT: Record<string, string> = {
   'tasks-drag-handle': '§ TaskRow (T-247) — drag handle for manual reorder, not built',
   // Inline add (T-244): BUILT (T-284/T-285). The inline row at the end of the
   // task list, replacing the old header-area add form.
+  // T-299 items 4 + 5: the header "Add task" button and the empty-state button
+  // are retired — a single inline field is the only add affordance, whether the
+  // list has tasks or not.
+  'assistant-add-task-button': 'retired T-299 item 4 — inline field is the single add affordance',
+  'tasks-empty-add-button': 'retired T-299 item 5 — empty state uses the inline field',
 }
 
 /**
@@ -728,7 +733,7 @@ describe('testid contract (design mockup catalogue)', () => {
     // both yield the same green as a working check.
     expect(catalogue().size).toBe(76)
     const expected = builtCatalogue()
-    expect(expected.size).toBe(44)
+    expect(expected.size).toBe(42)
 
     const seen = new Set<string>()
     for (const { state, drive } of STATES) {
@@ -1263,9 +1268,9 @@ describe('interactions', () => {
     const assistantBefore = h.server.assistantCalls().length
 
     // With nothing on the list the header is not drawn at all — the invitation
-    // is (ET-FIRST), and its CTA is the add path from an empty surface.
+    // is (ET-FIRST), and the inline field is the single add affordance.
     await act(async () => {
-      fireEvent.click(screen.getByTestId('tasks-empty-add-button'))
+      fireEvent.click(screen.getByTestId('tasks-inline-add'))
     })
     const field = screen.getByLabelText('New task name')
     await act(async () => {

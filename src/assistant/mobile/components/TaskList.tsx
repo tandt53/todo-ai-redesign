@@ -172,13 +172,21 @@ function TaskRow({
         <Pressable
           accessibilityLabel={`Rename “${task.title}”`}
           accessibilityRole="button"
-          style={{ flex: 1 }}
+          style={styles.taskMain}
           onPress={() => {
             setDraft(task.title)
             setRenaming(true)
           }}
         >
-          <Text style={[styles.taskTitle, done ? styles.taskTitleDone : null]}>{task.title}</Text>
+          {/* T-300 defect 1: title and marks share ONE row. The title takes
+              available space and the marks sit right-aligned on the same line,
+              so the due date never wraps to a second line. */}
+          <Text
+            style={[styles.taskTitle, done ? styles.taskTitleDone : null]}
+            numberOfLines={1}
+          >
+            {task.title}
+          </Text>
           {mark !== null && (
             // AC-4's row-level marker carries a TEXT label, never colour alone.
             <Text
@@ -196,21 +204,12 @@ function TaskRow({
               cannot encode. Each is shape, weight and its accessible name — which
               is what AC-33's 1.4.3 requires of it regardless. */}
           <View style={styles.rowMarks}>
-            {/* TR-URGENCY — **a single `!`, and only `high` wears it.** AC-9 fixes
-                the vocabulary at one glyph, deliberately *"not Apple's graduated
-                `!` / `!!` / `!!!`"*, and 1.4.3 forbids carrying the level in
-                colour; one glyph cannot render three levels perceivably, so
-                `none`, `low` and `medium` render nothing and all four states are
-                distinguished in the row's name instead. */}
             {priority === 'high' && (
               <Text style={styles.urgencyMark} accessibilityElementsHidden importantForAccessibility="no">
                 !
               </Text>
             )}
             {meta !== null && <Text style={styles.taskMeta}>{meta}</Text>}
-            {/* TR-REPEAT — Lucide `repeat`, `text.muted`, on a row belonging to a
-                LIVE series. It explains where a row the user never typed came
-                from, which is the whole of AC-39. */}
             {repeats && (
               <Repeat
                 size={tokens.icon.size.sm}
@@ -257,34 +256,18 @@ function RowSkeletons() {
 function EmptyState({
   view,
   collection,
-  platform,
-  onAdd,
 }: {
   view: TasksSurfaceView
   collection: Collection
-  platform: MobilePlatform
-  onAdd: () => void
 }) {
-  const { styles, colors } = useStyles()
+  const { styles } = useStyles()
   const row = view.empty
   if (row === null) return null
   const copy = EMPTY_TASKS[row]
-  const { hitSlop } = touchProps(SHELL_A11Y_IDS.tasksEmptyAddButton, platform)
   return (
     <View style={styles.emptyState}>
       <Text style={styles.emptyHead}>{fillListSlot(copy.head, collection)}</Text>
       {copy.body !== null && <Text style={styles.emptyBody}>{copy.body}</Text>}
-      {copy.action !== null && (
-        <Pressable
-          {...a11yProps(SHELL_A11Y_IDS.tasksEmptyAddButton, { label: copy.action, role: 'button' })}
-          hitSlop={hitSlop}
-          style={styles.primaryButton}
-          onPress={onAdd}
-        >
-          <Plus size={tokens.icon.size.sm} color={colors.text.onAccent} strokeWidth={tokens.icon.stroke} />
-          <Text style={styles.primaryButtonText}>{copy.action}</Text>
-        </Pressable>
-      )}
       {copy.secondDoor !== null && <Text style={styles.secondDoor}>{copy.secondDoor}</Text>}
     </View>
   )
@@ -437,12 +420,24 @@ export function TaskList({
   }
 
   if (view.tasks.length === 0) {
+    const hasAction = view.empty !== null && EMPTY_TASKS[view.empty].action !== null
     return (
       <ScrollView keyboardShouldPersistTaps="handled">
-        {/* Hide the empty state while the standalone add field is open: a CTA
-            offering to do the thing the user is already doing is noise. */}
-        {!adding && (
-          <EmptyState view={view} collection={collection} platform={platform} onAdd={onAdd} />
+        {/* T-300 defect 3: always an inline field, never a button. The
+            InlineAdd is a SIBLING of the empty heading, not a child, so the
+            two share the same gutter (spacing.gutter_mobile) without
+            double-padding. */}
+        <EmptyState view={view} collection={collection} />
+        {hasAction && (
+          <InlineAdd
+            adding={adding}
+            draft={draft}
+            setDraft={setDraft}
+            onCommit={onCommit}
+            onCancel={onCancel}
+            onActivate={onActivate}
+            platform={platform}
+          />
         )}
       </ScrollView>
     )

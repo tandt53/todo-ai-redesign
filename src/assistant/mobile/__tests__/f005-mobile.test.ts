@@ -373,9 +373,9 @@ describe('AC-35 — the three mobile readers, which need OPPOSITE inputs', () =>
     )
     // no per-row control is declared, because no row is drawn
     expect(shellIds.has(SHELL_A11Y_IDS.tasksDeleteButton)).toBe(false)
-    // …and the empty-state's own Add control IS declared, because ET-COLLECTION
-    // carries one
-    expect(shellIds.has(SHELL_A11Y_IDS.tasksEmptyAddButton)).toBe(true)
+    // …and the empty-state's InlineAdd IS declared, because ET-COLLECTION
+    // carries one (T-300: the CTA is now an inline field, not a button)
+    expect(shellIds.has(SHELL_A11Y_IDS.tasksInlineAdd)).toBe(true)
   })
 
   it('and the three readers are not one rule — two of them answer differently in this account', () => {

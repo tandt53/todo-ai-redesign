@@ -237,7 +237,7 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 
 .topbar {
   flex: none; display: flex; align-items: center; gap: var(--sp-md);
-  min-height: 56px; padding: 0 var(--sp-lg);
+  min-height: 56px; padding: 0 var(--gutter);
   background: var(--bg-base);
 }
 .topbar .wordmark { font-family: var(--font-family-display); font-weight: var(--font-weight-display); font-size: var(--fs-state); letter-spacing: var(--font-letterSpacing-display); }
@@ -353,12 +353,12 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 }
 .tasks { list-style: none; }
 .task-row {
-  display: flex; align-items: flex-start; gap: var(--sp-md);
-  padding: var(--sp-md) 0;
+  display: flex; align-items: center; gap: var(--sp-md);
+  padding: var(--sp-sm) 0;
   border-radius: var(--r-row); /* flat rows, carried from v3 */
 }
 .checkbox {
-  flex: none; width: 20px; height: 20px; margin-top: 1px;
+  flex: none; width: 20px; height: 20px;
   border: 1.8px solid var(--tx-muted); border-radius: var(--r-sm);
   display: inline-flex; align-items: center; justify-content: center; color: transparent;
   transition: border-color var(--dur-micro) var(--motion-easing-standard);
@@ -366,13 +366,14 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 .checkbox:hover { border-color: var(--accent); }
 .checkbox svg.ic { width: 12px; height: 12px; }
 .task-row.done .checkbox { border-color: var(--tx-muted); color: var(--tx-muted); }
-.task-main { flex: 1; min-width: 0; }
+.task-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-sm); }
 .task-title { display: inline; font-size: var(--fs-body); }
+.task-open { flex: 0 1 auto; min-width: 0; }
 .task-row.done .task-title { text-decoration: line-through; }
 .task-row.done { opacity: 0.6; }
-.task-meta { display: block; font-size: var(--fs-meta); line-height: var(--font-lineHeight-meta); color: var(--tx-muted); font-variant-numeric: var(--font-numeric); margin-top: 1px; }
+.task-meta { font-size: var(--fs-meta); line-height: var(--font-lineHeight-meta); color: var(--tx-muted); font-variant-numeric: var(--font-numeric); white-space: nowrap; flex: none; margin-left: auto; }
 .task-edit-input {
-  width: 100%; height: 32px;
+  flex: 1; min-width: 0; height: 32px;
   background: var(--bg-raised); border: 1px solid var(--accent); border-radius: var(--r-sm);
   padding: 0 var(--sp-sm); color: var(--tx); font-size: var(--fs-body);
 }
@@ -532,7 +533,7 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
   padding: var(--sp-md) var(--sp-lg);
   border-bottom-left-radius: var(--r-sm);
 }
-.msg.user .bubble { border-radius: var(--r-bubble); border-bottom-right-radius: var(--r-sm); border: 1px solid var(--hairline); background: var(--bg-base); }
+.msg.user .bubble { border-radius: var(--r-bubble); border-bottom-right-radius: var(--r-sm); background: var(--bg-base); }
 .msg-meta { font-size: var(--fs-label); line-height: var(--font-lineHeight-meta); color: var(--tx-muted); margin-top: var(--sp-xs); padding: 0 var(--sp-xs); font-variant-numeric: var(--font-numeric); }
 .bubble-head { font-weight: var(--font-weight-emphasis); margin-bottom: var(--sp-sm); }
 .bubble p + p { margin-top: var(--sp-xs); }
@@ -763,12 +764,21 @@ html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); 
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(360px, 420px);
     grid-template-rows: minmax(0, 1fr);
+    gap: 4px;
+    background: var(--bg-sunken);
   }
-  .surface { grid-row: 1; }
+  .surface { grid-row: 1; background: var(--bg-base); border-radius: var(--r-md); }
   .s-tasks, .s-settings { grid-column: 1; }
   .s-tasks { display: flex; }
-  /* Talk is always mounted at this width — it is a panel, not a destination. */
-  .s-talk { display: flex; grid-column: 2; border-left: 1px solid var(--hairline); }
+  /* Talk is always mounted at this width — it is a panel, not a destination.
+     The border-left is replaced by the panel gap on a sunken canvas (tokens
+     layout.panel pattern). */
+  .s-talk { display: flex; grid-column: 2; }
+  /* PANEL CORNER FIX — topbar and composer cover the panel's border-radius
+     unless they carry the matching corners themselves (mockup § PANEL CORNER FIX). */
+  .s-tasks > .topbar { border-radius: var(--r-md) var(--r-md) 0 0; }
+  .s-talk > .topbar { border-radius: var(--r-md) var(--r-md) 0 0; }
+  .s-talk .composer { border-radius: 0 0 var(--r-md) var(--r-md); }
   /* Settings is a STACKED surface: it takes the centre, never the panel. The
      assistant is never dismissed by navigating, which is the difference
      between a panel and a screen. */
@@ -916,6 +926,7 @@ html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); 
 .task-open {
   text-align: left; padding: 0; color: inherit; font: inherit;
   border-radius: var(--r-sm);
+  min-height: 40px; display: inline-flex; align-items: center;
 }
 .task-open:hover { text-decoration: underline; text-underline-offset: 2px; }
 

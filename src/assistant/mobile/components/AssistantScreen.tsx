@@ -24,7 +24,7 @@ import { pathSwitch } from '../model/shell.ts'
 import { taskLinkState } from '../model/task-link.ts'
 import { CarriedNotices } from './CarriedNotices.tsx'
 import { AssistantSurfaceHost } from './ShellHost.tsx'
-import { ThemeChoiceContext } from './styles.ts'
+import { PlatformContext, ThemeChoiceContext } from './styles.ts'
 import type { ThemeChoice } from './styles.ts'
 import { useStyles } from './styles.ts'
 
@@ -32,10 +32,15 @@ export function AssistantScreen({ controller }: { controller: MobileAssistantCon
   // The Theme preference is a device-local view choice with no server side and
   // no conversation meaning, so it lives here rather than on the controller.
   const [theme, setTheme] = useState<ThemeChoice>('system')
+  // T-300 defect 6: PlatformContext was never provided — the default ('ios')
+  // won on both platforms, so Android rendered iOS font sizes. The code in
+  // `font.sizeFor(platform)` is correct and was unreachable.
   return (
-    <ThemeChoiceContext.Provider value={theme}>
-      <Shell controller={controller} theme={theme} onThemeChange={setTheme} />
-    </ThemeChoiceContext.Provider>
+    <PlatformContext.Provider value={controller.platform}>
+      <ThemeChoiceContext.Provider value={theme}>
+        <Shell controller={controller} theme={theme} onThemeChange={setTheme} />
+      </ThemeChoiceContext.Provider>
+    </PlatformContext.Provider>
   )
 }
 
