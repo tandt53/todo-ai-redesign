@@ -431,3 +431,5 @@
 {"ts":"2026-08-23T15:41:20.432Z","event":"agent_return","task":"T-324","agent":"web-agent","status":"UNKNOWN","artifacts":[],"evidence_conflict":null,"session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
 {"ts":"2026-08-23T15:41:35.948Z","event":"agent_return","task":"T-325","agent":"mobile-agent","status":"UNKNOWN","artifacts":[],"evidence_conflict":null,"session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
 {"ts":"2026-08-23T15:42:37.224Z","event":"session_stop","session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
+{"ts":"2026-08-23T15:59:40.933Z","event":"session_stop","session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
+{"ts":"2026-08-23T16:14:52.691Z","event":"session_stop","session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
