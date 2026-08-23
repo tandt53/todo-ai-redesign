@@ -144,11 +144,15 @@ export function tasksSurfaceView(
  * own name, never re-worded — see `fillListSlot`.
  */
 export const EMPTY_TASKS = {
+  // T-298: one statement of emptiness, not two. "Speaking must not read as
+  // the fallback in a voice-first app" — the secondDoor framed the primary
+  // path as the backup, and the body was a second statement. The CTA stands
+  // on its own.
   'ET-FIRST': {
     head: 'No tasks yet',
-    body: 'Add one by hand and it lands right here.',
+    body: null,
     action: 'Add task',
-    secondDoor: 'Or say one, on Talk.',
+    secondDoor: null,
   },
   'ET-COLLECTION': {
     head: 'Nothing in {list}',

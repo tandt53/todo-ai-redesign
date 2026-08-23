@@ -117,9 +117,9 @@ const NOT_BUILT: Record<string, string> = {
   // shell-talk-button as the route to Talk.
   // ListEditorSheet color swatch: the list editor is not built (IA §7).
   'list-editor-color-swatch': 'needs `lists` + `tasks.list_id` (IA §7)',
-  // Header rework (T-227/T-244): search and overflow buttons drawn, not built.
-  'shell-search-button': 'drawn T-227/T-244, search not built',
-  'shell-overflow-button': 'drawn T-227/T-244, overflow menu not built',
+  // Header rework (T-227/T-244): search and overflow BUTTONS now placed in the
+  // bar (T-297). The surfaces behind them — the search field, the overflow menu —
+  // remain not-built. The buttons are inert until those surfaces ship.
   // Search field (§ SearchField, T-244): drawn, not built.
   'tasks-search-input': '§ SearchField (T-244) — search not built',
   'tasks-search-close': '§ SearchField (T-244) — search not built',
@@ -728,7 +728,7 @@ describe('testid contract (design mockup catalogue)', () => {
     // both yield the same green as a working check.
     expect(catalogue().size).toBe(76)
     const expected = builtCatalogue()
-    expect(expected.size).toBe(42)
+    expect(expected.size).toBe(44)
 
     const seen = new Set<string>()
     for (const { state, drive } of STATES) {

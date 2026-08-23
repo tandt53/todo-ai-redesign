@@ -16,7 +16,7 @@
 //   - rename is entered by TAPPING THE TITLE. A second per-row button would
 //     crowd the delete target at 44/48.
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import type { ScrollView as ScrollViewType, TextInput as TextInputType } from 'react-native'
 import { Check, Plus, Repeat, Trash2 } from 'lucide-react-native'
@@ -79,6 +79,11 @@ function TaskRow({
   const { styles, colors } = useStyles()
   const [renaming, setRenaming] = useState(false)
   const [draft, setDraft] = useState(task.title)
+  // Guard: on Android, Enter fires `onSubmitEditing` then the field loses focus
+  // and fires `onBlur`, calling `commitRename` twice. The ref lets whichever
+  // event arrives first commit, and the second is a no-op.
+  const renameCommitted = useRef(false)
+  useEffect(() => { renameCommitted.current = false }, [renaming])
   const done = task.status === 'done'
   const priority = priorityOf(task)
   const repeats = seriesLive(task)
@@ -124,6 +129,8 @@ function TaskRow({
   const delTouch = touchProps(SHELL_A11Y_IDS.tasksDeleteButton, platform)
 
   const commitRename = () => {
+    if (renameCommitted.current) return
+    renameCommitted.current = true
     setRenaming(false)
     // `editTask` is a no-op on an unchanged or empty title, so the cancel case
     // needs no branch here.
@@ -314,6 +321,17 @@ function InlineAdd({
   platform: MobilePlatform
 }) {
   const { styles, colors } = useStyles()
+  // Same double-fire guard as the rename field and the empty-state add —
+  // Enter fires `onSubmitEditing`, then the field blurs, and both call
+  // `onCommit`. The ref lets the first through and drops the second.
+  const committed = useRef(false)
+  useEffect(() => { committed.current = false }, [adding])
+
+  const guardedCommit = () => {
+    if (committed.current) return
+    committed.current = true
+    onCommit()
+  }
 
   if (adding) {
     return (
@@ -330,12 +348,12 @@ function InlineAdd({
           value={draft}
           autoFocus
           onChangeText={setDraft}
-          onSubmitEditing={onCommit}
+          onSubmitEditing={guardedCommit}
           onBlur={() => {
             // Blur with content commits; blur with empty cancels — the same
             // rule the existing rename uses (web parity).
             if (draft.trim() === '') onCancel()
-            else onCommit()
+            else guardedCommit()
           }}
         />
       </View>

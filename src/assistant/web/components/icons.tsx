@@ -265,6 +265,29 @@ export function BellIcon() {
   )
 }
 
+/** Search icon — Lucide `search`. Placed in the topbar; the surface behind it
+ * is NOT_BUILT (T-297). The path is carried from the mockup's SVG. */
+export function SearchIcon() {
+  return (
+    <Ic>
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.3-4.3" />
+    </Ic>
+  )
+}
+
+/** More-horizontal icon — Lucide `more-horizontal`. Placed in the topbar;
+ * the overflow menu behind it is NOT_BUILT (T-297). */
+export function MoreHorizontalIcon() {
+  return (
+    <Ic>
+      <circle cx="12" cy="12" r="1" />
+      <circle cx="19" cy="12" r="1" />
+      <circle cx="5" cy="12" r="1" />
+    </Ic>
+  )
+}
+
 export function MicSlash() {
   return (
     <span className="mic-slash" aria-hidden="true">

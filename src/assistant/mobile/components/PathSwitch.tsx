@@ -60,12 +60,18 @@ export function PathSwitch({
 }
 
 /** The bar PathSwitch sits in: wordmark left, control right. Shared by both
- * peers so the control cannot end up in two different places. */
-export function ShellBar({ left, children }: { left?: ReactNode; children: ReactNode }) {
+ * peers so the control cannot end up in two different places.
+ *
+ * `title` sits between the left slot and the spacer — on the Tasks surface
+ * it carries the collection name at body/semibold (matching `bar-surface-title`
+ * in app-shell-ios.html). The hero heading in the content column is removed;
+ * on a phone the bar IS the heading. */
+export function ShellBar({ left, title, children }: { left?: ReactNode; title?: ReactNode; children: ReactNode }) {
   const { styles } = useStyles()
   return (
     <View style={styles.topBar}>
       {left}
+      {title}
       <View style={styles.barSpacer} />
       {children}
     </View>
