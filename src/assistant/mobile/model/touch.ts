@@ -75,8 +75,10 @@ function textControlHeight(fontSize: number, verticalPadding: number, kind: 'bod
  * which sat between its shortest and longest label rather than at either.
  */
 export const PAINTED: Record<InteractiveId, Size> = {
-  // .icon-btn { width: 40px; height: 40px }
-  [A11Y_IDS.drawerButton]: { width: 40, height: 40 },
+  // .iconbtn { width: var(--min-target); height: var(--min-target) } → 44×44
+  // (was .icon-btn 40×40 before the T-227 redesign; the design moved to the
+  // platform minimum via a custom property — T-255 caught the drift)
+  [A11Y_IDS.drawerButton]: { width: 44, height: 44 },
   // .add-btn { padding: xs sm } around meta-size text — icon + "Add task",
   // floor published in components.md (renders 94.2)
   [A11Y_IDS.addTaskButton]: {
@@ -88,13 +90,18 @@ export const PAINTED: Record<InteractiveId, Size> = {
     width: 320,
     height: textControlHeight(font.size.body, spacing.sm),
   },
-  // .checkbox { width: 22px; height: 22px }
-  [A11Y_IDS.taskCheckbox]: { width: 22, height: 22 },
-  // .composer-input { height: 40px }
-  [A11Y_IDS.composerInput]: { width: 200, height: 40 },
-  // .mic { width: 52px; height: 52px } — the one control already above both minima
-  [A11Y_IDS.micButton]: { width: 52, height: 52 },
-  // .send { width: 36px; height: 36px }
+  // .cbx { width: calc(var(--icon-size-md) * 1px); height: same } → 20×20
+  // (was .checkbox 22×22 before the T-227 redesign; icon-size-md = 20 — T-255)
+  [A11Y_IDS.taskCheckbox]: { width: 20, height: 20 },
+  // .cinput { height: var(--field-h) } → 44 (was .composer-input 40px; T-255)
+  [A11Y_IDS.composerInput]: { width: 200, height: 44 },
+  // .mic { width: var(--h-md); height: var(--h-md) } → 44×44
+  // (was .mic 52×52 before the T-227 redesign; h-md = control-height-md = 44.
+  // On iOS 44 = the platform minimum; on Android hitSlop lifts it to 48 — T-255)
+  [A11Y_IDS.micButton]: { width: 44, height: 44 },
+  // .btn-sm { height: var(--h-sm) } → 36 (was .send 36×36; the standalone rule
+  // is gone, the button is now .btn .btn-sm .btn-ghost. Width no longer has a
+  // standalone CSS rule; 36 is the icon glyph + padding observed rendering)
   [A11Y_IDS.composerSend]: { width: 36, height: 36 },
   // .undo-btn { padding: xs md } — icon + "Undo", floor published in
   // components.md (renders 83.4)
@@ -176,8 +183,10 @@ export const PAINTED: Record<InteractiveId, Size> = {
 
   // .path { min-height: 44px } — PS-TASKS (PS-TALK is retired by T-227)
   [SHELL_A11Y_IDS.pathTasks]: { width: MIN_TOUCH_TARGET.android, height: 44 },
-  // T-227: the voice FAB replaces the Talk path switch button
-  [SHELL_A11Y_IDS.voiceFab]: { width: MIN_TOUCH_TARGET.android, height: 44 },
+  // .voice-fab { width: var(--h-lg); height: var(--h-lg) } → 52×52
+  // T-257: the voice FAB is now built; dimensions from app-shell-ios.html CSS.
+  // h-lg = control-height-lg = 52 — above both platform minima (44, 48).
+  [SHELL_A11Y_IDS.voiceFab]: { width: 52, height: 52 },
   // .icon-btn { width: 44px; height: 44px }
   [SHELL_A11Y_IDS.listsMenuButton]: { width: 44, height: 44 },
   [SHELL_A11Y_IDS.menuCloseButton]: { width: 44, height: 44 },

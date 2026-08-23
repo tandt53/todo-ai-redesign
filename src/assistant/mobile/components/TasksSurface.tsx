@@ -29,9 +29,9 @@ import type { Collection } from '../model/tasks-view.ts'
 import { tokens } from '../model/theme.ts'
 import { touchProps } from '../model/touch.ts'
 import { OfflineBanner } from './Chrome.tsx'
-import { PathSwitch, ShellBar } from './PathSwitch.tsx'
+import { ShellBar } from './PathSwitch.tsx'
 import { TaskList } from './TaskList.tsx'
-import type { PathSwitchView } from '../model/shell.ts'
+import { VoiceFab } from './VoiceFab.tsx'
 import { useStyles } from './styles.ts'
 
 export function TasksSurface({
@@ -39,7 +39,6 @@ export function TasksSurface({
   controller,
   platform,
   collection,
-  pathView,
   revealTaskId,
   onGoTalk,
   onOpenMenu,
@@ -49,7 +48,6 @@ export function TasksSurface({
   controller: MobileAssistantController
   platform: MobilePlatform
   collection: Collection
-  pathView: PathSwitchView
   revealTaskId: string | null
   onGoTalk: () => void
   onOpenMenu: () => void
@@ -101,7 +99,10 @@ export function TasksSurface({
           </Pressable>
         }
       >
-        <PathSwitch view={pathView} platform={platform} onPress={onGoTalk} />
+        {/* T-257: the Talk affordance on the Tasks surface is the voice FAB,
+            not a path switch button in the header. The bar's right slot is
+            empty here; the FAB floats at the bottom of the surface. */}
+        <View />
       </ShellBar>
 
       <Text style={styles.largeTitle} accessibilityRole="header">
@@ -193,6 +194,10 @@ export function TasksSurface({
           />
         </>
       )}
+      {/* T-257: the voice FAB — floating mic button that switches to Talk.
+          Positioned absolute bottom-right per the design (app-shell-ios.html
+          .voice-fab). Always present on the Tasks surface on a phone. */}
+      <VoiceFab platform={platform} onPress={onGoTalk} />
     </View>
   )
 }

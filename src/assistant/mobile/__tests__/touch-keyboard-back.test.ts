@@ -51,21 +51,23 @@ describe('AC-9 — every interactive element reaches the platform minimum as HIT
     })
   }
 
-  it('the painted sizes stay the mockup’s — slop extends the target, it does not resize the design', () => {
-    // .mic { 52px } — already above both minima, so it gets no slop at all
-    expect(PAINTED[A11Y_IDS.micButton]).toEqual({ width: 52, height: 52 })
-    expect(hitSlopFor(PAINTED[A11Y_IDS.micButton], 'ios')).toEqual({
+  it(‘the painted sizes stay the mockup’s — slop extends the target, it does not resize the design’, () => {
+    // .mic { var(--h-md) } → 44×44 (T-255: was 52×52 before the redesign).
+    // On iOS 44 = platform minimum, so slop is zero.
+    expect(PAINTED[A11Y_IDS.micButton]).toEqual({ width: 44, height: 44 })
+    expect(hitSlopFor(PAINTED[A11Y_IDS.micButton], ‘ios’)).toEqual({
       top: 0,
       bottom: 0,
       left: 0,
       right: 0,
     })
-    // .checkbox { 22px } — the case AC-9 exists for
-    expect(PAINTED[A11Y_IDS.taskCheckbox]).toEqual({ width: 22, height: 22 })
-    const slop = hitSlopFor(PAINTED[A11Y_IDS.taskCheckbox], 'android')
-    expect(slop.top).toBe(13)
+    // .cbx { calc(var(--icon-size-md) * 1px) } → 20×20 (T-255: was 22×22)
+    // — the case AC-9 exists for: painted below both minima, extended by slop
+    expect(PAINTED[A11Y_IDS.taskCheckbox]).toEqual({ width: 20, height: 20 })
+    const slop = hitSlopFor(PAINTED[A11Y_IDS.taskCheckbox], ‘android’)
+    expect(slop.top).toBe(14) // (48 - 20) / 2
     expect(areaOf(PAINTED[A11Y_IDS.taskCheckbox], slop)).toEqual({ width: 48, height: 48 })
-    expect(hitArea(A11Y_IDS.taskCheckbox, 'android')).toEqual({ width: 48, height: 48 })
+    expect(hitArea(A11Y_IDS.taskCheckbox, ‘android’)).toEqual({ width: 48, height: 48 })
   })
 
   it('the published content-width floors match the table design published — parsed, not retyped', () => {

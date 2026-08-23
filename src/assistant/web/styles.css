@@ -18,6 +18,7 @@
 :root {
   --color-dark-bg-base: #0C0E16;
   --color-dark-bg-raised: #161A28;
+  --color-dark-bg-sunken: #17171C;
   --color-dark-bg-hairline: #232741;
   --color-dark-text-primary: #F2F4FA;
   --color-dark-text-secondary: #A9B0CC;
@@ -40,6 +41,7 @@
   --color-dark-focusRing: #3EE6D2;
   --color-light-bg-base: #F6F7FB;
   --color-light-bg-raised: #FFFFFF;
+  --color-light-bg-sunken: #F2F2F4;
   --color-light-bg-hairline: #E4E6F0;
   --color-light-text-primary: #191D33;
   --color-light-text-secondary: #454C6E;
@@ -153,7 +155,7 @@ html {
 }
 
 html[data-theme="dark"] {
-  --bg-base: var(--color-dark-bg-base); --bg-raised: var(--color-dark-bg-raised); --hairline: var(--color-dark-bg-hairline);
+  --bg-base: var(--color-dark-bg-base); --bg-raised: var(--color-dark-bg-raised); --bg-sunken: var(--color-dark-bg-sunken); --hairline: var(--color-dark-bg-hairline);
   --tx: var(--color-dark-text-primary); --tx-2: var(--color-dark-text-secondary); --tx-muted: var(--color-dark-text-muted); --tx-onaccent: var(--color-dark-text-onAccent);
   --primary: var(--color-dark-primary); --primary-tint: var(--color-dark-primaryTint);
   --listening: var(--color-dark-voice-listening); --listening-tint: var(--color-dark-voice-listeningTint);
@@ -168,7 +170,7 @@ html[data-theme="dark"] {
   color-scheme: dark;
 }
 html[data-theme="light"] {
-  --bg-base: var(--color-light-bg-base); --bg-raised: var(--color-light-bg-raised); --hairline: var(--color-light-bg-hairline);
+  --bg-base: var(--color-light-bg-base); --bg-raised: var(--color-light-bg-raised); --bg-sunken: var(--color-light-bg-sunken); --hairline: var(--color-light-bg-hairline);
   --tx: var(--color-light-text-primary); --tx-2: var(--color-light-text-secondary); --tx-muted: var(--color-light-text-muted); --tx-onaccent: var(--color-light-text-onAccent);
   --primary: var(--color-light-primary); --primary-tint: var(--color-light-primaryTint);
   --listening: var(--color-light-voice-listening); --listening-tint: var(--color-light-voice-listeningTint);
@@ -265,6 +267,28 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
   font-variant-numeric: var(--font-numeric); text-align: center;
 }
 
+/* Voice FAB — floating action button opening Talk, below split only (T-254).
+   Replaces shell-talk-button, which was retired by T-227.
+   Positioned absolutely at bottom-right of the `.app` container (position:relative).
+   Hidden at or above the split where Talk is permanently visible.
+   Hidden when not on the Tasks surface (Talk, Settings, Detail all cover it). */
+.voice-fab {
+  display: grid; position: absolute; z-index: 5; cursor: pointer;
+  width: var(--icon-lg); height: var(--icon-lg);
+  min-width: 44px; min-height: 44px;
+  padding: var(--sp-md);
+  box-sizing: content-box;
+  border-radius: 50%; border: 0;
+  background: var(--primary); color: var(--tx-onaccent);
+  place-items: center;
+  right: var(--sp-lg); bottom: var(--sp-lg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+.voice-fab:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.voice-fab svg.ic { width: var(--icon-lg); height: var(--icon-lg); }
+/* Only visible on the Tasks surface below the split */
+.app:not([data-surface="tasks"]) .voice-fab { display: none; }
+
 /* ============ S2 · Tasks — the second path, as a surface ============ */
 .tasks-body { flex: 1; min-height: 0; overflow-y: auto; }
 .tasks-col { max-width: 900px; padding: var(--sp-lg) var(--gutter) var(--sp-xxl); }
@@ -343,7 +367,7 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 }
 .badge.show { display: inline; }
 .badge-new { color: var(--add); }
-.badge-edited { color: var(--primary); } /* violet — an applied change is the assistant's act */
+.badge-edited { color: var(--tx-2); background: var(--bg-sunken); } /* DESIGN.md rule 1: EDITED is not the assistant speaking, so accent violates one signal per meaning */
 .row-diff { display: none; margin-top: var(--sp-xs); font-size: var(--fs-meta); line-height: var(--font-lineHeight-meta); }
 .row-diff.show { display: block; }
 .row-diff-pair + .row-diff-pair { margin-left: var(--sp-sm); }
@@ -494,7 +518,7 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
   font-size: var(--fs-meta); line-height: var(--font-lineHeight-meta);
   padding: 2px var(--sp-sm); border-radius: var(--r-sm); font-variant-numeric: var(--font-numeric);
 }
-.chip-old { color: var(--remove); background: var(--remove-tint); text-decoration: line-through; }
+.chip-old { color: var(--tx-muted); text-decoration: line-through; }
 .chip-new { color: var(--add); background: var(--add-tint); }
 .diff-arrow { color: var(--tx-muted); }
 .mini-label {
@@ -743,11 +767,13 @@ html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); 
 
   /* PathSwitch is ABSENT — both paths are on screen, and a control that
      switches to what the user is already looking at is a dead control. This is
-     what makes `shell-tasks-button` / `shell-talk-button` below-split-only ids:
-     a desktop selector for either will not resolve, and should not
-     (components.md § AppFrame). The fallback guarantee PathSwitch carried is
-     met MORE strongly here — the second path is never left. */
+     what makes `shell-tasks-button` below-split-only: a desktop selector for it
+     will not resolve, and should not (components.md § AppFrame). The fallback
+     guarantee PathSwitch carried is met MORE strongly here — the second path
+     is never left. `shell-talk-button` is retired; the VoiceFab is its
+     replacement below split, also hidden here for the same reason. */
   .path { display: none; }
+  .voice-fab { display: none; }
 
   .s-talk .wordmark { display: none; }
   .s-talk .panel-title { display: inline; }

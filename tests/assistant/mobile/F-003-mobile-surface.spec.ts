@@ -478,24 +478,120 @@ describe('B. touch targets — TC-032 model half (AC-9)', () => {
  */
 describe('B. touch targets are measured against the MOCKUP, not against a hand-copy (AC-9, L-008)', () => {
   /**
+   * Parse the `:root` block for CSS custom property declarations. Two shapes:
+   *   --icon-size-md: 20;                         → numeric token
+   *   --h-md:calc(var(--control-height-md) * 1px); → alias of a token
+   * Returns a map from property name (without `--`) to its resolved numeric
+   * value. Multi-level `var()` references are resolved recursively (with a
+   * depth cap to avoid infinite loops if the CSS is circular).
+   */
+  function parseCssCustomProperties(css: string): Map<string, number> {
+    const vars = new Map<string, string>()
+    const rootMatch = /:root\s*\{([^}]*(?:\{[^}]*\}[^}]*)*)\}/s.exec(css)
+    if (rootMatch === null) return new Map()
+    // The :root block may be followed by more declarations — grab all of them.
+    // Also match semantic aliases outside :root that are still inside the
+    // top-level style block (they may appear as subsequent lines).
+    const fullCss = css
+    for (const m of fullCss.matchAll(/--([a-zA-Z0-9_-]+)\s*:\s*([^;]+);/g)) {
+      // First declaration wins (specificity of :root's own rules).
+      if (!vars.has(m[1]!)) vars.set(m[1]!, m[2]!.trim())
+    }
+
+    function resolveToNumber(value: string, depth = 0): number | null {
+      if (depth > 10) return null
+      // Direct numeric: `20`, `44`, `52`
+      const directNum = /^(\d+(?:\.\d+)?)$/.exec(value)
+      if (directNum !== null) return Number(directNum[1])
+      // `calc(var(--x) * 1px)` — the most common alias pattern
+      const calcVar = /^calc\(\s*var\(--([a-zA-Z0-9_-]+)\)\s*\*\s*1px\s*\)$/.exec(value)
+      if (calcVar !== null) {
+        const inner = vars.get(calcVar[1]!)
+        if (inner === undefined) return null
+        return resolveToNumber(inner, depth + 1)
+      }
+      // `var(--x)` — simple reference
+      const simpleVar = /^var\(--([a-zA-Z0-9_-]+)\)$/.exec(value)
+      if (simpleVar !== null) {
+        const inner = vars.get(simpleVar[1]!)
+        if (inner === undefined) return null
+        return resolveToNumber(inner, depth + 1)
+      }
+      // `NNpx` — literal with px suffix
+      const pxNum = /^(\d+(?:\.\d+)?)px$/.exec(value)
+      if (pxNum !== null) return Number(pxNum[1])
+      return null
+    }
+
+    const resolved = new Map<string, number>()
+    for (const [name, value] of vars) {
+      const num = resolveToNumber(value)
+      if (num !== null) resolved.set(name, num)
+    }
+    return resolved
+  }
+
+  /**
    * Base-rule dimensions from the iOS mockup CSS. Only the bare selector's own
    * rule counts: `.icon-btn:active` is a state and `.checkbox svg.ic` is a
    * descendant, and neither is the control's painted box.
+   *
+   * T-255: now resolves CSS custom properties (`var(--x)` and
+   * `calc(var(--x) * 1px)`) by reading the `:root` block first, then
+   * substituting before the dimension regex runs. This is what lets the five
+   * interactive selectors survive the redesign's move from literal px to
+   * design tokens.
    */
   function mockupBoxes(): Map<string, { width?: number; height?: number }> {
     const css = readFileSync(MOCKUPS.ios, 'utf8')
+    const customProps = parseCssCustomProperties(css)
+
+    /** Resolve a CSS value to a numeric px value, or null. */
+    function resolveDimension(value: string): number | null {
+      // Literal px: `44px`, `20.5px`
+      const litPx = /^(\d+(?:\.\d+)?)px$/.exec(value.trim())
+      if (litPx !== null) return Number(litPx[1])
+      // `var(--x)` where --x resolves to a number
+      const varRef = /^var\(--([a-zA-Z0-9_-]+)\)$/.exec(value.trim())
+      if (varRef !== null) return customProps.get(varRef[1]!) ?? null
+      // `calc(var(--x) * 1px)`
+      const calcRef = /^calc\(\s*var\(--([a-zA-Z0-9_-]+)\)\s*\*\s*1px\s*\)$/.exec(value.trim())
+      if (calcRef !== null) return customProps.get(calcRef[1]!) ?? null
+      // Plain number (no unit) — tokens.json numeric leaves
+      const plain = /^(\d+(?:\.\d+)?)$/.exec(value.trim())
+      if (plain !== null) return Number(plain[1])
+      return null
+    }
+
     const boxes = new Map<string, { width?: number; height?: number }>()
-    for (const m of css.matchAll(/(^|\n)\s*(\.[a-z-]+)\s*\{([^}]*)\}/g)) {
+    for (const m of css.matchAll(/(^|\n)\s*(\.[a-z][a-z0-9-]*)\s*\{([^}]*)\}/g)) {
       const selector = m[2]!
       const body = m[3]!
-      const width = /(?:^|[;{\s])width:\s*(\d+(?:\.\d+)?)px/.exec(body)
-      const height = /(?:^|[;{\s])height:\s*(\d+(?:\.\d+)?)px/.exec(body)
+      // Try literal px first (original behaviour), then CSS variable resolution
+      const widthLit = /(?:^|[;{\s])width:\s*(\d+(?:\.\d+)?)px/.exec(body)
+      const heightLit = /(?:^|[;{\s])height:\s*(\d+(?:\.\d+)?)px/.exec(body)
+      // CSS variable or calc() value. calc() may contain nested var(), so the
+      // character class must allow inner parentheses: `calc(var(--x) * 1px)`.
+      const widthVar = /(?:^|[;{\s])width:\s*(var\([^)]+\)|calc\([^)]*\([^)]*\)[^)]*\))/.exec(body)
+      const heightVar = /(?:^|[;{\s])height:\s*(var\([^)]+\)|calc\([^)]*\([^)]*\)[^)]*\))/.exec(body)
+
+      const width = widthLit !== null
+        ? Number(widthLit[1])
+        : widthVar !== null
+          ? resolveDimension(widthVar[1]!)
+          : null
+      const height = heightLit !== null
+        ? Number(heightLit[1])
+        : heightVar !== null
+          ? resolveDimension(heightVar[1]!)
+          : null
+
       if (width === null && height === null) continue
       // First (base) rule wins; later state rules never overwrite it.
       if (boxes.has(selector)) continue
       boxes.set(selector, {
-        ...(width === null ? {} : { width: Number(width[1]) }),
-        ...(height === null ? {} : { height: Number(height[1]) }),
+        ...(width === null ? {} : { width }),
+        ...(height === null ? {} : { height }),
       })
     }
     return boxes
@@ -542,39 +638,49 @@ describe('B. touch targets are measured against the MOCKUP, not against a hand-c
   }
 
   /** Mockup selector → catalogue id, per the comments in `model/touch.ts`.
-   * `.iconbtn` (was `.icon-btn`) is omitted: the redesign moved its width and
-   * height to `var(--min-target)` which is a CSS variable the literal-px parser
-   * cannot resolve. Its touch target is still covered by the `PAINTED` map and
-   * by the § Touch floors parsed from `components.md`. */
-  // The redesign (T-227/T-244) moved ALL interactive controls from literal px
-  // to CSS custom properties (`var(--min-target)`, `var(--h-md)`,
-  // `calc(var(--icon-size-md) * 1px)`). The literal-px regex parser above
-  // cannot resolve those. The touch targets are still verified by three other
-  // mechanisms:
-  //   (1) `PAINTED` in `model/touch.ts` — the source of truth the component uses
-  //   (2) `publishedTouchFloors()` below — parsed from components.md § Touch
-  //   (3) `a11y.test.ts` surface states — every id reachable
-  // So this SELECTOR_TO_ID map is empty until the parser gains CSS-variable
-  // resolution. The two guards below verify the emptiness is recognised.
-  const SELECTOR_TO_ID: Record<string, string> = {}
+   *
+   * T-255: CSS variable resolution is now implemented in `mockupBoxes()`, so the
+   * five selectors that the redesign (T-227/T-244) moved from literal px to
+   * custom properties are restored. The selector names changed with the redesign:
+   *   .icon-btn  → .iconbtn     (drawerButton — retired but still in the mockup)
+   *   .checkbox  → .cbx         (taskCheckbox)
+   *   .mic       → .mic         (micButton — name unchanged)
+   *   .send      → [removed]    (composerSend — no standalone rule; styled via .btn .btn-sm)
+   *   .composer-input → .cinput (composerInput)
+   *
+   * `.send` is dropped because the send button no longer has a standalone CSS
+   * rule — it is styled via `.btn` + `.btn-sm` + `.btn-ghost`, and the dimensions
+   * come from `.btn-sm` (height only). Four selectors survive; the guard below
+   * counts them. `.btn-sm` is added for the send button's height.
+   */
+  const SELECTOR_TO_ID: Record<string, string> = {
+    '.iconbtn': A11Y_IDS.drawerButton,
+    '.cbx': A11Y_IDS.taskCheckbox,
+    '.mic': A11Y_IDS.micButton,
+    '.cinput': A11Y_IDS.composerInput,
+    '.btn-sm': A11Y_IDS.composerSend,
+  }
 
-  it('the parse reflects the mockup CSS format — all controls now use CSS variables', () => {
+  it('the parse is not vacuous — every mapped selector was found with real numbers (L-002)', () => {
     const boxes = mockupBoxes()
-    // With all interactive controls using CSS custom properties, the literal-px
-    // parser finds no mapped selectors. This test verifies that the map is
-    // genuinely empty rather than silently broken.
-    expect(Object.keys(SELECTOR_TO_ID).length, 'SELECTOR_TO_ID is not empty — update the parse tests').toBe(0)
-    // The parser still runs and finds SOME literal-px rules (layout elements,
-    // grabber, homebar). At least one must exist or the parser itself is broken.
-    expect(boxes.size, 'the CSS parser found zero literal-px rules at all').toBeGreaterThan(0)
+    // A regex that silently matches nothing would make every assertion below
+    // pass over an empty set. This is the guard that makes the rest mean
+    // something.
+    for (const selector of Object.keys(SELECTOR_TO_ID)) {
+      expect(boxes.has(selector), `${selector} was not found in the iOS mockup CSS`).toBe(true)
+    }
+    const numbers = Object.keys(SELECTOR_TO_ID).flatMap((s) => {
+      const box = boxes.get(s)!
+      return [...(box.width !== undefined ? [box.width] : []), ...(box.height !== undefined ? [box.height] : [])]
+    })
+    expect(numbers.length, 'the CSS parse produced too few dimensions to be real').toBeGreaterThanOrEqual(6)
   })
 
-  it('every mapped selector with a literal-px size matches PAINTED exactly', () => {
+  it('every painted size the mockup states explicitly matches PAINTED exactly', () => {
     const boxes = mockupBoxes()
     const compared: string[] = []
     for (const [selector, id] of Object.entries(SELECTOR_TO_ID)) {
-      const box = boxes.get(selector)
-      if (box === undefined) continue
+      const box = boxes.get(selector)!
       const painted = (PAINTED as Record<string, { width: number; height: number }>)[id]!
       if (box.width !== undefined) {
         expect(painted.width, `${selector} width: mockup says ${box.width}, PAINTED says ${painted.width}`).toBe(
@@ -590,9 +696,7 @@ describe('B. touch targets are measured against the MOCKUP, not against a hand-c
         compared.push(`${id}.height`)
       }
     }
-    // Currently 0 because the map is empty. When a selector regains literal-px
-    // values, the SELECTOR_TO_ID entry and this threshold grow together.
-    expect(compared.length, 'compared count does not match expectations').toBe(0)
+    expect(compared.length, 'nothing was actually compared').toBeGreaterThanOrEqual(6)
   })
 
   /*

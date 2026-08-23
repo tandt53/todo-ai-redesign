@@ -94,9 +94,8 @@ const NOT_BUILT: Record<string, string> = {
   // notice, would each be half a component.
   'tasks-save-notice': 'SaveNotice is drawn and unbuilt (components.md § SaveNotice, T-135)',
   'tasks-save-notice-dismiss': 'dismisses a notice that does not render yet (components.md § SaveNotice)',
-  // Voice FAB: the voice-first floating action button is drawn in app-shell.html
-  // but the web build does not render it (Talk surface is embedded, not a FAB).
-  'assistant-voice-fab': 'drawn T-227, web embeds Talk surface rather than a FAB overlay',
+  // Voice FAB: BUILT (T-254). The below-split FAB replaces the retired
+  // shell-talk-button as the route to Talk.
   // ListEditorSheet color swatch: the list editor is not built (IA §7).
   'list-editor-color-swatch': 'needs `lists` + `tasks.list_id` (IA §7)',
   // Header rework (T-227/T-244): search and overflow buttons drawn, not built.
@@ -710,7 +709,7 @@ describe('testid contract (design mockup catalogue)', () => {
     // both yield the same green as a working check.
     expect(catalogue().size).toBe(76)
     const expected = builtCatalogue()
-    expect(expected.size).toBe(40)
+    expect(expected.size).toBe(41)
 
     const seen = new Set<string>()
     for (const { state, drive } of STATES) {

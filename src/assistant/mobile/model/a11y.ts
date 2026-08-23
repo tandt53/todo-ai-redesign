@@ -492,6 +492,11 @@ export function expectedShellIds(
   }
 
   ids.add(SHELL_A11Y_IDS.listsMenuButton)
+  // T-257: the voice FAB is the Talk affordance on the Tasks surface — the
+  // reciprocal of PS-TASKS on the Talk surface. Always present (hidden only at
+  // split+ width, which a phone never reaches, and during selection mode, which
+  // is not yet built).
+  ids.add(SHELL_A11Y_IDS.voiceFab)
   const tasks = tasksSurfaceView(state, shell.collection)
   if (tasks.banner === 'retry' || tasks.view === 'error') {
     ids.add(SHELL_A11Y_IDS.tasksListRetryButton)
