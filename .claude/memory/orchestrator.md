@@ -85,3 +85,22 @@ accept absent files, which would cost every other row its existence guarantee to
 Same shape as the sanction register: a check that cannot express a legitimate history is
 fixed by recording the history somewhere the check does not read, not by teaching the check
 to accept anything.
+
+## 2026-08-23 — Saying a deliverable will break does not stop it breaking
+
+A UAT document was built as an HTML file referencing a sibling `shots/` folder. It was
+delivered to the owner on its own, with a sentence in the covering message explaining
+that the images would only appear if it were opened from inside that folder.
+
+Every image was broken. The owner's reply was two words: *"Ảnh lỗi."*
+
+**The sentence was accurate and worthless.** A caveat attached to a deliverable is not a
+mitigation — it moves the failure from the artifact to the reader, who now has to act on
+a constraint they did not choose and will not remember. The fix cost one rebuild with the
+images embedded, which could have been the first version.
+
+**The rule: when a deliverable has a usage constraint that a recipient can trip over in
+the first ten seconds, that is a defect to fix, not a note to write.** Two questions
+before sending anything: does this work where it is going to be opened, and would I
+notice if it did not? Here the answer to the second was yes — verifying meant copying the
+file to an empty directory and looking, which took under a minute and was not done.
