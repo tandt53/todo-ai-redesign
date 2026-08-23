@@ -541,6 +541,8 @@ repeat_until:       iso8601-date | null    # inclusive; exclusive-with repeat_co
 repeat_count:       integer | null         # >= 1; exclusive-with repeat_until
 series_id:          uuid | null            # AC-25; assigned when a repeat is first set, never cleared
 series_live:        boolean                # AC-25 — DERIVED server-side, see below
+list_id:            uuid | null            # F-008 AC-10; null = Inbox (unfiled)
+sort_order:         integer                # F-009 AC-5; sparse, gaps of 1024
 created_at:         iso8601
 updated_at:         iso8601
 deleted_at:         iso8601 | null
