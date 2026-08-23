@@ -388,12 +388,30 @@ const rawTask = (over: Record<string, unknown> = {}): Record<string, unknown> =>
   ...over,
 });
 
-/** Every field name the contract declares on the wire, and nothing else. */
+/**
+ * Every field name the contract declares on the wire, and nothing else.
+ *
+ * HAND-MAINTAINED — kept in sync with api-contracts.md § "Task on the wire"
+ * (docs/specs/assistant/api-contracts.md around :524). When a field drifts here
+ * TC-33a fails, which is the check working. Deriving from the contract was
+ * considered and rejected (T-307/T-313, 2026-08-23): the contract's format is
+ * YAML-in-markdown with internal fields declared in a comment, and — more
+ * importantly — the contract may declare a field (e.g. sort_order, F-009 AC-5)
+ * before the backend serializes it, which would make this check fail on a field
+ * the server legitimately does not yet emit. A false failure on a correctly
+ * absent field is worse than a stale constant on a correctly present one,
+ * because the first teaches people to ignore the check.
+ *
+ * When this list drifts, the failure message names the extra or missing field.
+ * If the extra field is in api-contracts.md it belongs here; if it is not, it
+ * is an information leak (file a bug).
+ */
 const WIRE_FIELDS = [
   'id', 'title', 'note', 'due_at', 'due_all_day', 'reminder_at', 'reminder_shown_at',
   'priority', 'status', 'parent_id', 'step_order', 'completed_by_parent',
   'repeat_frequency', 'repeat_interval', 'repeat_weekdays', 'repeat_month_days',
   'repeat_until', 'repeat_count', 'series_id', 'series_live',
+  'list_id',
   'created_at', 'updated_at', 'deleted_at',
 ].sort();
 
@@ -2097,8 +2115,12 @@ describe('TC-22 AC-30/AC-31 deleting names which of the two things it is about t
     expect(restored.body.restored).toBe(true);
     const backIds = [restored.body.task as Task, ...(restored.body.changed as Task[])]
       .filter((r) => r.deleted_at === null).map((r) => r.id);
-    // ONE call brings back every occurrence the gesture trashed, with its steps
-    expect(backIds.sort()).toEqual([occ2.id, s1.id, s2.id].sort());
+    // ONE call brings back every occurrence the gesture trashed, with its steps.
+    // ADR-012 amendment (2026-08-23, T-181): the restore also clears
+    // series_ended_at on the whole series.  occ1 is a done occurrence that was
+    // never soft-deleted, but its series_ended_at was set by the series delete
+    // and is now cleared — so it appears in `changed` (L-026).
+    expect(backIds.sort()).toEqual([occ1.id, occ2.id, s1.id, s2.id].sort());
     expect((await tasksOf(U1)).map((r) => r.id).sort()).toEqual([occ1.id, occ2.id, s1.id, s2.id].sort());
   });
 });
