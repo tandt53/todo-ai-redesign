@@ -14,7 +14,7 @@
 // full-surface failure for the read itself, which had no design at all because
 // there is no thread to put an error bubble in.
 
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native'
+import { Pressable, ScrollView, Text, View } from 'react-native'
 import type { AppState } from '../../_shared/model/reducer.ts'
 import { undoableTurnId } from '../../_shared/model/reducer.ts'
 import type { MobileAssistantController } from '../controller.ts'
@@ -29,6 +29,7 @@ import { ConversationList } from './ConversationList.tsx'
 import { NewMessageAffordance } from './NewMessageAffordance.tsx'
 import { PathSwitch, ShellBar } from './PathSwitch.tsx'
 import { VoiceSurface } from './VoiceSurface.tsx'
+import { useKeyboardInset } from './useKeyboardInset.ts'
 import { useNewMessageFollow } from './useNewMessageFollow.ts'
 import { useStyles } from './styles.ts'
 
@@ -71,6 +72,7 @@ export function TalkSurface({
   const view = talkView(state)
   const follow = useNewMessageFollow(controller, state)
   const retryTouch = touchProps(SHELL_A11Y_IDS.talkSessionRetryButton, platform)
+  const keyboardInset = useKeyboardInset()
 
   return (
     <View style={styles.surface}>
@@ -80,10 +82,12 @@ export function TalkSurface({
         <PathSwitch view={pathView} platform={platform} onPress={onGoTasks} />
       </ShellBar>
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
+      {/* KeyboardAvoidingView replaced (T-240): RN 0.86 Fabric + edge-to-edge
+          broke the KAV's onLayout-based measurement on both platforms. The
+          useKeyboardInset hook listens to keyboard events directly and
+          subtracts the safe-area bottom that SafeAreaView already accounts
+          for, so the calculation never touches onLayout at all. */}
+      <View style={{ flex: 1, paddingBottom: keyboardInset }}>
         {view === 'loading' && (
           <ScrollView style={styles.convPane} contentContainerStyle={styles.convContent}>
             <BubbleSkeletons />
@@ -136,7 +140,7 @@ export function TalkSurface({
         />
         <OfflineBanner state={state} />
         <Composer state={state} controller={controller} platform={platform} />
-      </KeyboardAvoidingView>
+      </View>
     </View>
   )
 }
