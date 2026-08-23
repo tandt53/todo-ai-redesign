@@ -24,7 +24,7 @@
 
 | Task | Agent | Module | Feature | Subtree | Started |
 |---|---|---|---|---|---|
-| T-191+T-181 | architect-agent | assistant | F-006/F-005 | `docs/specs/` | 2026-08-23 12:0Z |
+| — | — | — | — | — | — |
 
 ## Blockers
 <!-- Anything stopping progress. Orchestrator resolves these. -->
@@ -46,6 +46,7 @@
 <!-- Recent entries only — archive old results when the file grows. -->
 | Date | Agent | Task | Status | Summary | Next Action |
 |------|-------|------|--------|---------|-------------|
+| 2026-08-23 | architect-agent | T-191+T-181 | DONE / PARTIAL | Nine shapes specified, ninth found by the agent itself. ADR-016, ADR-017, ADR-012 amended. No collision with F-008 — trash_read is additive. T-181 decided as Option A but OQ2 is the owner's per the spec; awaiting them. | T-309, T-170 |
 | 2026-08-23 | backend-agent | T-287 | DONE | 23 api ACs, 36 new tests, suite 1240→1275. Delete unfiles rather than deletes; no trash lifecycle; no invented migration. Two follow-ups: a stale QA wire constant (T-307) and a refusal reason that states something false (T-308). | T-307, T-308 |
 | 2026-08-23 | design-agent | T-200 | DONE | Design half already fixed by T-204/T-227 — 0px asymmetry at all four widths, verified independently. The live defect is now in the CLIENT, which never followed: T-304. | T-304 |
 | 2026-08-23 | web-agent | T-281 | DONE | Four status-indicator animations rebound to `activityPulse` (1200ms), aurora band deleted. Verified in a browser: computed `animation-duration` is 1.2s on all four, `none` on the aurora. Suite 1240/1240, tsc exit 0. | — |
