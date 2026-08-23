@@ -235,6 +235,8 @@ input{font:inherit; color:inherit}
   background:var(--bg-base); border-radius:var(--r-lg); box-shadow:var(--shadow-overlay);
   min-width:200px; padding:var(--s1) 0; display:none;
 }
+/* Groceries row is last: flip menu upward so it stays inside the stage */
+.ctx-menu.for-groceries{top:auto; bottom:100%}
 .ctx-item{display:flex; align-items:center; gap:var(--s3); width:100%;
   padding:var(--s3) var(--s4); font-size:var(--fs-body); line-height:var(--lh-body);
   text-align:left; cursor:pointer; color:var(--text-primary)}
