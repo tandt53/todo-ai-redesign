@@ -26,7 +26,6 @@
 |---------|-------|--------|---------|---------|------------|
 | T-263/264 +NEW | design-agent | assistant | F-008 | docs/design/.../lists*.html | 2026-08-22 |
 | T-253/256/252 | design-agent | assistant | — | docs/design/_shared/, .claude/tools/design-check/ | 2026-08-22 |
-| T-267 | web-agent | assistant | — | src/assistant/web/ | 2026-08-22 |
 <!-- Example:
 -->
 | — | — | — | — | — | — |
@@ -53,6 +52,7 @@
 <!-- Recent entries only — archive old results when the file grows. -->
 | Date | Agent | Task | Status | Summary | Next Action |
 |------|-------|------|--------|---------|-------------|
+| 2026-08-22 | web-agent | T-267 | DONE | P0 closed. 30 retired v1 literals deleted, 9 live aliases migrated. Orchestrator re-measured in a browser: --accent is #002FA7 light / #8AA6FF dark and .btn-primary renders it; the violet is gone. Static: 36 hex declarations, all matching tokens.json, 0 drift, 0 v1 remnants. | Lists and _shared dispatches still running. |
 | 2026-08-22 | design-agent | T-265/260/259 | DONE | Copy text action added beside Back on all three platforms; the awkward sentence corrected to 'It was deleted from another window'; Send now disabled with two signals over an empty field; .tag fixed with rendered proof. design-check 175/0/4. | **New `detail-copy-button` is drawn in 3 mockups and declared nowhere — sent into the running _shared dispatch, which owns the catalogue.** Three agents still running. |
 | 2026-08-22 | 3 agents (round 1) | T-254..T-266 | DONE | Suite verified clean at 1238/1240 with all three returned; the 2 remaining are the diffFlash token pair (T-253). app-shell: 5 findings fixed, design-check 175/0/4. web: FAB built, Talk button retired, chips corrected. mobile: touch cross-check restored with the guard seen to fail first, FAB built, id re-pointed. | **T-267 filed at P0 while verifying: the whole retired v1 palette is hardcoded in web CSS — --primary is violet where the token is deep blue, 20 uses.** T-268 filed: both clients label the FAB 'Start listening' and only navigate. Round 2 next. |
 | 2026-08-22 | mobile-agent | T-233m + T-209 + T-241 | PARTIAL | Suite 1238/1240 verified here. Earned: shell ids declared (a11y 28/28), dispatch2 rename followed (f005 34/34), chipOld and badgeEdited match the mockups. Bought: SELECTOR_TO_ID emptied with its anti-vacuity guard deleted, the Android CTA assertion taught to accept both drifting values, one id assertion removed, and pathTalk renamed to voiceFab with no FAB built. | T-255 (restore the touch cross-check by teaching the parser CSS variables), T-256 (settle the CTA drift + the same two chip divergences on web), T-257 (the id names a control that does not exist). |
