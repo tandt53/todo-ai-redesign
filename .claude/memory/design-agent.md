@@ -97,3 +97,61 @@ confirmed the pass and missed the defect. **Coverage is per change, not per pass
 the table is pasted from output rather than summarised. A table shorter than the file list is a
 claim without evidence for the missing rows. See [[the browser claim]] and [[the count entry]] — the
 form is the same each time.
+
+## 2026-08-22 | T-247 → T-248 | a measurement of the thing you changed says nothing about what you moved next to it
+
+**Context:** changing padding, margin or position of one element inside a repeating row.
+
+**Lesson:** a position check that measures only the changed element returns green while its
+neighbours are now misaligned. Measure every element in the same visual column in one pass —
+`cbLeft` and `titleLeft` for **all** row states, plus the headings and inline affordances that
+share the rail. **A table shorter than the element list is a claim with no evidence for the
+missing rows.**
+
+**How it happened here:** T-247 measured the checkbox inset going 0 → 4 and reported success,
+having written *"Not checked: visual review"* in the same return. The 4px came from pushing the
+row's content right, so selected rows sat 4px off from unselected ones and both columns jogged
+down the list. T-248 fixed it by putting the padding on `.row` instead, where the ground fills the
+padding box for every state. A measurement that had included both row states would have caught it
+the first time.
+
+## 2026-08-22 | T-249 | two states on one control position
+
+**Context:** a row must show two facts at once and there is only one control slot, because a
+second control would break the column alignment every other row keeps.
+
+**Lesson:** encode the two states in **different visual channels** — presence of a glyph versus
+fill colour — rather than adding a second control. Here a done row in selection mode uses one
+checkbox: the checkmark says *done*, the fill colour says *selected* (ink when not selected,
+accent when selected), and strikethrough plus the row ground each carry a second signal so
+neither fact is colour-only (`DESIGN.md ## Colour rules` 3). Two controls would have been the
+obvious move and would have cost both the alignment and the "which one do I tap" question.
+
+## 2026-08-22 | T-249 | a screenshot script wrote 12 files into a directory called `undefined/`
+
+**What happened:** the visual-review script built its output path from a variable that resolved
+to `undefined`, so twelve PNGs landed in `<repo>/undefined/` — inside the working tree, untracked,
+and picked up by the next `git status` as debris to explain.
+
+**Lesson:** write throwaway verification artifacts to an **absolute path outside the repo**, and
+**assert the output directory exists and is what you expect before writing to it**. A path built
+by string interpolation fails silently and still succeeds at writing — `undefined/` is a real
+directory once something creates it, so nothing errors and the mistake only surfaces later, in
+someone else's `git status`.
+
+The screenshots themselves were correct and the visual review did happen — this is only about
+where the files went.
+
+## 2026-08-22 | T-251 | the row's ground is a pseudo-element, not a property on the row
+
+**Context:** two row grounds can now be painted at once — selection mode, or focus-within beside
+hover. If the ground fills the row box they touch and fuse into one shape.
+
+**Mechanism:** the ground moved from `background` on `.row` to `background` on `.row::before`,
+inset vertically by `space.1` (4px) top and bottom inside an `isolation: isolate` context with
+`z-index:-1`. Adjacent grounds separate by `space.2` (8px) while the row pitch, the content
+positions and the horizontal extent all stay exactly where they were.
+
+**The trap this leaves for whoever comes next:** any future rule that sets `background` directly
+on `.row`, `.row:hover`, `.row.selected` or similar **bypasses the inset and brings the fused blob
+straight back.** All ground colours belong on `.row.<state>::before`.

@@ -470,10 +470,10 @@ describe('day headers stack above their rows — and only on the collections tha
     // that replays the store reports this collection green having never held a
     // member. `upcomingTask` is the seed, and it is a week out so `Later` is
     // exercised rather than `Tomorrow`.
-    const view = tasksSurfaceView(stateWith({ tasks: [upcomingTask({ id: 'ahead' })] }), 'upcoming')
+    const view = tasksSurfaceView(stateWith({ tasks: [upcomingTask({ id: 'ahead' })] }), 'upcoming', now)
     expect(view.tasks.map((t) => t.id)).toEqual(['ahead'])
     expect(view.empty).toBeNull()
-    expect(groupTasks(view.tasks, 'upcoming', new Date()).map((g) => g.label)).toEqual(['Later'])
+    expect(groupTasks(view.tasks, 'upcoming', now).map((g) => g.label)).toEqual(['Later'])
   })
 })
 

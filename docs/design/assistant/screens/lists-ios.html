@@ -338,17 +338,10 @@ input{font:inherit; color:inherit}
       </div>
     </div>
 
-    <!-- Home row -->
-    <div class="mrow lrow v v-default v-rename v-rename-taken vflex" style="position:relative">
-      <span class="ldot" style="background:#1A7A2E" aria-hidden="true"></span>
-      <span class="lname">Home</span><span class="n">2</span>
-      <button class="overflow" accessibilityIdentifier="list-row-overflow-button" aria-label="More options for Home"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
-    </div>
-
-    <!-- Recolour panel for Work -->
+    <!-- Recolour panel for Work (attached to Work row, same mechanism as rename) -->
     <div class="recolour-panel for-work">
       <span class="rlabel">Colour for Work</span>
-      <div class="swatches" role="radiogroup" aria-label="List colour" accessibilityIdentifier="list-recolour-swatch-group">
+      <div class="swatches" role="radiogroup" aria-label="List colour" accessibilityIdentifier="list-recolour-swatches">
         <button type="button" class="swatch" accessibilityIdentifier="list-recolour-swatch" role="radio" aria-checked="false" aria-label="Grey" style="background:#94949E"></button>
         <button type="button" class="swatch on" accessibilityIdentifier="list-recolour-swatch" role="radio" aria-checked="true" aria-label="Blue" style="background:#002FA7"></button>
         <button type="button" class="swatch" accessibilityIdentifier="list-recolour-swatch" role="radio" aria-checked="false" aria-label="Red" style="background:#C8102E"></button>
@@ -357,6 +350,13 @@ input{font:inherit; color:inherit}
         <button type="button" class="swatch" accessibilityIdentifier="list-recolour-swatch" role="radio" aria-checked="false" aria-label="Purple" style="background:#7C3AED"></button>
         <button type="button" class="swatch" accessibilityIdentifier="list-recolour-swatch" role="radio" aria-checked="false" aria-label="Teal" style="background:#0E7490"></button>
       </div>
+    </div>
+
+    <!-- Home row -->
+    <div class="mrow lrow v v-default v-rename v-rename-taken vflex" style="position:relative">
+      <span class="ldot" style="background:#1A7A2E" aria-hidden="true"></span>
+      <span class="lname">Home</span><span class="n">2</span>
+      <button class="overflow" accessibilityIdentifier="list-row-overflow-button" aria-label="More options for Home"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
     </div>
 
     <!-- Groceries row (0 tasks) -->
@@ -403,7 +403,7 @@ input{font:inherit; color:inherit}
     <!-- iOS DELETE CONFIRMATION ACTION SHEET -->
     <div class="delete-sheet" accessibilityIdentifier="list-delete-dialog">
       <div class="action-group">
-        <div class="action-header">Move 5 tasks to Inbox and delete Work?<br>The tasks are not deleted.</div>
+        <div class="action-header">Move 5 tasks to Inbox and delete Work?<br>The tasks are not deleted. They move to Inbox, where they were before you filed them.</div>
         <button class="action-item danger" accessibilityIdentifier="list-delete-confirm-button">Move and delete</button>
       </div>
       <div class="action-group">

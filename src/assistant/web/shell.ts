@@ -26,6 +26,7 @@ import { DEFAULT_COLLECTION, inCollection } from '../_shared/model/tasks.ts'
 import type { Collection } from '../_shared/model/tasks.ts'
 import type { AppState } from '../_shared/model/reducer.ts'
 import { prefersReducedMotion } from './follow.ts'
+import tokensJson from '../../../docs/design/_shared/tokens.json' with { type: 'json' }
 
 /**
  * The surfaces this shell can show. S3 (Lists menu) is a slide-over and S5 (New
@@ -61,11 +62,16 @@ export type ShellSurface = 'talk' | 'tasks' | 'settings' | 'detail'
  * re-attached by AC-31 from "whenever a turn applies" to "on arrival from the
  * message that changed it".
  *
+ * Derived at module scope so the JS constant and the CSS `--dur-flash` alias
+ * share the same source of truth (T-270, L-008).
+ *
  * `shell.test.ts` parses tokens.json and asserts this number, so a token change
  * fails the suite instead of silently leaving the JS and the CSS disagreeing
  * (L-008 — the test reads the owning artifact, not a retyped copy).
  */
-export const FLASH_MS = 2000
+export const FLASH_MS =
+  tokensJson.motion.duration_ms.diffFlashHold +
+  tokensJson.motion.duration_ms.diffFlashFade
 
 export interface ShellHandle {
   surface: ShellSurface

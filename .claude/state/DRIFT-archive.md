@@ -4,3 +4,5 @@
 <!-- Orchestrator resolves: minor → cleanup task; significant → route to agent; spec outdated → update spec. -->
 | Date | Agent | Feature | Issue | File |
 |------|-------|---------|-------|------|
+
+<!-- moved from STATUS.md ## In-Flight 2026-08-23 — these are drift-log entries that had accumulated under the In-Flight heading, where they pushed the live dispatch table off the top of the file and out of anyone's eye. -->

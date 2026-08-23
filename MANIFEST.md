@@ -164,9 +164,9 @@ writers:
   # Cross-cutting records the orchestrator maintains, plus the landing place for a
   # ONE-OFF cross-subtree grant it issued: when a change must land as a single unit
   # (T-121 — splitting it would have left Today defined twice) the acting agent
-  # crosses lines under an explicit grant and the files are recorded on the
-  # orchestrator row rather than widening that agent permanently. The map cannot
-  # express "sanctioned once"; that is the gap, not the crossing.
+  # crosses lines under an explicit grant. That gap is now closed by
+  # `.claude/state/SANCTIONS.md` (T-282): one exact task+agent+path triple per row,
+  # read by C6, printed as `sanc` and never as `ok`. Prefixes license nothing.
   # `.claude/` added 2026-08-18. The pipeline's own tooling is owned by no agent,
   # and the orchestrator is the party that runs `upgrade-project.sh` — so
   # template-synced files land here under its name. This is not authorship: the
@@ -188,8 +188,8 @@ writers:
   # returns and consolidations in it stay the orchestrator's to write.
   spec-agent:        ["{specs}/", "{design}/{shared_dir}/components.md", "docs/reports/gate1-lenses/"]
   architect-agent:   ["{specs}/"]
-  # `{reports}/` 2026-08-21 — map change not a one-off grant (L-017): an audit produces a report.
-  design-agent:      ["{design}/", "{reports}/"]
+  # `{reports}/` 2026-08-21 and `.claude/tools/design-check/` 2026-08-23 — map changes, not one-off grants (L-017): an audit produces a report, and design-agent AUTHORS the checker rather than visiting it.
+  design-agent:      ["{design}/", "{reports}/", ".claude/tools/design-check/"]
   # implementers also own the root build manifests (platform docs make the
   # first implementer create them; they are shared config, not source)
   backend-agent:     ["{src}/", "package.json", "tsconfig.json", ".gitignore"]

@@ -231,10 +231,12 @@ input{font:inherit; color:inherit}
 
 /* ══════ CONTEXT MENU (dropdown) ══════ */
 .ctx-menu{
-  position:absolute; right:var(--s2); z-index:30;
+  position:absolute; right:var(--s2); top:100%; z-index:30;
   background:var(--bg-base); border-radius:var(--r-lg); box-shadow:var(--shadow-overlay);
   min-width:200px; padding:var(--s1) 0; display:none;
 }
+/* Groceries row is last: flip menu upward so it stays inside the stage */
+.ctx-menu.for-groceries{top:auto; bottom:100%}
 .ctx-item{display:flex; align-items:center; gap:var(--s3); width:100%;
   padding:var(--s3) var(--s4); font-size:var(--fs-body); line-height:var(--lh-body);
   text-align:left; cursor:pointer; color:var(--text-primary)}
@@ -438,15 +440,7 @@ input{font:inherit; color:inherit}
       </div>
     </div>
 
-    <!-- === LIST ROW: Home (green, 2 tasks) === -->
-    <div class="mrow lrow v v-default v-rename v-rename-taken vflex" style="position:relative">
-      <span class="ldot" style="background:#1A7A2E" aria-hidden="true"></span>
-      <span class="lname">Home</span>
-      <span class="n">2</span>
-      <button class="overflow" aria-label="More options for Home" aria-haspopup="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
-    </div>
-
-    <!-- RECOLOUR PANEL for Work (appears below Work row) -->
+    <!-- RECOLOUR PANEL for Work (attached to Work row, same mechanism as rename) -->
     <div class="recolour-panel for-work">
       <span class="rlabel">Colour for Work</span>
       <div class="swatches" role="radiogroup" aria-label="List colour" data-testid="list-recolour-swatches">
@@ -458,6 +452,14 @@ input{font:inherit; color:inherit}
         <button type="button" class="swatch" role="radio" aria-checked="false" aria-label="Purple" style="background:#7C3AED"></button>
         <button type="button" class="swatch" role="radio" aria-checked="false" aria-label="Teal" style="background:#0E7490"></button>
       </div>
+    </div>
+
+    <!-- === LIST ROW: Home (green, 2 tasks) === -->
+    <div class="mrow lrow v v-default v-rename v-rename-taken vflex" style="position:relative">
+      <span class="ldot" style="background:#1A7A2E" aria-hidden="true"></span>
+      <span class="lname">Home</span>
+      <span class="n">2</span>
+      <button class="overflow" aria-label="More options for Home" aria-haspopup="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
     </div>
 
     <!-- === LIST ROW: Groceries (amber, 0 tasks — no count shown) === -->
