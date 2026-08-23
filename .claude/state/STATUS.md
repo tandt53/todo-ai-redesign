@@ -24,7 +24,7 @@
 
 | Task | Agent | Module | Feature | Subtree | Started |
 |---|---|---|---|---|---|
-| T-314+T-315+T-316 | design-agent | assistant | — | `docs/design/` | 2026-08-23 14:1Z |
+| — | — | — | — | — | — |
 
 ## Blockers
 <!-- Anything stopping progress. Orchestrator resolves these. -->
@@ -46,6 +46,7 @@
 <!-- Recent entries only — archive old results when the file grows. -->
 | Date | Agent | Task | Status | Summary | Next Action |
 |------|-------|------|--------|---------|-------------|
+| 2026-08-23 | design-agent | T-314+T-315+T-316 | DONE | B raised off the bottom with the system indicator reserved; keyboard drawn (38%, list keeps ~50%); B testids pulled back out of the contract, 82/82. B now 1.3 rows — but A has not reserved the indicator at all: T-318. | T-318 |
 | 2026-08-23 | design-agent | T-311 | DONE | Option B drawn, 5 states × 3 platforms. Bar 52px = 6.3% = 0.85 rows, covers 0 (it sits below the scroller). The trade: A is 0 permanent + 1–2 rows occluded; B is 0.85 rows permanent + 0 occluded. | T-312 |
 | 2026-08-23 | backend-agent | T-309 | DONE | The trash is served — 4 routes, the QA door, turn path and undo. 273/273 api, 35 new tests. Refused to invent enum members the contract does not declare. | T-313, T-170 |
 | 2026-08-23 | design-agent | T-305+T-306 | DONE | Long list drawn on 3 platforms with a real scroller; add row pins and releases; short list unchanged (0 covered, gap 0). FAB moved into the bar's band — zero additional text coverage, verified. | T-311 |

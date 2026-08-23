@@ -529,7 +529,7 @@ Purpose: the owner's alternative to InlineAdd. One fixed bottom row holding a te
 | empty | mic (lucide `mic`) | **"Talk"** | Navigates to the Talk surface. Does NOT start capture (AC-37). |
 | has text | arrow-up (lucide `arrow-up`) | **"Add task"** | Calls `addTask` with the title verbatim. Same path as InlineAdd. |
 
-The button is one element with `data-testid="tasks-bar-action"`. Its accessible name changes with the field state. The mic icon and styling (quiet border, `text.secondary`) match the idle MicControl's visual weight. The send state takes the `accent` fill so the action reads as committal.
+The button is one element (testid provisionally removed, T-315). Its accessible name changes with the field state. The mic icon and styling (quiet border, `text.secondary`) match the idle MicControl's visual weight. The send state takes the `accent` fill so the action reads as committal.
 
 **Empty field with arrow:** the arrow is NOT present when the field is empty. The mic stays until the first character. An empty submit is not possible. This is the field state being the mode switch.
 
@@ -537,11 +537,11 @@ The button is one element with `data-testid="tasks-bar-action"`. Its accessible 
 
 **Talk Composer divergence.** The Talk surface's Composer (§ Composer) shows input + mic + send all three at once, with send always present (merely `aria-disabled` when empty). **This bar does not follow that pattern, and the difference is deliberate:** on Talk, mic and send do different things simultaneously (mic starts capture, send submits text), while on Tasks the mic means "go somewhere else". The morph prevents the accidental promise that a mic beside a text field makes — that the text goes through the assistant. **The alternative — teaching Talk the same morph — was considered and rejected**: Talk's Composer handles the listening state (live transcript replaces the field) and the mic there IS an input method for the field, not a navigation control. Merging them into one morph would mean that on Talk, tapping the mic while the field has text would need to choose between sending the text and starting capture — a mode conflict the current three-button layout already resolves. Recorded here because `§ Composer` and `§ TaskBottomBar` now describe two bottom bars that behave differently, and the difference must read as decided rather than inconsistent.
 
-**Permanent vertical cost:** 52px = 0.85 task rows (a row is 61px at these tokens). Option A costs 0 rows permanently but occludes 1–2 rows while the inline-new is pinned on a long list. B costs 0.85 rows permanently and occludes 0.
+**Permanent vertical cost (updated T-314):** web 80px (1.31 rows), iOS 81px (1.33 rows), Android 79px (1.30 rows). The increase from the original 52px (0.85 rows) is the system indicator reservation (homebar on iOS, gesturebar on Android) and 8px bottom padding — the bar was flush at 0px and would sit under the iOS home indicator / Android gesture bar. Option A costs 0 rows permanently but occludes 1-2 rows while the inline-new is pinned on a long list. B now costs ~1.3 rows permanently and occludes 0.
 
 States: idle (field empty, mic button) · typing (field has text, send button) · focused (field ring).
 
-Testids: `tasks-bar-input` (the text field), `tasks-bar-action` (the morphing button).
+Testids: **removed (T-315)** — `tasks-bar-input` and `tasks-bar-action` are withdrawn from the contract while option B is provisional. The drawing is unchanged. The ids re-enter the catalogue and the mockup attributes in the same edit that implements whichever option the owner chooses.
 
 ## OfflineBanner
 
@@ -1490,8 +1490,6 @@ Genuinely new controls, and only those, take new ids:
 | `tasks-confirm-delete` | § ConfirmDialog — destructive confirm button (added T-244) |
 | `tasks-confirm-cancel` | § ConfirmDialog — cancel button (added T-244) |
 | `tasks-drag-handle` | § TaskRow — drag handle for manual reorder, visible only in manual sort (added T-247) |
-| `tasks-bar-input` | § TaskBottomBar (option B, T-311) — text field. Accessible name: **"Add a task"**. Visible only in optb-* states (below split). |
-| `tasks-bar-action` | § TaskBottomBar (option B, T-311) — the morphing action button. Accessible name: **"Talk"** (field empty, mic icon) / **"Add task"** (field has text, arrow-up icon, accent fill). One element, one testid, name changes with field state. |
 
 **`shell-talk-button` is retired by T-227** — the PathSwitch Talk button was removed when the Talk
 path changed from a bottom-bar tab to the voice FAB (below split) and the permanent panel (at
@@ -1509,8 +1507,10 @@ No content-width floor is published for any control above. § Touch's floors are
 shipped control; none of these has shipped, and publishing a floor measured only in Chromium
 would put a number into a table whose whole value is that its numbers are checkable.
 
-**The counts (updated T-311 — `tasks-bar-input`, `tasks-bar-action`).** This table now has
-**54** new-control rows (was 52; +2 for `tasks-bar-input` and `tasks-bar-action`). The carried-over list is still **6**.
+**The counts (updated T-315 — `tasks-bar-input`, `tasks-bar-action` removed).** This table now has
+**52** new-control rows (was 54; -2 for `tasks-bar-input` and `tasks-bar-action`, removed while
+option B is provisional — the ids re-enter the contract in the same edit that implements
+whichever option wins). The carried-over list is still **6**.
 **`src/assistant/mobile/model/a11y.ts SHELL_A11Y_IDS`** holds 29 and
 needs updating: add `shell-search-button`, `shell-overflow-button`, `tasks-drag-handle` and the
 20 F-009 ids; retire `shell-talk-button`. This is L-008's mechanism working in the direction drift actually travels — the
