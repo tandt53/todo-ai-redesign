@@ -4,7 +4,35 @@
 
 ## Project
 
-[Short description of what this project is]
+<!-- The orchestrator reads this before turning any request into tasks. It is -->
+<!-- what a priority is judged against: without it every request looks equally -->
+<!-- urgent, because there is nothing for one to be more urgent THAN. -->
+<!-- The owner's answers. They may ask for a draft, but the draft is not the -->
+<!-- answer until they have said so — these are product decisions. -->
+<!-- A line still in brackets is unanswered, and the orchestrator stops and asks -->
+<!-- rather than guessing. -->
+
+<!-- DRAFT 2026-08-23, read out of docs/specs/_source/todo-ai/02-use-cases.md and -->
+<!-- F-001's ## Out of Scope. Not confirmed by the owner. -->
+
+- **Is** — a todo app where saying one sentence does what filling in several
+  fields would; typing does everything too, and always has.
+- **For** — one person managing their own tasks, often with their hands busy —
+  walking, cooking, in a meeting.
+- **Must** — every basic action works with the AI off, broken, out of quota or
+  offline (`02-use-cases.md`, group CORE). Quick-add draws the row in p95 ≤ 100 ms
+  with no network wait. Nothing is lost: soft delete for 30 days, undo in place.
+- **Is not** — not a tool for teams or projects: no assigning, no handing work to
+  another person, no workflow status (`blocked` / `in-progress` were considered
+  and declined — a single user has no counterparty to hand to). AI is never the
+  only route to a basic action. No wake word and no always-on mic.
+- **Succeeds when** — a task gets created, found or completed in fewer taps and
+  keystrokes than typing it out would take. That is the measure every use case in
+  `02-use-cases.md` is already judged by.
+
+`Is not` is the one most often skipped and the one that does the most work: it is
+what makes a request refusable. Without it the only answer to "should we build
+this?" is yes.
 
 ## Agent Orchestration
 
