@@ -42,6 +42,8 @@ export type FixtureResult =
   | { kind: 'list_move'; target: string; list_name: string | null }
   /** F-008 AC-20: refuse rename/recolour/delete a list */
   | { kind: 'list_refuse' }
+  /** F-006 AC-14: trash read — target is a task title for task_in_trash, omitted for trash_contents */
+  | { kind: 'trash_read'; query: 'task_in_trash' | 'trash_contents'; target?: string }
 
 export interface FixtureRow {
   /** matched against the normalized transcript */
@@ -174,6 +176,23 @@ export class FixtureInterpreter implements Interpreter {
       }
       case 'list_refuse':
         return { kind: 'list_refuse' }
+      case 'trash_read': {
+        if (result.query === 'trash_contents') {
+          return { kind: 'trash_read', query: 'trash_contents' }
+        }
+        // task_in_trash: resolve the target title against deleted_tasks
+        if (result.target !== undefined) {
+          const want = result.target.trim().toLowerCase()
+          const found = ctx.deleted_tasks?.find(
+            (t) => t.title.trim().toLowerCase() === want,
+          )
+          if (found !== undefined) {
+            return { kind: 'trash_read', query: 'task_in_trash', handle: found.id }
+          }
+        }
+        // fallback: if we can't find it in deleted_tasks, still report trash_read
+        return { kind: 'trash_read', query: 'trash_contents' }
+      }
     }
   }
 

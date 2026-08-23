@@ -1147,6 +1147,45 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   .voice-fab{display:none}
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   OPTION B: Fixed bottom task bar — field + morphing mic/send (T-311)
+   Bar height = h-lg (52px). s1 pad + h-md content + s1 pad = 4+44+4.
+   ══════════════════════════════════════════════════════════════════════════ */
+.task-bar{display:none; flex:none; background:var(--bg-base)}
+.app[data-optb] .task-bar{display:block}
+.app[data-optb] .inline-new{display:none !important}
+.app[data-optb] .voice-fab{display:none !important}
+.app[data-optb] .content-col::after{display:none}
+.task-bar-in{
+  display:flex; align-items:center; gap:var(--s3);
+  padding:var(--s1) var(--gutter);
+  max-width:var(--list-max); margin:0 auto; width:100%;
+}
+.tbar-input{
+  flex:1 1 auto; min-width:0; height:var(--field-h); min-height:var(--min-target);
+  border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-sm);
+  background:var(--bg-base); padding:0 var(--field-px);
+  font-size:var(--fs-body); color:var(--text-primary);
+}
+.tbar-input::placeholder{color:var(--text-muted)}
+.tbar-input:focus{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px; border-color:var(--accent)}
+.tbar-action{
+  width:var(--h-md); height:var(--h-md);
+  border-radius:var(--r-circle); border:var(--b-hairline) solid var(--bg-rule);
+  background:transparent; color:var(--text-secondary); cursor:pointer;
+  display:grid; place-items:center; flex:none; position:relative;
+}
+.tbar-action::before{
+  content:""; position:absolute; top:50%; left:50%;
+  width:var(--min-target); height:var(--min-target); transform:translate(-50%,-50%);
+}
+.tbar-action:hover{color:var(--text-primary); border-color:var(--text-primary)}
+.tbar-action.tbar-active{background:var(--accent); color:var(--text-on-accent); border-color:transparent}
+.tbar-action:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
+@container (min-width:1024px){
+  .app[data-optb] .task-bar{display:none !important}
+}
+
 /* ── Swipe action hidden at split+ (hover-reveal delete button instead) ── */
 @container (min-width:1024px){
   .swipe-action{display:none}
@@ -1377,6 +1416,11 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   <button data-s="tasks-long-list" onclick="showState('tasks-long-list')">long-list-top</button>
   <button data-s="tasks-long-list-mid" onclick="showState('tasks-long-list-mid')">long-list-mid</button>
   <button data-s="tasks-long-list-bottom" onclick="showState('tasks-long-list-bottom')">long-list-bottom</button>
+  <button data-s="optb-short-list" onclick="showState('optb-short-list')">B: short</button>
+  <button data-s="optb-typing" onclick="showState('optb-typing')">B: typing</button>
+  <button data-s="optb-long-list" onclick="showState('optb-long-list')">B: long-top</button>
+  <button data-s="optb-long-list-mid" onclick="showState('optb-long-list-mid')">B: long-mid</button>
+  <button data-s="optb-long-list-bottom" onclick="showState('optb-long-list-bottom')">B: long-btm</button>
   <button data-s="search-open" onclick="showState('search-open')">search-open</button>
   <button data-s="search-filtering" onclick="showState('search-filtering')">search-filtering</button>
   <button data-s="search-no-results" onclick="showState('search-no-results')">search-no-results</button>
@@ -2010,7 +2054,17 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
             </div>
           </div>
         </main>
-<!-- Add task FAB removed (T-227) — inline add row is the primary affordance -->
+
+        <!-- OPTION B: Fixed bottom task bar (T-311) -->
+        <div class="task-bar">
+          <div class="task-bar-in">
+            <input class="tbar-input" id="tbarInput" data-testid="tasks-bar-input" resource-id="tasks-bar-input" type="text" placeholder="Add a task" aria-label="Add a task">
+            <button class="tbar-action" id="tbarAction" data-testid="tasks-bar-action" resource-id="tasks-bar-action" aria-label="Talk">
+              <span class="tbar-ico-mic"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></span>
+              <span class="tbar-ico-send" style="display:none"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></span>
+            </button>
+          </div>
+        </div>
 
         <!-- BULK ACTION TOOLBAR (T-225) -->
         <div class="bulk-toolbar" data-testid="tasks-bulk-toolbar" resource-id="tasks-bulk-toolbar">
@@ -2725,9 +2779,68 @@ var STATES = {
     "selection": "some",
     "confirm": "delete",
     "selectCount": 3
+  },
+  "optb-short-list": {
+    "collection": "today",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "frame": "phone",
+    "optb": "idle"
+  },
+  "optb-typing": {
+    "collection": "today",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "frame": "phone",
+    "optb": "typing"
+  },
+  "optb-long-list": {
+    "collection": "long",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "title": "Upcoming",
+    "count": "<b>18</b> open · <span class=\"late\">2 overdue</span>",
+    "scrollTo": "top",
+    "frame": "phone",
+    "optb": "idle"
+  },
+  "optb-long-list-mid": {
+    "collection": "long",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "title": "Upcoming",
+    "count": "<b>18</b> open · <span class=\"late\">2 overdue</span>",
+    "scrollTo": "mid",
+    "frame": "phone",
+    "optb": "idle"
+  },
+  "optb-long-list-bottom": {
+    "collection": "long",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "title": "Upcoming",
+    "count": "<b>18</b> open · <span class=\"late\">2 overdue</span>",
+    "scrollTo": "bottom",
+    "frame": "phone",
+    "optb": "idle"
   }
 };
-var KEYS = ["surface","collection","tasks","talk","mic","banner","row","carried","menu","settings","sheet","search","overflow","selection","confirm","sort"];
+var KEYS = ["surface","collection","tasks","talk","mic","banner","row","carried","menu","settings","sheet","search","overflow","selection","confirm","sort","optb"];
 
 function showState(name){
   var cfg = STATES[name]; if(!cfg) return;
@@ -2866,6 +2979,25 @@ function paint(cfg){
   if (swipeRow) {
     if (cfg.swiped) swipeRow.classList.add('row-swiped');
     else swipeRow.classList.remove('row-swiped');
+  }
+
+  /* ── Option B task bar morph (T-311) ── */
+  var tbarAction = document.getElementById('tbarAction');
+  var tbarInput = document.getElementById('tbarInput');
+  if (tbarAction && tbarInput) {
+    if (cfg.optb === 'typing') {
+      tbarAction.querySelector('.tbar-ico-mic').style.display = 'none';
+      tbarAction.querySelector('.tbar-ico-send').style.display = '';
+      tbarAction.setAttribute('aria-label', 'Add task');
+      tbarAction.classList.add('tbar-active');
+      tbarInput.value = 'Buy flowers for Lan';
+    } else {
+      tbarAction.querySelector('.tbar-ico-mic').style.display = '';
+      tbarAction.querySelector('.tbar-ico-send').style.display = 'none';
+      tbarAction.setAttribute('aria-label', 'Talk');
+      tbarAction.classList.remove('tbar-active');
+      tbarInput.value = '';
+    }
   }
 
   /* ── Long list scroll position (T-305/306) ── */

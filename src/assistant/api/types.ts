@@ -153,6 +153,21 @@ export type TurnOutcome =
    * the undo window, exactly like `no_match`.
    */
   | { kind: 'refused'; reason: RefusalReason; field: string | null; task_id: string | null }
+  /**
+   * The eighth member (F-006 AC-14, api-contracts § `turn.outcome` gains
+   * `trash_read`). A turn that reads the trash and produces an informational
+   * answer. The turn's `status` is `applied` (same as every answered query).
+   * No mutation. `changed_task_ids` is empty and no `undo_snapshot` is
+   * captured, so it never occupies or advances the undo window.
+   */
+  | {
+      kind: 'trash_read'
+      query: 'task_in_trash' | 'trash_contents'
+      task_id?: string
+      task_title?: string
+      entry_count?: number
+      entry_titles?: string[]
+    }
 
 export interface QuestionResolution {
   result: ResolutionResult
@@ -224,10 +239,13 @@ export interface Question {
   resolution: QuestionResolution | null
 }
 
+/** The two reasons a row can be skipped during undo (F-006 AC-13). */
+export type SkippedReason = 'modified_since_apply' | 'permanently_deleted'
+
 /** Stored on undone turns; mirror of the undo endpoint's 200 body. */
 export interface UndoResultRec {
   reverted: { task_id: string; title: string }[]
-  skipped: { task_id: string; title: string; reason: 'modified_since_apply' }[]
+  skipped: { task_id: string; title: string; reason: SkippedReason }[]
   nothing_reverted: boolean
   via: UndoVia
   transcript?: string
@@ -306,7 +324,7 @@ export interface UndoOutcomeWire {
   undone: true
   already_undone: boolean
   reverted: { task_id: string; title: string }[]
-  skipped: { task_id: string; title: string; reason: 'modified_since_apply' }[]
+  skipped: { task_id: string; title: string; reason: SkippedReason }[]
   nothing_reverted: boolean
   via: UndoVia
 }
