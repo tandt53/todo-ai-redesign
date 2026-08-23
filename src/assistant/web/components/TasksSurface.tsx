@@ -40,15 +40,17 @@ import {
   CheckIcon,
   ListChecksIcon,
   MenuIcon,
+  MicIcon,
   MoreHorizontalIcon,
   PencilIcon,
   PlusIcon,
   RepeatIcon,
   SearchIcon,
+  SendIcon,
   TrashIcon,
 } from './icons.tsx'
-// PathSwitch removed from Tasks header: the Talk direction is now VoiceFab
-// (T-254), rendered at the app root in App.tsx.
+// PathSwitch removed from Tasks header. VoiceFab retired (T-321), replaced by
+// TaskBottomBar at the bottom of this surface below split (AC-37).
 
 /**
  * § TaskRow § The row's mark budget — **three marks, one line, one decision.**
@@ -565,6 +567,17 @@ export function TasksSurface({
           )}
         </div>
       </div>
+      {/* ── TaskBottomBar — fixed field + morphing action (T-321, AC-37) ──────
+          Below breakpoints.split only (CSS hides it at split+). A flex:none
+          child outside the scroll container, so it never scrolls and the pane
+          fills the remaining height above it. The morph fires on the first
+          character entering / last character leaving, not on focus/blur. */}
+      <TaskBottomBar
+        onGoTalk={() => shell.go('talk')}
+        onAddTask={(title: string) => {
+          void controller.addTask(title, collection)
+        }}
+      />
     </div>
   )
 }
@@ -700,6 +713,71 @@ function InlineAdd({
         <PlusIcon />
       </span>
       <span className="inline-label">Add a task</span>
+    </div>
+  )
+}
+
+/**
+ * § TaskBottomBar — the canonical add-task and Talk-navigation control below
+ * `breakpoints.split` (AC-37). One fixed bottom row holding a text field and a
+ * single action button that morphs between two identities depending on whether
+ * the field has text.
+ *
+ * **When the field is empty:** mic icon, accessible name "Talk", tapping
+ * navigates to the Talk surface. Does NOT start capture.
+ * **When the field holds text:** send arrow, accessible name "Add task", tapping
+ * commits the title through the literal add path (controller.addTask).
+ *
+ * The morph fires on the first character entering or the last character leaving
+ * the field, not on focus or blur (AC-37).
+ *
+ * Testids: `tasks-bar-input` (the text field), `tasks-bar-action` (the
+ * morphing button) — from the design mockup catalogue (T-321).
+ */
+function TaskBottomBar({
+  onGoTalk,
+  onAddTask,
+}: {
+  onGoTalk: () => void
+  onAddTask: (title: string) => void
+}) {
+  const [text, setText] = useState('')
+  const hasText = text.length > 0
+
+  const handleSubmit = () => {
+    const trimmed = text.trim()
+    if (trimmed === '') return
+    onAddTask(trimmed)
+    setText('')
+  }
+
+  return (
+    <div className="task-bar">
+      <div className="task-bar-in">
+        <input
+          className="tbar-input"
+          type="text"
+          placeholder="Add a task"
+          aria-label="Add a task"
+          data-testid="tasks-bar-input"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleSubmit()
+          }}
+        />
+        <button
+          className={`tbar-action${hasText ? ' tbar-action-send' : ''}`}
+          data-testid="tasks-bar-action"
+          aria-label={hasText ? 'Add task' : 'Talk'}
+          onClick={() => {
+            if (hasText) handleSubmit()
+            else onGoTalk()
+          }}
+        >
+          {hasText ? <SendIcon /> : <MicIcon />}
+        </button>
+      </div>
     </div>
   )
 }
