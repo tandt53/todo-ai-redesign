@@ -1,0 +1,559 @@
+{
+ "flows": [
+  {
+   "id": "F1",
+   "title": "Lần chạy đầu — app chưa có việc nào",
+   "purpose": "Người dùng mở app lần đầu. Kiểm tra trạng thái rỗng có mời gọi hành động, và app xử lý được lỗi tải.",
+   "happy": [
+    [
+     "app-shell/tasks-empty-first",
+     "Danh sách rỗng — màn hình đầu tiên người dùng mới thấy"
+    ],
+    [
+     "voice-assistant-view/idle-empty",
+     "Màn Talk khi chưa có việc nào"
+    ],
+    [
+     "app-shell/talk-empty",
+     "Talk rỗng trong khung app"
+    ]
+   ],
+   "neg": [
+    [
+     "app-shell/tasks-loading",
+     "Đang tải danh sách"
+    ],
+    [
+     "app-shell/tasks-error",
+     "Tải thất bại"
+    ],
+    [
+     "app-shell/tasks-offline",
+     "Mất mạng"
+    ],
+    [
+     "app-shell/tasks-refresh-failed",
+     "Làm mới thất bại nhưng vẫn còn dữ liệu cũ"
+    ]
+   ]
+  },
+  {
+   "id": "F2",
+   "title": "Thêm việc bằng cách gõ — thanh dưới cùng",
+   "purpose": "Luồng chính của thiết kế vừa chọn (phương án B). Chạm ô nhập → nút mic hoá mũi tên → gửi.",
+   "happy": [
+    [
+     "app-shell/tasks-default",
+     "Trạng thái nghỉ — thanh có ô nhập và nút mic"
+    ],
+    [
+     "app-shell/tasks-typing",
+     "Đang gõ — nút mic đã hoá mũi tên gửi"
+    ],
+    [
+     "app-shell/tasks-typing-kb-short",
+     "Đang gõ, bàn phím hiện, danh sách ngắn"
+    ],
+    [
+     "app-shell/tasks-typing-kb-long",
+     "Đang gõ, bàn phím hiện, danh sách dài"
+    ],
+    [
+     "app-shell/tasks-arrived",
+     "Việc mới vừa xuất hiện trong danh sách"
+    ],
+    [
+     "app-shell/phone-tasks",
+     "Khung điện thoại — trạng thái nghỉ"
+    ],
+    [
+     "app-shell/phone-tasks-arrived",
+     "Khung điện thoại — việc vừa thêm"
+    ]
+   ],
+   "neg": [
+    [
+     "app-shell/tasks-saved-offline",
+     "Lưu khi đang offline"
+    ],
+    [
+     "app-shell/phone-tasks-empty",
+     "Điện thoại, danh sách rỗng"
+    ]
+   ]
+  },
+  {
+   "id": "F3",
+   "title": "Thêm việc bằng giọng nói",
+   "purpose": "Đường voice-first: chạm mic → nói → trợ lý diễn giải → áp dụng. Gồm cả các nhánh trợ lý phải hỏi lại.",
+   "happy": [
+    [
+     "voice-assistant-view/idle-tasks",
+     "Màn Talk, đã có việc"
+    ],
+    [
+     "voice-assistant-view/listening",
+     "Đang nghe"
+    ],
+    [
+     "voice-assistant-view/thinking",
+     "Đang xử lý"
+    ],
+    [
+     "voice-assistant-view/applied-diff",
+     "Đã áp dụng — hiện phần thay đổi"
+    ],
+    [
+     "app-shell/talk-listening",
+     "Đang nghe, trong khung app"
+    ],
+    [
+     "app-shell/phone-talk",
+     "Khung điện thoại — màn Talk"
+    ]
+   ],
+   "neg": [
+    [
+     "voice-assistant-view/question-confirm",
+     "Trợ lý hỏi xác nhận"
+    ],
+    [
+     "voice-assistant-view/question-clarify",
+     "Trợ lý hỏi làm rõ"
+    ],
+    [
+     "voice-assistant-view/no-match",
+     "Không khớp việc nào"
+    ],
+    [
+     "voice-assistant-view/boundary",
+     "Ranh giới lượt nói"
+    ],
+    [
+     "voice-assistant-view/queued",
+     "Xếp hàng chờ gửi"
+    ],
+    [
+     "voice-assistant-view/error",
+     "Lỗi"
+    ],
+    [
+     "voice-assistant-view/offline",
+     "Offline"
+    ],
+    [
+     "voice-assistant-view/mic-permission",
+     "Chưa cấp quyền micro"
+    ],
+    [
+     "voice-assistant-view/mic-hidden",
+     "Thiết bị không có micro"
+    ],
+    [
+     "voice-assistant-view/mic-transient",
+     "Micro tạm thời không dùng được"
+    ],
+    [
+     "voice-assistant-view/nma-new",
+     "Có tin nhắn mới chưa đọc"
+    ],
+    [
+     "voice-assistant-view/nma-waiting",
+     "Đang chờ phản hồi"
+    ]
+   ]
+  },
+  {
+   "id": "F4",
+   "title": "Hoàn tác một lượt trợ lý",
+   "purpose": "Người dùng đổi ý ngay sau khi trợ lý áp dụng thay đổi.",
+   "happy": [
+    [
+     "voice-assistant-view/reverted",
+     "Đã hoàn tác"
+    ],
+    [
+     "app-shell/carried-undo",
+     "Lời mời hoàn tác mang sang màn khác"
+    ]
+   ],
+   "neg": [
+    [
+     "voice-assistant-view/nothing-reverted",
+     "Không có gì để hoàn tác"
+    ],
+    [
+     "voice-assistant-view/declined-superseded",
+     "Từ chối vì đã bị thao tác sau ghi đè"
+    ]
+   ]
+  },
+  {
+   "id": "F5",
+   "title": "Mở màn Talk — tóm tắt khi vào",
+   "purpose": "Điều app nói khi người dùng vào màn Talk, tuỳ tình trạng công việc hôm nay.",
+   "happy": [
+    [
+     "app-shell/talk-idle",
+     "Talk, trạng thái nghỉ"
+    ],
+    [
+     "app-shell/talk-landing",
+     "Tóm tắt khi vào"
+    ],
+    [
+     "app-shell/talk-landing-ahead",
+     "Đang làm trước tiến độ"
+    ],
+    [
+     "app-shell/talk-landing-clear-today",
+     "Hôm nay đã xong hết"
+    ],
+    [
+     "app-shell/talk-landing-clear",
+     "Không còn việc nào"
+    ]
+   ],
+   "neg": [
+    [
+     "app-shell/talk-landing-overdue",
+     "Có việc quá hạn"
+    ],
+    [
+     "app-shell/talk-landing-overdue-only",
+     "Chỉ còn việc quá hạn"
+    ],
+    [
+     "app-shell/talk-loading",
+     "Đang tải"
+    ],
+    [
+     "app-shell/talk-failed",
+     "Tải thất bại"
+    ]
+   ]
+  },
+  {
+   "id": "F6",
+   "title": "Duyệt danh sách theo các nhóm",
+   "purpose": "Chuyển giữa Today / Upcoming / Inbox / Done, và hành vi khi danh sách dài hơn màn hình.",
+   "happy": [
+    [
+     "app-shell/tasks-upcoming",
+     "Nhóm Upcoming"
+    ],
+    [
+     "app-shell/tasks-inbox",
+     "Nhóm Inbox"
+    ],
+    [
+     "app-shell/tasks-done",
+     "Nhóm Done"
+    ],
+    [
+     "app-shell/tasks-long-list",
+     "Danh sách dài — cuộn lên đầu"
+    ],
+    [
+     "app-shell/tasks-long-list-mid",
+     "Danh sách dài — cuộn giữa"
+    ],
+    [
+     "app-shell/tasks-long-list-bottom",
+     "Danh sách dài — cuộn xuống đáy"
+    ],
+    [
+     "app-shell/tasks-rename",
+     "Đổi tên việc ngay trên hàng"
+    ]
+   ],
+   "neg": [
+    [
+     "app-shell/tasks-upcoming-empty",
+     "Upcoming rỗng"
+    ],
+    [
+     "app-shell/tasks-empty-done",
+     "Done rỗng"
+    ],
+    [
+     "app-shell/phone-tasks-swiped",
+     "Điện thoại — vuốt hàng để lộ thao tác"
+    ]
+   ]
+  },
+  {
+   "id": "F7",
+   "title": "Mở và sửa chi tiết một việc",
+   "purpose": "Mở màn chi tiết, đặt ưu tiên, hạn, nhắc nhở, và lịch lặp.",
+   "happy": [
+    [
+     "task-detail/detail-default",
+     "Chi tiết việc"
+    ],
+    [
+     "task-detail/detail-priority-pick",
+     "Chọn mức ưu tiên"
+    ],
+    [
+     "task-detail/detail-deadline-pick",
+     "Chọn hạn"
+    ],
+    [
+     "task-detail/detail-reminder-pick",
+     "Chọn nhắc nhở"
+    ],
+    [
+     "task-detail/detail-repeat",
+     "Đặt lịch lặp"
+    ],
+    [
+     "task-detail/detail-repeat-until",
+     "Lặp đến ngày"
+    ],
+    [
+     "task-detail/detail-repeat-count",
+     "Lặp số lần"
+    ],
+    [
+     "task-detail/detail-series",
+     "Một lần xuất hiện trong chuỗi lặp"
+    ],
+    [
+     "task-detail/detail-typed-affordance",
+     "Ô nhập đang gõ"
+    ],
+    [
+     "task-detail/phone-detail",
+     "Khung điện thoại — chi tiết"
+    ],
+    [
+     "task-detail/phone-detail-pick",
+     "Khung điện thoại — bộ chọn"
+    ]
+   ],
+   "neg": [
+    [
+     "task-detail/detail-blank",
+     "Việc chưa có nội dung"
+    ],
+    [
+     "task-detail/detail-overdue",
+     "Việc quá hạn"
+    ],
+    [
+     "task-detail/detail-loading",
+     "Đang tải"
+    ],
+    [
+     "task-detail/detail-field-failed",
+     "Lưu một trường thất bại"
+    ],
+    [
+     "task-detail/detail-offline",
+     "Offline"
+    ],
+    [
+     "task-detail/detail-error",
+     "Lỗi"
+    ],
+    [
+     "task-detail/detail-deleted",
+     "Việc đã bị xoá"
+    ],
+    [
+     "task-detail/detail-repeat-refused",
+     "Lịch lặp bị từ chối"
+    ],
+    [
+     "task-detail/detail-repeat-unsupported",
+     "Kiểu lặp không hỗ trợ"
+    ],
+    [
+     "task-detail/detail-steps-refused",
+     "Thêm bước bị từ chối"
+    ]
+   ]
+  },
+  {
+   "id": "F8",
+   "title": "Tìm kiếm",
+   "purpose": "Mở tìm kiếm và lọc danh sách theo tiêu đề.",
+   "happy": [
+    [
+     "app-shell/search-open",
+     "Mở ô tìm kiếm"
+    ],
+    [
+     "app-shell/search-filtering",
+     "Đang lọc — mọi hàng hiện ra đều khớp từ khoá"
+    ]
+   ],
+   "neg": [
+    [
+     "app-shell/search-no-results",
+     "Không có kết quả"
+    ]
+   ]
+  },
+  {
+   "id": "F9",
+   "title": "Sắp xếp, ẩn việc đã xong, menu ⋯",
+   "purpose": "Các thao tác trong menu ba chấm ở đầu màn hình.",
+   "happy": [
+    [
+     "app-shell/overflow-open",
+     "Mở menu ⋯"
+    ],
+    [
+     "app-shell/sort-manual",
+     "Sắp xếp thủ công"
+    ],
+    [
+     "app-shell/overflow-hide-on",
+     "Đang ẩn việc đã xong"
+    ]
+   ],
+   "neg": [
+    [
+     "app-shell/overflow-manual-disabled",
+     "Sắp xếp thủ công bị vô hiệu ở nhóm không cho phép"
+    ]
+   ]
+  },
+  {
+   "id": "F10",
+   "title": "Chọn nhiều việc và thao tác hàng loạt",
+   "purpose": "Vào chế độ chọn, chọn vài việc, rồi hoàn thành hoặc xoá hàng loạt.",
+   "happy": [
+    [
+     "app-shell/select-none",
+     "Đã vào chế độ chọn, chưa chọn gì"
+    ],
+    [
+     "app-shell/select-some",
+     "Đã chọn vài việc — thanh thao tác hiện ra"
+    ]
+   ],
+   "neg": [
+    [
+     "app-shell/confirm-delete",
+     "Hỏi xác nhận trước khi xoá hàng loạt"
+    ]
+   ]
+  },
+  {
+   "id": "F11",
+   "title": "Quản lý các danh sách (Lists)",
+   "purpose": "Tạo, đổi tên, đổi màu, sắp xếp lại và xoá danh sách cá nhân.",
+   "happy": [
+    [
+     "app-shell/menu-default",
+     "Menu Lists"
+    ],
+    [
+     "app-shell/list-new",
+     "Tạo danh sách mới"
+    ],
+    [
+     "lists/default",
+     "Màn Lists"
+    ],
+    [
+     "lists/menu-nonempty",
+     "Menu thao tác trên một danh sách có việc"
+    ],
+    [
+     "lists/rename",
+     "Đổi tên"
+    ],
+    [
+     "lists/recolour",
+     "Đổi màu"
+    ],
+    [
+     "lists/reorder-done",
+     "Sắp xếp lại xong"
+    ]
+   ],
+   "neg": [
+    [
+     "app-shell/menu-empty",
+     "Chưa có danh sách nào"
+    ],
+    [
+     "app-shell/menu-failed",
+     "Tải danh sách thất bại"
+    ],
+    [
+     "app-shell/list-name-taken",
+     "Tên đã tồn tại"
+    ],
+    [
+     "lists/rename-taken",
+     "Đổi tên trùng"
+    ],
+    [
+     "lists/menu-empty-list",
+     "Menu trên danh sách rỗng"
+    ],
+    [
+     "lists/delete-confirm",
+     "Xác nhận xoá danh sách"
+    ]
+   ]
+  },
+  {
+   "id": "F12",
+   "title": "Thông báo mang qua màn khác",
+   "purpose": "Kết quả của một thao tác phải nhìn thấy được kể cả khi người dùng đã chuyển màn.",
+   "happy": [
+    [
+     "app-shell/tasks-saved-notice",
+     "Đã lưu — thông báo"
+    ],
+    [
+     "app-shell/tasks-saved-notice-many",
+     "Đã lưu nhiều thay đổi"
+    ],
+    [
+     "app-shell/carried-on-talk",
+     "Thông báo hiện trên màn Talk"
+    ]
+   ],
+   "neg": [
+    [
+     "app-shell/carried-failed",
+     "Thao tác thất bại — thông báo mang theo"
+    ],
+    [
+     "app-shell/carried-offline",
+     "Offline — thông báo mang theo"
+    ]
+   ]
+  },
+  {
+   "id": "F13",
+   "title": "Cài đặt và màn hình rộng",
+   "purpose": "Màn cài đặt, và bố cục ở độ rộng desktop.",
+   "happy": [
+    [
+     "app-shell/settings-default",
+     "Cài đặt"
+    ],
+    [
+     "app-shell/wide-tasks",
+     "Bố cục màn rộng (desktop)"
+    ]
+   ],
+   "neg": [
+    [
+     "app-shell/settings-save-failed",
+     "Lưu cài đặt thất bại"
+    ]
+   ]
+  }
+ ],
+ "missing": [],
+ "broken": []
+}
