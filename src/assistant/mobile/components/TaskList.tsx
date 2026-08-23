@@ -16,8 +16,9 @@
 //   - rename is entered by TAPPING THE TITLE. A second per-row button would
 //     crowd the delete target at 44/48.
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
+import type { ScrollView as ScrollViewType, TextInput as TextInputType } from 'react-native'
 import { Check, Plus, Repeat, Trash2 } from 'lucide-react-native'
 import type { AppState } from '../../_shared/model/reducer.ts'
 import { formatDue } from '../../_shared/model/format.ts'
@@ -26,8 +27,8 @@ import type { DiffLine, Priority, TaskView } from '../../_shared/types.ts'
 import type { MobileAssistantController } from '../controller.ts'
 import { A11Y_IDS, SHELL_A11Y_IDS, a11yProps } from '../model/a11y.ts'
 import type { MobilePlatform } from '../model/permissions.ts'
-import { tokens } from '../model/theme.ts'
-import { touchProps } from '../model/touch.ts'
+import { spacing, tokens } from '../model/theme.ts'
+import { minTouchSize, touchProps } from '../model/touch.ts'
 import {
   EMPTY_TASKS,
   collectionName,
