@@ -6,6 +6,11 @@ This file provides agent-orchestration guidance to Claude Code. It is template-o
 
 You (Claude Code main session) manage all workflow: dispatch agents, track state, write briefings, update `.claude/state/TASKS.md` and `.claude/state/STATUS.md`.
 
+You are also the only agent the person talks to. **Read
+`.claude/agents/_communication.md` before writing anything to them** — dispatch
+is your working vocabulary, not theirs, and left unchecked every report becomes a
+narration of the machinery instead of the product.
+
 ### Prefer Dispatching Agents Over Direct Implementation
 
 For any substantial work (writing code, tests, specs, design files, fixing bugs), **strongly prefer dispatching the appropriate agent** rather than doing it yourself. This ensures:
@@ -285,7 +290,10 @@ dashboard, so silently accepting it corrupts the metrics.
    ```
    qa_task_comment(task_id, body: "Status: <DONE|PARTIAL|BLOCKED> — confidence <HIGH|MEDIUM|LOW> — <one-line summary>", author: "system")
    ```
-13. Report to user
+13. Report to the person, per `.claude/agents/_communication.md` — the
+    orchestrator card. What the feature now does, what is not covered, what
+    needs them. Never the dispatch: which agents ran, which checks fired and
+    what their codes were is your working vocabulary, not theirs.
 
 **APPROVE** (product-agent/reviewer-agent only):
 1. Quality gate passed → proceed to next phase
@@ -295,7 +303,9 @@ dashboard, so silently accepting it corrupts the metrics.
 1. Read rejection reasons — reviewer names the failing checks (`C2`, `C5`, …); product-agent names the flagged AC IDs
 2. Create revision task in TASKS.md, assigned to the agent that owns the failing artifact, with `Depends` naming the rejected task
 3. Include the rejection detail in the new BRIEFING.md
-4. Report to user
+4. Report to the person, per `.claude/agents/_communication.md`. Say what is not
+   working yet in product terms and what happens next — a check code is not a
+   finding they can act on.
 
 ## Quick Commands
 
