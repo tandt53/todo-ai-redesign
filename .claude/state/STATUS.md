@@ -47,7 +47,7 @@
 <!-- Recent entries only — archive old results when the file grows. -->
 | Date | Agent | Task | Status | Summary | Next Action |
 |------|-------|------|--------|---------|-------------|
-| 2026-08-23 | design-agent | T-200 | DONE | Design half already fixed by T-204/T-227 — 0px asymmetry at all four widths, verified independently. The live defect is now in the CLIENT, which never followed: T-288. | T-288 |
+| 2026-08-23 | design-agent | T-200 | DONE | Design half already fixed by T-204/T-227 — 0px asymmetry at all four widths, verified independently. The live defect is now in the CLIENT, which never followed: T-304. | T-304 |
 | 2026-08-23 | web-agent | T-281 | DONE | Four status-indicator animations rebound to `activityPulse` (1200ms), aurora band deleted. Verified in a browser: computed `animation-duration` is 1.2s on all four, `none` on the aurora. Suite 1240/1240, tsc exit 0. | — |
 | 2026-08-23 | design-agent | T-274 | DONE | Owner option A. New `activityPulse` 1200ms token for status-indicator loops; `motion.rule` rewritten to distinguish decorative from status loops; aurora band retired outright. | T-281 binds src/ |
 | 2026-08-23 | design-agent | T-276 | DONE | Testid catalogue 107/148 → 147/147. One drift resolved rather than catalogued (`list-recolour-swatches`). VoiceFab got its first catalogue entry and the drawn label now says Talk. | — |
