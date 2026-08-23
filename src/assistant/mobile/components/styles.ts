@@ -40,6 +40,7 @@ const sendBox = paintedBox(A11Y_IDS.composerSend)
 
 // App-shell boxes, read from `PAINTED` on the same terms as the five above.
 const pathBox = paintedBox(SHELL_A11Y_IDS.pathTasks)
+const voiceFabBox = paintedBox(SHELL_A11Y_IDS.voiceFab)
 const rowDeleteBox = paintedBox(SHELL_A11Y_IDS.tasksDeleteButton)
 const menuRowBox = paintedBox(SHELL_A11Y_IDS.menuCollectionRow)
 const segmentBox = paintedBox(SHELL_A11Y_IDS.settingsThemeControl)
@@ -96,7 +97,7 @@ export function makeStyles(c: Palette) {
       fontFamily: font.family.ui,
       fontSize: font.size.meta,
       lineHeight: lineHeightFor(font.size.meta, 'meta'),
-      color: c.question,
+      color: c.attention,  // rule 1: attention = "this needs your answer" (offline)
       flexShrink: 1,
     },
 
@@ -126,7 +127,7 @@ export function makeStyles(c: Palette) {
       fontFamily: font.family.ui,
       fontSize: font.size.meta,
       fontWeight: String(font.weight.emphasis) as '600',
-      color: c.primary,
+      color: c.accent,   // pure rename: primary → accent ($meta.replaces)
     },
     dayHead: {
       paddingHorizontal: spacing.gutter_mobile,
@@ -157,7 +158,9 @@ export function makeStyles(c: Palette) {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    checkboxDone: { borderColor: c.success },
+    // Design: .cbx:checked{background:var(--text-primary); border-color:var(--text-primary)}
+    // Tick drawn in bg.base (mockups app-shell-ios:549, app-shell-android:544).
+    checkboxDone: { backgroundColor: c.text.primary, borderColor: c.text.primary },
     taskTitle: {
       fontFamily: font.family.ui,
       fontSize: font.size.body,
@@ -209,8 +212,14 @@ export function makeStyles(c: Palette) {
       textTransform: 'uppercase',
       overflow: 'hidden',
     },
-    badgeNew: { color: c.diff.add, backgroundColor: c.diff.addTint },
-    badgeEdited: { color: c.primary, backgroundColor: c.primaryTint },
+    // Rule 6: green/success retired — the label NEW does the work, the hue was
+    // decoration. Added values read in text.primary at semibold.
+    // Design: .new{font-weight:var(--w-semibold); color:var(--text-primary)}
+    badgeNew: { color: c.text.primary, fontWeight: String(font.weight.semibold) as '600' },
+    // Mockup: `.tag.edited{background:var(--bg-sunken); color:var(--text-secondary)}`.
+    // EDITED is not the assistant speaking, so accent violates colour rule 1
+    // ("one signal per meaning").
+    badgeEdited: { color: c.text.secondary, backgroundColor: c.bg.sunken },
 
     // ---- conversation ----
     convPane: { flex: 1 },
@@ -238,8 +247,8 @@ export function makeStyles(c: Palette) {
       paddingVertical: spacing.md,
       gap: spacing.xs,
     },
-    bubbleUser: { backgroundColor: c.primaryTint },
-    bubbleQuestion: { backgroundColor: c.questionTint, borderLeftWidth: 3, borderLeftColor: c.question },
+    bubbleUser: { backgroundColor: c.accentTint },
+    bubbleQuestion: { backgroundColor: c.attentionTint, borderLeftWidth: 3, borderLeftColor: c.attention },
     bubbleError: { borderLeftWidth: 3, borderLeftColor: c.danger },
     bubbleUndone: { opacity: 0.7 },
     bubbleHead: {
@@ -269,21 +278,26 @@ export function makeStyles(c: Palette) {
       lineHeight: lineHeightFor(font.size.body),
       color: c.text.primary,
     },
+    // DESIGN.md colour rule 6: "added values now read in text.primary at semibold
+    // **against the old value struck through in text.muted**". Both mockups agree:
+    // `.old{color:var(--text-muted); text-decoration:line-through}` with no
+    // background. An old diff value is muted and struck through, not red.
     chipOld: {
       paddingHorizontal: spacing.xs,
       borderRadius: radius.sm,
-      backgroundColor: c.diff.removeTint,
-      color: c.diff.remove,
+      color: c.text.muted,
       textDecorationLine: 'line-through',
       fontFamily: font.family.ui,
       fontSize: font.size.meta,
       overflow: 'hidden',
     },
+    // Rule 6: added values read in text.primary at semibold — the label does
+    // the work, the hue was decoration. Design: .new{font-weight:semibold; color:text.primary}
     chipNew: {
       paddingHorizontal: spacing.xs,
       borderRadius: radius.sm,
-      backgroundColor: c.diff.addTint,
-      color: c.diff.add,
+      color: c.text.primary,
+      fontWeight: String(font.weight.semibold) as '600',
       fontFamily: font.family.ui,
       fontSize: font.size.meta,
       overflow: 'hidden',
@@ -301,7 +315,7 @@ export function makeStyles(c: Palette) {
       paddingHorizontal: spacing.lg,
       borderRadius: radius.pill,
       borderWidth: 1,
-      borderColor: c.primary,
+      borderColor: c.accent,
     },
     chipDanger: { borderColor: c.danger },
     chipDisabled: { borderColor: c.bg.hairline },
@@ -309,7 +323,7 @@ export function makeStyles(c: Palette) {
       fontFamily: font.family.ui,
       fontSize: font.size.body,
       fontWeight: String(font.weight.emphasis) as '600',
-      color: c.primary,
+      color: c.accent,
     },
     chipTextDanger: { color: c.danger },
     chipTextDisabled: { color: c.text.muted },
@@ -324,7 +338,7 @@ export function makeStyles(c: Palette) {
       fontFamily: font.family.ui,
       fontSize: font.size.body,
       fontWeight: String(font.weight.emphasis) as '600',
-      color: c.primary,
+      color: c.accent,
     },
     primaryButton: {
       // § Buttons, shared with the app shell rather than declared twice — the
@@ -339,7 +353,7 @@ export function makeStyles(c: Palette) {
       paddingVertical: spacing.sm,
       paddingHorizontal: spacing.lg,
       borderRadius: radius.pill,
-      backgroundColor: c.primary,
+      backgroundColor: c.accent,
     },
     selfCenter: { alignSelf: 'center' },
     primaryButtonText: {
@@ -368,7 +382,7 @@ export function makeStyles(c: Palette) {
     queuedNoticeText: {
       fontFamily: font.family.ui,
       fontSize: font.size.meta,
-      color: c.question,
+      color: c.attention,  // rule 1: attention = "this needs your answer"
     },
 
     // ---- new-message affordance (F-001 AC-30 / BUG-004) ----
@@ -407,7 +421,7 @@ export function makeStyles(c: Palette) {
     // NMA-WAITING takes the amber that already means "open question" everywhere
     // else in the catalogue. Colour never carries this alone — the words change
     // too (components.md), which is what `label` in `model/follow.ts` decides.
-    nmPillWaiting: { backgroundColor: c.questionTint, borderColor: c.question },
+    nmPillWaiting: { backgroundColor: c.attentionTint, borderColor: c.attention },
     nmLabel: {
       flexShrink: 1,
       fontFamily: font.family.ui,
@@ -416,7 +430,7 @@ export function makeStyles(c: Palette) {
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.text.primary,
     },
-    nmLabelWaiting: { color: c.question },
+    nmLabelWaiting: { color: c.attention },
 
     // ---- voice surface (the ONE place the gradient is legal) ----
     voiceSurface: { alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.sm },
@@ -450,7 +464,7 @@ export function makeStyles(c: Palette) {
       fontFamily: font.family.ui,
       fontSize: font.size.meta,
       fontWeight: String(font.weight.emphasis) as '600',
-      color: c.primary,
+      color: c.accent,
     },
 
     // ---- composer ----
@@ -480,7 +494,9 @@ export function makeStyles(c: Palette) {
       fontSize: font.size.body,
       color: c.text.primary,
     },
-    composerInputListening: { borderColor: c.voice.listening, color: c.voice.listening },
+    // Rule 6: one accent means "the assistant", on both halves of its turn.
+    // voice.listening/thinking → accent (DESIGN.md ## Colour rules rule 6).
+    composerInputListening: { borderColor: c.accent, color: c.accent },
     mic: {
       ...micBox,
       borderRadius: orbRadius(micBox.width),
@@ -490,8 +506,8 @@ export function makeStyles(c: Palette) {
       borderWidth: 1,
       borderColor: c.bg.hairline,
     },
-    micListening: { borderColor: c.voice.listening },
-    micThinking: { borderColor: c.voice.thinking },
+    micListening: { borderColor: c.accent },   // rule 6: accent = the assistant
+    micThinking: { borderColor: c.accent },    // rule 6: accent = the assistant
     micDimmed: { opacity: 0.4 },
     micGlyph: { fontFamily: font.family.ui, fontSize: font.size.title, color: c.text.primary },
     send: {
@@ -499,7 +515,7 @@ export function makeStyles(c: Palette) {
       borderRadius: orbRadius(sendBox.width),
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: c.primary,
+      backgroundColor: c.accent,
     },
     sendDisabled: { opacity: 0.4 },
     sendGlyph: {
@@ -527,18 +543,32 @@ export function makeStyles(c: Palette) {
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.text.primary,
     },
-    // the badge is a `radius.pill` primaryTint fill with `primary` text
+    // the badge is a `radius.pill` accentTint fill with `accent` text
     pathBadge: {
       minWidth: spacing.lg,
       paddingHorizontal: spacing.sm,
       borderRadius: radius.pill,
-      backgroundColor: c.primaryTint,
+      backgroundColor: c.accentTint,
       overflow: 'hidden',
       textAlign: 'center',
       fontFamily: font.family.numeric,
       fontSize: font.size.meta,
       fontWeight: String(font.weight.emphasis) as '600',
-      color: c.primary,
+      color: c.accent,
+    },
+    // § VoiceFab — circular accent FAB, bottom-right, replaces Talk path switch
+    // on the Tasks surface (T-257). Dimensions from `PAINTED[voiceFab]` (52×52),
+    // positioning from `app-shell-ios.html .voice-fab { right: s4; bottom: s4 }`.
+    voiceFab: {
+      position: 'absolute',
+      right: spacing.md,
+      bottom: spacing.md,
+      ...voiceFabBox,
+      borderRadius: orbRadius(voiceFabBox.width),
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: c.accent,
+      zIndex: 5,
     },
     largeTitle: {
       paddingHorizontal: spacing.gutter_mobile,
@@ -586,7 +616,7 @@ export function makeStyles(c: Palette) {
       fontFamily: font.family.ui,
       fontSize: font.size.body,
       fontWeight: String(font.weight.emphasis) as '600',
-      color: c.primary,
+      color: c.accent,
     },
     // § InlineRetryBanner — full-width strip, danger hairlines, never replaces
     // the list
@@ -682,7 +712,7 @@ export function makeStyles(c: Palette) {
       fontFamily: font.family.ui,
       fontSize: font.size.body,
       fontWeight: String(font.weight.emphasis) as '600',
-      color: c.primary,
+      color: c.accent,
     },
     // `Put back` takes § Buttons' NEW `neutral` variant, and that variant exists
     // for one reason: AC-43's offer is the one control in the catalogue with an
@@ -776,14 +806,14 @@ export function makeStyles(c: Palette) {
       paddingHorizontal: spacing.sm,
       borderRadius: radius.sm,
       borderWidth: 1,
-      borderColor: c.primary,
+      borderColor: c.accent,
       backgroundColor: c.bg.raised,
       fontFamily: font.family.ui,
       fontSize: font.size.body,
       color: c.text.primary,
     },
     // AC-31's arrival cue — AC-4's own diff-flash tint, at the moment it informs
-    rowArrived: { backgroundColor: c.primaryTint },
+    rowArrived: { backgroundColor: c.accentTint },
     // § ListsMenu — a slide-over panel with a scrim at every width
     // The mockups declare `--scrim` as `bg.base` at 66% (dark) — the COLOUR is
     // the token; only the alpha is transcribed, because `tokens.json` publishes
@@ -822,7 +852,7 @@ export function makeStyles(c: Palette) {
       marginHorizontal: spacing.sm,
       borderRadius: radius.sm,
     },
-    menuRowActive: { backgroundColor: c.primaryTint },
+    menuRowActive: { backgroundColor: c.accentTint },
     // The group break (components.md § ListsMenu, "Where the Inbox row sits"):
     // the views and the gate, then space, then the filing rows. Space, not a
     // rule and not a header — whitespace groups before borders do, and no word
@@ -834,7 +864,7 @@ export function makeStyles(c: Palette) {
       fontSize: font.size.body,
       color: c.text.primary,
     },
-    menuRowTextActive: { color: c.primary },
+    menuRowTextActive: { color: c.accent },
     menuCount: {
       marginLeft: 'auto',
       fontFamily: font.family.numeric,
@@ -877,13 +907,13 @@ export function makeStyles(c: Palette) {
       paddingHorizontal: spacing.md,
       borderRadius: radius.sm,
     },
-    segmentButtonOn: { backgroundColor: c.primaryTint },
+    segmentButtonOn: { backgroundColor: c.accentTint },
     segmentText: {
       fontFamily: font.family.ui,
       fontSize: font.size.meta,
       color: c.text.secondary,
     },
-    segmentTextOn: { color: c.primary, fontWeight: String(font.weight.emphasis) as '600' },
+    segmentTextOn: { color: c.accent, fontWeight: String(font.weight.emphasis) as '600' },
   })
 }
 

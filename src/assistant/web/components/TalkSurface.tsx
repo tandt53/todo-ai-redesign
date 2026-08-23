@@ -48,7 +48,6 @@ export function TalkSurface({
         <span className="panel-title">Talk</span>
         <span className="spacer" />
         <PathSwitch
-          to="tasks"
           count={openTodayCount(state.tasks)}
           onGo={() => shell.go('tasks')}
         />

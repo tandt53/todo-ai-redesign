@@ -21,9 +21,29 @@
   and layout from tokens.json. NOT ONE ELEMENT ID CHANGED from v1's 36 except
   two ADDED: shell-search-button, shell-overflow-button.
 
-  WHAT IS DELIBERATELY NOT DESIGNED HERE: Search field states and the overflow
-  menu contents — those are T-225. The controls are drawn; what is behind them
-  is not.
+  T-225 (2026-08-22): SEARCH, OVERFLOW MENU, SELECTION MODE, BULK ACTIONS,
+  CONFIRM DIALOG. The second half of T-227: that pass drew the buttons; this
+  pass draws what is behind them. Ten new STATES entries. Twenty new testids
+  from components.md T-244.
+
+  WHAT IS DELIBERATELY NOT DESIGNED HERE: FILTER. The sidebar collections —
+  Today, Upcoming, Inbox, each personal list — already serve the common
+  filtering use cases. A filter engine adds a query language, saved filters and
+  a composition UI; none of that is needed at this scale. This is a deliberate
+  and reasoned exclusion (F-009 spec ## Out of Scope), not a deferral.
+
+  DUE TIME FORMAT RULE (T-266, all platforms):
+   · Format is always `Weekday H:MM AM/PM` — e.g. `Thu 5:00 PM`.
+   · Weekday is always present, even under a group heading that names the day,
+     because the user scans rows, not headings.
+   · Minutes are always shown (`:00` included) for tabular-numeral alignment.
+   · All three platforms follow the same rule. Per-platform differences in time
+     format are not intended.
+
+  SEARCH FILTERING RULE (T-258, AC-2):
+   · search-filtering hides rows whose title does not contain the query.
+   · It is TITLE filtering, not hide-completed. The CSS does not hide by
+     completion status; the JS in showState filters by title text.
 
   Self-contained: no network, no server, no build. Open by double-click.
   Design system: docs/design/_shared/DESIGN.md · tokens: tokens.json ·
@@ -508,7 +528,21 @@ button,input,textarea{font:inherit; color:inherit}
    flat row is now the default; the grid-with-rail override is deleted. */
 .row{
   display:flex; align-items:center; gap:var(--s3);
-  min-height:var(--h-lg); padding:var(--s2) 0;
+  min-height:var(--h-lg); padding:var(--s2) var(--s2);
+  position:relative; isolation:isolate;
+}
+/* ROW GROUND PSEUDO — the hover, focus-within and selected grounds are painted
+   on ::before, inset vertically by space.1 (4px) from the row box edges. This
+   keeps the row pitch at 56px while separating adjacent painted grounds by
+   space.2 (8px). Without the inset, two selected rows butt directly against
+   each other and read as one fused blob with a pinched waist at the join.
+   The horizontal extent is unchanged — the ground still fills the row's
+   padding-box width, aligned with headings above. */
+.row::before{
+  content:""; position:absolute;
+  top:var(--s1); bottom:var(--s1); left:0; right:0;
+  border-radius:var(--r-md);
+  z-index:-1; pointer-events:none;
 }
 /* TIME COLUMN HIDDEN AT EVERY WIDTH. The time is now .row-due on the right. */
 .row-time{display:none}
@@ -549,7 +583,10 @@ button,input,textarea{font:inherit; color:inherit}
 .row-marks{display:inline-flex; align-items:center; gap:var(--s2); margin-left:var(--s2); flex:none}
 .mark{font-family:var(--font-num); font-size:var(--fs-body); font-weight:var(--w-bold); color:var(--text-primary); line-height:1.35}
 .mark-quiet{color:var(--text-muted); display:inline-flex; align-self:center}
-.tag{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:var(--font-case-label); font-weight:var(--w-semibold); padding:2px 6px; border-radius:var(--r-xs); background:var(--accent-tint); color:var(--accent); white-space:nowrap}
+/* .tag — DESIGN.md ## Colour rules 6: retired accent-on-tint for diff markers.
+   NEW reads in text.primary at semibold on bg.sunken — legible to a colour-blind
+   user by construction. The client already implements this (styles.ts:217). */
+.tag{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:var(--font-case-label); font-weight:var(--w-semibold); padding:2px 6px; border-radius:var(--r-xs); background:var(--bg-sunken); color:var(--text-primary); white-space:nowrap}
 .tag.edited{background:var(--bg-sunken); color:var(--text-secondary)}
 .row-trail{display:flex; align-items:center; flex:none; gap:var(--s1)}
 .row-del{
@@ -564,9 +601,10 @@ button,input,textarea{font:inherit; color:inherit}
    1920 are what made the half-empty row read as a stretched rule rather than as
    margin (layout.ultra_answer). Separation is space; the row's own ground
    arrives on hover and on focus-within, at radius.md — a GROUND, not a box. */
-.row:hover,.row:focus-within{background:var(--bg-sunken); border-radius:var(--r-md)}
+.row:hover::before,.row:focus-within::before{background:var(--bg-sunken)}
 .row.done .row-title{color:var(--text-muted); text-decoration:line-through}
 .row.arrived{box-shadow:inset var(--b-mark) 0 0 var(--accent); border-radius:0 var(--r-md) var(--r-md) 0}
+.row.arrived::before{border-radius:0 var(--r-md) var(--r-md) 0}
 .rename{display:flex; align-items:center; gap:var(--s2); flex:1 1 auto; min-width:0}
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -995,6 +1033,19 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .app[data-row="rename"] .row-editable .row-open{display:none}
 .app[data-row="arrived"] .row-editable{box-shadow:inset var(--b-mark) 0 0 var(--accent)}
 
+/* data-overflow view switching */
+.app[data-overflow="open"] .v-overflow-open{display:block}
+.app[data-overflow="open-manual-disabled"] .v-overflow-manual-disabled{display:block}
+/* data-search view switching */
+.app[data-search="open"] .v-search-open{display:block}
+.app[data-search="filtering"] .v-search-filtering{display:block}
+.app[data-search="no-results"] .v-search-no-results{display:block}
+/* data-selection view switching */
+.app[data-selection="none"] .v-selection-none{display:block}
+.app[data-selection="some"] .v-selection-some{display:block}
+/* data-confirm view switching */
+.app[data-confirm="delete"] .v-confirm-delete{display:block}
+
 /* ══════════════════════════════════════════════════════════════════════════
    PANEL CORNER FIX — topbar, composer and rail header cover the panel's
    border-radius unless they carry the matching corners themselves.
@@ -1104,7 +1155,174 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .app[data-search="open"] .search-field{display:block}
 .app[data-search="open"] .bar-surface-title{display:none}
 .app[data-search="open"] .head{display:none}
+/* Search close button — inside the header bar, after the field */
+.search-close{
+  appearance:none; border:0; background:transparent; cursor:pointer; color:var(--text-secondary);
+  width:var(--min-target); height:var(--min-target); display:none; place-items:center; flex:none;
+}
+.search-close:hover{color:var(--text-primary)}
+.search-close:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
+.app[data-search="open"] .search-close{display:grid}
+/* When search is open, hide the overflow button — the field + close fill the header */
+.app[data-search="open"] .overflow-anchor{display:none}
+.app[data-search="open"] .btn-search{display:none}
 
+/* ── Search no-results empty state ── */
+.search-empty{display:none; padding:var(--s7) 0 var(--s6)}
+.search-empty h2{margin:0 0 var(--s2); font-size:var(--fs-title); letter-spacing:var(--ls-title); line-height:var(--lh-title); font-weight:var(--w-semibold)}
+.search-empty p{margin:0; color:var(--text-secondary); font-size:var(--fs-body); max-width:44ch}
+.app[data-search="no-results"] .search-empty{display:block}
+.app[data-search="no-results"] .search-field{display:block}
+.app[data-search="no-results"] .search-close{display:grid}
+.app[data-search="no-results"] .bar-surface-title{display:none}
+.app[data-search="no-results"] .head{display:none}
+.app[data-search="no-results"] .overflow-anchor{display:none}
+.app[data-search="no-results"] .btn-search{display:none}
+.app[data-search="no-results"] .list{display:none}
+.app[data-search="no-results"] .inline-new{display:none}
+/* When search is filtering, JS hides rows whose title does not contain the
+   query (AC-2: live filtering by title). The CSS below shows the search UI
+   chrome; the actual row visibility is set by showState's searchQuery handler.
+   RULE: search narrows by title, not by completion status. */
+.app[data-search="filtering"] .search-field{display:block}
+.app[data-search="filtering"] .search-close{display:grid}
+.app[data-search="filtering"] .bar-surface-title{display:none}
+.app[data-search="filtering"] .head{display:none}
+.app[data-search="filtering"] .overflow-anchor{display:none}
+.app[data-search="filtering"] .btn-search{display:none}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   OVERFLOW MENU  (§ OverflowMenu — F-009 AC-4, AC-5, AC-7, AC-8, AC-9)
+   ══════════════════════════════════════════════════════════════════════════ */
+/* .overflow-anchor wraps the trigger and the menu, so the menu positions
+   relative to the button (right edges aligned, space.1 gap below). */
+.overflow-anchor{position:relative; display:inline-flex}
+.overflow{
+  display:none; position:absolute; top:100%; right:0; margin-top:var(--s1); z-index:15;
+  background:var(--bg-base); border-radius:var(--r-lg); box-shadow:var(--shadow-overlay);
+  width:min(280px, calc(100vw - 2 * var(--gutter))); padding:var(--s2) 0;
+}
+.app[data-overflow="open"] .overflow{display:block}
+.app[data-overflow="open-manual-disabled"] .overflow{display:block}
+.overflow-section{padding:var(--s1) var(--s4) var(--s2)}
+.overflow-section-label{font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:var(--font-case-label); font-weight:var(--w-semibold); color:var(--text-muted)}
+.overflow-item{
+  display:flex; align-items:center; gap:var(--s3); height:var(--h-md); min-height:var(--min-target);
+  padding:0 var(--s4); margin:0 var(--s2); font-size:var(--fs-body); color:var(--text-primary);
+  cursor:pointer; border:0; background:transparent; width:calc(100% - 2 * var(--s2));
+  border-radius:var(--r-sm); text-align:left;
+}
+.overflow-item:hover{background:var(--bg-sunken)}
+.overflow-item:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px}
+.overflow-item .overflow-check{margin-left:auto; color:var(--accent); display:none}
+.overflow-item.active .overflow-check{display:block}
+.overflow-item[disabled]{opacity:.4; cursor:not-allowed; border-color:transparent}
+.overflow-item[disabled]:hover{background:transparent}
+.overflow-sep{height:var(--s4)}
+/* Switch control for Hide completed toggle */
+.overflow-switch{
+  margin-left:auto; width:44px; height:24px; border-radius:var(--r-pill); border:0; cursor:pointer;
+  position:relative; flex:none; background:var(--bg-hairline);
+}
+.overflow-switch::after{
+  content:""; position:absolute; left:3px; top:3px; width:18px; height:18px;
+  border-radius:var(--r-circle); background:var(--text-secondary);
+  transition:transform var(--t-micro) var(--ease);
+}
+.overflow-switch.on{background:var(--accent)}
+.overflow-switch.on::after{transform:translateX(20px); background:var(--text-on-accent)}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SELECTION MODE + BULK TOOLBAR  (§ SelectionMode, § BulkActionToolbar)
+   ══════════════════════════════════════════════════════════════════════════ */
+/* Selection checkbox replaces completion checkbox */
+.select-cbx{
+  appearance:none; margin:0; width:calc(var(--icon-size-md) * 1px); height:calc(var(--icon-size-md) * 1px); flex:none; cursor:pointer;
+  border:var(--b-hairline) solid var(--bg-rule); background:var(--bg-base);
+  border-radius:var(--r-sm); display:none; place-items:center; position:relative;
+}
+.select-cbx::before{
+  content:""; position:absolute; top:50%; left:50%;
+  width:var(--min-target); height:var(--min-target); transform:translate(-50%,-50%);
+}
+.select-cbx:checked{background:var(--accent); border-color:var(--accent)}
+.select-cbx:checked::after{content:""; width:10px; height:6px; border-left:2px solid var(--text-on-accent); border-bottom:2px solid var(--text-on-accent); transform:rotate(-45deg) translate(1px,-1px)}
+.select-cbx:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
+/* Done row in selection mode — the select-cbx shows the completion state as its
+   default visual. Unchecked (not selected): text.primary fill + white checkmark,
+   identical to .cbx:checked. Checked (selected): accent fill + white checkmark,
+   identical to every other selected row. Two marks coexist on one control:
+   the checkmark means "done", the fill colour means "selected or not".
+   Neither is colour-only — done is also carried by strikethrough + muted text;
+   selected is also carried by accentTint row ground. */
+.row.done .select-cbx:not(:checked){background:var(--text-primary); border-color:var(--text-primary)}
+.row.done .select-cbx::after{content:""; width:10px; height:6px; border-left:2px solid var(--bg-base); border-bottom:2px solid var(--bg-base); transform:rotate(-45deg) translate(1px,-1px)}
+.app[data-selection] .select-cbx{display:grid}
+.app[data-selection] .cbx{display:none}
+.app[data-selection] .row-open{pointer-events:none}
+.app[data-selection] .row-trail{display:none!important}
+.app[data-selection] .row-due{display:none}
+.app[data-selection] .inline-new{display:none}
+/* Selected row ground — painted on ::before, same pseudo as .row:hover.
+   Inset vertically by space.1 (4px) so adjacent selected rows show an 8px
+   gap between their painted grounds. No padding override — cbLeft and titleLeft
+   are identical for selected, unselected and done rows. */
+.row.selected::before{background:var(--accent-tint)}
+/* Bulk action toolbar */
+.bulk-toolbar{
+  display:none; position:sticky; bottom:0; z-index:10; background:var(--bg-base);
+  border-top:var(--b-hairline) solid var(--bg-hairline); padding:var(--s3) var(--gutter);
+}
+.app[data-selection] .bulk-toolbar{display:flex}
+.app[data-selection] .voice-fab{display:none}
+.bulk-toolbar-in{
+  display:flex; align-items:center; gap:var(--s3);
+  width:100%; max-width:var(--list-max); margin:0 auto;
+}
+.bulk-count{font-size:var(--fs-body); font-weight:var(--w-semibold); white-space:nowrap}
+.bulk-actions{display:flex; align-items:center; gap:var(--s2); margin-left:auto}
+.bulk-btn{
+  appearance:none; cursor:pointer; font:inherit; font-size:var(--fs-meta); font-weight:var(--w-semibold);
+  height:var(--h-sm); min-height:var(--min-target); padding:0 var(--s3); border-radius:var(--r-sm);
+  border:var(--b-hairline) solid var(--bg-rule); background:transparent; color:var(--text-primary);
+  display:inline-flex; align-items:center; gap:var(--s2); white-space:nowrap;
+}
+.bulk-btn:hover{background:var(--bg-sunken)}
+.bulk-btn:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
+.bulk-btn[disabled]{opacity:.4; cursor:not-allowed; border-color:transparent}
+.bulk-btn[disabled]:hover{background:transparent}
+.bulk-exit{
+  appearance:none; cursor:pointer; border:0; background:transparent; color:var(--text-secondary);
+  width:var(--min-target); height:var(--min-target); display:grid; place-items:center;
+  border-radius:var(--r-sm); flex:none;
+}
+.bulk-exit:hover{color:var(--text-primary); background:var(--bg-sunken)}
+.bulk-exit:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CONFIRM DIALOG  (§ ConfirmDialog — F-009 AC-12)
+   ══════════════════════════════════════════════════════════════════════════ */
+.confirm-scrim{display:none; position:fixed; inset:0; background:var(--bg-scrim); z-index:30}
+.app[data-confirm="delete"] .confirm-scrim{display:flex; align-items:center; justify-content:center}
+.confirm-dialog{
+  background:var(--bg-base); border-radius:var(--r-lg); box-shadow:var(--shadow-overlay);
+  width:min(400px, calc(100vw - 2 * var(--gutter))); padding:var(--s5);
+}
+.confirm-dialog h2{margin:0 0 var(--s3); font-size:var(--fs-lead); font-weight:var(--w-semibold); line-height:var(--lh-title)}
+.confirm-dialog p{margin:0 0 var(--s5); color:var(--text-secondary); font-size:var(--fs-body); line-height:var(--lh-body)}
+.confirm-dialog .btn-row{display:flex; gap:var(--s3); justify-content:flex-end}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MANUAL SORT — drag handles  (§ drag-to-reorder, F-009 AC-6)
+   ══════════════════════════════════════════════════════════════════════════ */
+.drag-handle{
+  display:none; width:var(--min-target); height:var(--min-target); flex:none;
+  color:var(--text-muted); cursor:grab; place-items:center;
+}
+.app[data-sort="manual"] .drag-handle{display:grid}
+.app[data-sort="manual"] .row-due{display:none}
+/* Manual sort in Inbox: suppress day headers */
+.app[data-sort="manual"] .group{display:none}
 
 </style>
 </head>
@@ -1157,6 +1375,16 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   <button data-s="phone-tasks-empty" onclick="showState('phone-tasks-empty')">phone-empty</button>
   <button data-s="wide-tasks" onclick="showState('wide-tasks')">wide-tasks</button>
   <button data-s="tasks-long-list" onclick="showState('tasks-long-list')">long-list</button>
+  <button data-s="search-open" onclick="showState('search-open')">search-open</button>
+  <button data-s="search-filtering" onclick="showState('search-filtering')">search-filtering</button>
+  <button data-s="search-no-results" onclick="showState('search-no-results')">search-no-results</button>
+  <button data-s="overflow-open" onclick="showState('overflow-open')">overflow-open</button>
+  <button data-s="overflow-manual-disabled" onclick="showState('overflow-manual-disabled')">overflow-manual-off</button>
+  <button data-s="sort-manual" onclick="showState('sort-manual')">sort-manual</button>
+  <button data-s="overflow-hide-on" onclick="showState('overflow-hide-on')">hide-completed-on</button>
+  <button data-s="select-none" onclick="showState('select-none')">select-none</button>
+  <button data-s="select-some" onclick="showState('select-some')">select-some</button>
+  <button data-s="confirm-delete" onclick="showState('confirm-delete')">confirm-delete</button>
   <button onclick="toggleTheme()">light / dark</button>
   <button onclick="setFrame('')">frame: real width</button>
   <button onclick="setFrame('phone')">frame: phone</button>
@@ -1229,8 +1457,26 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           <button class="iconbtn hide-wide" data-testid="shell-lists-menu-button" aria-label="Lists"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
           <span class="bar-surface-title" id="barTitle">Today</span>
           <span class="spacer"></span>
-          <button class="iconbtn" data-testid="shell-search-button" aria-label="Search"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button>
-          <button class="iconbtn" data-testid="shell-overflow-button" aria-label="More"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+          <input class="search-field" data-testid="tasks-search-input" type="text" placeholder="Search tasks" aria-label="Search tasks" value="">
+          <button class="search-close" data-testid="tasks-search-close" aria-label="Close search"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+          <button class="iconbtn btn-search" data-testid="shell-search-button" aria-label="Search"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button>
+          <span class="overflow-anchor">
+          <button class="iconbtn btn-overflow" data-testid="shell-overflow-button" aria-label="More"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+          <!-- OVERFLOW MENU (T-225, anchored T-247) — right edge aligned to trigger, space.1 gap below -->
+          <nav class="overflow" data-testid="overflow-menu" role="menu" aria-label="List actions">
+          <div class="overflow-section"><span class="overflow-section-label">Sort by</span></div>
+          <button class="overflow-item active" data-testid="overflow-sort-due" role="menuitemradio" aria-checked="true">Due date<span class="overflow-check"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span></button>
+          <button class="overflow-item" data-testid="overflow-sort-priority" role="menuitemradio" aria-checked="false">Priority<span class="overflow-check"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span></button>
+          <button class="overflow-item" id="overflowManual" data-testid="overflow-sort-manual" role="menuitemradio" aria-checked="false">Manual<span class="overflow-check"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span></button>
+          <div class="overflow-sep"></div>
+          <div class="overflow-item" id="overflowHide" data-testid="overflow-hide-completed" role="menuitemcheckbox" aria-checked="false">
+            <span>Hide completed</span>
+            <button class="overflow-switch" aria-hidden="true" tabindex="-1"></button>
+          </div>
+          <div class="overflow-sep"></div>
+          <button class="overflow-item" data-testid="overflow-select" role="menuitem">Select</button>
+          </nav>
+          </span>
         </div></header>
       <div class="pos">
 
@@ -1263,13 +1509,21 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
             <span class="ico"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m2 2 20 20"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M2 8.8a15.9 15.9 0 0 1 4.6-2.9"/><path d="M10.7 5c4 -.4 8.1 .9 11.3 3.8"/><path d="M5 12.9a10 10 0 0 1 3-1.8"/><path d="M12 20h.01"/></svg></span>
             <span class="btxt"><b>Saved on this device</b>“Buy milk” will go up when you’re back online.</span>
           </div>
+            <!-- Search no-results empty state (T-225, AC-3) -->
+            <div class="search-empty" data-testid="tasks-no-results">
+              <h2 id="searchEmptyTitle">No tasks matching "meeting"</h2>
+              <p>Try a different search, or close search to see all tasks.</p>
+            </div>
+
             <div class="v v-collection-today">
       <div class="list">
         <div class="group overdue"><h3>Overdue</h3></div>
         
         <div class="row row-editable" data-testid="assistant-task-row">
+          <div class="drag-handle" aria-label="Drag to reorder"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg></div>
           <div class="row-time"><span class="wd">Thu</span>5:00 PM</div>
           <div class="row-main">
+            <input class="select-cbx" type="checkbox" data-testid="tasks-select-checkbox" aria-label="Select: Send the weekly report to Hanh">
             <input class="cbx" type="checkbox" data-testid="assistant-task-checkbox" aria-label="Complete: Send the weekly report to Hanh">
             <button class="row-open" aria-label="Open Send the weekly report to Hanh"><span class="row-title">Send the weekly report to Hanh</span></button>
             <span class="rename"><input class="field" data-testid="tasks-rename-input" value="Send the weekly report to Hanh" aria-label="Rename task"><button class="btn btn-sm btn-secondary">Save</button></span>
@@ -1279,9 +1533,11 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
         </div>
         
-        <div class="row">
+        <div class="row" id="row2">
+          <div class="drag-handle" aria-label="Drag to reorder"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg></div>
           <div class="row-time"><span class="wd">Wed</span>9:00 AM</div>
           <div class="row-main">
+            <input class="select-cbx" type="checkbox" aria-label="Select: Gọi nha sĩ đặt lịch khám răng">
             <input class="cbx" type="checkbox" aria-label="Complete: Gọi nha sĩ đặt lịch khám răng">
             <button class="row-open" aria-label="Open Gọi nha sĩ đặt lịch khám răng"><span class="row-title">Gọi nha sĩ đặt lịch khám răng</span></button><span class="row-marks"><span class="mark" role="img" aria-label="High priority" title="High priority">!</span></span>
             <span class="row-due">Wed 9:00 AM</span>
@@ -1291,9 +1547,11 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
         </div>
         <div class="group "><h3>Today · Fri, Aug 21</h3></div>
         
-        <div class="row">
+        <div class="row" id="row3">
+          <div class="drag-handle" aria-label="Drag to reorder"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg></div>
           <div class="row-time"><span class="wd">Fri</span>6:00 PM</div>
           <div class="row-main">
+            <input class="select-cbx" type="checkbox" aria-label="Select: Pay the electricity bill">
             <input class="cbx" type="checkbox" aria-label="Complete: Pay the electricity bill">
             <button class="row-open" aria-label="Open Pay the electricity bill"><span class="row-title">Pay the electricity bill</span></button><span class="row-marks"><span class="mark-quiet" role="img" aria-label="2 steps" title="2 steps"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></span></span>
             <span class="row-due">Fri 6:00 PM</span>
@@ -1301,20 +1559,23 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
           <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
         </div>
-        
-        <div class="row">
+
+        <div class="row" id="row4">
+          <div class="drag-handle" aria-label="Drag to reorder"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg></div>
           <div class="row-time"><span class="wd"></span>—</div>
           <div class="row-main">
+            <input class="select-cbx" type="checkbox" aria-label="Select: Buy milk">
             <input class="cbx" type="checkbox" aria-label="Complete: Buy milk">
             <button class="row-open" aria-label="Open Buy milk"><span class="row-title">Buy milk</span></button>
           </div>
           <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
           <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
         </div>
-        
+
         <div class="row done">
           <div class="row-time"><span class="wd">Fri</span>9:30 AM</div>
           <div class="row-main">
+            <input class="select-cbx" type="checkbox" aria-label="Select: Change the tyres">
             <input class="cbx" type="checkbox" checked aria-label="Mark not done: Change the tyres">
             <button class="row-open" aria-label="Open Change the tyres"><span class="row-title">Change the tyres</span></button>
             <span class="row-due">Fri 9:30 AM</span>
@@ -1374,8 +1635,9 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
             <div class="v v-collection-inbox">
       <div class="list">
         <div class="group overdue"><h3>Overdue</h3></div>
-        
+
         <div class="row">
+          <div class="drag-handle" data-testid="tasks-drag-handle" aria-label="Drag to reorder"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg></div>
           <div class="row-time"><span class="wd">Thu</span>5:00 PM</div>
           <div class="row-main">
             <input class="cbx" type="checkbox" aria-label="Complete: Send the weekly report to Hanh">
@@ -1454,6 +1716,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
         <div class="row done">
           <div class="row-time"><span class="wd">Fri</span>9:30 AM</div>
           <div class="row-main">
+            <input class="select-cbx" type="checkbox" aria-label="Select: Change the tyres">
             <input class="cbx" type="checkbox" checked aria-label="Mark not done: Change the tyres">
             <button class="row-open" aria-label="Open Change the tyres"><span class="row-title">Change the tyres</span></button>
             <span class="row-due">Fri 9:30 AM</span>
@@ -1465,6 +1728,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
         <div class="row done">
           <div class="row-time"><span class="wd">Thu</span>4:15 PM</div>
           <div class="row-main">
+            <input class="select-cbx" type="checkbox" aria-label="Select: Order the cake">
             <input class="cbx" type="checkbox" checked aria-label="Mark not done: Order the cake">
             <button class="row-open" aria-label="Open Order the cake"><span class="row-title">Order the cake</span></button>
             <span class="row-due">Thu 4:15 PM</span>
@@ -1476,6 +1740,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
         <div class="row done">
           <div class="row-time"><span class="wd">Wed</span>11:00 AM</div>
           <div class="row-main">
+            <input class="select-cbx" type="checkbox" aria-label="Select: Send the visa photos">
             <input class="cbx" type="checkbox" checked aria-label="Mark not done: Send the visa photos">
             <button class="row-open" aria-label="Open Send the visa photos"><span class="row-title">Send the visa photos</span></button>
             <span class="row-due">Wed 11:00 AM</span>
@@ -1487,6 +1752,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
         <div class="row done">
           <div class="row-time"><span class="wd"></span>—</div>
           <div class="row-main">
+            <input class="select-cbx" type="checkbox" aria-label="Select: Cancel the gym trial">
             <input class="cbx" type="checkbox" checked aria-label="Mark not done: Cancel the gym trial">
             <button class="row-open" aria-label="Open Cancel the gym trial"><span class="row-title">Cancel the gym trial</span></button>
           </div>
@@ -1660,8 +1926,21 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           </div>
         </main>
 
+        <!-- BULK ACTION TOOLBAR (T-225, AC-9/10/11/13) — pinned bottom, selection mode only -->
+        <div class="bulk-toolbar" data-testid="tasks-bulk-toolbar">
+          <div class="bulk-toolbar-in">
+            <span class="bulk-count" data-testid="tasks-select-count" id="bulkCount">0 selected</span>
+            <div class="bulk-actions">
+              <button class="bulk-btn" data-testid="tasks-bulk-complete" disabled aria-label="Complete selected"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Complete</button>
+              <button class="bulk-btn" data-testid="tasks-bulk-delete" disabled aria-label="Delete selected"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete</button>
+              <button class="bulk-btn" data-testid="tasks-bulk-move" disabled aria-label="Move to list"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9L9.1 3.1A2 2 0 0 0 7.4 2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2Z"/></svg>Move to list</button>
+            </div>
+            <button class="bulk-exit" data-testid="tasks-select-done" aria-label="Exit selection"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+          </div>
+        </div>
+
         <!-- Floating voice button — below split only -->
-        <button class="voice-fab" data-testid="assistant-voice-fab" aria-label="Start listening"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></button>
+        <button class="voice-fab" data-testid="assistant-voice-fab" aria-label="Talk"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></button>
 
         <div class="settings-panel" style="position:absolute; inset:0; background:var(--bg-base); z-index:15">
           <header class="topbar"><div class="bar-in">
@@ -1817,6 +2096,18 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           
         </div>
     </aside>
+  </div>
+
+  <!-- CONFIRM DIALOG (T-225, AC-12) — bulk delete confirmation -->
+  <div class="confirm-scrim">
+    <div class="confirm-dialog" data-testid="tasks-confirm-dialog" role="dialog" aria-labelledby="confirmTitle" aria-modal="true">
+      <h2 id="confirmTitle">Delete 3 tasks?</h2>
+      <p id="confirmBody">Send the weekly report to Hanh, Pay the electricity bill, Buy milk.</p>
+      <div class="btn-row">
+        <button class="btn btn-secondary" data-testid="tasks-confirm-cancel">Cancel</button>
+        <button class="btn btn-danger" id="confirmDeleteBtn" data-testid="tasks-confirm-delete">Delete 3 tasks</button>
+      </div>
+    </div>
   </div>
 </div>
 </div></div>
@@ -2213,9 +2504,108 @@ var STATES = {
     "surface": "tasks",
     "title": "Upcoming",
     "count": "<b>12</b> open · <span class=\"late\">2 overdue</span>"
+  },
+  "search-open": {
+    "collection": "today",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "search": "open"
+  },
+  "search-filtering": {
+    "collection": "today",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "search": "filtering",
+    "searchQuery": "bill"
+  },
+  "search-no-results": {
+    "collection": "today",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "search": "no-results",
+    "searchQuery": "meeting"
+  },
+  "overflow-open": {
+    "collection": "today",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "overflow": "open"
+  },
+  "overflow-manual-disabled": {
+    "collection": "today",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "overflow": "open-manual-disabled",
+    "overflowManualDisabled": true
+  },
+  "sort-manual": {
+    "collection": "inbox",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "sort": "manual",
+    "title": "Inbox",
+    "count": "<b>16</b> filed here"
+  },
+  "overflow-hide-on": {
+    "collection": "today",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "overflow": "open",
+    "hideCompleted": true
+  },
+  "select-none": {
+    "collection": "today",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "selection": "none"
+  },
+  "select-some": {
+    "collection": "today",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "selection": "some",
+    "selectCount": 3
+  },
+  "confirm-delete": {
+    "collection": "today",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "selection": "some",
+    "confirm": "delete",
+    "selectCount": 3
   }
 };
-var KEYS = ["surface","collection","tasks","talk","mic","banner","row","carried","menu","settings","sheet"];
+var KEYS = ["surface","collection","tasks","talk","mic","banner","row","carried","menu","settings","sheet","search","overflow","selection","confirm","sort"];
 
 function showState(name){
   var cfg = STATES[name]; if(!cfg) return;
@@ -2260,6 +2650,100 @@ function paint(cfg){
     badge[i].textContent = String(n);
     badge[i].style.display = n === 0 ? 'none' : '';
   }
+
+  /* ── Search field value ── */
+  var sf = document.querySelector('.search-field');
+  if (sf) sf.value = cfg.searchQuery || '';
+  var set = document.getElementById('searchEmptyTitle');
+  if (set && cfg.searchQuery) set.textContent = 'No tasks matching “' + cfg.searchQuery + '”';
+
+  /* ── Search filtering: hide rows whose title does not contain the query (AC-2).
+     Also hide empty groups whose every row was hidden. Reset when leaving search. ── */
+  var allRows = document.querySelectorAll('.v-collection-today .row');
+  var allGroups = document.querySelectorAll('.v-collection-today .group');
+  if (cfg.search === 'filtering' && cfg.searchQuery) {
+    var q = cfg.searchQuery.toLowerCase();
+    for (var sr = 0; sr < allRows.length; sr++) {
+      var titleEl = allRows[sr].querySelector('.row-title');
+      var titleText = titleEl ? titleEl.textContent.toLowerCase() : '';
+      allRows[sr].style.display = titleText.indexOf(q) !== -1 ? '' : 'none';
+    }
+    /* Hide group headings that have no visible rows after them */
+    for (var sg = 0; sg < allGroups.length; sg++) {
+      var hasVisible = false;
+      var sib = allGroups[sg].nextElementSibling;
+      while (sib && !sib.classList.contains('group') && !sib.classList.contains('inline-new')) {
+        if (sib.classList.contains('row') && sib.style.display !== 'none') hasVisible = true;
+        sib = sib.nextElementSibling;
+      }
+      allGroups[sg].style.display = hasVisible ? '' : 'none';
+    }
+  } else {
+    for (var rr = 0; rr < allRows.length; rr++) allRows[rr].style.display = '';
+    for (var gg = 0; gg < allGroups.length; gg++) allGroups[gg].style.display = '';
+  }
+
+  /* ── Overflow menu — manual disabled in Today/Upcoming/Done ── */
+  var manualBtn = document.getElementById('overflowManual');
+  if (manualBtn) {
+    if (cfg.overflowManualDisabled) { manualBtn.disabled = true; manualBtn.classList.remove('active'); }
+    else { manualBtn.disabled = false; }
+  }
+
+  /* ── Overflow — hide completed toggle ── */
+  var hcItem = document.getElementById('overflowHide');
+  var hcSwitch = document.querySelector('.overflow-switch');
+  if (hcItem && hcSwitch) {
+    if (cfg.hideCompleted) {
+      hcItem.querySelector('span').textContent = 'Show completed';
+      hcSwitch.classList.add('on');
+      hcItem.setAttribute('aria-checked','true');
+    } else {
+      hcItem.querySelector('span').textContent = 'Hide completed';
+      hcSwitch.classList.remove('on');
+      hcItem.setAttribute('aria-checked','false');
+    }
+  }
+
+  /* ── Selection mode ── */
+  var sc = cfg.selectCount || 0;
+  var bc = document.getElementById('bulkCount');
+  if (bc) bc.textContent = sc + ' selected';
+  /* Enable/disable bulk action buttons */
+  var bulkBtns = document.querySelectorAll('.bulk-btn');
+  for (var j=0;j<bulkBtns.length;j++) {
+    if (sc > 0) bulkBtns[j].removeAttribute('disabled');
+    else bulkBtns[j].setAttribute('disabled','');
+  }
+  /* Toggle selected rows — includes done rows (owner override 2026-08-22:
+     "Task đã xong thì hiển thị checkbox đã check, có thể chọn được.") */
+  var rows = document.querySelectorAll('.v-collection-today .row');
+  var selCbxs = document.querySelectorAll('.v-collection-today .select-cbx');
+  if (cfg.selection === 'some') {
+    /* Select the first 2 open rows + the done row (shows all 4 combinations) */
+    for (var r=0;r<rows.length;r++) {
+      var isDone = rows[r].classList.contains('done');
+      var selectThis = (r < 2) || isDone;
+      if (selectThis) {
+        rows[r].classList.add('selected');
+        if (selCbxs[r]) selCbxs[r].checked = true;
+      } else {
+        rows[r].classList.remove('selected');
+        if (selCbxs[r]) selCbxs[r].checked = false;
+      }
+    }
+  } else {
+    for (var r3=0;r3<rows.length;r3++) {
+      rows[r3].classList.remove('selected');
+      if (selCbxs[r3]) selCbxs[r3].checked = false;
+    }
+  }
+
+  /* ── Confirm dialog count ── */
+  var ct = document.getElementById('confirmTitle');
+  var cd = document.getElementById('confirmDeleteBtn');
+  if (ct && sc > 0) ct.textContent = 'Delete ' + sc + ' tasks?';
+  if (cd && sc > 0) cd.textContent = 'Delete ' + sc + ' tasks';
 }
 
 function toggleTheme(){

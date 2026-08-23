@@ -52,3 +52,61 @@ explicitly. And when two answers land together, check whether one is a
 read finds both — but only if *compose* is read as "does A enable or forbid B",
 not merely "do A and B disagree".
 
+
+## 2026-08-22 | T-232 | colour-token migration
+Type: pattern · Tags: tokens, theme, migration, visual-drift
+
+When `tokens.json` retires a colour key, the compatibility shim that keeps the old
+name alive so the codebase compiles will also **silently change what renders**, and
+no test catches it — the shim's own comment (*"mapped to closest surviving accent"*)
+disguises a design decision as a compatibility choice.
+
+**Delete the shim and update every call site in the same task.** Where a call site's
+colour changes, the comment must name the design rule that decided it, not the
+mapping that produced it.
+
+**Second lesson, from the same task's briefing rather than its code:** when the
+design system answers a retired key *directly*, cite that answer. The T-232 briefing
+sent the agent to check `diff.remove` against rules 1 and 3 — both of which pass —
+when rule 6 already named the pair outright (`text.muted`, struck through). The agent
+checked what it was pointed at and the wrong colour survived. **A briefing that names
+the wrong rule is worse than one that names no rule**, because it converts an open
+question into a closed one.
+
+## 2026-08-23 — A prohibition written without its exception will be obeyed exactly
+
+`tokens.json motion.rule` said *"NO spring, NO bounce, NO breathing loop."* An agent
+cleaning the palette read it correctly and deleted the token behind it. That token also
+carried the assistant's **thinking dots**, the speaking waveform and the mic orb, so the
+only signal that the machine is working went static — and `design-check` reported
+**202 passed, 0 failed** over it.
+
+Nobody was wrong. The rule was right (v1's decorative aurora loop deserved retirement),
+the deletion was right, and the consequence was a product defect.
+
+The durable half: **a rule stated as an absolute gets applied as an absolute.** If it has
+an exception, the exception belongs *inside the rule text*, not in the judgement of
+whoever reads it next. The rewritten rule now opens by distinguishing a decorative loop
+from a status-indicator loop and says, in the rule itself, that *an agent that reads "no
+loops" without that distinction will correctly remove the only sign the machine is
+working.* That sentence is the fix, not the new token.
+
+## 2026-08-23 — A briefing that repeats a claim about a MECHANISM sends an agent to fix nothing
+
+Twice in one day, an agent was dispatched against a defect described in terms of a cause
+the orchestrator had not verified:
+
+- the search state "does not narrow **because** `.app[data-search="filtering"] .row.done
+  {display:none}` hides the done row" — that CSS rule exists in **no file in the repo**.
+  The claim came from a Gate 1.5 lens and was repeated without checking.
+- a `.tag` sweep briefed for files where `.tag` has never appeared.
+
+Both agents checked and reported "nothing to fix" rather than inventing one, which is the
+behaviour that saved it. But a full dispatch was spent each time, and the second one
+nearly convinced the orchestrator the finding had been wrong.
+
+The distinction that matters: **the symptom was measured, the mechanism was inferred.**
+The search state genuinely was wrong when it was found (`git log -S` puts the fix four
+hours later, inside an unrelated commit). Brief the measurement — *"query 'bill', 4 rows
+visible, 1 contains 'bill'"* — and let the agent find the cause. A briefing that names the
+cause narrows the search to the orchestrator's guess.

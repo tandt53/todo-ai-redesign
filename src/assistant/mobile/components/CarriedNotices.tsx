@@ -79,8 +79,8 @@ function RowIcon({ id, colors }: { id: CarriedRowId; colors: ReturnType<typeof u
       // failed.
       return <AlertCircle size={size} color={colors.danger} strokeWidth={stroke} />
     case 'CN-OFFLINE':
-      // `question` — § OfflineBanner already carries the offline news in that accent.
-      return <WifiOff size={size} color={colors.question} strokeWidth={stroke} />
+      // `attention` — § OfflineBanner already carries the offline news in that accent.
+      return <WifiOff size={size} color={colors.attention} strokeWidth={stroke} />
     case 'CN-SUPERSEDED':
       // nothing is wrong and there is no action
       return <History size={size} color={colors.text.muted} strokeWidth={stroke} />

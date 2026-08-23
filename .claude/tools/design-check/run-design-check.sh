@@ -40,4 +40,18 @@ if ! command -v node >/dev/null 2>&1; then
 fi
 
 cd "$ROOT" || exit 0
-node "$SCRIPT_DIR/check-design.mjs" --design-root "$DESIGN_ROOT" "$@"
+
+EXIT=0
+
+# ── Core design checks (token drift, render, overflow, states, contrast) ──
+node "$SCRIPT_DIR/check-design.mjs" --design-root "$DESIGN_ROOT" "$@" || EXIT=1
+
+# ── T-275: undefined CSS variable references (pure text, no browser) ──
+echo ""
+bash "$SCRIPT_DIR/check-undefined-vars.sh" --design-root "$ROOT/$DESIGN_ROOT" || EXIT=1
+
+# ── T-271: mockup testids missing from the component catalogue ──
+echo ""
+bash "$SCRIPT_DIR/check-testid-catalogue.sh" --design-root "$ROOT/$DESIGN_ROOT" || EXIT=1
+
+exit $EXIT

@@ -71,7 +71,6 @@ export function AssistantSurfaceHost({
         controller={controller}
         platform={platform}
         collection={shell.collection}
-        pathView={pathView}
         revealTaskId={shell.reveal === null ? null : shell.reveal.taskId}
         onGoTalk={() => controller.shellDispatch({ type: 'go', surface: 'talk' })}
         onOpenMenu={() => controller.shellDispatch({ type: 'open-menu' })}

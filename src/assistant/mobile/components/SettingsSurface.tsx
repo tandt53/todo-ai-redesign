@@ -58,7 +58,7 @@ export function SettingsSurface({
           style={styles.ghostButton}
           onPress={onBack}
         >
-          <ChevronLeft size={tokens.icon.size.md} color={colors.primary} strokeWidth={tokens.icon.stroke} />
+          <ChevronLeft size={tokens.icon.size.md} color={colors.accent} strokeWidth={tokens.icon.stroke} />
           <Text style={styles.ghostButtonText}>Lists</Text>
         </Pressable>
         <View style={styles.barSpacer} />
