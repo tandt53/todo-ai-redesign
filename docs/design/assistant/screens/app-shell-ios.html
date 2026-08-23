@@ -1162,7 +1162,9 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 
 /* ══════════════════════════════════════════════════════════════════════════
    OPTION B: Fixed bottom task bar — field + morphing mic/send (T-311)
-   Bar height = h-lg (52px). s1 pad + h-md content + s1 pad = 4+44+4.
+   T-314: raised the bar; homebar reserves the system indicator the same
+   way .composer already does. Height: s1 + h-md + s2 + homebar (25px)
+   = 4+44+8+25 = 81px total, 33px gap below content (4.0%).
    ══════════════════════════════════════════════════════════════════════════ */
 .task-bar{display:none; flex:none; background:var(--bg-base)}
 .app[data-optb] .task-bar{display:block}
@@ -1171,7 +1173,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .app[data-optb] .content-col::after{display:none}
 .task-bar-in{
   display:flex; align-items:center; gap:var(--s3);
-  padding:var(--s1) var(--gutter);
+  padding:var(--s1) var(--gutter) var(--s2);
   max-width:var(--list-max); margin:0 auto; width:100%;
 }
 .tbar-input{
@@ -1198,6 +1200,27 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 @container (min-width:1024px){
   .app[data-optb] .task-bar{display:none !important}
 }
+
+/* ── Keyboard mock — iOS (T-314) ─────────────────────────────────────────
+   38% of 820px = 312px, derived from the owner's Microsoft To Do screenshot.
+   When the keyboard is up the home indicator is behind it, so the task bar's
+   homebar is hidden. The bar rides directly above the keyboard at its reduced
+   height: s1 + h-md + s2 = 56px (no homebar). ─────────────────────────── */
+.keyboard-mock{display:none; flex:none; height:312px; background:#D1D3D9; overflow:hidden; position:relative}
+.app[data-kb="on"] .keyboard-mock{display:block}
+.app[data-kb="on"] .task-bar .homebar{display:none}
+.app[data-kb="on"] .task-bar .gesturebar{display:none}
+.kb-suggest{display:flex; gap:var(--s2); padding:var(--s2) var(--s3); background:#C8CAD0; border-bottom:1px solid #B8BAC0}
+.kb-suggest span{flex:1; text-align:center; font-size:var(--fs-body); color:#3C3C43; padding:var(--s1) 0}
+.kb-rows{display:flex; flex-direction:column; gap:6px; padding:8px 4px 4px}
+.kb-row{display:flex; justify-content:center; gap:6px}
+.kb-key{width:34px; height:42px; background:#FFFFFF; border-radius:5px; display:grid; place-items:center;
+  font-size:22px; color:#000; box-shadow:0 1px 0 #898A8D; font-family:-apple-system,sans-serif}
+.kb-key.wide{width:44px; font-size:15px}
+.kb-key.space{flex:1; max-width:200px; font-size:15px}
+.kb-key.action{background:#007AFF; color:#FFF; width:88px; font-size:15px}
+.kb-bottom{display:flex; gap:6px; padding:0 4px 8px; justify-content:center}
+.kb-bottom .kb-key{font-size:15px}
 
 /* ── Swipe action hidden at split+ (hover-reveal delete button instead) ── */
 @container (min-width:1024px){
@@ -1433,6 +1456,8 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   <button data-s="optb-long-list" onclick="showState('optb-long-list')">B: long-top</button>
   <button data-s="optb-long-list-mid" onclick="showState('optb-long-list-mid')">B: long-mid</button>
   <button data-s="optb-long-list-bottom" onclick="showState('optb-long-list-bottom')">B: long-btm</button>
+  <button data-s="optb-typing-kb-short" onclick="showState('optb-typing-kb-short')">B: kb-short</button>
+  <button data-s="optb-typing-kb-long" onclick="showState('optb-typing-kb-long')">B: kb-long</button>
   <button data-s="search-open" onclick="showState('search-open')">search-open</button>
   <button data-s="search-filtering" onclick="showState('search-filtering')">search-filtering</button>
   <button data-s="search-no-results" onclick="showState('search-no-results')">search-no-results</button>
@@ -2068,15 +2093,31 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           </div>
         </main>
 
-        <!-- OPTION B: Fixed bottom task bar (T-311) -->
+        <!-- OPTION B: Fixed bottom task bar (T-311, raised T-314).
+             Testids removed T-315 — option B is provisional; ids re-enter
+             the contract when the owner chooses and implementation begins. -->
         <div class="task-bar">
           <div class="task-bar-in">
-            <input class="tbar-input" id="tbarInput" data-testid="tasks-bar-input" accessibilityIdentifier="tasks-bar-input" type="text" placeholder="Add a task" aria-label="Add a task">
-            <button class="tbar-action" id="tbarAction" data-testid="tasks-bar-action" accessibilityIdentifier="tasks-bar-action" aria-label="Talk">
+            <input class="tbar-input" id="tbarInput" type="text" placeholder="Add a task" aria-label="Add a task">
+            <button class="tbar-action" id="tbarAction" aria-label="Talk">
               <span class="tbar-ico-mic"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></span>
               <span class="tbar-ico-send" style="display:none"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></span>
             </button>
           </div>
+          <div class="homebar"></div>
+        </div>
+
+        <!-- Keyboard mock (T-314) — iOS system keyboard silhouette.
+             38% of 820px = 312px. When visible the homebar hides (behind keyboard)
+             and the task bar rides at 56px instead of 81px. -->
+        <div class="keyboard-mock" aria-hidden="true">
+          <div class="kb-suggest"><span>I</span><span>The</span><span>It</span></div>
+          <div class="kb-rows">
+            <div class="kb-row"><span class="kb-key">q</span><span class="kb-key">w</span><span class="kb-key">e</span><span class="kb-key">r</span><span class="kb-key">t</span><span class="kb-key">y</span><span class="kb-key">u</span><span class="kb-key">i</span><span class="kb-key">o</span><span class="kb-key">p</span></div>
+            <div class="kb-row"><span class="kb-key">a</span><span class="kb-key">s</span><span class="kb-key">d</span><span class="kb-key">f</span><span class="kb-key">g</span><span class="kb-key">h</span><span class="kb-key">j</span><span class="kb-key">k</span><span class="kb-key">l</span></div>
+            <div class="kb-row"><span class="kb-key wide">&#8679;</span><span class="kb-key">z</span><span class="kb-key">x</span><span class="kb-key">c</span><span class="kb-key">v</span><span class="kb-key">b</span><span class="kb-key">n</span><span class="kb-key">m</span><span class="kb-key wide">&#9003;</span></div>
+          </div>
+          <div class="kb-bottom"><span class="kb-key wide">123</span><span class="kb-key space">space</span><span class="kb-key action">return</span></div>
         </div>
 
         <!-- BULK ACTION TOOLBAR (T-225) -->
@@ -2851,9 +2892,34 @@ var STATES = {
     "scrollTo": "bottom",
     "frame": "phone",
     "optb": "idle"
+  },
+  "optb-typing-kb-short": {
+    "collection": "today",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "frame": "phone",
+    "optb": "typing",
+    "kb": "on"
+  },
+  "optb-typing-kb-long": {
+    "collection": "long",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "title": "Upcoming",
+    "count": "<b>18</b> open · <span class=\"late\">2 overdue</span>",
+    "scrollTo": "top",
+    "frame": "phone",
+    "optb": "typing",
+    "kb": "on"
   }
 };
-var KEYS = ["surface","collection","tasks","talk","mic","banner","row","carried","menu","settings","sheet","search","overflow","selection","confirm","sort","optb"];
+var KEYS = ["surface","collection","tasks","talk","mic","banner","row","carried","menu","settings","sheet","search","overflow","selection","confirm","sort","optb","kb"];
 
 function showState(name){
   var cfg = STATES[name]; if(!cfg) return;

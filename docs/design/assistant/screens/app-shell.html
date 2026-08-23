@@ -1169,19 +1169,22 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
    OPTION B: Fixed bottom task bar — field + morphing mic/send (T-311)
    The owner's alternative to A's pinned inline row. Both options coexist
    in the mockup; A states are unchanged, B states set data-optb.
-   Bar height = h-lg (52px) = inline-new height = Microsoft To Do's bar.
-   Built: s1 (4px) pad + h-md (44px) content + s1 (4px) pad = 52px.
+   Bar height: s1 (4px) top pad + h-md (44px) content + s2 (8px) bottom pad
+   = 56px painted, plus platform clearance below (web s5 24px / iOS homebar
+   25px / Android gesturebar 23px). Total with clearance: web 80px, iOS 81px,
+   Android 79px — approximately 1.3 task rows (up from 0.85).
    Mic (field empty) → "Talk", navigates to Talk surface.
    Send (field has text) → "Add task", commits the title via addTask.
+   T-314: raised the bar and reserved the system indicator on iOS/Android.
    ══════════════════════════════════════════════════════════════════════════ */
-.task-bar{display:none; flex:none; background:var(--bg-base)}
+.task-bar{display:none; flex:none; background:var(--bg-base); padding-bottom:var(--s5)}
 .app[data-optb] .task-bar{display:block}
 .app[data-optb] .inline-new{display:none !important}
 .app[data-optb] .voice-fab{display:none !important}
 .app[data-optb] .content-col::after{display:none}
 .task-bar-in{
   display:flex; align-items:center; gap:var(--s3);
-  padding:var(--s1) var(--gutter);
+  padding:var(--s1) var(--gutter) var(--s2);
   max-width:var(--list-max); margin:0 auto; width:100%;
 }
 .tbar-input{
@@ -2090,11 +2093,13 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 
         <!-- OPTION B: Fixed bottom task bar — field + morphing mic/send (T-311).
              Visible only in optb-* states. The mic morphs into a send arrow when
-             the field has text: one button, one testid, two accessible names. -->
+             the field has text: one button, two accessible names.
+             T-315: testids removed while option B is provisional — they re-enter
+             the contract in the same edit that implements whichever option wins. -->
         <div class="task-bar">
           <div class="task-bar-in">
-            <input class="tbar-input" id="tbarInput" data-testid="tasks-bar-input" type="text" placeholder="Add a task" aria-label="Add a task">
-            <button class="tbar-action" id="tbarAction" data-testid="tasks-bar-action" aria-label="Talk">
+            <input class="tbar-input" id="tbarInput" type="text" placeholder="Add a task" aria-label="Add a task">
+            <button class="tbar-action" id="tbarAction" aria-label="Talk">
               <span class="tbar-ico-mic"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></span>
               <span class="tbar-ico-send" style="display:none"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></span>
             </button>
