@@ -929,22 +929,14 @@ describe('B. permissions — the platform split (AC-2, AC-3)', () => {
     const androidLabel = mockupPermissionCtaLabel(MOCKUPS.android)
     expect(iosLabel, 'the iOS mockup publishes an empty CTA label').not.toBe('')
     expect(androidLabel, 'the Android mockup publishes an empty CTA label').not.toBe('')
-    // iOS and Android now both read "Open Settings" — the design unified the
-    // CTA label across platforms. The inequality guard that previously caught a
-    // parser that silently read only one mockup is removed: both mockups are
-    // verified non-empty above, and the value equality is the design's intent.
+    // Both mockups are verified non-empty above. iOS reads "Open Settings"
+    // (IOS-DENIED opens the system Settings app); Android reads "Open app
+    // settings" (AND-PERMANENT opens ACTION_APPLICATION_DETAILS_SETTINGS).
 
     expect(permissionCtaLabel('ios', { microphone: 'denied', speech_recognition: 'granted' })).toBe(iosLabel)
-    // The Android mockup reads "Open Settings" but components.md § MicControl
-    // still publishes "Open app settings" for AND-PERMANENT. The code follows
-    // components.md (verified by permissions.test.ts). The mockup/catalogue
-    // drift is a design-side issue — do not change the code to match one file
-    // and break the other.
-    const androidCta = permissionCtaLabel('android', { microphone: 'permanently_denied' })
-    expect(
-      androidCta === androidLabel || androidCta === 'Open app settings',
-      `Android CTA is "${androidCta}", expected "${androidLabel}" (mockup) or "Open app settings" (components.md)`,
-    ).toBe(true)
+    // The Android mockup and components.md § MicControl both publish
+    // "Open app settings" for AND-PERMANENT. Single expected value.
+    expect(permissionCtaLabel('android', { microphone: 'permanently_denied' })).toBe(androidLabel)
   })
 })
 
