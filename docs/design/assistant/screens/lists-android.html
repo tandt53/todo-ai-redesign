@@ -171,6 +171,8 @@ input{font:inherit; color:inherit}
   background:var(--bg-base); border-radius:var(--r-lg); box-shadow:var(--shadow-overlay);
   min-width:200px; padding:var(--s1) 0; display:none;
 }
+/* Groceries row is last: flip menu upward so it stays inside the stage */
+.ctx-menu.for-groceries{top:auto; bottom:100%}
 /* Allow context menu to overflow the scrollable body */
 [data-state="menu-nonempty"] .over-body,
 [data-state="menu-empty-list"] .over-body{overflow:visible}
