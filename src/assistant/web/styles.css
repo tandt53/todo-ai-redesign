@@ -96,16 +96,17 @@
   --shadow-raisedLight: 0 8px 24px -10px rgba(25, 29, 51, 0.18);
   /* rule 6: voice pair retired → one accent; both glows now accent at 35% */
   --shadow-glow: 0 0 24px color-mix(in srgb, var(--color-dark-accent) 35%, transparent);
-  --motion-duration_ms-micro: 120;
-  --motion-duration_ms-standard: 200;
-  --motion-duration_ms-emphasis: 320;
-  --motion-duration_ms-celebrate: 600;
-  --motion-duration_ms-auroraBreath: 2400;
-  --motion-duration_ms-diffFlashHold: 1600;
-  --motion-duration_ms-diffFlashFade: 400;
-  --motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
-  --motion-easing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --motion-easing-exit: cubic-bezier(0.4, 0, 1, 1);
+  /* motion.duration_ms — tokens.json v2 (T-270: corrects v1 speeds, retires celebrate/auroraBreath) */
+  --motion-duration_ms-micro: 100;           /* tokens.json motion.duration_ms.micro */
+  --motion-duration_ms-standard: 180;        /* tokens.json motion.duration_ms.standard */
+  --motion-duration_ms-emphasis: 280;        /* tokens.json motion.duration_ms.emphasis */
+  --motion-duration_ms-diffFlashHold: 1600;  /* tokens.json motion.duration_ms.diffFlashHold */
+  --motion-duration_ms-diffFlashFade: 400;   /* tokens.json motion.duration_ms.diffFlashFade */
+  --motion-duration_ms-rulegrow: 900;        /* tokens.json motion.duration_ms.rulegrow — listening rule growth */
+  /* motion.easing — tokens.json v2 (T-270: retires spring per motion.rule "NO spring, NO bounce") */
+  --motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);  /* tokens.json motion.easing.standard */
+  --motion-easing-exit: cubic-bezier(0.4, 0, 1, 1);      /* tokens.json motion.easing.exit */
+  --motion-easing-linear: linear;                          /* tokens.json motion.easing.linear */
   --icon-stroke: 1.8;
   --icon-size-sm: 16;
   --icon-size-md: 20;
@@ -135,7 +136,7 @@ html {
   --dur-micro: calc(var(--motion-duration_ms-micro) * 1ms);
   --dur-standard: calc(var(--motion-duration_ms-standard) * 1ms);
   --dur-emphasis: calc(var(--motion-duration_ms-emphasis) * 1ms);
-  --dur-breath: calc(var(--motion-duration_ms-auroraBreath) * 1ms);
+  --dur-rulegrow: calc(var(--motion-duration_ms-rulegrow) * 1ms);
   --dur-flash: calc((var(--motion-duration_ms-diffFlashHold) + var(--motion-duration_ms-diffFlashFade)) * 1ms);
   --icon-sm: calc(var(--icon-size-sm) * 1px);
   --icon-md: calc(var(--icon-size-md) * 1px);
@@ -553,7 +554,7 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 .chip {
   padding: var(--sp-xs) var(--sp-lg); border-radius: var(--r-pill);
   border: 1px solid var(--accent); color: var(--accent); font-weight: var(--font-weight-emphasis);
-  transition: background var(--dur-micro) var(--motion-easing-standard), transform var(--dur-micro) var(--motion-easing-spring);
+  transition: background var(--dur-micro) var(--motion-easing-standard), transform var(--dur-micro) var(--motion-easing-standard);
 }
 .chip:hover { background: var(--accent-tint); }
 .chip:active { transform: scale(0.96); }
@@ -569,7 +570,7 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
   display: inline-flex; align-items: center; gap: var(--sp-xs);
   margin-top: var(--sp-sm); padding: var(--sp-sm) var(--sp-lg);
   border-radius: var(--r-pill); background: var(--accent); color: var(--tx-onaccent); font-weight: var(--font-weight-emphasis);
-  transition: transform var(--dur-micro) var(--motion-easing-spring);
+  transition: transform var(--dur-micro) var(--motion-easing-standard);
 }
 .retry-btn:active { transform: scale(0.96); }
 
@@ -637,7 +638,7 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
   box-shadow: var(--shadow-card);
   font-family: var(--font-family-body); font-size: var(--fs-body); font-weight: var(--font-weight-emphasis);
   cursor: pointer;
-  transition: transform var(--dur-micro) var(--motion-easing-spring), background var(--dur-micro) var(--motion-easing-standard);
+  transition: transform var(--dur-micro) var(--motion-easing-standard), background var(--dur-micro) var(--motion-easing-standard);
 }
 .nm-pill:hover { background: var(--accent-tint); }
 .nm-pill:active { transform: scale(0.96); }
@@ -690,7 +691,7 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
   position: relative; flex: none; width: 52px; height: 52px; border-radius: var(--radius-orb);
   background: var(--bg-raised); border: 1px solid var(--hairline);
   display: inline-flex; align-items: center; justify-content: center; color: var(--tx);
-  transition: transform var(--dur-micro) var(--motion-easing-spring), box-shadow var(--dur-standard) var(--motion-easing-standard);
+  transition: transform var(--dur-micro) var(--motion-easing-standard), box-shadow var(--dur-standard) var(--motion-easing-standard);
 }
 .mic::after { /* idle ember — the gradient at 8%, a promise of the bloom */
   content: ""; position: absolute; inset: 0; border-radius: var(--radius-orb);
@@ -718,7 +719,7 @@ html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); 
   flex: none; width: 40px; height: 40px; border-radius: var(--radius-orb);
   background: var(--accent); color: var(--tx-onaccent);
   display: inline-flex; align-items: center; justify-content: center;
-  transition: transform var(--dur-micro) var(--motion-easing-spring), opacity var(--dur-micro) var(--motion-easing-standard);
+  transition: transform var(--dur-micro) var(--motion-easing-standard), opacity var(--dur-micro) var(--motion-easing-standard);
 }
 .send:active { transform: scale(0.96); }
 .send[aria-disabled="true"] { opacity: 0.4; }
