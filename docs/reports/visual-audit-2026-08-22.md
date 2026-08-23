@@ -244,3 +244,52 @@ Thursday** (day-picker T selected; next three occurrences Thu 27 Aug, Thu 3 Sep,
 until Fri 18 Dec). The deadline's weekday and the recurrence rule contradict each other. It is
 seed data rather than layout, and low severity — but QA authors read these mockups, and a repeat
 rule that disagrees with its own deadline is how a confused test gets written.
+
+---
+
+# Fifth pass — comparing the same state across platforms
+
+F7 suggested a sweep with a confirmed true positive behind it, unlike the first four: **compare
+what each named state renders on web, iOS and Android.** Nothing checks this today — the a11y
+suite compares **ids** and passes.
+
+It produced three candidates. **One was my own error, and is recorded first.**
+
+## Not a finding — the time format, retracted
+
+The sweep reported iOS showing `Thu 5 PM` / `6 PM` where web and Android showed `Thu 5:00 PM` /
+`Fri 6:00 PM`, and I formed a hypothesis about iOS dropping the weekday inside the Today group.
+
+**Re-probed with the mockup's dev toolbar removed: all three render identically** — `Thu5:00 PM`,
+`Wed9:00 AM`, `Fri6:00 PM`, `—`, `Fri9:30 AM`. The difference came from the toolbar still being in
+the page and narrowing the frame. **No finding.**
+
+(A minor redundancy is real and shared by all three: a row reads `Fri 6:00 PM` under a heading
+that already says `Today · Fri, Aug 21`. Consistent across platforms, so a design judgement rather
+than a divergence, and not filed.)
+
+## F8 — two Lists states render an empty overlay (`lists-android.html`, `lists.html`)
+
+| state | web | iOS | Android |
+|---|---|---|---|
+| `delete-confirm` | full copy + button | button label only | **scrim, no dialog at all** |
+| `menu-nonempty` | **no menu content** | 6 items | **container present, empty** |
+
+Measured as overlay elements plus visible leaf-text count. On Android `delete-confirm` the screen
+dims and nothing is drawn on it; on `menu-nonempty` the `ctx-menu` container exists with the same
+leaf-text count as the closed drawer.
+
+**The delete confirmation is the serious half.** Web reads *"Move 5 tasks to Inbox and delete
+Work?"* and *"The tasks are not deleted. They move to Inbox, where they were before you filed
+them."* That reassurance **is** F-008's delete semantics, and it is what a user needs before
+confirming a destructive action. iOS shows only the button `Move and delete`; Android shows
+nothing. **Two of three platforms ask for confirmation without saying what will happen.**
+
+Filed as T-263.
+
+## A third design-check blind spot
+
+The tool counts *distinct renderings* per state, so an overlay containing nothing still counts as
+distinct — the scrim differs from the base state. **A rule for "an overlay element that renders
+with no visible content" catches this whole class**, and belongs with the adjacent-grounds rule
+already filed as T-252.
