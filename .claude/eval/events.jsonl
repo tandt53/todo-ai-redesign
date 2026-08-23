@@ -371,3 +371,6 @@
 {"ts":"2026-08-23T11:59:01.619Z","event":"agent_return","task":"T-287","agent":"backend-agent","status":"UNKNOWN","artifacts":[],"evidence_conflict":null,"session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
 {"ts":"2026-08-23T11:59:25.990Z","event":"agent_return","task":"T-200","agent":"design-agent","status":"UNKNOWN","artifacts":[],"evidence_conflict":null,"session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
 {"ts":"2026-08-23T12:00:15.179Z","event":"session_stop","session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
+{"ts":"2026-08-23T12:00:51.789Z","event":"session_stop","session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
+{"ts":"2026-08-23T12:05:30.881Z","event":"agent_return","task":"T-191","agent":"architect-agent","status":"UNKNOWN","artifacts":[],"evidence_conflict":null,"session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
+{"ts":"2026-08-23T12:06:33.755Z","event":"session_stop","session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
