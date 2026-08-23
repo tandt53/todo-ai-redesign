@@ -397,3 +397,5 @@
 {"ts":"2026-08-23T13:32:16.476Z","event":"agent_return","task":"T-309","agent":"backend-agent","status":"UNKNOWN","artifacts":[],"evidence_conflict":null,"session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
 {"ts":"2026-08-23T13:36:54.447Z","event":"agent_return","task":"T-311","agent":"design-agent","status":"UNKNOWN","artifacts":[],"evidence_conflict":null,"session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
 {"ts":"2026-08-23T13:37:22.908Z","event":"session_stop","session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
+{"ts":"2026-08-23T13:38:02.355Z","event":"session_stop","session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
+{"ts":"2026-08-23T13:43:33.232Z","event":"session_stop","session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
