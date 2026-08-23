@@ -24,7 +24,7 @@
 
 | Task | Agent | Module | Feature | Subtree | Started |
 |---|---|---|---|---|---|
-| T-322 | spec-agent | assistant | F-001 | `docs/specs/` | 2026-08-23 15:1Z |
+| T-321 | design-agent | assistant | — | `docs/design/` | 2026-08-23 15:4Z |
 
 ## Blockers
 <!-- Anything stopping progress. Orchestrator resolves these. -->
@@ -46,6 +46,7 @@
 <!-- Recent entries only — archive old results when the file grows. -->
 | Date | Agent | Task | Status | Summary | Next Action |
 |------|-------|------|--------|---------|-------------|
+| 2026-08-23 | spec-agent | T-322 | DONE | F-001 rev 10. AC-37 restated for the bar with both accessible names and the name-tracks-function rule; AC-36 confirmed. 37 ACs unchanged, spec-check 0. | T-321 |
 | 2026-08-23 | qa-api-agent | T-313+T-307 | DONE | Both stale fixtures fixed; suite 1311/1311. Declined to derive WIRE_FIELDS and the reason was a finding: the contract declares sort_order, the backend emits it nowhere. | T-323 |
 | 2026-08-23 | design-agent | T-314+T-315+T-316 | DONE | B raised off the bottom with the system indicator reserved; keyboard drawn (38%, list keeps ~50%); B testids pulled back out of the contract, 82/82. B now 1.3 rows — but A has not reserved the indicator at all: T-318. | T-318 |
 | 2026-08-23 | design-agent | T-311 | DONE | Option B drawn, 5 states × 3 platforms. Bar 52px = 6.3% = 0.85 rows, covers 0 (it sits below the scroller). The trade: A is 0 permanent + 1–2 rows occluded; B is 0.85 rows permanent + 0 occluded. | T-312 |
