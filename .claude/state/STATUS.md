@@ -24,7 +24,8 @@
 
 | Task | Agent | Module | Feature | Subtree | Started |
 |---|---|---|---|---|---|
-| T-319+T-318 | design-agent | assistant | — | `docs/design/` | 2026-08-23 14:5Z |
+| T-322 | spec-agent | assistant | F-001 | `docs/specs/` | 2026-08-23 15:1Z |
+| T-313+T-307 | qa-api-agent | assistant | F-005 | `tests/` | 2026-08-23 15:1Z |
 
 ## Blockers
 <!-- Anything stopping progress. Orchestrator resolves these. -->
