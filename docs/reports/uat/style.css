@@ -1,0 +1,41 @@
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;color:#111;background:#f7f7f8}
+.top{position:sticky;top:0;z-index:60;background:#fff;border-bottom:1px solid #e2e2e4;padding:10px 18px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.top h1{font-size:16px;margin:0;font-weight:650}.top .m{color:#777;font-size:12px}
+.seg{display:flex;border:1px solid #d4d4d8;border-radius:8px;overflow:hidden;margin-left:auto}
+.seg button{font:inherit;font-size:13px;padding:5px 14px;border:0;background:#fff;cursor:pointer;color:#444}
+.seg button[aria-pressed=true]{background:#0a58ca;color:#fff}
+#prog{font-variant-numeric:tabular-nums;font-size:12px;color:#555;border:1px solid #ddd;border-radius:99px;padding:3px 10px}
+.exp{font:inherit;font-size:12px;padding:5px 11px;border:1px solid #ccc;background:#fff;border-radius:7px;cursor:pointer}
+.toc{display:flex;gap:6px;flex-wrap:wrap;padding:9px 18px;background:#fff;border-bottom:1px solid #eee;position:sticky;top:47px;z-index:55}
+.toc a{font-size:11.5px;color:#444;text-decoration:none;border:1px solid #e2e2e4;border-radius:99px;padding:2px 9px;white-space:nowrap}
+.toc a:hover{border-color:#0a58ca;color:#0a58ca}.toc a b{color:#0a58ca;margin-right:5px}
+.flow{background:#fff;margin:16px 14px;border-radius:12px;border:1px solid #e6e6e8;padding:16px 0 14px;scroll-margin-top:92px}
+.flow h2{font-size:17px;margin:0 0 3px;padding:0 18px;display:flex;gap:9px;align-items:baseline;flex-wrap:wrap}
+.flow h2 b{color:#0a58ca}.flow h2 em{font-style:normal;font-size:11.5px;color:#999;font-weight:400;margin-left:auto}
+.why{margin:0 0 12px;padding:0 18px;color:#555;font-size:13px}
+.strip{display:flex;align-items:flex-start;overflow-x:auto;padding:4px 18px 10px;scrollbar-width:thin}
+.strip.neg{flex-wrap:wrap;gap:14px}
+.arw{align-self:center;color:#c4c4c8;font-size:20px;padding:0 9px;flex:none;margin-bottom:34px}
+.card{flex:none;width:300px}
+.cap{display:flex;gap:6px;align-items:flex-start;font-size:12px;line-height:1.35;min-height:34px;margin-bottom:5px;font-weight:550}
+.n{background:#0a58ca;color:#fff;min-width:17px;height:17px;border-radius:50%;display:grid;place-items:center;font-size:10px;flex:none;margin-top:1px}
+.n.neg{background:#c0392b}
+.shot{display:flex;justify-content:flex-start}
+.shot img.sh{display:block;border:1px solid #dcdce0;border-radius:7px;background:#fff;max-width:300px;max-height:380px;width:auto;height:auto;cursor:zoom-in}
+.shot .sh:not(img){width:180px;height:150px;display:grid;place-items:center;text-align:center;font-size:11px;color:#8aa1bb;background:#f6f9fd;border:1px dashed #cbd8e8;border-radius:7px;padding:8px}
+.shot .sh.gap{color:#a88;background:#fffafa;border-color:#e6cccc}.shot .sh i{font-size:10px;opacity:.8}
+.v{display:flex;gap:4px;align-items:center;margin-top:6px}
+.v button{width:24px;height:24px;border:1px solid #d8d8dc;background:#fff;border-radius:6px;cursor:pointer;font-size:12px;color:#666;line-height:1}
+.v button[aria-pressed=true][data-v=pass]{background:#1a7f37;border-color:#1a7f37;color:#fff}
+.v button[aria-pressed=true][data-v=fail]{background:#c0392b;border-color:#c0392b;color:#fff}
+.v button[aria-pressed=true][data-v=na]{background:#888;border-color:#888;color:#fff}
+.v .note{flex:1;min-width:0;border:1px solid #e0e0e4;border-radius:6px;padding:3px 7px;font:inherit;font-size:11.5px}
+.card code{display:block;font-size:10px;color:#aaa;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card.pass .shot img{outline:2px solid #1a7f37}.card.fail .shot img{outline:2px solid #c0392b}.card.na{opacity:.5}
+.negwrap{border-top:1px dashed #e6e6e8;margin-top:6px;padding-top:10px}
+.negwrap h4{margin:0 0 8px;padding:0 18px;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:#c0392b;font-weight:650}
+#lb{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;place-items:center;z-index:200;cursor:zoom-out;padding:20px}
+#lb img{max-width:100%;max-height:100%;border-radius:5px}
+.legend{padding:9px 18px;font-size:12px;color:#666;background:#fff;border-bottom:1px solid #eee}
+@media print{.top,.toc,.v,.exp{display:none}.flow{break-inside:avoid}}
