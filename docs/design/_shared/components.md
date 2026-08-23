@@ -496,6 +496,24 @@ rule checkable rather than merely stated: **the title's text equals the active m
 blocked on `lists` + `tasks.list_id` (IA §7, § ListsMenu LM-LIST), so the title has four possible
 values today and no fallback case to design.
 
+## InlineAdd — the add-task row at the list bottom (T-305/306)
+
+Purpose: a tappable row at the end of every `.list` that creates a new task with the typed title. `data-testid="tasks-inline-add"`. Accessible name: **"Add a task"**. `role=button`.
+
+**Pinning rule (T-306, owner decision: Option A — provisional).** The row uses `position: sticky; bottom: 0` inside the scroll container (`.pane`). When the list is short enough to fit the viewport without scrolling, the row sits in its normal flow position after the last task — **zero rows covered, zero gap from the last row.** When the list is longer than the viewport, the row pins to the bottom of the scrollport and stays there as the user scrolls, releasing when the `.list` wrapper's bottom edge comes into view.
+
+**Cost:** while pinned, the bar draws over roughly two rows at the bottom of the viewport. Rows keep their coordinates and scroll beneath it. **Scroller padding does not fix this** (measured: still two rows) — padding only adds room at the very end where the bar has already released. **Do not add padding-bottom for the bar.** The existing `pane-tasks` padding-bottom on mobile is for the voice FAB only.
+
+**What a short list looks like:** byte-for-byte today's behaviour — 0 rows covered, gap 0. `position: sticky` has no visual effect when the element's natural position is already within the scrollport. This property is what made the feature cheap and must survive.
+
+**Voice FAB clearance:** on mobile (below `breakpoints.split`), the FAB moves to `bottom: 0` — the same level as the pinned bar (both 52px). The bar gets `padding-right: calc(var(--h-lg) + var(--s4) + var(--s2))` on mobile so its text stops before the FAB area. The FAB sits on the bar's right padding zone, covering no text the bar does not already cover. Rejected options and measured evidence: (1) **FAB above bar** (`bottom: calc(var(--h-lg) + var(--s4))`) — covered 2 rows of readable content, including due times hidden behind the mic button; (2) **FAB at original position** (`bottom: var(--s4)`) — protrudes 16px above the bar, covering 1 row's due time; (3) **FAB hidden while bar is pinned** — removes the only Talk navigation on mobile.
+
+**No mic in this row.** The add row calls `addTask` with the title verbatim. A mic icon next to a text field promises the text goes through the assistant, which it does not. The mic control lives exclusively on the Talk surface (§ MicControl).
+
+**Not drawn and why:** Option B (one fixed bottom bar merging the field and the mic) was examined by the owner and not taken *for now*. Nothing in the current design forecloses it.
+
+States: default (idle, plus icon + "Add a task" in `text.muted`) · hover (label shifts to `text.secondary`) · focused (focus ring).
+
 ## OfflineBanner
 
 Purpose: no half-running conversation (AC-25) — a full-width note above the Composer on `bg.base`

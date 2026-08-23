@@ -401,7 +401,7 @@ button,input,textarea{font:inherit; color:inherit}
 /* ══════════════════════════════════════════════════════════════════════════
    FRAME — layout.wide_rule, drawn. Three tiers, one branch each.
    ══════════════════════════════════════════════════════════════════════════ */
-.app{display:flex; flex-direction:column; min-height:820px; background:var(--bg-sunken)}
+.app{display:flex; flex-direction:column; height:820px; overflow:hidden; background:var(--bg-sunken)}
 .frame{display:flex; flex:1 1 auto; min-height:0; max-width:var(--frame-max); width:100%; margin:0 auto}
 .col-rail{display:none; flex-direction:column; min-width:0; background:var(--bg-base)}
 .col-main{display:flex; flex-direction:column; flex:1 1 auto; min-width:0; background:var(--bg-base)}
@@ -534,7 +534,7 @@ button,input,textarea{font:inherit; color:inherit}
 .list{position:relative}
 /* SPINE REMOVED (T-227). The spine marked the time-rail column. With the rail
    gone at all widths, the spine has nothing to separate and nothing to mark. */
-.group{padding:var(--s5) 0 var(--s2) 0}
+.group{padding:var(--s5) 0 var(--s2) 0; position:sticky; top:0; z-index:4; background:var(--bg-base)}
 .group:first-child{padding-top:var(--s4)}
 .group h3{margin:0; font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:var(--font-case-label); font-weight:var(--w-semibold); color:var(--text-muted)}
 .group.overdue h3{color:var(--danger)}
@@ -977,6 +977,8 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .app[data-collection="today"] .v-collection-today.v-flex{display:flex}
 .app[data-collection="upcoming"] .v-collection-upcoming{display:block}
 .app[data-collection="upcoming"] .v-collection-upcoming.v-flex{display:flex}
+.app[data-collection="long"] .v-collection-long{display:block}
+.app[data-collection="long"] .v-collection-long.v-flex{display:flex}
 .app[data-menu="empty"] .v-menu-empty{display:block}
 .app[data-menu="empty"] .v-menu-empty.v-flex{display:flex}
 .app[data-menu="failed"] .v-menu-failed{display:block}
@@ -1084,7 +1086,8 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   /* Swipe-to-delete replaces always-visible delete button */
   .row-trail{display:none}
   /* List padding to clear floating button */
-  .pane-tasks{padding-bottom:calc(var(--h-lg) + var(--s7) + var(--s4))}
+  .pane-tasks{padding-bottom:0}
+  .content-col::after{content:''; display:block; height:calc(var(--h-lg) + var(--s7) + var(--s4))}
   /* Header: hide Talk and Add buttons below split */
   .bar-talk-btn{display:none}
   .bar-add-btn{display:none}
@@ -1109,10 +1112,13 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .row.row-swiped .swipe-action{transform:translateX(0)}
 
 /* ── Inline new-task row — visible at all widths ── */
+/* T-305/306: position:sticky pins the row to the scrollport bottom when
+   scrolled out of view. Short lists: no effect. Cost: ~2 rows occluded. */
 .inline-new{
   display:flex; align-items:center; gap:var(--s3);
   min-height:var(--h-lg); padding:var(--s1) var(--gutter);
   color:var(--text-muted); cursor:pointer;
+  position:sticky; bottom:0; z-index:5; background:var(--bg-base);
 }
 .inline-new .plus{
   width:calc(var(--icon-size-md) * 1px); height:calc(var(--icon-size-md) * 1px); flex:none;
@@ -1122,17 +1128,17 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .inline-new:hover .inline-label{color:var(--text-secondary)}
 .inline-new:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
 @container (max-width:1023px){
-  .inline-new{padding:var(--s1) var(--gutter)}
+  .inline-new{padding:var(--s1) var(--gutter); padding-right:calc(var(--h-lg) + var(--s4) + var(--s2))}
 }
 
 /* ── Floating voice button — below split only ── */
 .voice-fab{
-  display:grid; position:absolute; z-index:5; cursor:pointer;
+  display:grid; position:absolute; z-index:6; cursor:pointer;
   width:var(--h-lg); height:var(--h-lg); min-width:var(--min-target); min-height:var(--min-target);
   border-radius:var(--r-circle); border:0;
   background:var(--accent); color:var(--text-on-accent);
   place-items:center;
-  right:var(--s4); bottom:var(--s4);
+  right:var(--s4); bottom:0;
   box-shadow:0 4px 12px rgba(0,0,0,0.15);
 }
 .voice-fab:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
@@ -1368,6 +1374,9 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   <button data-s="phone-tasks-arrived" onclick="showState('phone-tasks-arrived')">phone-arrived</button>
   <button data-s="phone-tasks-empty" onclick="showState('phone-tasks-empty')">phone-empty</button>
   <button data-s="wide-tasks" onclick="showState('wide-tasks')">wide-tasks</button>
+  <button data-s="tasks-long-list" onclick="showState('tasks-long-list')">long-list-top</button>
+  <button data-s="tasks-long-list-mid" onclick="showState('tasks-long-list-mid')">long-list-mid</button>
+  <button data-s="tasks-long-list-bottom" onclick="showState('tasks-long-list-bottom')">long-list-bottom</button>
   <button data-s="search-open" onclick="showState('search-open')">search-open</button>
   <button data-s="search-filtering" onclick="showState('search-filtering')">search-filtering</button>
   <button data-s="search-no-results" onclick="showState('search-no-results')">search-no-results</button>
@@ -1745,6 +1754,217 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           </div>
           <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
           <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+      </div></div>
+
+            <div class="v v-collection-long">
+      <div class="list">
+        <div class="group overdue"><h3>Overdue</h3></div>
+        <div class="row">
+          <div class="row-time"><span class="wd"></span>—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Send the weekly report to Hanh">
+            <button class="row-open" aria-label="Open Send the weekly report to Hanh"><span class="row-title">Send the weekly report to Hanh</span></button>
+            <span class="row-due">Thu 5:00 PM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+        <div class="row">
+          <div class="row-time"><span class="wd"></span>—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Gọi nha sĩ đặt lịch khám răng">
+            <button class="row-open" aria-label="Open Gọi nha sĩ đặt lịch khám răng"><span class="row-title">Gọi nha sĩ đặt lịch khám răng</span></button><span class="row-marks"><span class="mark" role="img" aria-label="High priority" title="High priority">!</span></span>
+            <span class="row-due">Wed 9:00 AM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+        <div class="group"><h3>Today</h3></div>
+        <div class="row">
+          <div class="row-time"><span class="wd"></span>—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Pay the electricity bill">
+            <button class="row-open" aria-label="Open Pay the electricity bill"><span class="row-title">Pay the electricity bill</span></button>
+            <span class="row-due">Fri 6:00 PM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+        <div class="row">
+          <div class="row-time"><span class="wd"></span>—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Buy milk">
+            <button class="row-open" aria-label="Open Buy milk"><span class="row-title">Buy milk</span></button>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+        <div class="row">
+          <div class="row-time"><span class="wd"></span>—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Review the contract with Minh">
+            <button class="row-open" aria-label="Open Review the contract with Minh"><span class="row-title">Review the contract with Minh</span></button>
+            <span class="row-due">Fri 3:00 PM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+        <div class="row">
+          <div class="row-time"><span class="wd"></span>—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Pick up the dry cleaning">
+            <button class="row-open" aria-label="Open Pick up the dry cleaning"><span class="row-title">Pick up the dry cleaning</span></button>
+            <span class="row-due">Fri 5:30 PM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+        <div class="group"><h3>Tomorrow</h3></div>
+        <div class="row">
+          <div class="row-time"><span class="wd"></span>—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Team meeting">
+            <button class="row-open" aria-label="Open Team meeting"><span class="row-title">Team meeting</span></button>
+            <span class="row-due">Sat 2:00 PM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+        <div class="row">
+          <div class="row-time"><span class="wd"></span>—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Take Bao to swimming class">
+            <button class="row-open" aria-label="Open Take Bao to swimming class"><span class="row-title">Take Bao to swimming class</span></button>
+            <span class="row-due">Sat 10:00 AM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+        <div class="group"><h3>Next week</h3></div>
+        <div class="row">
+          <div class="row-time"><span class="wd"></span>—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Call the insurance about the claim">
+            <button class="row-open" aria-label="Open Call the insurance about the claim"><span class="row-title">Call the insurance about the claim</span></button>
+            <span class="row-due">Mon 9:00 AM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+        <div class="row">
+          <div class="row-time"><span class="wd"></span>—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Return the library books">
+            <button class="row-open" aria-label="Open Return the library books"><span class="row-title">Return the library books</span></button>
+            <span class="row-due">Mon 5:00 PM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+        <div class="row">
+          <div class="row-time"><span class="wd"></span>—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Schedule the car service">
+            <button class="row-open" aria-label="Open Schedule the car service"><span class="row-title">Schedule the car service</span></button>
+            <span class="row-due">Tue 10:00 AM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+        <div class="row">
+          <div class="row-time"><span class="wd"></span>—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Order new running shoes">
+            <button class="row-open" aria-label="Open Order new running shoes"><span class="row-title">Order new running shoes</span></button>
+            <span class="row-due">Wed 12:00 PM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+        <div class="group"><h3>Later</h3></div>
+        <div class="row">
+          <div class="row-time"><span class="wd"></span>—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Renew the apartment lease">
+            <button class="row-open" aria-label="Open Renew the apartment lease"><span class="row-title">Renew the apartment lease</span></button>
+            <span class="row-due">Thu 11:00 AM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+        <div class="row">
+          <div class="row-time"><span class="wd"></span>—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Submit the tax documents">
+            <button class="row-open" aria-label="Open Submit the tax documents"><span class="row-title">Submit the tax documents</span></button>
+            <span class="row-due">Fri 4:00 PM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+        <div class="row done">
+          <div class="row-time"><span class="wd"></span>—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" checked aria-label="Mark not done: Water the plants">
+            <button class="row-open" aria-label="Open Water the plants"><span class="row-title">Water the plants</span></button>
+            <span class="row-due">Sat 8:00 AM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+        <div class="row">
+          <div class="row-time"><span class="wd"></span>—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Buy birthday gift for Mai">
+            <button class="row-open" aria-label="Open Buy birthday gift for Mai"><span class="row-title">Buy birthday gift for Mai</span></button>
+            <span class="row-due">Sun 3:00 PM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+        <div class="row">
+          <div class="row-time"><span class="wd"></span>—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Update the project slides">
+            <button class="row-open" aria-label="Open Update the project slides"><span class="row-title">Update the project slides</span></button>
+            <span class="row-due">Mon 9:00 AM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+        <div class="row">
+          <div class="row-time"><span class="wd"></span>—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Fix the kitchen shelf">
+            <button class="row-open" aria-label="Open Fix the kitchen shelf"><span class="row-title">Fix the kitchen shelf</span></button>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+        <div class="row">
+          <div class="row-time"><span class="wd"></span>—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Research flight prices to Da Nang">
+            <button class="row-open" aria-label="Open Research flight prices to Da Nang"><span class="row-title">Research flight prices to Da Nang</span></button>
+            <span class="row-due">Tue 6:00 PM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+        <div class="row done">
+          <div class="row-time"><span class="wd"></span>—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" checked aria-label="Mark not done: Book the dentist follow-up">
+            <button class="row-open" aria-label="Open Book the dentist follow-up"><span class="row-title">Book the dentist follow-up</span></button>
+            <span class="row-due">Wed 10:00 AM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+          <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        </div>
+        <div class="inline-new" role="button" tabindex="0" aria-label="Add a task">
+          <span class="plus"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
+          <span class="inline-label">Add a task</span>
         </div>
       </div></div>
 
@@ -2371,6 +2591,42 @@ var STATES = {
     "surface": "tasks",
     "frame": "wide"
   },
+  "tasks-long-list": {
+    "collection": "long",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "title": "Upcoming",
+    "count": "<b>18</b> open · <span class=\"late\">2 overdue</span>",
+    "scrollTo": "top",
+    "frame": "phone"
+  },
+  "tasks-long-list-mid": {
+    "collection": "long",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "title": "Upcoming",
+    "count": "<b>18</b> open · <span class=\"late\">2 overdue</span>",
+    "scrollTo": "mid",
+    "frame": "phone"
+  },
+  "tasks-long-list-bottom": {
+    "collection": "long",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "title": "Upcoming",
+    "count": "<b>18</b> open · <span class=\"late\">2 overdue</span>",
+    "scrollTo": "bottom",
+    "frame": "phone"
+  },
   "search-open": {
     "collection": "today",
     "tasks": "list",
@@ -2610,6 +2866,18 @@ function paint(cfg){
   if (swipeRow) {
     if (cfg.swiped) swipeRow.classList.add('row-swiped');
     else swipeRow.classList.remove('row-swiped');
+  }
+
+  /* ── Long list scroll position (T-305/306) ── */
+  var pane = document.querySelector('.pane-tasks');
+  if (pane && cfg.scrollTo) {
+    setTimeout(function(){
+      if (cfg.scrollTo === 'top') pane.scrollTop = 0;
+      else if (cfg.scrollTo === 'mid') pane.scrollTop = Math.round((pane.scrollHeight - pane.clientHeight) / 2);
+      else if (cfg.scrollTo === 'bottom') pane.scrollTop = pane.scrollHeight;
+    }, 50);
+  } else if (pane) {
+    pane.scrollTop = 0;
   }
 }
 

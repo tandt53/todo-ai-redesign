@@ -24,7 +24,8 @@
 
 | Task | Agent | Module | Feature | Subtree | Started |
 |---|---|---|---|---|---|
-| T-305+T-306 | design-agent | assistant | — | `docs/design/` | 2026-08-23 12:4Z |
+| T-309 | backend-agent | assistant | F-006 | `src/assistant/api/` | 2026-08-23 13:2Z |
+| T-311 | design-agent | assistant | — | `docs/design/` | 2026-08-23 13:2Z |
 
 ## Blockers
 <!-- Anything stopping progress. Orchestrator resolves these. -->
@@ -46,6 +47,7 @@
 <!-- Recent entries only — archive old results when the file grows. -->
 | Date | Agent | Task | Status | Summary | Next Action |
 |------|-------|------|--------|---------|-------------|
+| 2026-08-23 | design-agent | T-305+T-306 | DONE | Long list drawn on 3 platforms with a real scroller; add row pins and releases; short list unchanged (0 covered, gap 0). FAB moved into the bar's band — zero additional text coverage, verified. | T-311 |
 | 2026-08-23 | architect-agent | T-191+T-181 | DONE / PARTIAL | Nine shapes specified, ninth found by the agent itself. ADR-016, ADR-017, ADR-012 amended. No collision with F-008 — trash_read is additive. T-181 decided as Option A but OQ2 is the owner's per the spec; awaiting them. | T-309, T-170 |
 | 2026-08-23 | backend-agent | T-287 | DONE | 23 api ACs, 36 new tests, suite 1240→1275. Delete unfiles rather than deletes; no trash lifecycle; no invented migration. Two follow-ups: a stale QA wire constant (T-307) and a refusal reason that states something false (T-308). | T-307, T-308 |
 | 2026-08-23 | design-agent | T-200 | DONE | Design half already fixed by T-204/T-227 — 0px asymmetry at all four widths, verified independently. The live defect is now in the CLIENT, which never followed: T-304. | T-304 |
