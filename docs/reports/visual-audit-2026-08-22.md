@@ -79,3 +79,55 @@ card, and its `padding: var(--s2)` is 8px by design.** Wrong element measured; n
 
 iOS and Android variants beyond the automated sweep; `voice-assistant-view.html`; every non-default
 state of `task-detail.html` and `lists.html`; dark theme; breakpoints other than 1440.
+
+---
+
+# Second pass — dark theme, and the states nobody looked at
+
+## Dark theme had never been checked by anything
+
+`grep -i "dark\|theme" .claude/tools/design-check/check-design.mjs` returns **nothing**. The
+render tier verifies contrast, overflow, states and testids **in the light theme only**. Half the
+product had never been checked mechanically.
+
+**Result of running it: clean.** Every text pair in every one of the 307 states meets the declared
+4.5:1 in dark. The 24 hits the sweep reported were all `.dev button.on` — the mockup's own
+state-switcher toolbar, not product UI.
+
+**Worth wiring into `design-check` so it stays true** (see T-252, which is already open for a
+different blind spot in the same tool).
+
+## F3 — the search mid-query state does not narrow by title (`app-shell.html`)
+
+**This is the significant finding of the pass**, and it is on the state this feature is built
+around.
+
+State `search-filtering` carries the query **`bill`** and shows **four rows, of which one contains
+"bill"**:
+
+| row | matches "bill"? |
+|---|---|
+| Send the weekly report to Hanh | no |
+| Gọi nha sĩ đặt lịch khám răng | no |
+| Pay the electricity bill | **yes** |
+| Buy milk | no |
+
+Against `tasks-default` (five rows) **the only change is that the done row disappeared** — which is
+`AC-7` hide-completed, a different feature. The dev lens had already flagged the responsible CSS,
+`.app[data-search="filtering"] .row.done{display:none}`, as contradicting `AC-2`; what nobody
+noticed is that it is the *only* thing the state does.
+
+`AC-2` is **live filtering by title**. `search-no-results` is correct by contrast — query
+`meeting`, zero rows.
+
+**Three lenses passed this, and my own briefing to T-225 called it *"the state the product lives or
+dies on"*.** The spec lens recorded *"AC-2: search-filtering state shows live narrowing with query
+'bill'. Covered."* It verified the state exists, not what it contains.
+
+**The tester lens proposed the assertion that would have missed it.** Asked whether narrowing was
+assertable, it answered yes — by counting visible rows. The count does fall, five to four. **A
+row-count assertion goes green on this state while three of the four remaining rows do not match
+the query.** The check would have confirmed the defect rather than caught it.
+
+Filed as T-258, including the instruction to tell qa-web-agent that the test must assert every
+visible row contains the query, not that the count fell.
