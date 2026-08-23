@@ -31,7 +31,7 @@ import { touchProps } from '../model/touch.ts'
 import { OfflineBanner } from './Chrome.tsx'
 import { ShellBar } from './PathSwitch.tsx'
 import { TaskList } from './TaskList.tsx'
-import { VoiceFab } from './VoiceFab.tsx'
+import { TaskBottomBar } from './TaskBottomBar.tsx'
 import { useStyles } from './styles.ts'
 
 export function TasksSurface({
@@ -207,10 +207,14 @@ export function TasksSurface({
           />
         </>
       )}
-      {/* T-257: the voice FAB — floating mic button that switches to Talk.
-          Positioned absolute bottom-right per the design (app-shell-ios.html
-          .voice-fab). Always present on the Tasks surface on a phone. */}
-      <VoiceFab platform={platform} onPress={onGoTalk} />
+      {/* T-321: the TaskBottomBar replaces both the voice FAB and InlineAdd
+          below split. Fixed bottom row: text field + morphing action button
+          (AC-37). Typing commits through controller.addTask (literal path). */}
+      <TaskBottomBar
+        platform={platform}
+        onGoTalk={onGoTalk}
+        onAddTask={(title) => void controller.addTask(title, collection)}
+      />
     </View>
   )
 }

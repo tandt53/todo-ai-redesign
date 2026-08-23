@@ -18,7 +18,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
-import type { ScrollView as ScrollViewType, TextInput as TextInputType } from 'react-native'
+import type { TextInput as TextInputType } from 'react-native'
 import { Check, Plus, Repeat, Trash2 } from 'lucide-react-native'
 import type { AppState } from '../../_shared/model/reducer.ts'
 import { formatDue } from '../../_shared/model/format.ts'
@@ -388,7 +388,8 @@ export function TaskList({
   onAdd: () => void
 }) {
   const { styles } = useStyles()
-  const scrollRef = useRef<ScrollViewType>(null)
+  // T-321: scrollRef removed — InlineAdd no longer renders below split, so
+  // scroll-to-end on inline-add activation is no longer needed.
   // ONE clock for this render. The grouping is day-sensitive since ADR-009
   // § Amendment — `Overdue` and `Today · {date}` are decided by which calendar
   // day it is — and this file used to mint a second `new Date()` inline for the
@@ -423,36 +424,18 @@ export function TaskList({
     const hasAction = view.empty !== null && EMPTY_TASKS[view.empty].action !== null
     return (
       <ScrollView keyboardShouldPersistTaps="handled">
-        {/* T-300 defect 3: always an inline field, never a button. The
-            InlineAdd is a SIBLING of the empty heading, not a child, so the
-            two share the same gutter (spacing.gutter_mobile) without
-            double-padding. */}
+        {/* T-321: InlineAdd is retired below split — the TaskBottomBar
+            replaces it. On mobile (always below split), only the empty state
+            heading renders here; the bar at the bottom of the surface is the
+            add mechanism. */}
         <EmptyState view={view} collection={collection} />
-        {hasAction && (
-          <InlineAdd
-            adding={adding}
-            draft={draft}
-            setDraft={setDraft}
-            onCommit={onCommit}
-            onCancel={onCancel}
-            onActivate={onActivate}
-            platform={platform}
-          />
-        )}
       </ScrollView>
     )
   }
 
   return (
-    <ScrollView
-      ref={scrollRef}
-      keyboardShouldPersistTaps="handled"
-      onContentSizeChange={() => {
-        // When the inline add input opens, scroll to the bottom so the row
-        // stays visible above the keyboard.
-        if (adding) scrollRef.current?.scrollToEnd({ animated: true })
-      }}
-    >
+    <ScrollView keyboardShouldPersistTaps="handled">
+
       {/* Grouping is per collection: Today gets `Overdue` + `Today · {date}`,
           Upcoming gets `Tomorrow · {date}` + `Later`, and Inbox and Done render
           FLAT — one unlabelled group and no headings at all (components.md
@@ -473,19 +456,10 @@ export function TaskList({
           ))}
         </View>
       ))}
-      {/* Inline new-task row — at the END of the list, matching the web
-          surface. Only shown when the list has content; the empty state keeps
-          its own CTA because an end-of-list row has no list to sit at the end
-          of. */}
-      <InlineAdd
-        adding={adding}
-        draft={draft}
-        setDraft={setDraft}
-        onCommit={onCommit}
-        onCancel={onCancel}
-        onActivate={onActivate}
-        platform={platform}
-      />
+      {/* T-321: InlineAdd is retired below split — the TaskBottomBar at the
+          bottom of TasksSurface replaces it on mobile. The InlineAdd component
+          still exists for split+ (tablet/desktop) reuse; it is simply not
+          rendered here. */}
     </ScrollView>
   )
 }

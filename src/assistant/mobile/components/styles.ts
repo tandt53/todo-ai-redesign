@@ -40,7 +40,7 @@ const sendBox = paintedBox(A11Y_IDS.composerSend)
 
 // App-shell boxes, read from `PAINTED` on the same terms as the five above.
 const pathBox = paintedBox(SHELL_A11Y_IDS.pathTasks)
-const voiceFabBox = paintedBox(SHELL_A11Y_IDS.voiceFab)
+const barActionBox = paintedBox(SHELL_A11Y_IDS.tasksBarAction)
 const rowDeleteBox = paintedBox(SHELL_A11Y_IDS.tasksDeleteButton)
 const menuRowBox = paintedBox(SHELL_A11Y_IDS.menuCollectionRow)
 const segmentBox = paintedBox(SHELL_A11Y_IDS.settingsThemeControl)
@@ -583,19 +583,45 @@ export function makeStyles(c: Palette, platform: 'ios' | 'android' = 'ios') {
       fontWeight: String(font.weight.emphasis) as '600',
       color: c.accent,
     },
-    // § VoiceFab — circular accent FAB, bottom-right, replaces Talk path switch
-    // on the Tasks surface (T-257). Dimensions from `PAINTED[voiceFab]` (52×52),
-    // positioning from `app-shell-ios.html .voice-fab { right: s4; bottom: s4 }`.
-    voiceFab: {
-      position: 'absolute',
-      right: spacing.md,
-      bottom: spacing.md,
-      ...voiceFabBox,
-      borderRadius: orbRadius(voiceFabBox.width),
+    // § TaskBottomBar — fixed bottom row: text field + morphing action button
+    // (T-321). Replaces both InlineAdd and the voice FAB below split.
+    // Bar height: h-lg (52) = s1 (4) top pad + h-md (44) content + s1 (4) bottom pad.
+    taskBottomBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: spacing.xs,    // s1 = 4
+      paddingHorizontal: spacing.gutter_mobile,
+      gap: spacing.sm,                // 8
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.bg.hairline,
+    },
+    taskBottomBarInput: {
+      flex: 1,
+      minWidth: 0,
+      height: 44,                     // h-md — painted field height
+      paddingHorizontal: spacing.sm,
+      fontFamily: font.family.ui,
+      fontSize: fs.body,
+      color: c.text.primary,
+      borderWidth: 1,
+      borderColor: c.bg.hairline,
+      borderRadius: radius.sm,
+      paddingVertical: 0,
+    },
+    taskBottomBarAction: {
+      ...barActionBox,
       alignItems: 'center',
       justifyContent: 'center',
+      borderRadius: orbRadius(barActionBox.width),
+    },
+    // The two visual identities of the morphing button (AC-37):
+    taskBottomBarActionTalk: {
+      borderWidth: 1,
+      borderColor: c.bg.hairline,
+      backgroundColor: 'transparent',
+    },
+    taskBottomBarActionSend: {
       backgroundColor: c.accent,
-      zIndex: 5,
     },
     // T-298: the hero `largeTitle` in the content column is replaced by
     // `barTitle` inside the bar. Kept for other surfaces that may still use it.

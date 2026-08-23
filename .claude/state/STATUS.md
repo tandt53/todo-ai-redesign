@@ -24,8 +24,7 @@
 
 | Task | Agent | Module | Feature | Subtree | Started |
 |---|---|---|---|---|---|
-| T-324 | web-agent | assistant | F-001 | `src/assistant/web/` | 2026-08-23 16:0Z |
-| T-325 | mobile-agent | assistant | F-001 | `src/assistant/mobile/` | 2026-08-23 16:0Z |
+| — | — | — | — | — | — |
 
 ## Blockers
 <!-- Anything stopping progress. Orchestrator resolves these. -->
@@ -47,6 +46,7 @@
 <!-- Recent entries only — archive old results when the file grows. -->
 | Date | Agent | Task | Status | Summary | Next Action |
 |------|-------|------|--------|---------|-------------|
+| 2026-08-23 | web+mobile | T-324, T-325 | DONE | Option B is built on both clients. Suite 1321/1321, tsc 0, all three contract tests green. VoiceFab deleted; the morph is tested in both directions on both platforms. | T-326 |
 | 2026-08-23 | design-agent | T-321 | DONE | Option B is canonical: FAB gone, testids restored, catalogue 148. A survives at split+ only, which components.md states and the return understated. 3 client tests red on purpose. | T-324, T-325 |
 | 2026-08-23 | spec-agent | T-322 | DONE | F-001 rev 10. AC-37 restated for the bar with both accessible names and the name-tracks-function rule; AC-36 confirmed. 37 ACs unchanged, spec-check 0. | T-321 |
 | 2026-08-23 | qa-api-agent | T-313+T-307 | DONE | Both stale fixtures fixed; suite 1311/1311. Declined to derive WIRE_FIELDS and the reason was a finding: the contract declares sort_order, the backend emits it nowhere. | T-323 |
