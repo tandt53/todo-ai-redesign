@@ -52,6 +52,7 @@ patterns:
   api_contracts:        "{specs}/{module}/api-contracts.md"
   data_model:           "{specs}/{module}/data-model.md"
   design_notes:         "{specs}/{module}/design-notes.md"
+  design_wireframes:    "{design}/{module}/wireframes/"
   design_screens:       "{design}/{module}/screens/"
   module_src:           "{src}/{module}/"
   unit_tests:           "{src}/{module}/__tests__/"
@@ -269,15 +270,14 @@ spec_review:    full      # full = every applicable role lens reviews the spec a
                           # product-only = previous behaviour, product-agent alone
                           # skip = static spec checks only
                           # C13 runs in all three modes. See ORCHESTRATION "Gate 1".
-design_review:  full      # full = dev + tester + spec lenses read the design at
-                          #        Gate 1.5, before any implementer is dispatched
-                          # skip = design-check only (mechanical)
+design_review:  full      # full | skip. `skip` leaves design-check alone.
                           # See ORCHESTRATION "Gate 1.5".
-design_signoff: required  # required = the owner sees the rendered screens and
-                          #            answers design-agent's review_guide
-                          #            questions before any implementer runs
-                          # skip = agents only; nothing then judges whether the
-                          #        design is any GOOD
+wireframe_signoff: required
+                          # required | skip. Absent = required.
+                          # See ORCHESTRATION "The layout gate".
+design_signoff: required  # required | skip. `skip` means nothing in the pipeline
+                          # judges whether the design is any GOOD.
+                          # See ORCHESTRATION "Gate 1.5" step 6.
 ```
 
 <!-- What `skip` gives up, stated so the choice is informed rather than silent: -->

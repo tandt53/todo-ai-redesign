@@ -4,6 +4,7 @@
 #
 #   bash .claude/tools/design-check/run-design-check.sh
 #   bash .claude/tools/design-check/run-design-check.sh --screenshots output/design-shots
+#   bash .claude/tools/design-check/run-design-check.sh --wireframes
 #
 # Exit: 0 = no failures (including "skipped because no browser"), 1 = failures.
 #
@@ -40,6 +41,33 @@ if ! command -v node >/dev/null 2>&1; then
 fi
 
 cd "$ROOT" || exit 0
+
+# Screenshots are not optional. The mechanical checks below tell you a mockup
+# renders; only a render tells you it is any good, and a mockup nobody looked at
+# was reviewed by nobody. The browser is already launched for the checks, so
+# capturing every state at every breakpoint from that same launch is free — and
+# it hands the reviewing agent a list of paths instead of a second screenshot
+# pipeline to build and get wrong. Callers may still redirect them.
+# --wireframes is the layout pass: the lo-fi study under wireframes/, with the
+# two checks that a greyscale artifact cannot satisfy turned off. Its renders go
+# to their own directory so a wireframe and the mockup that replaces it never
+# overwrite each other under the same slug.
+SHOT_DIR="$DESIGN_ROOT/_shots"
+argv=()
+for a in "$@"; do
+  if [ "$a" = "--wireframes" ]; then
+    SHOT_DIR="$DESIGN_ROOT/_shots/wireframes"
+    argv+=(--subdir wireframes --lofi)
+  else
+    argv+=("$a")
+  fi
+done
+set -- "${argv[@]+${argv[@]}}"
+
+case " $* " in
+  *" --screenshots "*) ;;
+  *) set -- "$@" --screenshots "$SHOT_DIR" ;;
+esac
 
 EXIT=0
 

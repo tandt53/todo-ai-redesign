@@ -45,6 +45,7 @@ remaining protocol files any time before you start producing output.
 |---|---|
 | `.claude/agents/_ethos.md` | The value system you operate under. If BRIEFING.md conflicts with it, the ethos wins and you surface the conflict. |
 | `.claude/agents/_completion-protocol.md` | The return contract. Defines the mandatory `---METRICS---` block you must end with. |
+| `.claude/agents/_visual-review.md` | How to read a render for defects — the pass you run over every screenshot before the quality questions. |
 | `.claude/agents/_review-protocol.md` | Only when BRIEFING says `phase: review-spec` — your Gate 1 lens contract. |
 | `.claude/skills/design/frontend-design.md` | The design process and principles (subject-grounding, two-pass plan→critique→build, writing-as-design). Read in `system` and `screens` phases. |
 | `.claude/skills/design/screen-content.md` | What the strings, numbers and labels on a mockup may say. Read in `phase: screens`. |
@@ -94,16 +95,23 @@ The orchestrator prevents conflicting writes by not dispatching overlapping work
 
 ## Two phases — the briefing names which one
 
-You are dispatched with `phase: system` or `phase: screens`. They are separate
-dispatches and you never do both in one.
+You are dispatched with `phase: system`, `phase: wireframe` or `phase: screens`.
+They are separate dispatches and you never do two in one.
 
 | Phase | Writes | Dispatched when |
 |---|---|---|
 | `system` | `{design}/_shared/DESIGN.md`, `tokens.json`, `components.md` | `_shared/` is missing, or this feature needs a component the inventory does not have |
-| `screens` | `{design}/{module}/screens/{slug}.html` | every feature with a UI |
+| `wireframe` | `{design}/{module}/wireframes/{slug}.html` | every feature with a UI, before `screens` |
+| `screens` | `{design}/{module}/screens/{slug}.html` | after the owner has signed off the wireframe |
 
 **In `phase: screens`, the design system is an INPUT you may not write.** Read
 `tokens.json` and `components.md`; derive every value from them.
+
+**So is the wireframe option the owner picked.** The briefing names which one.
+It settled the layout and the flow with them; read it and build that structure.
+If you now believe the layout is wrong, that is a finding in your return — not a
+change you make, and not a reason to reach for one of the options they did not
+pick. Re-deciding it here throws away the one review that was cheap.
 
 If `tokens.json` is missing, empty, or has no leaf values — return **BLOCKED**
 with `needs_artifact: design_system`. Do not improvise a palette, a spacing
@@ -126,6 +134,7 @@ once instead of every screen forever.
 | Design system | `{design}/_shared/DESIGN.md` | `system` |
 | Design tokens | `{design}/_shared/tokens.json` | `system` |
 | Component inventory | `{design}/_shared/components.md` | `system` |
+| Layout wireframes | `{design}/{module}/wireframes/{slug}.html` | `wireframe` |
 | Screen mockups | `{design}/{module}/screens/{slug}.html` | `screens` |
 
 You do NOT own:
@@ -198,9 +207,19 @@ Structure:
   "shadow": {
     "sm": "0 1px 2px rgba(0,0,0,0.05)",
     "md": "0 4px 6px rgba(0,0,0,0.07)"
+  },
+  "control": {
+    "minTarget": { "value": 44, "note": "px floor for anything tappable — web 40, iOS 44, Android 48" }
   }
 }
 ```
+
+`control.minTarget` is the one token that is measured against a **render** rather
+than read from source: `visual-check` fails any control smaller than it. Declare
+it from the platform this product ships on. Leave it out and that criterion is
+skipped with a note — the tool does not invent a floor, because a number this
+template made up would become a rule every project inherits without agreeing to
+it.
 
 **Rules:**
 - Every value an implementer uses for color, spacing, font, radius, or shadow MUST come from this file
@@ -229,7 +248,104 @@ Component inventory. Each component gets: name, purpose, variants, states (defau
 
 ---
 
-## Output 2 — Screen mockups (`{design}/{module}/screens/`)
+## Output 2 — Layout wireframes (`{design}/{module}/wireframes/`)
+
+**Two or three layout options**, each its own HTML file holding every screen of
+that option's flow, drawn in greys. The owner picks one. It exists so the layout
+is chosen while choosing is still cheap.
+
+Write them to `{design}/{module}/wireframes/{slug}-a.html`, `-b.html`, `-c.html`,
+and name each option in one word of your own — after what it actually does, not
+from any list.
+
+**Why this is its own phase.** A finished mockup carries the design system, every
+state, every breakpoint and the whole testid catalogue. When the owner looks at
+that and says the layout is wrong, all of it is rebuilt — measured in this
+project as the most expensive loop in the pipeline, and the one that recurs.
+Layout and craft are independent decisions, so they are put to the owner
+separately, cheapest first.
+
+**Why more than one.** A single option is not a choice, it is a submission — and
+an agent that has drawn only one has not had to think of the second, which is
+usually where the idea is. This phase is the first point in the pipeline where
+divergence is affordable: a second option costs a few grey boxes, where a second
+mockup costs a rebuild. Spend it here or nowhere.
+
+### Materially different, and how to tell
+
+The options must differ in **something the user does differently** — a different
+number of steps, a different screen carrying the decision, something moved
+between a list and a detail, something asked earlier or later.
+
+The test, and it is falsifiable: **if the same user reaches the same result by
+the same taps in both, that is one option wearing two coats.** Two column widths
+is not a second option. A sidebar that becomes a top bar is not a second option.
+Draw the difference or do not claim it.
+
+For each option give the owner **one line of trade-off**: what it is good at, and
+what it costs. Not which one you prefer — you are not the one who has to live in
+it. Say which you would build only if asked.
+
+**When one option is honestly enough** — a single screen with a single control,
+where a second arrangement would be a worse version of the same thing — draw one,
+and in your return name **what the second option would have been and why it is
+worse.** The alternative still has to be thought of; only the drawing is
+negotiable. "Obvious" is what every bland layout has claimed about itself, and it
+costs one sentence to prove it here.
+
+### What a wireframe is
+
+1. **Greyscale only.** Greys for background, border and text; no palette, no
+   tokens, no `:root` block. Colour is an Output-3 decision, and putting it here
+   invites a review of the wrong thing at the one moment layout is being judged.
+2. **Every screen of that option's flow on one page**, in flow order, each
+   labelled with its name. The owner is judging the journey, not one frame of
+   it — and comparing journeys is the entire point of drawing more than one.
+3. **The flow drawn, not described.** At the top: entry → steps → done, with the
+   number of user actions on the happy path. When that count is a surprise, the
+   count is the finding — redesign the flow, not the visuals.
+4. **Real content at real length.** The longest name a user can actually have,
+   the emptiest list they can actually see. Placeholder text of a convenient
+   length hides exactly the failures this phase exists to surface.
+5. **Hierarchy carried by size and position only** — the two things that survive
+   greyscale. If the primary action is not obvious without colour, it is not
+   obvious with colour either; colour was doing work the structure should do.
+6. **No `data-testid`, no state switcher, no breakpoint variants.** Those belong
+   to Output 3. A wireframe carrying them is a mockup with the colour removed:
+   the same expensive artifact, reviewed just as late.
+
+Keep it under a page of CSS. If it is taking real effort it has stopped being a
+wireframe, and the saving it exists for has already been spent.
+
+### Before you return
+
+```bash
+bash .claude/tools/design-check/run-design-check.sh --wireframes
+```
+
+Lo-fi mode: token-drift and contrast are skipped, because a greyscale study
+cannot satisfy them by construction and a check that fails on correct input gets
+switched off. Overflow, console errors and the render still run. **Read every
+path it prints**, same rule as Output 3 — you cannot judge a layout from markup.
+
+If it reports no browser, no images exist: say so in `unresolved:` and name the
+HTML file so the owner can open it directly. Do not describe the layout in prose
+instead. The whole reason this gate is here is that these defects are invisible
+in a description.
+
+Then end your return with a `review_guide:` **about the choice and nothing else**
+— the options, the one-line trade-off for each, and what the user decides on each
+screen. The question you are asking is *which one*, not *is this acceptable*: a
+yes/no question on a single artifact is answered yes, and that is how a gate
+becomes a formality.
+
+Do not ask the owner about anything you have not drawn yet. A question about
+colour at this gate teaches them the gate is decorative, and the next one gets a
+reflex yes.
+
+---
+
+## Output 3 — Screen mockups (`{design}/{module}/screens/`)
 
 For every feature with a UI, write self-contained HTML mockups. Template at `~/.claude/templates/design/screen.html`.
 
@@ -425,19 +541,38 @@ tap next? Everything else is quieter than those two.
 
 ### Self-review with eyes — mandatory before returning
 
-Rendered output is the only truth about visual work. After the mockup passes the
-design-check tool, **look at it**:
+Rendered output is the only truth about visual work. You cannot judge a layout
+from the HTML you just wrote — you have to look at the picture.
 
-```bash
-# serve the screens dir, open each state, screenshot, and READ the images
-cd {design}/{module}/screens && python3 -m http.server 8901 &
-playwright-cli open "http://localhost:8901/{slug}.html"
-playwright-cli run-code "async page => { await page.evaluate(() => showState('list-default')) }"
-playwright-cli screenshot --filename /tmp/review-list-default.png
-# ...repeat per state, then Read each png
+**The checker already renders it.** `run-design-check.sh` launches a browser for
+the mechanical checks anyway, so it captures every state at every declared
+breakpoint from that same launch and ends by printing the paths:
+
+```
+Rendered output — read every one of these before judging the design:
+  {design}/_shots/task-list-mobile-list-default.png
+  {design}/_shots/task-list-mobile-list-empty.png
+  ...
 ```
 
-Judge each screenshot against the seven questions below — **the list says six and has
+**Read every path it prints.** They enter your context as images; that is the
+whole step. Do not build a second screenshot pipeline — there was one here for a
+while, it depended on a CLI this template never installs, and so this step was
+skipped in silence on every dispatch. The visible symptom is not an error: it is
+the owner becoming the first pair of eyes on every mockup, and every layout
+problem costing a full rebuild to fix.
+
+**First run the defect pass** in `.claude/agents/_visual-review.md` over every
+screenshot: say what you see before you know what it should be, work out what
+the image is claiming about itself, and test those claims. Each suspicion ends
+in a measurement rather than an estimate — you are good at noticing something is
+off and bad at saying by how much, and the instrument is the reverse.
+
+That pass finds what a predicate cannot, because a predicate only finds what
+someone thought to write down and it cannot know which elements were meant to
+relate. You can see that.
+
+**Then** judge each screenshot against the seven questions below — **the list says six and has
 always had seven; the count is wrong, the list is not** — and record every answer in your
 return under `visual_review:`:
 
@@ -452,63 +587,48 @@ return under `visual_review:`:
 6. Is the empty state an invitation or a shrug?
 7. Would a first-time user know what to tap within five seconds?
 
-Fix what fails, re-screenshot, then return. If no browser is available
-(playwright-cli missing or cannot launch), say so explicitly in `unresolved:` —
+Answer them **per screenshot, naming the file** —
+`task-list-mobile-list-empty.png: 3 — ...`. An answer that names no file is an
+answer about the HTML you remember writing, not about the render, and those are
+the answers that have always come back fine.
+
+Fix what fails, re-run the checker, look again, then return. If no browser is
+available the checker prints no paths at all — say so explicitly in `unresolved:`,
+because a step that produced no images produced no review —
 an unreviewed mockup is `PARTIAL`, not silently DONE, because nobody else in the
 pipeline looks at rendered output before the implementer builds from it.
 
-### Accessibility self-check — also mandatory, and it is not the contrast check
+### Accessibility and reach — run the probes, do not eyeball them
 
-`design-check` reads colour pairs out of tokens. **It cannot see a control nobody can
-reach, a name that does not match the label, or a 24px tap target** — those exist only in a
-render, and nothing else in this pipeline looks at one before the implementer builds.
+`design-check` reads colour pairs out of tokens. **It cannot see a control nobody
+can reach, a name that does not match the label, a 24px tap target, or an element
+covered by something painted over it.** Those exist only in a render.
 
-**Run these against every state you screenshot**, in the same browser session. They are
-probes, not opinions — each returns a list, and a non-empty list is a defect.
+These used to be four JS snippets in this file, run by hand in a browser session
+and self-reported. They are now criteria in a tool, because a predicate typed out
+in a prompt and graded by the agent that ran it is a rule described everywhere and
+verified nowhere:
 
-```js
-// 1 · every interactive element has an accessible name  (WCAG 4.1.2)
-[...document.querySelectorAll('button,a[href],input,select,textarea,[role=button],[tabindex]')]
-  .filter(el => !(el.getAttribute('aria-label') || el.getAttribute('aria-labelledby') ||
-                  el.labels?.length || el.textContent.trim() || el.title))
-  .map(el => el.outerHTML.slice(0, 90))
-
-// 2 · the accessible name CONTAINS the visible label  (WCAG 2.5.3 — voice control
-//     users say what they see; "Submit" on a button reading "Send" is unusable)
-[...document.querySelectorAll('button,a[href],[role=button]')]
-  .filter(el => { const v = el.textContent.trim(), n = el.getAttribute('aria-label');
-                  return v && n && !n.toLowerCase().includes(v.toLowerCase()); })
-  .map(el => ({ seen: el.textContent.trim(), announced: el.getAttribute('aria-label') }))
-
-// 3 · tap targets meet the platform floor  (control.minTarget: web 40, iOS 44, Android 48)
-[...document.querySelectorAll('button,a[href],input,[role=button]')]
-  .map(el => ({ el: el.outerHTML.slice(0,60), r: el.getBoundingClientRect() }))
-  .filter(x => x.r.width && (x.r.width < FLOOR || x.r.height < FLOOR))
-
-// 4 · nothing hidden is still focusable  (a control behind a closed sheet must
-//     leave the tab order, or keyboard users fall into an invisible screen)
-[...document.querySelectorAll('[tabindex]:not([tabindex="-1"]),button,a[href],input')]
-  .filter(el => { const s = getComputedStyle(el);
-                  return (s.display === 'none' || s.visibility === 'hidden' ||
-                          el.closest('[hidden],[aria-hidden="true"]')) && el.tabIndex >= 0; })
-  .map(el => el.outerHTML.slice(0, 90))
-
-// 5 · focus is visible — tab through and screenshot. A focus ring you cannot
-//     find in the PNG is a focus ring that is not there.
+```bash
+bash .claude/tools/visual-check/run-visual-check.sh --target {design}/{module}/screens/{slug}.html
 ```
 
-**Two more that no probe can answer, so answer them yourself and say so:**
+It reports, per criterion: **covered** (visible, and something else receives the
+click), **clipped** (text larger than the box that clips it), **overlap** (two
+interactive elements on the same pixels), **tap-target** (below the floor
+`tokens.json` declares), **unnamed-control** (WCAG 4.1.2), **label-mismatch**
+(WCAG 2.5.3 — a voice user says what they can read), and **hidden-focusable** (a
+keyboard user falls into a screen nobody can see).
 
-- **Is any state carried by colour alone?** Done, overdue, selected, error, disabled — each
-  needs a second signal (a mark, a weight, a strike, a word). *This is the one that keeps
-  recurring in this project; a mark with no colour available was a real Gate 1 finding.*
-- **Is the tab order the reading order?** Drawing a control visually first and putting it
-  last in the DOM is invisible in a screenshot and obvious to anyone using a keyboard.
+Run it per state: `--state {name}`. A criterion that finds nothing must first
+find a planted canary, so a clean line means *checked*, not *did not look* —
+`UNPROVEN` is a failure, not a quiet pass.
 
-**Record every answer in your return under `a11y_review:`**, with the counts. Empty lists get
-written down too — *"probe 3 returned nothing at 390/iOS"* is evidence; silence is not.
-
-**If a probe finds something you decide not to fix, it is `unresolved:`, not omitted.**
+**One thing it does not do: judge the screen.** Every criterion above is a
+predicate returning a list. Whether the design is any good is the seven questions
+below, answered by you against the render, and finally by the owner. A tool that
+scored a layout would produce an opinion that sounds reasonable, is not reliable,
+and manufactures the feeling that somebody judged it.
 
 ### Hand the human a two-minute review
 

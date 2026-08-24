@@ -508,7 +508,7 @@ dashboard, so silently accepting it corrupts the metrics.
 |---|-------|--------|-----------|
 | 1 | Spec | spec-agent | — |
 | 2 | **Gate 1**: Multi-lens spec review | tester + dev + architect + design + product, `phase: review-spec` | yes |
-| 3 | Architecture + Design | architect-agent, design-agent (`phase: system` if needed, then `phase: screens`) | architect yes; design phases are sequential |
+| 3 | Architecture + Design | architect-agent, design-agent (`phase: system` if needed → `phase: wireframe` → owner → `phase: screens`) | architect yes; design phases are sequential |
 | 3.5 | **Gate 1.5**: Multi-lens design review | dev + tester + spec, `phase: review-design` | yes |
 | 4 | Implementation + QA authoring | backend/web/mobile + 3 QA agents | yes |
 | 5 | QA execution | qa-api/qa-web/qa-mobile agents | yes — after harness is up |
@@ -516,10 +516,15 @@ dashboard, so silently accepting it corrupts the metrics.
 | 7 | **Gate 3**: Final product review (optional) | product-agent (review-final) | — |
 | 8 | Sign-off | human — preceded by `## When a feature closes` | — |
 
-**Phase 3 sequencing (design):** dispatch `design-agent` with `phase: system`
-**only** when `{design}/_shared/tokens.json` is missing, or when this feature
-needs a component the inventory does not have. Otherwise go straight to
-`phase: screens`.
+**Phase 3 sequencing (design):** `system` (only when needed) → `wireframe` →
+**the owner** → `screens`.
+
+Dispatch `phase: system` **only** when `{design}/_shared/tokens.json` is missing,
+or when this feature needs a component the inventory does not have. Otherwise
+start at `phase: wireframe`.
+
+`phase: wireframe` always runs for a feature with a UI, and `phase: screens` is
+not dispatched until the layout gate below returns. See **The layout gate**.
 
 The two are never one dispatch. A single dispatch that authors the design system
 and then builds screens against it has no external standard to meet — it wrote
@@ -532,6 +537,7 @@ is absent rather than improvising one.
 
 **Four quality gates:**
 - **Gate 1** (after spec) — the spec is reviewed through several role lenses before any build work
+- **The layout gate** (after the wireframe, before anything is styled) — the owner approves the flow and the arrangement in greyscale, while changing them is still cheap
 - **Gate 1.5** (after design, before implementation) — the design is reviewed by the three roles that have to act on it: the implementer, QA, and the spec it must satisfy
 - **Gate 2** (after QA) — reviewer-agent runs deterministic structural checks (files, tests, contracts, security)
 - **Gate 3** (after reviewer pass) — product-agent does final UX/value review before human signs off
@@ -728,6 +734,84 @@ Two things worth stating because they are the cheap ways to get this wrong.
 changed artifact returns nothing and costs a full dispatch to do it. And **say
 what changed, not that something changed**: an agent handed "the design was
 revised" re-reads the whole design, which is a rebuild wearing a review's name.
+
+---
+
+## The layout gate — the owner sees the wireframe
+
+Runs after `phase: wireframe` returns and **before `phase: screens` is
+dispatched.** Configured by `MANIFEST ## Product.wireframe_signoff`: `required`
+(default) or `skip`. `upgrade-project.sh` never rewrites MANIFEST, so a project
+upgraded from an earlier template has no such key at all — **absent means
+`required`.** Reading a missing switch as `skip` would silently turn the gate off
+in exactly the projects that predate it.
+
+**Why it exists, in one number.** Every design-level correction in this project's
+history came from the owner seeing a render, and every one of them arrived after
+a full mockup existed — design system applied, all states drawn, all breakpoints
+handled, testids catalogued. A correction of the form *the layout is wrong*
+discards all of that. The wireframe puts the same question to the owner while the
+answer costs a few grey boxes.
+
+The two decisions are independent: whether the flow and the arrangement are right
+has no dependency on whether the palette and the type are any good. Asking them
+together is what makes the second answer expensive.
+
+**It is a choice, not an approval.** design-agent returns two or three layout
+options that differ in something the user does differently, each with a one-line
+trade-off. **Ask which one, never whether this one is acceptable.** A yes/no
+question on a single artifact is answered yes — that is the mechanism by which
+every gate in this pipeline has degraded into a formality, and it is why the
+options exist rather than a single draft to nod at.
+
+**What you present.** design-agent's wireframe return ends with a `review_guide:`
+scoped to the choice. Present exactly that: every option's render side by side,
+its one-line trade-off, and the questions as written. The renders are the paths
+`run-design-check.sh --wireframes` printed; when it reported no browser, give the
+owner the HTML files to open.
+
+**Do not pre-filter the options.** Presenting the one you think is best, with the
+others summarised, is presenting one option. You are not the one who has to live
+in it.
+
+**When design-agent returned only one option**, its return must name what the
+second would have been and why it is worse. If it does not, that is a
+re-dispatch, not an owner question: the agent skipped the step this gate is built
+on. Re-dispatch it once; if it comes back single-option again, record it in
+`STATUS.md ## Drift Log` and tell the owner they are choosing from a field of
+one.
+
+**What you must not do:**
+
+- **Do not describe the layout in prose instead of showing it.** These defects
+  are invisible in a description — that is the entire reason the render is the
+  artifact, and the reason this gate is not an agent's job.
+- **Do not ask about colour, type or polish.** None of it is drawn yet. A
+  question about something that does not exist teaches the owner that this gate
+  is decorative, and the next one gets a reflex yes.
+- **Do not infer approval from silence.** No answer is not an answer.
+
+**Recording it.** Append to `{reports}/design-signoff-{feature}.md` — the same
+file the later sign-off writes to, so one file answers *what did the owner
+actually see, and when*. Record every option shown, **which one they picked and
+in their own words why**, and what changed. The reason is the part worth having:
+it is the only durable statement of what this product's owner values in a layout,
+and the next feature's options should be drawn knowing it.
+
+**Then name the pick in the `phase: screens` briefing** — the option's file path,
+not its letter. A briefing that says "the approved wireframe" sends the agent to
+find out which one, and it has three.
+
+**When the owner asks for changes**, or picks a mix — *B's flow with A's first
+screen* — that is a revision task to design-agent at `phase: wireframe`, and the
+revised option is drawn and shown again. It is cheap on purpose: iterate here
+rather than carrying a doubt into `screens`. A mix is the most useful answer this
+gate produces, and it is only available because more than one thing was drawn.
+
+**When `wireframe_signoff: skip`**, `phase: wireframe` still runs and its render
+still goes to the owner as information — what is skipped is the wait. State
+plainly what that trades: the layout is then first judged by a human on a
+finished mockup, and a correction at that point rebuilds the mockup.
 
 ---
 

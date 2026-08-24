@@ -44,6 +44,7 @@ remaining protocol files any time before you start producing output.
 |---|---|
 | `.claude/agents/_ethos.md` | The value system you operate under. If BRIEFING.md conflicts with it, the ethos wins and you surface the conflict. |
 | `.claude/agents/_completion-protocol.md` | The return contract. Defines the mandatory `---METRICS---` block you must end with. |
+| `.claude/agents/_visual-review.md` | How to read a render for defects — the half of C16 that `visual-check` cannot answer. |
 | `.claude/agents/_qa-foundations.md` | AC quality spectrum and the evidence standard you judge against. |
 
 Then, before you start reviewing:
@@ -498,9 +499,44 @@ through a string comparison, and a screen can carry every declared testid, pass
 every check here, and look nothing like the design that was approved.
 
 **What you do.** The QA harness is already up at this point in the pipeline
-(phase 5 brought it up). Render each screen this feature built, at the
-breakpoints `DESIGN.md` declares, and put each one beside the mockup state it
-implements. Attach both to the report.
+(phase 5 brought it up), so the built screen has a URL. For each screen this
+feature built:
+
+```bash
+bash .claude/tools/visual-check/run-visual-check.sh \
+     --target <url of the built screen> \
+     --against {design}/{module}/screens/{slug}.html
+```
+
+This used to be three paragraphs telling you to render things and look at them,
+with no command and nothing that could fail. That is the same shape as
+design-agent's old screenshot step, which depended on a CLI this template never
+installs and had therefore never run once.
+
+The tool answers the mechanical half and prints the paths it rendered:
+
+- **`parity`** — a testid the design shows and the build never does. C14 greps
+  source and proves the string exists somewhere; this proves the element reaches
+  a screen. An id present in the file, rendered, and covered by an overlay
+  satisfies C14 and fails here, which is the correct order of those two verdicts.
+- **`covered` · `clipped` · `overlap` · `tap-target` · `unnamed-control` ·
+  `label-mismatch` · `hidden-focusable`** — defects that exist only once things
+  are laid out. Quote any FAIL line verbatim in the report.
+- **`UNPROVEN`** on a criterion is a FAIL, not a pass. It means that predicate
+  could not find a planted positive, so its silence is worth nothing.
+
+**Then read the renders it printed**, beside the mockup states they implement,
+and run the defect pass in `.claude/agents/_visual-review.md` over each one —
+describe it before comparing it to intent, test what the image claims about
+itself, and measure every suspicion instead of estimating it. Attach both
+renders to the report.
+
+The tool's criteria are the half someone thought to write down. Two defects in
+this project's history sat outside all of them and were obvious in a picture: a
+heading hardcoded to one collection's name appearing above all four, and a
+heading meant to mark missed work drawn identically to an ordinary date heading.
+No predicate names either. The eyes are not the fallback here; they are the
+half that found those.
 
 - **FAIL** when a state the mockup declares has no rendered counterpart — the
   implementation never reaches it, or nobody could produce it. A missing empty
@@ -508,8 +544,8 @@ implements. Attach both to the report.
 - **FAIL** when a rendered screen contradicts the design in a way you can name as
   a rule: an element the mockup places that is absent, a component swapped for
   one the system does not contain, a token replaced by a literal value.
-- **WARNING, not FAIL**, when the screens cannot be rendered — no browser, the
-  harness will not start, the route needs data nobody seeded. Record which
+- **WARNING, not FAIL**, when the screens cannot be rendered — the tool reports
+  no browser, the harness will not start, or the route needs data nobody seeded. Record which
   screens were not seen. **A screen that could not be rendered is not a screen
   that matched**, and the report must not read as though it were.
 - **PASS** when every declared state was rendered and each matched its mockup on

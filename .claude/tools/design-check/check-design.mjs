@@ -22,6 +22,7 @@
 //
 // Usage:
 //   node check-design.mjs --design-root design [--screenshots <dir>] [--json]
+//   node check-design.mjs --subdir wireframes --lofi     # layout pass, greyscale
 //
 // Exit: 0 = no failures, 1 = at least one failure, 2 = bad invocation.
 
@@ -38,8 +39,16 @@ const opt = (name, fallback = null) => {
 const DESIGN_ROOT = opt('--design-root', 'design');
 const SHOTS = opt('--screenshots', null);
 const AS_JSON = args.includes('--json');
+const SUBDIR = opt('--subdir', 'screens');
+// Lo-fi mode is for wireframes: greyscale layout studies with no :root block and
+// no palette, by construction. Running token-drift and contrast against one
+// reports failures that are the artifact working as intended, and a checker that
+// fails on correct input is a checker somebody switches off within a week.
+// Everything else — render, overflow, console, states, testid — still applies.
+const LOFI = args.includes('--lofi');
 
 const results = [];
+const SHOT_PATHS = [];
 const add = (level, check, message) => results.push({ level, check, message });
 const pass = (c, m) => add('pass', c, m);
 const fail = (c, m) => add('fail', c, m);
@@ -102,13 +111,17 @@ function findMockups(dir) {
   }
   return out;
 }
-const mockups = findMockups(DESIGN_ROOT).filter(p => p.split(path.sep).includes('screens'));
+const mockups = findMockups(DESIGN_ROOT).filter(p => p.split(path.sep).includes(SUBDIR));
 
 if (mockups.length === 0) {
-  skip('mockups', `no screen mockups under ${DESIGN_ROOT}/**/screens/`);
+  skip('mockups', `nothing to check under ${DESIGN_ROOT}/**/${SUBDIR}/`);
   report();
   process.exit(0);
 }
+// What was discovered, before any check runs. Without this the file count is
+// only visible through the render half, so a discovery bug and a missing
+// browser produce the same silence — and one of those is a real defect.
+pass('mockups', `${mockups.length} file(s) under ${DESIGN_ROOT}/**/${SUBDIR}/`);
 
 // ── Half 1: token drift ────────────────────────────────────────────────────
 // Flatten tokens.json into the CSS-variable names a mockup would generate.
@@ -149,7 +162,9 @@ function rootVars(html) {
   return out;
 }
 
-if (!tokens) {
+if (LOFI) {
+  skip('token-drift', 'lo-fi pass — a wireframe declares no tokens by design');
+} else if (!tokens) {
   skip('token-drift', 'no tokens.json — nothing to compare mockups against');
 } else if (declared.size === 0) {
   skip('token-drift', 'tokens.json declares no leaf values');
@@ -410,7 +425,9 @@ try {
     }
 
     // Contrast, only against a ratio the project stated.
-    if (CONTRAST_MIN === null) {
+    if (LOFI) {
+      skip('contrast', `${file}: lo-fi pass — greys are placeholders, not the palette`);
+    } else if (CONTRAST_MIN === null) {
       skip('contrast', `${file}: DESIGN.md states no contrast ratio — not measured`);
     } else {
       const bad = await page.evaluate(min => {
@@ -655,15 +672,18 @@ try {
     if (SHOTS) {
       fs.mkdirSync(SHOTS, { recursive: true });
       const base = path.basename(file, '.html');
+      const taken = [];
       for (const bp of widths) {
         await page.setViewportSize({ width: bp.px, height: 900 });
         for (const s of states.length ? states : ['default']) {
           await page.evaluate(st => typeof window.showState === 'function' && window.showState(st), s);
           const out = path.join(SHOTS, `${base}-${bp.name}-${s}.png`);
           await page.screenshot({ path: out, fullPage: true });
+          taken.push(out);
         }
       }
-      pass('screenshots', `${file}: captured to ${SHOTS}/`);
+      SHOT_PATHS.push(...taken);
+      pass('screenshots', `${file}: ${taken.length} render(s) \u2192 ${SHOTS}/`);
     }
 
     await page.close();
@@ -677,7 +697,7 @@ process.exit(results.some(r => r.level === 'fail') ? 1 : 0);
 
 function report() {
   if (AS_JSON) {
-    console.log(JSON.stringify({ results }, null, 2));
+    console.log(JSON.stringify({ results, screenshots: SHOT_PATHS }, null, 2));
     return;
   }
   const f = results.filter(r => r.level === 'fail').length;
@@ -688,4 +708,13 @@ function report() {
     console.log(`  ${tag}  [${r.check}] ${r.message}`);
   }
   console.log(`\ndesign-check: ${p} passed, ${f} failed, ${s} skipped`);
+
+  // The paths, not just the directory. Everything above this line is mechanical:
+  // it says the mockup renders, not that it is worth looking at. The judgment
+  // half needs an eye on each of these files, and an agent that has to guess
+  // filenames is an agent that reviews none of them.
+  if (SHOT_PATHS.length) {
+    console.log(`\nRendered output \u2014 read every one of these before judging the design:`);
+    for (const shot of SHOT_PATHS) console.log(`  ${shot}`);
+  }
 }

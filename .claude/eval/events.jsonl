@@ -453,3 +453,5 @@
 {"ts":"2026-08-24T01:32:17.985Z","event":"session_stop","session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
 {"ts":"2026-08-24T02:09:32.941Z","event":"session_stop","session":"96714da3-5f4d-4c4d-98b8-72def06d7ea0"}
 {"ts":"2026-08-24T02:33:51.918Z","event":"request","session":"96714da3-5f4d-4c4d-98b8-72def06d7ea0","prompt_chars":298,"prompt":null}
+{"ts":"2026-08-24T02:34:41.178Z","event":"episode","session":"96714da3-5f4d-4c4d-98b8-72def06d7ea0","duration_seconds":49,"prompt_chars":298,"dispatches":0,"agents":[],"artifacts":0,"zero_artifact_returns":0,"blocked_returns":0,"unknown_returns":0,"repeated_tasks":[]}
+{"ts":"2026-08-24T02:34:41.179Z","event":"session_stop","session":"96714da3-5f4d-4c4d-98b8-72def06d7ea0"}

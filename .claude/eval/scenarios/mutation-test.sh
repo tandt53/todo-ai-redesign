@@ -619,6 +619,123 @@ run_case R25 "the sibling sweep drops its canary" \
 run_case R25 "archival overwrites the archive instead of appending" \
   "perl -0777 -i -pe 's/>> \"\\\$archive\"/> \"\\\$archive\"/' .claude/lib/tasks.sh"
 
+# R26 — the checker goes back to seeing only `screens`. The wireframe is then
+# invisible to it: nothing rendered, exit 0, and the layout gate is satisfied by
+# a description of the thing nobody looked at. This is the bug the scenario's
+# executable half was written against, and it was one line.
+run_case R26 "the checker cannot see a wireframe and still exits 0" \
+  "perl -0777 -i -pe \"s/includes\\(SUBDIR\\)/includes('screens')/\" .claude/tools/design-check/check-design.mjs"
+
+# R26 — the lo-fi pass stops being lo-fi, so a greyscale study is failed for
+# declaring no tokens. Correct input reported as broken is how a check gets
+# switched off, and a switched-off check is indistinguishable from a passing one.
+run_case R26 "lo-fi mode is dropped and the wireframe fails on its own greys" \
+  "perl -0777 -i -pe \"s/const LOFI = args.includes\\('--lofi'\\);/const LOFI = false;/\" .claude/tools/design-check/check-design.mjs"
+
+# R26 — the gate stops refusing a prose substitute. A layout defect is invisible
+# in a description; that is the entire reason the render is the artifact.
+run_case R26 "the gate accepts a prose summary in place of the render" \
+  "perl -0777 -i -pe 's/Do not describe the layout in prose instead of showing it/Summarise the layout for the owner/' .claude/ORCHESTRATION.md"
+
+# R26 — `phase: screens` is free to redo the layout again, which throws away the
+# one review that was cheap and restores the loop this gate exists to end.
+run_case R26 "the styled phase may re-decide the layout the owner picked" \
+  "perl -0777 -i -pe 's/So is the wireframe option the owner picked/Also note the wireframe/' .claude/agents/design-agent.md"
+
+# R26 — the gate goes back to a single draft. A yes/no question on one artifact
+# is answered yes; that is how every gate in this template has degraded, and
+# with one option drawn the agent never had to think of the second.
+run_case R26 "only one layout is drawn, so the gate is a nod" \
+  "perl -0777 -i -pe 's/\\*\\*Two or three layout options\\*\\*/**One layout**/' .claude/agents/design-agent.md"
+
+# R26 — "materially different" loses its test and becomes taste. Two column
+# widths then counts as a second option, which is one option wearing two coats.
+run_case R26 "the difference between options stops being falsifiable" \
+  "perl -0777 -i -pe 's/same taps in both, that is one option wearing two coats/they feel different enough/' .claude/agents/design-agent.md"
+
+# R26 — the orchestrator asks whether instead of which. Same artifact, same
+# render, and the answer is yes every time.
+run_case R26 "the gate asks for approval instead of a choice" \
+  "perl -0777 -i -pe 's/Ask which one, never whether this one is acceptable/Ask whether it is acceptable/' .claude/ORCHESTRATION.md"
+
+# R26 — the orchestrator may show its favourite and summarise the rest, which is
+# presenting one option with extra steps.
+run_case R26 "the orchestrator narrows the field before the owner sees it" \
+  "perl -0777 -i -pe 's/Do not pre-filter the options/Lead with the strongest option/' .claude/ORCHESTRATION.md"
+
+# R26 — discovery keeps only the first file. The owner is then handed one render
+# of a choice that was supposed to have two, and nothing anywhere says so.
+run_case R26 "only the first option survives discovery" \
+  "perl -0777 -i -pe \"s/includes\\(SUBDIR\\)\\);/includes(SUBDIR)).slice(0, 1);/\" .claude/tools/design-check/check-design.mjs"
+
+# R27 — C16 goes back to prose. It described rendering the screens and looking
+# at them for three paragraphs, with no command and nothing that could fail; the
+# same shape as the screenshot step that turned out never to have run.
+run_case R27 "C16 stops naming a tool and describes the work again" \
+  "perl -0777 -i -pe 's/run-visual-check\\.sh/render-each-screen/g' .claude/agents/reviewer-agent.md"
+
+# R27 — the mockup side loses its check, so the render is only ever inspected
+# after the implementers have already built from it.
+run_case R27 "design-agent stops checking its own render" \
+  "perl -0777 -i -pe 's/run-visual-check\\.sh/eyeball-it/g' .claude/agents/design-agent.md"
+
+# R27 — a criterion ships without a canary. It then reports clean forever,
+# including when its predicate matches markup the page does not contain. Six
+# sweeps did exactly this and six zeroes were read as six clean results.
+run_case R27 "a criterion may report clean without proving it can fire" \
+  "perl -0777 -i -pe 's/canary: \\(\\) =>/canaryDisabled: () =>/' .claude/tools/visual-check/visual-check.mjs"
+
+# R27 — a bad invocation exits 0. A tool that reports success when it was handed
+# nothing to check is worse than no tool: it certifies whatever it is handed.
+run_case R27 "the tool reports success when given nothing to check" \
+  "perl -0777 -i -pe 's/process\\.exit\\(2\\);/process.exit(0);/' .claude/tools/visual-check/visual-check.mjs"
+
+# R27 — canaries stop resisting the page's CSS. Measured: a stylesheet setting
+# min-height on buttons inflated the tap-target canary until it was no longer
+# small, and a clean page came back UNPROVEN.
+run_case R27 "planted canaries can be reshaped by the page under test" \
+  "perl -0777 -i -pe \"s/, 'important'//\" .claude/tools/visual-check/visual-check.mjs"
+
+# R27 — measure mode reaches a verdict. An instrument that decides what is wrong
+# is the brain again, which is the arrangement that made the alignment sweep both
+# noisy and blind.
+run_case R27 "the instrument starts judging instead of answering" \
+  "perl -0777 -i -pe 's/No verdict/Verdict/' .claude/tools/visual-check/visual-check.mjs"
+
+# R27 — container-relative measurement is dropped, leaving only absolute page
+# coordinates. Repeated components live in different containers, so their
+# absolute positions have no reason to agree and comparing them answers a
+# question nobody asked.
+run_case R27 "elements can only be measured against the page, not their container" \
+  "perl -0777 -i -pe 's/relative-to/relative-2/g' .claude/tools/visual-check/visual-check.mjs"
+
+# R27 — a self-directed alignment sweep comes back. Which elements were meant to
+# line up is intent; no element tree carries it.
+run_case R27 "the script decides for itself which elements should align" \
+  "perl -0777 -i -pe \"s/name: 'covered'/name: 'alignment'/\" .claude/tools/visual-check/visual-check.mjs"
+
+# R27 — the defect pass loses its reader. A protocol no agent names is dead:
+# dispatch passes the agent file and the briefing, and nothing else.
+run_case R27 "the defect pass is left with no agent reading it" \
+  "perl -0777 -i -pe 's/_visual-review\\.md/_gone.md/g' .claude/agents/design-agent.md .claude/agents/reviewer-agent.md"
+
+# R27 — the pass stops describing the render before comparing it to intent. An
+# agent that knows what it drew sees what it intended, and every finding in that
+# pass comes out of the gap between the two.
+run_case R27 "the render is compared to intent before it is described" \
+  "perl -0777 -i -pe 's/Do not open the spec or the mockup while doing this/Read the spec first/' .claude/agents/_visual-review.md"
+
+# R27 — what to look for becomes a fixed list. A checklist finds what its author
+# had already seen and is blind to whatever this product does that they never
+# met, which is the opposite of looking.
+run_case R27 "what to check is handed over as a list instead of derived" \
+  "perl -0777 -i -pe 's/not from a list/from the list below/' .claude/agents/_visual-review.md"
+
+# R27 — the reasoning assumes a web page. A native screen has no browser, and an
+# agent told to measure one the web way measures nothing at all.
+run_case R27 "the visual reasoning assumes how the screen is built" \
+  "perl -0777 -i -pe 's/The instrument is per platform/The instrument is a browser/' .claude/agents/_visual-review.md"
+
 echo
 echo "─── ${PROVEN} proven fallible, ${UNPROVEN} unproven ───"
 if [ "$UNPROVEN" -gt 0 ]; then
