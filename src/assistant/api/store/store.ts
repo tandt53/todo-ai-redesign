@@ -5,10 +5,12 @@
 
 import type {
   AccountRow,
+  AuthTokenRow,
   ListRow,
   SessionRow,
   TaskRow,
   TurnRow,
+  UserRow,
   TurnSource,
   UndoOutcomeWire,
 } from '../types.ts'
@@ -47,6 +49,14 @@ export interface StoreState {
   accounts?: Record<string, AccountRow>
   /** F-008 — personal lists, keyed by list id. Optional (predates the entity). */
   lists?: Record<string, ListRow>
+  /**
+   * UC-22 — registered people, keyed by `user_id`. Optional for the same reason
+   * `accounts` is: every snapshot written before registration existed has no
+   * such key, and a reader that assumes one crashes on the store it is given.
+   */
+  users?: Record<string, UserRow>
+  /** UC-22 — live sign-ins, keyed by the token's SHA-256 (never the token). */
+  auth_tokens?: Record<string, AuthTokenRow>
 }
 
 export const emptyState = (): StoreState => ({
@@ -56,6 +66,8 @@ export const emptyState = (): StoreState => ({
   undo_records: {},
   accounts: {},
   lists: {},
+  users: {},
+  auth_tokens: {},
 })
 
 export interface Store {

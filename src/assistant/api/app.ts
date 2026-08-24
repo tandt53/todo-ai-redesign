@@ -13,7 +13,17 @@
 
 import type { IncomingMessage, RequestListener, ServerResponse } from 'node:http'
 import { randomUUID } from 'node:crypto'
-import { ApiError, notFound, unauthenticated, validation } from './errors.ts'
+import { ApiError, conflict, notFound, unauthenticated, validation } from './errors.ts'
+import {
+  hashPassword,
+  hashToken,
+  isPlausibleEmail,
+  mintToken,
+  normalizeEmail,
+  passwordComplaint,
+  tokenExpiryIso,
+  verifyPassword,
+} from './auth.ts'
 import type { Clock } from './ports/clock.ts'
 import { systemClock } from './ports/clock.ts'
 import type { Interpreter } from './ports/interpreter.ts'
@@ -62,6 +72,17 @@ export interface AppDeps {
   /** server-owned idle close, lazily evaluated (ADR-004); default 180 s */
   idleCloseMs?: number
   uuid?: () => string
+  /**
+   * Whether a bare `X-User-Id` header still identifies an account (UC-22).
+   *
+   * Default `true`, and that default is a statement about where the product is,
+   * not an oversight: every existing test, the QA e2e harness, and the web
+   * client's `?qaUser=` door identify this way, and no client has a sign-in
+   * screen yet. Registration and sign-in are real underneath it — a bearer
+   * token always wins when one is presented. Flip this to `false` in one place
+   * the day a client can sign in, and the header door closes for good.
+   */
+  allowHeaderIdentity?: boolean
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -228,6 +249,7 @@ export function createApp(deps: AppDeps): RequestListener {
   const clock = deps.clock ?? systemClock
   const idleCloseMs = deps.idleCloseMs ?? DEFAULT_IDLE_CLOSE_MS
   const uuid = deps.uuid ?? (() => randomUUID())
+  const allowHeaderIdentity = deps.allowHeaderIdentity ?? true
   const queue = new AccountQueue()
 
   const turnDeps = { store, interpreter, clock, idleCloseMs, uuid }
@@ -266,8 +288,25 @@ export function createApp(deps: AppDeps): RequestListener {
       const raw = req.headers[name]
       return (Array.isArray(raw) ? raw[0] : raw)?.trim()
     }
-    const userId = header('x-user-id') ?? ''
+    // ---- UC-22: register and sign in, the two routes reachable with no identity --
+    if (path === '/auth/register' && method === 'POST') {
+      return json(res, 201, await register(await readBody(req)))
+    }
+    if (path === '/auth/login' && method === 'POST') {
+      return json(res, 200, await login(await readBody(req)))
+    }
+
+    const userId = identify(header)
     if (userId === '') throw unauthenticated()
+
+    if (path === '/auth/me' && method === 'GET') {
+      return json(res, 200, { user: publicUser(userId) })
+    }
+    if (path === '/auth/logout' && method === 'POST') {
+      const presented = bearer(header)
+      if (presented !== null) store.transact((st) => { delete st.auth_tokens?.[hashToken(presented)] })
+      return json(res, 200, { signed_out: true })
+    }
 
     // ---- the ONE zone installer, in the auth step, before routing (ADR-010) --
     //
@@ -805,6 +844,115 @@ export function createApp(deps: AppDeps): RequestListener {
   }
 
   // -------------------------------------------------------------------------
+  // ---- UC-22: registration, sign-in, and who the request is ----------------
+
+  const bearer = (header: (n: string) => string | undefined): string | null => {
+    const raw = header('authorization')
+    if (raw === undefined) return null
+    const match = /^Bearer[ ]+(.+)$/i.exec(raw)
+    return match === null ? null : match[1]!.trim()
+  }
+
+  /**
+   * Who the request is. A bearer token always wins; the `X-User-Id` header is
+   * the pre-auth door and answers only when no token was presented AND
+   * `allowHeaderIdentity` is on.
+   *
+   * A presented-but-invalid token is an error, never a silent fall-through to
+   * the header. Falling through would mean a client whose session expired
+   * quietly keeps working under whatever id it also happens to send — which is
+   * the failure that makes an expiry meaningless.
+   */
+  const identify = (header: (n: string) => string | undefined): string => {
+    const token = bearer(header)
+    if (token !== null) {
+      const row = store.read((st) => st.auth_tokens?.[hashToken(token)])
+      if (row === undefined) throw new ApiError(401, 'INVALID_TOKEN', 'token is not valid')
+      if (Date.parse(row.expires_at) <= clock.now()) {
+        store.transact((st) => { delete st.auth_tokens?.[hashToken(token)] })
+        throw new ApiError(401, 'TOKEN_EXPIRED', 'token has expired; sign in again')
+      }
+      return row.user_id
+    }
+    if (!allowHeaderIdentity) throw unauthenticated()
+    return header('x-user-id') ?? ''
+  }
+
+  const publicUser = (userId: string): Record<string, unknown> => {
+    const row = store.read((st) => st.users?.[userId])
+    // An id that reached here through the header door has no user row, and that
+    // is not an error while that door is open: it is an account with no
+    // credentials yet. Report what is true rather than inventing an email.
+    if (row === undefined) return { id: userId, email: null, created_at: null, registered: false }
+    return { id: row.id, email: row.email, created_at: row.created_at, registered: true }
+  }
+
+  const credentials = (body: Body): { email: string; password: string } => {
+    rejectUnknownFields(body, ['email', 'password'])
+    const rawEmail = body.email
+    if (typeof rawEmail !== 'string' || rawEmail.trim() === '') {
+      throw validation('email is required', 'email')
+    }
+    const email = normalizeEmail(rawEmail)
+    if (!isPlausibleEmail(email)) throw validation('email is not a valid address', 'email')
+    const password = body.password
+    if (typeof password !== 'string') throw validation('password is required', 'password')
+    return { email, password }
+  }
+
+  const issue = (userId: string): Record<string, unknown> => {
+    const { token, hash } = mintToken()
+    const row = {
+      token_hash: hash,
+      user_id: userId,
+      created_at: nowIso(clock),
+      expires_at: tokenExpiryIso(clock.now()),
+    }
+    store.transact((st) => {
+      st.auth_tokens ??= {}
+      st.auth_tokens[hash] = row
+    })
+    return { token, expires_at: row.expires_at }
+  }
+
+  async function register(body: Body): Promise<Record<string, unknown>> {
+    const { email, password } = credentials(body)
+    const complaint = passwordComplaint(password)
+    if (complaint !== null) throw validation(complaint, 'password')
+
+    // Hash BEFORE the transaction: scrypt takes ~60 ms, and the store's
+    // transact() holds the whole state for the length of its callback.
+    const passwordHash = hashPassword(password)
+    const id = uuid()
+    const at = nowIso(clock)
+    const created = store.transact((st) => {
+      st.users ??= {}
+      const taken = Object.values(st.users).some((u) => u.email === email)
+      if (taken) throw conflict('EMAIL_TAKEN', 'an account with that email already exists', { field: 'email' })
+      const row = { id, email, password_hash: passwordHash, created_at: at, updated_at: at }
+      st.users[id] = row
+      return row
+    })
+    return { user: { id: created.id, email: created.email, created_at: created.created_at, registered: true }, ...issue(created.id) }
+  }
+
+  async function login(body: Body): Promise<Record<string, unknown>> {
+    const { email, password } = credentials(body)
+    const row = store.read((st) => Object.values(st.users ?? {}).find((u) => u.email === email))
+    // One error for "no such account" and for "wrong password", deliberately:
+    // two distinguishable answers turn this endpoint into a way to ask whether
+    // an address is registered.
+    const invalid = (): ApiError => new ApiError(401, 'INVALID_CREDENTIALS', 'email or password is incorrect')
+    if (row === undefined) {
+      // Still spend the time a real verification costs, so the response time
+      // does not answer the question the error message refuses to.
+      verifyPassword(password, 'scrypt$16384$8$1$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAA')
+      throw invalid()
+    }
+    if (!verifyPassword(password, row.password_hash)) throw invalid()
+    return { user: { id: row.id, email: row.email, created_at: row.created_at, registered: true }, ...issue(row.id) }
+  }
+
   // Handlers with enough body to name (kept out of the router for readability)
   // -------------------------------------------------------------------------
 

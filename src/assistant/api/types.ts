@@ -91,6 +91,34 @@ export interface ListRow {
 }
 
 /** account (new entity — ADR-010). One row per `user_id`, created lazily. */
+/**
+ * A person who can sign in (UC-22). `id` is the value every other row's
+ * `user_id` carries, so an account created under the pre-auth header door and
+ * one created by registration are the same kind of thing.
+ *
+ * `password_hash` is scrypt output — see auth.ts. The plaintext is never held,
+ * not even in memory beyond the request that verified it.
+ */
+export interface UserRow {
+  id: string
+  email: string
+  password_hash: string
+  created_at: string
+  updated_at: string
+}
+
+/**
+ * A live sign-in. Keyed and looked up by `token_hash` — the raw token exists
+ * only in the response that minted it and in the client's own storage, so a
+ * leaked store snapshot cannot be replayed as a session.
+ */
+export interface AuthTokenRow {
+  token_hash: string
+  user_id: string
+  created_at: string
+  expires_at: string
+}
+
 export interface AccountRow {
   user_id: string
   /** the ONE source every date computation reads (AC-44) */

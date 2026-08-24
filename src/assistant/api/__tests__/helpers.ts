@@ -172,7 +172,7 @@ export interface Harness {
  * supertest's double-listen fallback path is never triggered.
  */
 export async function buildHarness(
-  opts: { rows?: FixtureRow[]; idleCloseMs?: number } = {},
+  opts: { rows?: FixtureRow[]; idleCloseMs?: number; allowHeaderIdentity?: boolean } = {},
 ): Promise<Harness> {
   const clock = new FakeClock()
   const interpreter = new CountingInterpreter(
@@ -184,6 +184,10 @@ export async function buildHarness(
     interpreter,
     clock,
     idleCloseMs: opts.idleCloseMs ?? 180_000,
+    // Defaults to the app's own default (true) so every existing test keeps
+    // identifying by header; the UC-22 suite builds a second harness with it
+    // off to prove the door actually closes.
+    ...(opts.allowHeaderIdentity === undefined ? {} : { allowHeaderIdentity: opts.allowHeaderIdentity }),
   })
   const server = createServer(app)
   await new Promise<void>((resolve, reject) => {

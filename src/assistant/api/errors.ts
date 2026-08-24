@@ -38,3 +38,6 @@ export const unauthenticated = (): ApiError =>
   new ApiError(401, 'UNAUTHENTICATED', 'missing X-User-Id header')
 
 export const notFound = (what: string): ApiError => new ApiError(404, 'NOT_FOUND', what)
+
+export const conflict = (code: string, message: string, opts: ApiErrorOpts = {}): ApiError =>
+  new ApiError(409, code, message, opts)
