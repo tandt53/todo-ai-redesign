@@ -190,6 +190,7 @@ const TASK_PATCH_FIELDS = [
   'priority',
   'status',
   'step_order',
+  'list_id',
   ...RECURRENCE_MEMBERS,
 ] as const
 
@@ -446,13 +447,75 @@ export function createApp(deps: AppDeps): RequestListener {
       return json(res, 201, out)
     }
 
-    // ---- POST /tasks/{id}/restore — new (AC-41, ADR-012) ----
+    // ---- GET /tasks/deleted — new (F-006 AC-5, AC-12, AC-14) ----
+    if (path === '/tasks/deleted' && method === 'GET') {
+      const out = getDeletedTasks(store, userId, clock)
+      return json(res, 200, out)
+    }
+
+    // ---- DELETE /tasks/deleted — empty the trash (F-006 AC-17) ----
+    if (path === '/tasks/deleted' && method === 'DELETE') {
+      const body = await readBody(req)
+      rejectUnknownFields(body, ['task_ids'])
+      const taskIds = body.task_ids
+      if (!Array.isArray(taskIds)) {
+        throw validation('task_ids must be an array', 'task_ids')
+      }
+      for (const id of taskIds) {
+        if (typeof id !== 'string' || !UUID_RE.test(id)) {
+          throw validation('every entry in task_ids must be a uuid', 'task_ids')
+        }
+      }
+      const out = store.transact((s) => {
+        const removed: string[] = []
+        const pinned = new Set(taskIds as string[])
+        for (const id of pinned) {
+          const row = s.tasks[id]
+          // Only remove rows belonging to this user that are still deleted
+          if (row === undefined || row.user_id !== userId || row.deleted_at === null) continue
+          removed.push(row.id)
+          delete s.tasks[id]
+        }
+        return { removed }
+      })
+      return json(res, 200, out)
+    }
+
+    // ---- DELETE /tasks/deleted/{id} — permanent delete one entry (F-006 AC-11) ----
+    const deletedEntryMatch = path.match(/^\/tasks\/deleted\/([^/]+)$/)
+    if (method === 'DELETE' && deletedEntryMatch !== null) {
+      const taskId = deletedEntryMatch[1]!
+      const out = store.transact((s) => {
+        const row = s.tasks[taskId]
+        if (row === undefined || row.user_id !== userId || row.deleted_at === null) {
+          throw notFound('unknown task id')
+        }
+        // Resolve the entry's membership: all rows sharing the same gesture id
+        const gesture = row.delete_gesture_id ?? null
+        const members = gesture === null
+          ? [row]
+          : Object.values(s.tasks).filter(
+              (t) => t.user_id === userId && t.deleted_at !== null && t.delete_gesture_id === gesture,
+            )
+        const removed: string[] = []
+        for (const member of members) {
+          // Only remove rows still deleted at the moment of the act
+          if (member.deleted_at === null) continue
+          removed.push(member.id)
+          delete s.tasks[member.id]
+        }
+        return { removed }
+      })
+      return json(res, 200, out)
+    }
+
+    // ---- POST /tasks/{id}/restore — (AC-41, ADR-012, F-006 AC-9) ----
     const restoreMatch = path.match(/^\/tasks\/([^/]+)\/restore$/)
     if (method === 'POST' && restoreMatch !== null) {
       const taskId = restoreMatch[1]!
       const body = await readBody(req)
       rejectUnknownFields(body, [])
-      const out = store.transact((s) => restoreTask(s, userId, taskId, nowIso(clock), view))
+      const out = store.transact((s) => restoreTask(s, userId, taskId, nowIso(clock), view, clock.now()))
       return json(res, 200, out)
     }
 
@@ -498,6 +561,20 @@ export function createApp(deps: AppDeps): RequestListener {
           if (cur === undefined || cur.user_id !== userId || cur.deleted_at !== null) {
             throw notFound('unknown task id')
           }
+          // F-008 AC-13: step constraint for list_id. F-008 AC-11: list existence.
+          // These checks live here (not in planEdits) so the HTTP path can throw
+          // the contract's 400/404 directly — the turn path resolves lists by name
+          // and handles the constraints in its own code path.
+          if (changes.list_id !== undefined && changes.list_id !== null) {
+            const lists = s.lists ?? {}
+            const list = lists[changes.list_id as string]
+            if (list === undefined || list.user_id !== userId) {
+              throw notFound('unknown list_id')
+            }
+          }
+          if (changes.list_id !== undefined && (cur.parent_id ?? null) !== null) {
+            throw validation("A step's filing follows its parent", 'list_id')
+          }
           const ctx = plans(s, userId)
           const planned = planEdits(ctx, [{ task_id: taskId, changes }], { door: 'http' })
           if (!planned.ok) throw violationToApiError(planned.violation)
@@ -533,6 +610,197 @@ export function createApp(deps: AppDeps): RequestListener {
       return json(res, 200, out)
     }
 
+    // ---- LIST CRUD (F-008) ----
+
+    // ---- POST /lists (AC-1, AC-2, AC-3, AC-23, AC-24) ----
+    if (path === '/lists' && method === 'POST') {
+      const body = await readBody(req)
+      rejectUnknownFields(body, ['name', 'color'])
+      const nameRaw = body.name
+      if (typeof nameRaw !== 'string' || nameRaw.trim() === '') {
+        throw validation('name is required and must be a non-empty string', 'name')
+      }
+      const name = nameRaw.trim()
+      if (name.length > 100) {
+        throw validation('name exceeds 100 characters', 'name')
+      }
+      let color = 0
+      if (body.color !== undefined) {
+        if (typeof body.color !== 'number' || !Number.isInteger(body.color) || body.color < 0 || body.color > 6) {
+          throw validation('color must be an integer 0–6', 'color')
+        }
+        color = body.color
+      }
+      const out = store.transact((s) => {
+        const lists = s.lists ?? (s.lists = {})
+        const userLists = Object.values(lists).filter((l) => l.user_id === userId)
+        // AC-23: 50 list limit
+        if (userLists.length >= 50) {
+          throw new ApiError(409, 'LIST_LIMIT_REACHED', 'user already has 50 lists')
+        }
+        // AC-3: duplicate name check (case-insensitive)
+        const nameLower = name.toLowerCase()
+        if (userLists.some((l) => l.name.toLowerCase() === nameLower)) {
+          throw new ApiError(409, 'DUPLICATE_NAME', `a list with this name already exists`)
+        }
+        // position: max + 1024, or 1024 if none
+        const maxPos = userLists.length > 0 ? Math.max(...userLists.map((l) => l.position)) : 0
+        const at = nowIso(clock)
+        const id = uuid()
+        const row = {
+          id,
+          user_id: userId,
+          name,
+          color,
+          position: maxPos + 1024,
+          created_at: at,
+          updated_at: at,
+        }
+        lists[id] = row
+        // task_count is computed: tasks where list_id = this list and not deleted and not step
+        return {
+          list: {
+            ...row,
+            task_count: 0,
+          },
+        }
+      })
+      return json(res, 201, out)
+    }
+
+    // ---- GET /lists (AC-14) ----
+    if (path === '/lists' && method === 'GET') {
+      const out = store.read((s) => {
+        const lists = s.lists ?? {}
+        const userLists = Object.values(lists)
+          .filter((l) => l.user_id === userId)
+          .sort((a, b) => a.position - b.position)
+        return {
+          lists: userLists.map((l) => ({
+            ...l,
+            task_count: Object.values(s.tasks).filter(
+              (t) =>
+                t.user_id === userId &&
+                t.deleted_at === null &&
+                (t.parent_id ?? null) === null &&
+                (t.list_id ?? null) === l.id,
+            ).length,
+          })),
+        }
+      })
+      return json(res, 200, out)
+    }
+
+    // ---- PATCH /lists/{id} (AC-4, AC-5) ----
+    const listMatch = path.match(/^\/lists\/([^/]+)$/)
+    if (listMatch !== null && method === 'PATCH') {
+      const listId = listMatch[1]!
+      const body = await readBody(req)
+      rejectUnknownFields(body, ['name', 'color', 'position'])
+      if (Object.keys(body).length === 0) {
+        throw validation('at least one field is required')
+      }
+      const out = store.transact((s) => {
+        const lists = s.lists ?? {}
+        const list = lists[listId]
+        if (list === undefined || list.user_id !== userId) {
+          throw notFound('unknown list id')
+        }
+        // name validation
+        if (body.name !== undefined) {
+          if (typeof body.name !== 'string' || (body.name as string).trim() === '') {
+            throw validation('name must be a non-empty string', 'name')
+          }
+          const newName = (body.name as string).trim()
+          if (newName.length > 100) {
+            throw validation('name exceeds 100 characters', 'name')
+          }
+          const nameLower = newName.toLowerCase()
+          const dup = Object.values(lists).find(
+            (l) => l.user_id === userId && l.id !== listId && l.name.toLowerCase() === nameLower,
+          )
+          if (dup !== undefined) {
+            throw new ApiError(409, 'DUPLICATE_NAME', 'a list with this name already exists')
+          }
+          list.name = newName
+        }
+        // color validation
+        if (body.color !== undefined) {
+          if (typeof body.color !== 'number' || !Number.isInteger(body.color) || body.color < 0 || body.color > 6) {
+            throw validation('color must be an integer 0–6', 'color')
+          }
+          list.color = body.color
+        }
+        // position
+        if (body.position !== undefined) {
+          if (typeof body.position !== 'number' || !Number.isInteger(body.position)) {
+            throw validation('position must be an integer', 'position')
+          }
+          list.position = body.position
+        }
+        list.updated_at = nowIso(clock)
+        return {
+          list: {
+            ...list,
+            task_count: Object.values(s.tasks).filter(
+              (t) =>
+                t.user_id === userId &&
+                t.deleted_at === null &&
+                (t.parent_id ?? null) === null &&
+                (t.list_id ?? null) === list.id,
+            ).length,
+          },
+        }
+      })
+      return json(res, 200, out)
+    }
+
+    // ---- DELETE /lists/{id} (AC-6, AC-7, AC-9) ----
+    if (listMatch !== null && method === 'DELETE') {
+      const listId = listMatch[1]!
+      const body = await readBody(req)
+      rejectUnknownFields(body, ['confirm'])
+      const out = store.transact((s) => {
+        const lists = s.lists ?? {}
+        const list = lists[listId]
+        if (list === undefined || list.user_id !== userId) {
+          throw notFound('unknown list id')
+        }
+        // count tasks in the list: non-deleted, non-step rows
+        const tasksInList = Object.values(s.tasks).filter(
+          (t) =>
+            t.user_id === userId &&
+            t.deleted_at === null &&
+            (t.parent_id ?? null) === null &&
+            (t.list_id ?? null) === listId,
+        )
+        const count = tasksInList.length
+        if (count > 0 && body.confirm !== true) {
+          throw new ApiError(409, 'LIST_NOT_EMPTY', 'list has tasks and confirm is missing or false', {
+            detail: { task_count: count, list_name: list.name },
+          })
+        }
+        // AC-7: set list_id = null on every task in the list (same transaction)
+        let tasksMoved = 0
+        if (count > 0) {
+          const at = nowIso(clock)
+          // Unfile ALL tasks in the list (not just non-step), because a step's
+          // list_id should follow parent, but we clean up any stale refs too
+          for (const t of Object.values(s.tasks)) {
+            if (t.user_id === userId && (t.list_id ?? null) === listId && t.deleted_at === null) {
+              t.list_id = null
+              t.updated_at = at
+              tasksMoved += 1
+            }
+          }
+        }
+        // AC-9: permanent delete — no soft delete, no trash
+        delete lists[listId]
+        return { deleted: true, tasks_moved: tasksMoved }
+      })
+      return json(res, 200, out)
+    }
+
     throw notFound(`no route: ${method} ${path}`)
   }
 
@@ -559,11 +827,139 @@ export function createApp(deps: AppDeps): RequestListener {
   }
 
   /**
-   * `POST /tasks/{id}/restore` (AC-41, ADR-012). Clears `deleted_at` on the
-   * addressed row and on **every other row carrying the same
-   * `delete_gesture_id`**. Ids, `step_order`, `series_id` and `created_at` are
-   * kept; only `deleted_at` clears and `updated_at` advances — restoring is not
-   * creating.
+   * `GET /tasks/deleted` (F-006 AC-5, AC-12, AC-14). The account's deleted
+   * rows, grouped into entries by `delete_gesture_id`, server-side.
+   *
+   * **ADR-017: the surface's call purges expired rows.** When called via HTTP
+   * (the surface's caller), rows whose `deleted_at + 30 days` is past are
+   * excluded from the response and hard-removed from the store in the same
+   * transaction. The turn path's inline read evaluates the same predicate to
+   * exclude expired rows but does not remove them — a question purges nothing.
+   */
+  function getDeletedTasks(
+    st: Store,
+    userId: string,
+    clk: Clock,
+  ): Record<string, unknown> {
+    const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000
+    const nowMs = clk.now()
+
+    // Check if any row is expired using a read first (ADR-017 optimization:
+    // avoid a full snapshot write when the trash holds nothing to purge).
+    const hasExpired = st.read((s) =>
+      Object.values(s.tasks).some(
+        (t) =>
+          t.user_id === userId &&
+          t.deleted_at !== null &&
+          Date.parse(t.deleted_at) + THIRTY_DAYS_MS <= nowMs,
+      ),
+    )
+
+    if (hasExpired) {
+      // Enter transact to purge expired rows and read in one atomic step
+      return st.transact((s) => {
+        // Purge expired rows
+        for (const t of Object.values(s.tasks)) {
+          if (
+            t.user_id === userId &&
+            t.deleted_at !== null &&
+            Date.parse(t.deleted_at) + THIRTY_DAYS_MS <= nowMs
+          ) {
+            delete s.tasks[t.id]
+          }
+        }
+        return buildDeletedResponse(s, userId, nowMs, THIRTY_DAYS_MS)
+      })
+    }
+
+    // No expired rows — pure read
+    return st.read((s) => buildDeletedResponse(s, userId, nowMs, THIRTY_DAYS_MS))
+  }
+
+  function buildDeletedResponse(
+    s: StoreState,
+    userId: string,
+    nowMs: number,
+    thirtyDaysMs: number,
+  ): Record<string, unknown> {
+    const userDeleted = Object.values(s.tasks).filter(
+      (t) =>
+        t.user_id === userId &&
+        t.deleted_at !== null &&
+        Date.parse(t.deleted_at) + thirtyDaysMs > nowMs,
+    )
+
+    // Group by delete_gesture_id (or singleton id for null-gesture rows)
+    const groups = new Map<string, TaskRow[]>()
+    for (const t of userDeleted) {
+      const key = t.delete_gesture_id ?? t.id
+      const group = groups.get(key) ?? []
+      group.push(t)
+      groups.set(key, group)
+    }
+
+    // Build entries, ordered by deleted_at desc, then addressing_id asc
+    const entries: Record<string, unknown>[] = []
+    for (const [, group] of groups) {
+      const deletedAt = group[0]!.deleted_at!
+      const expiresAt = new Date(Date.parse(deletedAt) + thirtyDaysMs).toISOString()
+      const tasks = group
+        .sort((a, b) => a.id.localeCompare(b.id))
+        .map((t) => ({
+          id: t.id,
+          title: t.title,
+          status: t.status,
+          parent_id: (t.parent_id ?? null),
+        }))
+
+      // Parent resolution for steps (AC-7)
+      const hasStep = tasks.some((t) => t.parent_id !== null)
+      let parent: Record<string, unknown> | undefined
+      if (hasStep) {
+        const stepRow = group.find((t) => (t.parent_id ?? null) !== null)
+        if (stepRow !== undefined) {
+          const parentId = stepRow.parent_id!
+          const parentRow = s.tasks[parentId]
+          if (parentRow === undefined) {
+            parent = { id: parentId, title: '(deleted)', state: 'gone' }
+          } else if (parentRow.deleted_at !== null) {
+            parent = { id: parentId, title: parentRow.title, state: 'deleted' }
+          } else {
+            parent = { id: parentId, title: parentRow.title, state: 'live' }
+          }
+        }
+      }
+
+      const entry: Record<string, unknown> = {
+        deleted_at: deletedAt,
+        expires_at: expiresAt,
+        tasks,
+      }
+      if (parent !== undefined) entry.parent = parent
+
+      entries.push(entry)
+    }
+
+    // Sort entries by deleted_at desc
+    entries.sort((a, b) =>
+      (b.deleted_at as string).localeCompare(a.deleted_at as string),
+    )
+
+    return { entries }
+  }
+
+  /**
+   * `POST /tasks/{id}/restore` (AC-41, ADR-012, F-006 AC-9).
+   *
+   * Five outcomes (F-006 api-contracts):
+   *   (a) Restored — 200 `{ task, changed, restored: true }`
+   *   (b) Already live — 200 `{ task, changed: [], restored: false }`
+   *   (c) Refused/expired — 409 RESTORE_EXPIRED
+   *   (d) Refused/parent gone — 409 RESTORE_PARENT_GONE
+   *   (e) Unknown — 404 NOT_FOUND
+   *
+   * ADR-012 amendment: the restore also clears `series_ended_at` on rows of the
+   * restored series whose `series_ended_at` equals the gesture's `deleted_at`.
    */
   function restoreTask(
     s: StoreState,
@@ -571,26 +967,30 @@ export function createApp(deps: AppDeps): RequestListener {
     taskId: string,
     at: string,
     mkView: (s: StoreState, userId: string) => TaskView,
+    nowMs: number,
   ): Record<string, unknown> {
+    const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000
     const row = s.tasks[taskId]
-    // **Scoped to the caller's rows.** Another account's id behaves as 404, per
-    // the standing convention — stated because a brand-new write path is exactly
-    // where that gets missed and no AC would otherwise turn red.
+    // (e) Ownership check — another account's id or unknown id
     if (row === undefined || row.user_id !== userId) throw notFound('unknown task id')
     const v = mkView(s, userId)
-    // **Restoring a row that is not deleted is a stated no-op** — 200 with
-    // `restored: false`, never 404 and never 409 (AC-41). A double-tap is
-    // ordinary on an undo that is one action away wherever the user is.
+    // (b) Already live — a stated no-op, never 404, never 409
     if (row.deleted_at === null) {
       return { task: serializeTask(row, v), changed: [], restored: false }
     }
 
+    // (c) Expiry check on the addressed row
+    const deletedAtMs = Date.parse(row.deleted_at)
+    if (deletedAtMs + THIRTY_DAYS_MS <= nowMs) {
+      throw new ApiError(409, 'RESTORE_EXPIRED', 'this entry has expired and can no longer be restored', {
+        detail: {
+          task_id: taskId,
+          expired_at: new Date(deletedAtMs + THIRTY_DAYS_MS).toISOString(),
+        },
+      })
+    }
+
     const gesture = row.delete_gesture_id ?? null
-    // **A row whose `delete_gesture_id` is `null` restores alone** (ADR-012) —
-    // the measured 53-of-790 case, all predating the field. Neither `parent_id`
-    // nor matching `deleted_at` is used as a key: AC-41 rejects both by name, and
-    // a singleton restore is the only answer that is TRUE rather than plausible.
-    // **No migration is run**; ADR-009's precedent holds.
     const members =
       gesture === null
         ? [row]
@@ -599,26 +999,94 @@ export function createApp(deps: AppDeps): RequestListener {
               t.user_id === userId && t.deleted_at !== null && t.delete_gesture_id === gesture,
           )
 
-    // **Restoring a step whose parent is still deleted restores the parent too**
-    // (AC-41) — evaluated AFTER the membership set is assembled, as an invariant
-    // rather than as a key, and applying to legacy rows as well. A step with no
-    // parent is in no collection and therefore unreachable.
+    // Assemble the membership set, then apply the parent invariant
     const set = new Map(members.map((m) => [m.id, m]))
     for (const member of members) {
       const parentId = member.parent_id ?? null
       if (parentId === null) continue
       const parent = s.tasks[parentId]
-      if (parent === undefined || parent.user_id !== userId) continue
-      if (parent.deleted_at !== null) set.set(parent.id, parent)
+      if (parent === undefined || parent.user_id !== userId) {
+        // (d) Parent's row has been hard-removed from the store
+        throw new ApiError(409, 'RESTORE_PARENT_GONE', "this step's parent has been permanently deleted", {
+          detail: { task_id: member.id, parent_id: parentId },
+        })
+      }
+      // (c) Expiry check on the required parent — AC-12 reachability limit
+      if (parent.deleted_at !== null) {
+        const parentDeletedAtMs = Date.parse(parent.deleted_at)
+        if (parentDeletedAtMs + THIRTY_DAYS_MS <= nowMs) {
+          throw new ApiError(409, 'RESTORE_EXPIRED', 'this entry has expired and can no longer be restored', {
+            detail: {
+              task_id: member.id,
+              expired_at: new Date(parentDeletedAtMs + THIRTY_DAYS_MS).toISOString(),
+            },
+          })
+        }
+        set.set(parent.id, parent)
+      }
     }
 
     const restored: TaskRow[] = []
+    const gestureDeletedAt = row.deleted_at // capture before clearing
     for (const member of set.values()) {
       if (member.deleted_at === null) continue
       member.deleted_at = null
       member.updated_at = at
       restored.push(member)
     }
+
+    // ADR-012 amendment: clear series_ended_at on rows of the restored series
+    // whose series_ended_at equals the gesture's shared deleted_at (L-026).
+    //
+    // The clearing fires ONLY when the gesture being restored is the gesture
+    // that WROTE series_ended_at. plan.ts's series-delete writes
+    // series_ended_at on ALL rows of the series — including LIVE (done) rows
+    // it does not trash. A live (non-deleted) row that carries
+    // series_ended_at === gestureDeletedAt and is NOT in the membership set
+    // proves that this gesture wrote series_ended_at: no other mechanism writes
+    // that value at that timestamp on a live row.
+    //
+    // An individually-deleted row may acquire series_ended_at from a DIFFERENT
+    // series-delete gesture. When the two gestures happen at the same clock
+    // instant (FakeClock in tests), the timestamps match, but the non-member
+    // rows visible to the check are all TRASHED (they were trashed by the other
+    // gesture, not by this one). A trashed non-member does not prove this
+    // gesture wrote series_ended_at — it might have been written by the gesture
+    // that trashed it. So the check requires a LIVE non-member, which can only
+    // exist if planDelete(scope=series) wrote series_ended_at on a done row.
+    const restoredSeriesIds = new Set<string>()
+    for (const m of members) {
+      const sid = m.series_id ?? null
+      if (sid !== null) restoredSeriesIds.add(sid)
+    }
+    if (restoredSeriesIds.size > 0) {
+      let seriesEndedByThisGesture = false
+      for (const t of Object.values(s.tasks)) {
+        if (t.user_id !== userId) continue
+        const sid = t.series_id ?? null
+        if (sid === null || !restoredSeriesIds.has(sid)) continue
+        if (set.has(t.id)) continue // skip membership rows
+        // A LIVE non-member row with series_ended_at === gestureDeletedAt
+        // is conclusive evidence this gesture was a series delete.
+        if (t.deleted_at === null && (t.series_ended_at ?? null) === gestureDeletedAt) {
+          seriesEndedByThisGesture = true
+          break
+        }
+      }
+      if (seriesEndedByThisGesture) {
+        for (const t of Object.values(s.tasks)) {
+          if (t.user_id !== userId) continue
+          const sid = t.series_id ?? null
+          if (sid === null || !restoredSeriesIds.has(sid)) continue
+          if ((t.series_ended_at ?? null) === gestureDeletedAt) {
+            t.series_ended_at = null
+            t.updated_at = at
+            if (!set.has(t.id)) restored.push(t)
+          }
+        }
+      }
+    }
+
     const addressed = s.tasks[taskId]!
     return {
       task: serializeTask(addressed, mkView(s, userId)),

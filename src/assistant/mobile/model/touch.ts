@@ -183,10 +183,11 @@ export const PAINTED: Record<InteractiveId, Size> = {
 
   // .path { min-height: 44px } — PS-TASKS (PS-TALK is retired by T-227)
   [SHELL_A11Y_IDS.pathTasks]: { width: MIN_TOUCH_TARGET.android, height: 44 },
-  // .voice-fab { width: var(--h-lg); height: var(--h-lg) } → 52×52
-  // T-257: the voice FAB is now built; dimensions from app-shell-ios.html CSS.
-  // h-lg = control-height-lg = 52 — above both platform minima (44, 48).
-  [SHELL_A11Y_IDS.voiceFab]: { width: 52, height: 52 },
+  // T-321: TaskBottomBar — field is full-width (placeholder width), button is
+  // 44×44 painted, with transparent hit area extending to 48 on Android.
+  // Bar height: h-lg (52) = s1 (4) top pad + h-md (44) content + s1 (4) bottom pad.
+  [SHELL_A11Y_IDS.tasksBarInput]: { width: MIN_TOUCH_TARGET.android, height: 44 },
+  [SHELL_A11Y_IDS.tasksBarAction]: { width: 44, height: 44 },
   // .icon-btn { width: 44px; height: 44px }
   [SHELL_A11Y_IDS.listsMenuButton]: { width: 44, height: 44 },
   [SHELL_A11Y_IDS.menuCloseButton]: { width: 44, height: 44 },
@@ -265,7 +266,8 @@ export const INTERACTIVE_IDS = [
  */
 export const SHELL_INTERACTIVE_IDS = [
   SHELL_A11Y_IDS.pathTasks,
-  SHELL_A11Y_IDS.voiceFab,
+  SHELL_A11Y_IDS.tasksBarInput,
+  SHELL_A11Y_IDS.tasksBarAction,
   SHELL_A11Y_IDS.listsMenuButton,
   SHELL_A11Y_IDS.menuCloseButton,
   SHELL_A11Y_IDS.menuCollectionRow,

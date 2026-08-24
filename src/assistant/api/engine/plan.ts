@@ -158,6 +158,7 @@ export function planCreate(ctx: PlanContext, fields: CreateFields, origin: Origi
     series_id: null,
     series_ended_at: null,
     delete_gesture_id: null,
+    list_id: null,
     created_at: ctx.at,
     updated_at: ctx.at,
     deleted_at: null,
@@ -383,6 +384,21 @@ export function planEdits(ctx: PlanContext, edits: EditRequest[], opts: PlanEdit
     }
     if (changes.due_at === null) changes.due_all_day = null
 
+    // ---- F-008 AC-13: a step may not carry a list_id ---------------------------
+    if (changes.list_id !== undefined) {
+      const isStepRow = (target.parent_id ?? null) !== null
+      if (isStepRow) {
+        return {
+          ok: false,
+          violation: {
+            reason: 'structural_field_not_settable',
+            field: 'list_id',
+            message: "A step's filing follows its parent",
+          },
+        }
+      }
+    }
+
     // ---- AC-10: writing OR clearing `reminder_at` clears `reminder_shown_at`
     // A reminder moved to a new moment is a new reminder and surfaces again.
     if (changes.reminder_at !== undefined && changes.reminder_at !== target.reminder_at) {
@@ -522,6 +538,7 @@ function planSuccessor(ctx: PlanContext, target: TaskRow): PlanResult {
     series_id: seriesId ?? successorId,
     series_ended_at: null,
     delete_gesture_id: null,
+    list_id: target.list_id ?? null,
     created_at: ctx.at,
     updated_at: ctx.at,
     deleted_at: null,

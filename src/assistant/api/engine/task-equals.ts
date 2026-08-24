@@ -29,6 +29,7 @@ const FIELDS = [
   'series_id',
   'series_ended_at',
   'delete_gesture_id',
+  'list_id',
   'created_at',
   'updated_at',
   'deleted_at',

@@ -107,14 +107,21 @@ export const ALL_A11Y_IDS: readonly ConversationA11yId[] = Object.values(A11Y_ID
  * `menu-list-row` is not in the mobile mockups' platform-specific attributes
  * (`accessibilityIdentifier` / `resource-id`); it appears only as `data-testid`
  * and is web-only for now.
+ *
+ * **T-321 retirements.** `assistant-voice-fab` was removed when the owner
+ * chose option B: the TaskBottomBar replaces both InlineAdd and the floating
+ * voice FAB below split. The bar's two ids — `tasks-bar-input` and
+ * `tasks-bar-action` — supersede it.
  */
 export const SHELL_A11Y_IDS = {
   // PathSwitch — below-split-only controls (components.md § AppFrame). A phone
   // is always below the split, so on mobile they are unconditional.
   pathTasks: 'shell-tasks-button',
   listsMenuButton: 'shell-lists-menu-button',
-  // T-227: the voice FAB replaces the Talk path switch button
-  voiceFab: 'assistant-voice-fab',
+  // T-321: the TaskBottomBar replaces the voice FAB and InlineAdd below split.
+  // The bar's text field and morphing action button.
+  tasksBarInput: 'tasks-bar-input',
+  tasksBarAction: 'tasks-bar-action',
   // Tasks header (T-227): Search and overflow replaced Talk and Add task
   shellSearchButton: 'shell-search-button',
   shellOverflowButton: 'shell-overflow-button',
@@ -498,28 +505,22 @@ export function expectedShellIds(
   // not yet built.
   ids.add(SHELL_A11Y_IDS.shellSearchButton)
   ids.add(SHELL_A11Y_IDS.shellOverflowButton)
-  // T-257: the voice FAB is the Talk affordance on the Tasks surface — the
-  // reciprocal of PS-TASKS on the Talk surface. Always present (hidden only at
-  // split+ width, which a phone never reaches, and during selection mode, which
-  // is not yet built).
-  ids.add(SHELL_A11Y_IDS.voiceFab)
+  // T-321: the TaskBottomBar replaces the voice FAB and InlineAdd below split.
+  // Both ids are always present on the Tasks surface on a phone (below split).
+  ids.add(SHELL_A11Y_IDS.tasksBarInput)
+  ids.add(SHELL_A11Y_IDS.tasksBarAction)
   const tasks = tasksSurfaceView(state, shell.collection)
   if (tasks.banner === 'retry' || tasks.view === 'error') {
     ids.add(SHELL_A11Y_IDS.tasksListRetryButton)
   }
-  // T-300 defect 3: the empty state CTA is now an InlineAdd (always an inline
-  // field, never a button), so `tasksInlineAdd` renders in both the empty and
-  // populated states whenever an action is available.
-  if (tasks.empty !== null && EMPTY_TASKS[tasks.empty].action !== null) {
-    ids.add(SHELL_A11Y_IDS.tasksInlineAdd)
-  }
+  // T-321: InlineAdd is retired below split — the TaskBottomBar replaces it.
+  // The bar's ids (tasksBarInput, tasksBarAction) are added unconditionally
+  // above. InlineAdd's `tasksInlineAdd` no longer shows on the Tasks surface
+  // on a phone (always below split).
   if (tasks.tasks.length > 0) {
     // touch is not hover: the delete control is ALWAYS visible in the row's
     // trailing slot (components.md § Platform variants)
     ids.add(SHELL_A11Y_IDS.tasksDeleteButton)
-    // T-285: the inline add row renders at the end of the list whenever the
-    // list has content.
-    ids.add(SHELL_A11Y_IDS.tasksInlineAdd)
     const renaming = ui.renaming ?? null
     if (renaming !== null && tasks.tasks.some((t) => t.id === renaming)) {
       ids.add(SHELL_A11Y_IDS.tasksRenameInput)

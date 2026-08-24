@@ -498,13 +498,17 @@ and its steps), restoring a cluster or a series, and a step move that exhausts
 its gap (ADR-015). The list illustrates the rule; it does not bound it.
 
 ```yaml
-removed: [uuid]        # rows HARD-removed by this write. Today exactly one
-                       # producer: AC-28's successor removal on un-complete,
-                       # which is deliberately not a soft delete (AC-28) because
-                       # a soft-removed successor would be restorable by
-                       # POST /tasks/{id}/restore and would produce the second
-                       # open occurrence the recurrence section rests on not
-                       # having. Omitted when empty.
+removed: [uuid]        # rows HARD-removed by this write. Three producers:
+                       # (1) AC-28's successor removal on un-complete —
+                       # deliberately not a soft delete because a soft-removed
+                       # successor would be restorable and would produce the
+                       # second open occurrence the recurrence section rests
+                       # on not having;
+                       # (2) F-006 AC-11's delete-forever (one entry);
+                       # (3) F-006 AC-17's empty-trash (all entries).
+                       # Producers (2) and (3) return { removed } only,
+                       # without task or changed — see § F-006 note above.
+                       # Omitted when empty.
 ```
 
 **The client applies what a write returns** — `task`, every member of
@@ -1071,6 +1075,403 @@ deliberately unanswered. Index:
 | How the run count is derived (T35) | **ADR-014**; § `Task` on the wire → `series_live` |
 | Who may write `reminder_shown_at` — caller scoping, may a turn set it (T37) | § `POST /tasks/{id}/reminder-ack` |
 | AC-46's capture-before-apply ordering and the record-to-row mapping | **ADR-013**; `POST /assistant/turn` rule 6 and the undo endpoint's revert shapes, both amended in place above |
+
+---
+
+# Feature F-006 — recently deleted (the trash)
+
+**Added**: 2026-08-23 by architect-agent (T-191). Spec:
+`F-006-recently-deleted.md`. Nine architecture-owed shapes from Gate 1's
+revision 5 log, each recorded in the spec's own words in `## API Touch Points`
+or `## Impact` §10.
+
+## `GET /tasks/deleted` — new (AC-5, AC-12, AC-14)
+
+**Feature**: F-006 recently-deleted
+**Added**: 2026-08-23 by architect-agent
+**Auth required**: yes (`X-User-Id`)
+
+The account's deleted rows, grouped into entries by `delete_gesture_id`,
+server-side. **Two callers, one shape, one code path, one difference**: the
+surface (the HTTP call) and the turn path (processing rule 5's inline read).
+The expiry predicate runs for both — an expired row is never listed and never
+spoken. **The removal write runs on the surface's call only** — a question
+purges nothing (AC-5, AC-12, ADR-017).
+
+### Response 200
+
+```yaml
+entries:                           # ordered by deleted_at desc, then addressing_id asc
+  - deleted_at:    iso8601         # shared deleted_at of the gesture
+    expires_at:    iso8601         # server-produced: deleted_at + 30 days
+    tasks:                         # the member tasks of this entry
+      - id:        uuid
+        title:     string
+        status:    string          # the task's status at time of deletion
+        parent_id: uuid | null
+    parent:                        # PRESENT iff any member has parent_id != null
+      id:          uuid            #   the parent row's id
+      title:       string          #   the parent's title — server-produced (AC-7)
+      state:       "live" | "deleted" | "gone"
+                                   # live   = parent is in state.tasks
+                                   # deleted = parent is in the trash
+                                   # gone   = parent's row has left the store (AC-7)
+```
+
+**Entry identity.** Each entry corresponds to one `delete_gesture_id` (or one
+singleton row where that field is `null`). The client addresses an entry by
+passing **any** member task id to `POST /tasks/{id}/restore` or
+`DELETE /tasks/deleted/{id}` — the server resolves the membership. No gesture
+id appears on the wire; `delete_gesture_id` remains internal (AC-6,
+`§ Task on the wire`, ADR-012).
+
+**Expired-row removal (AC-12).** When this endpoint is called via HTTP (the
+surface's caller), rows whose `deleted_at + 30 days` is past are **excluded
+from the response and hard-removed from the store** in the same transaction.
+This is the only purge mechanism; there is no scheduler. An account nobody
+opens the trash on keeps its rows on disk past 30 days — accepted, not
+overlooked (AC-12).
+
+**`parent` resolution for steps (AC-7).** A lone deleted step's entry carries
+its parent's title and state. Without these, the three parent states (live,
+deleted, gone) are indistinguishable on the client, because the client has only
+`parent_id` on the wire. The parent's state:
+- `"live"` — the parent is not deleted (`deleted_at === null`).
+- `"deleted"` — the parent is soft-deleted (another trash entry holds it).
+- `"gone"` — the parent's row does not exist in the store (hard-removed).
+
+**Turn-path read (AC-14, processing rule 5).** The turn path reads the same
+data inline during interpretation, not via an HTTP call. It receives only
+**top-level deleted tasks** (steps excluded — the handle list excludes steps,
+and the trash read mirrors it for AC-14's boundary). See § Processing rule 5
+amendment below.
+
+### Errors
+
+| Status | Code | Reason |
+|--------|------|--------|
+| 401 | UNAUTHENTICATED | missing `X-User-Id` |
+
+### Notes
+
+No pagination. The largest trash on the live store today is 9 entries. The
+endpoint returns all entries in one call.
+
+---
+
+## `POST /tasks/{id}/restore` — F-006 amendments (AC-9)
+
+**Gains two new outcomes.** The three today (`200 restored`, `200 restored:false`,
+`404`) become five. AC-9 requires refused-because-expired and
+refused-because-parent-gone, and neither may collapse into an existing outcome:
+`404` is indistinguishable from an unknown id, and `restored: false` asserts
+the row is live, which is false in both refusal cases. **The five must be
+distinguishable at the door**, because AC-16's 4.1.3 requires both refusals
+announced, and a client cannot announce a refusal it cannot tell apart from a
+double-tap.
+
+| # | Outcome | Status | Body | How the client tells |
+|---|---------|--------|------|---------------------|
+| (a) | Restored | 200 | `{ task, changed, restored: true }` | `restored === true` |
+| (b) | Already live | 200 | `{ task, changed: [], restored: false }` | `restored === false` |
+| (c) | Refused — expired | 409 | `{ error: { code: "RESTORE_EXPIRED" } }` | status 409, code |
+| (d) | Refused — parent gone | 409 | `{ error: { code: "RESTORE_PARENT_GONE" } }` | status 409, code |
+| (e) | Unknown / other account | 404 | `{ error: { code: "NOT_FOUND" } }` | status 404 |
+
+**(c) fires when:** the row's `deleted_at + 30 days` is past, **or** the
+restore must bring back a parent (the invariant from ADR-012) and that
+parent's own `deleted_at + 30 days` is past. AC-12's reachability limit applies
+without exception.
+
+```yaml
+# 409 RESTORE_EXPIRED
+error:
+  code:    "RESTORE_EXPIRED"
+  message: "this entry has expired and can no longer be restored"
+  detail:
+    task_id:    uuid          # the addressed row
+    expired_at: iso8601       # the expiry instant
+```
+
+**(d) fires when:** the addressed row is a step (`parent_id != null`) whose
+parent's row has been hard-removed from the store. The step cannot return
+without its parent.
+
+```yaml
+# 409 RESTORE_PARENT_GONE
+error:
+  code:    "RESTORE_PARENT_GONE"
+  message: "this step's parent has been permanently deleted"
+  detail:
+    task_id:   uuid           # the addressed step
+    parent_id: uuid           # the gone parent's id
+```
+
+**Order of evaluation:** (e) ownership check → (c) expiry check on the
+addressed row → membership assembly → parent invariant → (c) expiry check on
+the required parent → (d) parent-gone check → (a)/(b) restore. A client
+calling restore on a stale entry gets (c) before it can trigger (d).
+
+**Series restore and `series_ended_at` (T-181, ADR-012 amendment).** When a
+restore brings back rows that carry a `series_id`, the restore also clears
+`series_ended_at` on every row of that series whose `series_ended_at` matches
+the `deleted_at` of the gesture being restored. This ensures `F-005 AC-43`'s
+*"it reverses exactly the action it was offered for and nothing else"* is true
+for the series class. See ADR-012 § Amendment.
+
+---
+
+## `DELETE /tasks/deleted/{id}` — new (AC-11)
+
+**Feature**: F-006 recently-deleted
+**Added**: 2026-08-23 by architect-agent
+**Auth required**: yes (`X-User-Id`)
+
+Permanently destroys one trash entry. `{id}` is any member task id of the entry
+(AC-6's addressing rule). Hard-removes the entry's membership set (AC-6),
+**restricted to rows still deleted at the moment of the act** — a member
+restored in between is live and never hard-removed.
+
+### Request
+
+Empty body.
+
+### Response 200
+
+```yaml
+removed: [uuid]          # the ids of the hard-removed rows
+```
+
+**No `task` field.** The multi-row response rule's envelope is
+`{ task, changed, removed }` where `task` is *"the row the request addressed"*.
+AC-11 destroys the addressed row, so there is nothing for `task` to carry.
+This endpoint returns `{ removed }` only — the `removed` channel from the
+multi-row response rule without the rest of the envelope (see § The multi-row
+response rule, F-006 note).
+
+### Errors
+
+| Status | Code | Reason |
+|--------|------|--------|
+| 401 | UNAUTHENTICATED | missing `X-User-Id` |
+| 404 | NOT_FOUND | unknown id, or id owned by another account, or the row is not deleted |
+
+### Notes
+
+Not optimistic; offline refused, never queued (AC-11). The confirmation is
+client-side (AC-11's naming requirement is the client's to enforce before
+calling).
+
+---
+
+## `DELETE /tasks/deleted` — new (AC-17)
+
+**Feature**: F-006 recently-deleted
+**Added**: 2026-08-23 by architect-agent
+**Auth required**: yes (`X-User-Id`)
+
+Empties the entire trash. Hard-removes **every deleted row of the account**,
+expired or not. Addresses no entry — it is keyed on `deleted_at`, not on a
+gesture id (AC-17).
+
+### Request
+
+```yaml
+task_ids: [uuid]          # the set pinned to the confirmation (AC-17)
+                          # the act destroys ONLY the rows in this set
+                          # that are still deleted at the moment of the act.
+                          # A row restored in between is live and excluded.
+                          # A row deleted AFTER the confirmation was shown
+                          # is not in this set and is excluded.
+```
+
+### Response 200
+
+```yaml
+removed: [uuid]          # the ids of the hard-removed rows
+```
+
+**No `task` field** — same reasoning as `DELETE /tasks/deleted/{id}`.
+
+### Errors
+
+| Status | Code | Reason |
+|--------|------|--------|
+| 401 | UNAUTHENTICATED | missing `X-User-Id` |
+
+### Notes
+
+Not optimistic; offline refused, never queued (AC-17). If `task_ids` is empty,
+nothing is removed and `removed` is `[]`.
+
+---
+
+## `POST /assistant/turn` — F-006 amendments
+
+### Processing rule 5 amendment — reading and addressing are separated (AC-4, AC-14)
+
+Rule 5 reads *"the interpretation context (the user's current tasks)"* — one
+set doing both jobs. AC-14 grants the assistant a read of the trash while AC-4
+keeps deleted rows out of the handle list. Those two requirements cannot both be
+true of one set, so the context gains a second, read-only set.
+
+The interpretation context is now:
+
+```yaml
+tasks:         ContextTask[]             # the user's live tasks (UNCHANGED)
+                                         # the handle list — a turn may target
+                                         # only rows in this set
+
+deleted_tasks: DeletedContextTask[]      # top-level deleted tasks, unexpired (NEW)
+                                         # read-only: the interpreter may
+                                         # recognise a task as "in the trash"
+                                         # and produce a trash_read outcome,
+                                         # but may NEVER target a row in this
+                                         # set for any mutation. Steps excluded
+                                         # (mirroring the handle list).
+```
+
+```yaml
+DeletedContextTask:
+  id:         uuid
+  title:      string
+  deleted_at: iso8601
+```
+
+The expiry predicate is evaluated before building this set — an expired row
+never appears in `deleted_tasks`.
+
+### `turn.outcome` gains an eighth member: `trash_read` (AC-14)
+
+A turn that reads the trash and produces an informational answer. The turn's
+`status` is `applied` (same as every answered query). No mutation.
+
+```yaml
+kind: "trash_read"
+query: "task_in_trash" | "trash_contents"
+
+# query = "task_in_trash":
+#   the user asked about a specific task that is in the trash
+task_id:       uuid              # the deleted task's id
+task_title:    string            # the deleted task's title
+
+# query = "trash_contents":
+#   the user asked what is in the trash
+entry_count:   integer           # number of entries
+entry_titles:  string[]          # up to 3 task titles, then overflow
+                                 # follows title_list's published rule
+```
+
+**Frame selection.** The two queries map to the two frames owed to
+`components.md § Spoken frames`:
+- `"task_in_trash"` → frame taking `title` (the task-is-in-the-trash answer)
+- `"trash_contents"` → frame taking `count` and `title_list`
+
+Both fit the existing closed five-slot vocabulary. No sixth slot type is added.
+
+**`trash_read` does NOT change anything in the existing `turn.outcome.kind`
+set.** The seven existing members — `applied`, `question`, `resolution`,
+`unclassifiable`, `no_match`, `unsupported_query`, `refused` — retain their
+shapes and semantics. F-008's `refused` outcome (AC-20) is unaffected.
+
+**The `no_match` exclusion (AC-14).** A turn asking for an act on a row the
+assistant has just named as being in the trash **never** produces `no_match`.
+The interpreter recognises the task in `deleted_tasks`, sees it is not
+actionable, and returns `trash_read` with `query: "task_in_trash"` — the reply
+names the trash and the way to reach it.
+
+### `changed_task_ids` for `trash_read`
+
+Empty. No mutation, no diff, no snapshot. A `trash_read` turn never occupies
+or advances the undo window (same mechanical rule as `no_match` and
+`unsupported_query`).
+
+---
+
+## `POST /assistant/turn/{turn_id}/undo` — F-006 amendments (AC-13)
+
+### `skipped` gains a second reason
+
+```yaml
+skipped:
+  - task_id: uuid
+    title:   string
+    reason:  "modified_since_apply" | "permanently_deleted"
+```
+
+`"permanently_deleted"`: the row was hard-removed from the store (by AC-11,
+AC-17, or AC-12's retention purge) after the turn applied. The undo cannot
+replay what no longer exists, and reporting the row as *"modified since apply"*
+would be a false statement about a row that is gone.
+
+**Step reporting.** `skipped` names top-level tasks only (unchanged). A purged
+step whose parent is also purged is reported through the parent: the parent
+appears in `skipped` with reason `permanently_deleted`, and the message states
+that its steps were not fully reversed (the existing step-through-parent
+reporting convention). A purged step whose parent is **live** is reported by
+adding the parent to `skipped` with reason `permanently_deleted` — the parent
+itself was not modified, but the undo cannot restore its step, and the parent
+is the only permissible container for that information given the top-level-only
+rule.
+
+---
+
+## `§ The multi-row response rule` — F-006 note
+
+The `removed: [uuid]` channel gains two new producers:
+- `DELETE /tasks/deleted/{id}` (AC-11) — one entry's membership
+- `DELETE /tasks/deleted` (AC-17) — every deleted row of the account
+
+Both return `{ removed: [uuid] }` **without the `task` and `changed` fields**.
+The existing envelope `{ task, changed, removed }` requires `task` to be *"the
+row the request addressed"*, and AC-11 destroys the addressed row while AC-17
+addresses none. Rather than make `task` nullable across every existing
+consumer, the two permanent-deletion endpoints return only the `removed`
+channel.
+
+**The existing comment** *"Today exactly one producer: AC-28's successor
+removal on un-complete"* is now three producers. The comment is updated.
+
+---
+
+## Harness doors — F-006 additions (AC-12, AC-17)
+
+### `GET /__qa__/raw-tasks` — the raw-store read
+
+The read half of the harness. `POST /__qa__/seed` writes raw rows bypassing
+every write rule; this endpoint **reads raw rows bypassing every filter**,
+including the deletion filter and the expiry predicate. Its purpose is
+specific: after a trash read, the assertion that expired rows were removed is
+**the account's stored row count** (AC-12), and after an empty-trash without
+an intervening trash read, the assertion that expired rows were also removed is
+the same count (AC-17).
+
+```yaml
+GET /__qa__/raw-tasks?user_id={uuid}
+
+Response 200:
+  tasks:  [RawTaskRow]     # every row for this account, deleted or not,
+                           # expired or not, hard-removed excluded
+                           # (they are gone from the store)
+  count:  integer          # length of tasks array
+```
+
+`RawTaskRow` is the internal row representation, including `deleted_at`,
+`delete_gesture_id`, `series_ended_at`, and every other internal field. It is
+**not** `serializeTask`'s output — it includes what `serializeTask` excludes.
+
+**Test-only.** Not served by the production app. Served by the QA harness
+(`tests/harness/qa-test-server.ts`) alongside `POST /__qa__/seed`,
+`POST /__qa__/set-clock` and `POST /__qa__/reopen-store`.
+
+---
+
+## New and changed error codes (F-006)
+
+| Status | Code | Reason |
+|--------|------|--------|
+| 409 | RESTORE_EXPIRED | the entry is past its 30 days, or a required parent is (AC-9 outcome c) |
+| 409 | RESTORE_PARENT_GONE | the step's parent has been permanently deleted (AC-9 outcome d) |
 
 ---
 

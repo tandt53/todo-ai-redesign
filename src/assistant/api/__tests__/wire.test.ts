@@ -213,6 +213,7 @@ describe('the wire shape itself', () => {
         'due_all_day',
         'due_at',
         'id',
+        'list_id',
         'note',
         'parent_id',
         'priority',

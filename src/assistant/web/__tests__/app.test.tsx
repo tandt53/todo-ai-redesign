@@ -113,8 +113,9 @@ const NOT_BUILT: Record<string, string> = {
   // notice, would each be half a component.
   'tasks-save-notice': 'SaveNotice is drawn and unbuilt (components.md § SaveNotice, T-135)',
   'tasks-save-notice-dismiss': 'dismisses a notice that does not render yet (components.md § SaveNotice)',
-  // Voice FAB: BUILT (T-254). The below-split FAB replaces the retired
-  // shell-talk-button as the route to Talk.
+  // Voice FAB: RETIRED (T-321). Replaced by TaskBottomBar's morphing action
+  // button (tasks-bar-action). The testid `assistant-voice-fab` is removed from
+  // all mockups and from components.md.
   // ListEditorSheet color swatch: the list editor is not built (IA §7).
   'list-editor-color-swatch': 'needs `lists` + `tasks.list_id` (IA §7)',
   // Header rework (T-227/T-244): search and overflow BUTTONS now placed in the
@@ -735,9 +736,9 @@ describe('testid contract (design mockup catalogue)', () => {
     // Both size guards are here for L-007's reason: a catalogue that silently
     // came back empty, or an exclusion list that silently excused everything,
     // both yield the same green as a working check.
-    expect(catalogue().size).toBe(76)
+    expect(catalogue().size).toBe(77)
     const expected = builtCatalogue()
-    expect(expected.size).toBe(42)
+    expect(expected.size).toBe(43)
 
     const seen = new Set<string>()
     for (const { state, drive } of STATES) {
@@ -846,6 +847,73 @@ describe('testid contract (design mockup catalogue)', () => {
       expect((input as HTMLInputElement).disabled, name).toBe(false)
       cleanup()
     }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// TaskBottomBar morph (AC-37)
+// ---------------------------------------------------------------------------
+
+describe('TaskBottomBar morph (AC-37)', () => {
+  it('accessible name is "Talk" when the field is empty and "Add task" when text is entered', () => {
+    mount(byName('idle-tasks'))
+    const action = screen.getByTestId('tasks-bar-action')
+    // Empty field: button should navigate to Talk
+    expect(action.getAttribute('aria-label')).toBe('Talk')
+
+    // Type a character: morph fires on first character entering
+    const input = screen.getByTestId('tasks-bar-input')
+    act(() => {
+      fireEvent.change(input, { target: { value: 'B' } })
+    })
+    const actionAfter = screen.getByTestId('tasks-bar-action')
+    expect(actionAfter.getAttribute('aria-label')).toBe('Add task')
+  })
+
+  it('morphs back to "Talk" when the last character leaves the field', () => {
+    mount(byName('idle-tasks'))
+    const input = screen.getByTestId('tasks-bar-input')
+
+    // Type text
+    act(() => {
+      fireEvent.change(input, { target: { value: 'Buy milk' } })
+    })
+    expect(screen.getByTestId('tasks-bar-action').getAttribute('aria-label')).toBe('Add task')
+
+    // Clear text: morph fires on last character leaving
+    act(() => {
+      fireEvent.change(input, { target: { value: '' } })
+    })
+    expect(screen.getByTestId('tasks-bar-action').getAttribute('aria-label')).toBe('Talk')
+  })
+
+  it('navigates to Talk when the button is clicked with an empty field', () => {
+    const { container } = mount(byName('idle-tasks'))
+    // Default surface is talk (idle state); switch to tasks first
+    act(() => {
+      fireEvent.click(screen.getByTestId('shell-tasks-button'))
+    })
+    const surface = () => container.querySelector('.app')?.getAttribute('data-surface')
+    expect(surface()).toBe('tasks')
+    act(() => {
+      fireEvent.click(screen.getByTestId('tasks-bar-action'))
+    })
+    expect(surface()).toBe('talk')
+  })
+
+  it('submits the typed title through addTask when the button is clicked with text', async () => {
+    mount(byName('idle-tasks'))
+    const input = screen.getByTestId('tasks-bar-input')
+    act(() => {
+      fireEvent.change(input, { target: { value: 'Buy milk' } })
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('tasks-bar-action'))
+    })
+    // The field should clear after submission
+    expect((input as HTMLInputElement).value).toBe('')
+    // And the button should morph back to Talk
+    expect(screen.getByTestId('tasks-bar-action').getAttribute('aria-label')).toBe('Talk')
   })
 })
 

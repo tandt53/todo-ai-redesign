@@ -38,6 +38,8 @@ export interface ContextTask {
   due_at: string | null
   reminder_at: string | null
   priority: string | null
+  /** F-008 AC-18: the interpreter must see where a task is filed */
+  list_id: string | null
 }
 
 export interface QuestionContext {
@@ -46,12 +48,33 @@ export interface QuestionContext {
   options: string[]
 }
 
+export interface ContextList {
+  id: string
+  name: string
+}
+
+/**
+ * F-006 AC-14 (processing rule 5 amendment): top-level deleted tasks,
+ * unexpired. Read-only — the interpreter may recognise a task as "in the
+ * trash" and produce a trash_read outcome, but may NEVER target a row in
+ * this set for any mutation. Steps excluded (mirroring the handle list).
+ */
+export interface DeletedContextTask {
+  id: string
+  title: string
+  deleted_at: string
+}
+
 export interface InterpreterContext {
   transcript: string
   source: TurnSource
   timezone: string | null
   /** the user's current tasks, read fresh inside this turn's queue slot (OQ 7) */
   tasks: ContextTask[]
+  /** F-006 AC-14: top-level deleted tasks, unexpired, read-only */
+  deleted_tasks: DeletedContextTask[]
+  /** F-008: the user's personal lists, for list-name resolution */
+  lists: ContextList[]
   /** sliding window: at most the last 10 resolved turns (ADR-003) */
   recent_turns: { transcript: string; outcome_kind: string | null }[]
   /** the pending question this turn is bound to, if any (answer classification) */
@@ -73,6 +96,14 @@ export type Interpretation =
   | { kind: 'no_match' }
   | { kind: 'query' }
   | { kind: 'answer'; answer: AnswerClass }
+  /** F-008 AC-17: create a list by voice */
+  | { kind: 'list_create'; name: string }
+  /** F-008 AC-18/AC-19: move a task to a named list or to Inbox */
+  | { kind: 'list_move'; handle: string; list_name: string | null }
+  /** F-008 AC-20: attempted rename/recolour/delete a list — refused */
+  | { kind: 'list_refuse' }
+  /** F-006 AC-14: the user asked about a task in the trash or about trash contents */
+  | { kind: 'trash_read'; query: 'task_in_trash' | 'trash_contents'; handle?: string }
 
 export interface Interpreter {
   interpret(ctx: InterpreterContext): Promise<Interpretation>

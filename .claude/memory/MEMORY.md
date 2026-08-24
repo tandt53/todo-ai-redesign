@@ -133,3 +133,95 @@ hygiene rather than as a queue.
 **The structural reason it stays invisible: the mockups are HTML and the app is React and React
 Native, with nothing connecting them.** A mockup edit can never touch the build, so *design
 approved* never implies *app changed* — only a dispatch does. See [[T-290]].
+
+## 2026-08-23 — A closed enum with no member for the case reuses the nearest one, and lies
+
+Recorded from architect-agent's return on T-191, which met this from one side while
+backend-agent met it from the other in the same hour.
+
+`skipped.reason` had one member, `modified_since_apply`, so a row the user had
+**permanently destroyed** was reported to them as *"modified since apply"* — and the
+test that passed certified the wrong message. `RefusalReason` is closed at twelve
+members with none meaning *"this operation is not permitted on this entity type"*, so
+a duplicate list name ships as `structural_field_not_settable` on a field that is
+perfectly settable, and a refused list operation ships with `field: null`, which is
+the tell.
+
+Neither agent did anything wrong: each had a closed vocabulary and a case outside it,
+and each flagged the choice rather than hiding it.
+
+**The method, which is the part worth keeping:** when adding a member to a closed
+enum, grep every existing use of the nearest member and ask which uses are already
+misfits. **The misfits are the same gap arriving earlier.** They compound — each
+false-statement use teaches a test that the wrong message is correct, and after that
+the test defends the defect.
+
+## 2026-08-23 — A full-suite run during parallel work attributes another agent's breakage to nobody
+
+backend-agent finished T-309 and reported four failing tests: one its own, one a known
+stale fixture, and **two as "pre-existing"**. They were not pre-existing and they were
+not its own — design-agent had added two testids to the mockups **while it was
+running**, and the catalogue tests read the drawings from disk.
+
+Verified by stashing `docs/design/` and re-running: **82/82 pass.**
+
+Nothing the agent did was wrong. It ran the suite, saw four reds, and attributed the
+two it could not explain to the past — which is the most reasonable guess available to
+something that cannot see another agent typing.
+
+**L-022 said quoting a failure COUNT is unreliable during parallel work. This sharpens
+it: attribution is unreliable too, and it fails in the direction that hides the
+finding** — "pre-existing" closes an investigation, where "unknown" would have opened
+one.
+
+**Two rules follow.** Brief an agent to measure **its own tier** and treat the full
+suite as informational, saying so. And when a return says "pre-existing", the
+orchestrator verifies it by stashing the other agent's tree — the cost is one command
+and the alternative is a real defect filed as history.
+
+## 2026-08-23 — Geometric overlap is not occlusion, and this is the third time
+
+Measuring "does A overlap B" by comparing bounding rectangles has now produced three
+wrong conclusions in one day:
+
+1. A hidden `.row-time` (`display:none`) was measured through a selector that matched
+   it, and a **correct finding was retracted** on the strength of it.
+2. The voice FAB was reported as still covering row text after a fix, because the
+   probe counted any overlap rather than **overlap the pinned bar did not already
+   cover**. The FAB sits in the bar's exact band; its additional coverage is zero.
+3. Option B's bar was reported as covering a row, because the probe did not account
+   for **clipping**: the bar sits below the scroller (measured, bar top 1449 =
+   scroller bottom 1449), so the row is cut by the scroller's own edge, not painted
+   over by the bar.
+
+Each time the number was plausible and nothing errored.
+
+**A rectangle overlap is a claim about geometry. Occlusion is a claim about painted
+pixels**, and the two differ whenever the element is hidden, clipped by an ancestor,
+or behind something already covering the same area. **Before comparing rects: filter
+on computed visibility, check every scrollable ancestor's clip, and state what the
+question is** — "covered by X" and "covered by X beyond what Y already covers" are
+different questions with different answers.
+
+## 2026-08-23 — "Pre-existing" is the word to distrust, and a briefing warning does not stop it
+
+Twice in one day an agent finished, ran the full suite, saw a red it could not explain,
+and labelled it **pre-existing**. Both times it was another agent's work, in flight, in
+a tree the reporting agent had never touched.
+
+The second time, **the briefing warned about this in plain words** — naming the earlier
+occurrence — and the agent used the word anyway. Its *attribution* was right ("mobile
+agent's domain"); only the label was wrong. That is the milder failure and still the
+dangerous one: **"pre-existing" closes an investigation, "another agent is writing right
+now" opens one.**
+
+Verifying costs one command: `git stash push -- <the other tree>`, re-run, `git stash
+pop`. Both times it took under a minute and both times the answer was the opposite of
+the label.
+
+**The rule is for the orchestrator, not the agent.** An agent cannot see another agent
+typing, so asking it to be careful is asking it to do something it lacks the information
+for. Two things follow: **brief agents to measure their own tier and treat the full suite
+as informational**, and **verify every "pre-existing" in a return by stashing the other
+in-flight tree** before recording it. A warning in prose has now failed once; the check
+has worked twice.

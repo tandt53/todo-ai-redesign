@@ -1,0 +1,31 @@
+{
+  "layer": 1,
+  "agent": "spec-agent",
+  "task_id": "T-322",
+  "task_description": "T-322 — the ACs that describe A's control",
+  "feature_id": "F-001",
+  "timestamp": "2026-08-23T15:07:51Z",
+  "status": "unknown",
+  "duration_seconds": 0,
+  "files_created": [],
+  "files_created_count": 0,
+  "project_stats": {
+    "spec_files": 0,
+    "source_files": 145,
+    "test_files": 39,
+    "qa_files": 0,
+    "total_loc": 47860
+  },
+  "confidence": "unknown",
+  "tests": {
+    "passing": 0,
+    "failing": 0,
+    "total": 0
+  },
+  "acs_covered": "none",
+  "blockers": "none",
+  "bugs_filed": [],
+  "summary": "No summary available",
+  "capture_method": "hook:PostToolUse",
+  "project": "todo-ai-redesign"
+}

@@ -208,4 +208,29 @@ export const FIXTURE_TABLE: FixtureRow[] = [
   // clarify candidate selections (a tap sends the option's literal text)
   { utterance: 'report q1', when: 'clarify', result: { kind: 'answer', answer: { type: 'selection', target: 'Report Q1' } } },
   { utterance: 'report q2', when: 'clarify', result: { kind: 'answer', answer: { type: 'selection', target: 'Report Q2' } } },
+  // -------------------------------------------------------------------------
+  // F-008 — list operations (AC-17, AC-18, AC-19, AC-20, AC-21)
+  // -------------------------------------------------------------------------
+  // AC-17: create a list by voice
+  { utterance: 'make a list called groceries', result: { kind: 'list_create', name: 'Groceries' } },
+  { utterance: 'create a work list', result: { kind: 'list_create', name: 'Work' } },
+  // AC-18: move a task to a named list
+  { utterance: 'move buy milk to groceries', result: { kind: 'list_move', target: 'Buy milk', list_name: 'Groceries' } },
+  { utterance: 'add buy milk to the shopping list', result: { kind: 'list_move', target: 'Buy milk', list_name: 'Shopping' } },
+  // AC-19: move a task to Inbox
+  { utterance: 'move buy milk to inbox', result: { kind: 'list_move', target: 'Buy milk', list_name: null } },
+  { utterance: 'unfile buy milk', result: { kind: 'list_move', target: 'Buy milk', list_name: null } },
+  // AC-20: refuse rename/recolour/delete a list
+  { utterance: 'rename the groceries list', result: { kind: 'list_refuse' } },
+  { utterance: 'delete the work list', result: { kind: 'list_refuse' } },
+  // AC-21: no auto-create on no-match (handled by list_move with no_match)
+  { utterance: 'add buy milk to nonexistent list', result: { kind: 'list_move', target: 'Buy milk', list_name: 'Nonexistent' } },
+  // -------------------------------------------------------------------------
+  // F-006 — trash read (AC-14)
+  // -------------------------------------------------------------------------
+  // AC-14: ask about a specific task that is in the trash
+  { utterance: 'what happened to buy milk', result: { kind: 'trash_read', query: 'task_in_trash', target: 'Buy milk' } },
+  // AC-14: ask what is in the trash
+  { utterance: 'what is in the trash', result: { kind: 'trash_read', query: 'trash_contents' } },
+  { utterance: 'show my deleted tasks', result: { kind: 'trash_read', query: 'trash_contents' } },
 ]

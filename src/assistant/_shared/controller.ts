@@ -1727,6 +1727,7 @@ export class AssistantController {
       // landing collection, through the path that produces it invisibly.
       due_all_day: due === null ? null : true,
       status: 'inbox',
+      list_id: null,
       created_at: at,
       updated_at: at,
       deleted_at: null,

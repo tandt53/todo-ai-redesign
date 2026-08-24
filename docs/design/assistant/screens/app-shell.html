@@ -17,6 +17,22 @@
    · Inline add row: no longer indented by the rail width at split+.
    · New state: tasks-long-list — shows the inline add row below the fold.
 
+  REVISED T-305/306 (2026-08-23): LONG LIST + PINNED INLINE-ADD.
+   · .app height constrained to 820px so the pane scrolls internally.
+   · .inline-new gets position:sticky; bottom:0 — pins to the bottom of the
+     scrollport when scrolled out of view, releases at the wrapper's bottom edge.
+   · Group headings (.group) get position:sticky; top:0 so the date stays visible.
+   · Long list expanded from 12 to 20 rows. Three scroll states: top, mid, bottom.
+
+  REVISED T-321 (2026-08-23): OPTION B PROMOTED TO CANONICAL.
+   · Owner chose option B: TaskBottomBar replaces inline-new and voice FAB below
+     split. The bar holds a text field and one morphing action button.
+   · .inline-new hidden below split (display:none in the phone layout rule).
+   · .voice-fab removed from the DOM — TaskBottomBar's mic-state button replaces it.
+   · data-optb gating removed — the task bar shows by default below split.
+   · optb-* states retired; tasks-typing is the canonical typing state.
+   · testids tasks-bar-input and tasks-bar-action restored to the contract.
+
   REDRAWN TO VISUAL LANGUAGE v2 (Swiss) in T-204. Colour, type, spacing, shape
   and layout from tokens.json. NOT ONE ELEMENT ID CHANGED from v1's 36 except
   two ADDED: shell-search-button, shell-overflow-button.
@@ -387,7 +403,7 @@ button,input,textarea{font:inherit; color:inherit}
 /* ══════════════════════════════════════════════════════════════════════════
    FRAME — layout.wide_rule, drawn. Three tiers, one branch each.
    ══════════════════════════════════════════════════════════════════════════ */
-.app{display:flex; flex-direction:column; min-height:820px; background:var(--bg-sunken)}
+.app{display:flex; flex-direction:column; height:820px; overflow:hidden; background:var(--bg-sunken)}
 .frame{display:flex; flex:1 1 auto; min-height:0; max-width:var(--frame-max); width:100%; margin:0 auto}
 .col-rail{display:none; flex-direction:column; min-width:0; background:var(--bg-base)}
 .col-main{display:flex; flex-direction:column; flex:1 1 auto; min-width:0; background:var(--bg-base)}
@@ -519,7 +535,9 @@ button,input,textarea{font:inherit; color:inherit}
 .list{position:relative}
 /* SPINE REMOVED (T-227). The spine marked the time-rail column. With the rail
    gone at all widths, the spine has nothing to separate and nothing to mark. */
-.group{padding:var(--s5) 0 var(--s2) 0}
+/* T-305: group headings stick to the scroll top so the user always sees which
+   date group they are in. z-index 4 sits below the inline-new bar (z-5). */
+.group{padding:var(--s5) 0 var(--s2) 0; position:sticky; top:0; z-index:4; background:var(--bg-base)}
 .group:first-child{padding-top:var(--s4)}
 .group h3{margin:0; font-size:var(--fs-label); letter-spacing:var(--ls-label); text-transform:var(--font-case-label); font-weight:var(--w-semibold); color:var(--text-muted)}
 .group.overdue h3{color:var(--danger)}
@@ -1060,9 +1078,9 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   OPTION C — PHONE / BELOW-SPLIT LAYOUT
+   PHONE / BELOW-SPLIT LAYOUT
    No time rail. Checkbox + title flush left. Due date right. Swipe-to-delete.
-   Inline "Add a task" row. Floating voice button.
+   TaskBottomBar replaces inline-new and voice FAB below split (T-321).
    The rail STAYS at tablet and desktop.
    ══════════════════════════════════════════════════════════════════════════ */
 
@@ -1078,8 +1096,12 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   .group{padding-left:var(--gutter)}
   /* Swipe-to-delete replaces always-visible delete button */
   .row-trail{display:none}
-  /* List padding to clear floating button */
-  .pane-tasks{padding-bottom:calc(var(--h-lg) + var(--s7) + var(--s4))}
+  /* T-321: FAB clearance pseudo removed — the voice FAB is retired; the
+     TaskBottomBar is a flex child outside the scroll container, so no
+     clearance pseudo is needed. */
+  .pane-tasks{padding-bottom:0}
+  /* T-321: inline-new hidden below split — the TaskBottomBar replaces it */
+  .inline-new{display:none !important}
 }
 
 
@@ -1098,12 +1120,17 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .row.row-swiped .row-inner{transform:translateX(-80px)}
 .row.row-swiped .swipe-action{transform:translateX(0)}
 
-/* ── Inline new-task row — visible at all widths ── */
-/* ── Inline new-task row — visible at all widths, no rail indent (T-227) ── */
+/* ── Inline new-task row — visible at split+ only (T-321: hidden below split,
+   TaskBottomBar replaces it). No rail indent (T-227). ── */
+/* T-305/306: position:sticky pins the row to the scrollport bottom when
+   scrolled out of view. Releases at the wrapper's (.list) bottom edge.
+   Short lists: no effect (natural position is above the fold). Cost: ~2 rows
+   occluded while pinned. Padding does NOT fix this (measured). */
 .inline-new{
   display:flex; align-items:center; gap:var(--s3);
   min-height:var(--h-lg); padding:var(--s1) 0;
   color:var(--text-muted); cursor:pointer;
+  position:sticky; bottom:0; z-index:5; background:var(--bg-base);
 }
 .inline-new .plus{
   width:calc(var(--icon-size-md) * 1px); height:calc(var(--icon-size-md) * 1px); flex:none;
@@ -1112,24 +1139,56 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .inline-new span.inline-label{font-size:var(--fs-body); color:var(--text-muted)}
 .inline-new:hover .inline-label{color:var(--text-secondary)}
 .inline-new:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
-@container (max-width:1023px){
-  .inline-new{padding:var(--s1) var(--gutter)}
-}
+/* T-321: voice-fab CSS removed — the FAB is retired from the Tasks surface.
+   The TaskBottomBar's morphing action button replaces both the FAB and the
+   inline-new row below split. The inline-new padding-right for FAB clearance
+   is also removed (the FAB is not rendered). */
 
-/* ── Floating voice button — below split only ── */
-.voice-fab{
-  display:grid; position:absolute; z-index:5; cursor:pointer;
-  width:var(--h-lg); height:var(--h-lg); min-width:var(--min-target); min-height:var(--min-target);
-  border-radius:var(--r-circle); border:0;
-  background:var(--accent); color:var(--text-on-accent);
-  place-items:center;
-  right:var(--s4); bottom:var(--s4);
-  box-shadow:0 4px 12px rgba(0,0,0,0.15);
+/* ══════════════════════════════════════════════════════════════════════════
+   TASKBOTTOMBAR — fixed field + morphing mic/send (T-311, canonical T-321)
+   Owner chose option B 2026-08-23. The bar replaces both the inline-new row
+   and the floating voice FAB below split. At split+ the Talk panel is permanent
+   and the inline-new row in the list body is reachable.
+   Bar height: s1 (4px) top pad + h-md (44px) content + s2 (8px) bottom pad
+   = 56px painted, plus platform clearance below (web s5 24px / iOS homebar
+   25px / Android gesturebar 23px). Total with clearance: web 80px, iOS 81px,
+   Android 79px — approximately 1.3 task rows.
+   Mic (field empty) → "Talk", navigates to Talk surface.
+   Send (field has text) → "Add task", commits the title via addTask.
+   ══════════════════════════════════════════════════════════════════════════ */
+.task-bar{flex:none; background:var(--bg-base); padding-bottom:var(--s5)}
+.task-bar-in{
+  display:flex; align-items:center; gap:var(--s3);
+  padding:var(--s1) var(--gutter) var(--s2);
+  max-width:var(--list-max); margin:0 auto; width:100%;
 }
-.voice-fab:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
-/* At split and above, Talk column is visible — no floating button needed */
+.tbar-input{
+  flex:1 1 auto; min-width:0; height:var(--field-h); min-height:var(--min-target);
+  border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-sm);
+  background:var(--bg-base); padding:0 var(--field-px);
+  font-size:var(--fs-body); color:var(--text-primary);
+}
+.tbar-input::placeholder{color:var(--text-muted)}
+.tbar-input:focus{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px; border-color:var(--accent)}
+.tbar-action{
+  width:var(--h-md); height:var(--h-md);
+  border-radius:var(--r-circle); border:var(--b-hairline) solid var(--bg-rule);
+  background:transparent; color:var(--text-secondary); cursor:pointer;
+  display:grid; place-items:center; flex:none; position:relative;
+}
+/* Hit-area: platform target floor (web 40, iOS 44, Android 48) met by
+   transparent pseudo, never by painting a bigger control — tokens.json
+   control.note. The painted circle stays h-md (44). */
+.tbar-action::before{
+  content:""; position:absolute; top:50%; left:50%;
+  width:var(--min-target); height:var(--min-target); transform:translate(-50%,-50%);
+}
+.tbar-action:hover{color:var(--text-primary); border-color:var(--text-primary)}
+.tbar-action.tbar-active{background:var(--accent); color:var(--text-on-accent); border-color:transparent}
+.tbar-action:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
+/* At split+ the Talk panel is permanent — no bar needed */
 @container (min-width:1024px){
-  .voice-fab{display:none}
+  .task-bar{display:none !important}
 }
 
 /* ── Swipe action hidden at split+ (hover-reveal delete button instead) ── */
@@ -1179,7 +1238,9 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .app[data-search="no-results"] .overflow-anchor{display:none}
 .app[data-search="no-results"] .btn-search{display:none}
 .app[data-search="no-results"] .list{display:none}
-.app[data-search="no-results"] .inline-new{display:none}
+/* T-321: inline-new is hidden below split by the phone layout rule;
+   no extra search/selection hide needed. At split+ the search-no-results
+   state hides the list entirely so the inline-new is not visible anyway. */
 /* When search is filtering, JS hides rows whose title does not contain the
    query (AC-2: live filtering by title). The CSS below shows the search UI
    chrome; the actual row visibility is set by showState's searchQuery handler.
@@ -1262,7 +1323,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .app[data-selection] .row-open{pointer-events:none}
 .app[data-selection] .row-trail{display:none!important}
 .app[data-selection] .row-due{display:none}
-.app[data-selection] .inline-new{display:none}
+/* T-321: inline-new hidden by phone layout; voice-fab retired */
 /* Selected row ground — painted on ::before, same pseudo as .row:hover.
    Inset vertically by space.1 (4px) so adjacent selected rows show an 8px
    gap between their painted grounds. No padding override — cbLeft and titleLeft
@@ -1274,7 +1335,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   border-top:var(--b-hairline) solid var(--bg-hairline); padding:var(--s3) var(--gutter);
 }
 .app[data-selection] .bulk-toolbar{display:flex}
-.app[data-selection] .voice-fab{display:none}
+/* T-321: voice-fab retired — selection does not need to hide it */
 .bulk-toolbar-in{
   display:flex; align-items:center; gap:var(--s3);
   width:100%; max-width:var(--list-max); margin:0 auto;
@@ -1374,7 +1435,10 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   <button data-s="phone-tasks-arrived" onclick="showState('phone-tasks-arrived')">phone-arrived</button>
   <button data-s="phone-tasks-empty" onclick="showState('phone-tasks-empty')">phone-empty</button>
   <button data-s="wide-tasks" onclick="showState('wide-tasks')">wide-tasks</button>
-  <button data-s="tasks-long-list" onclick="showState('tasks-long-list')">long-list</button>
+  <button data-s="tasks-long-list" onclick="showState('tasks-long-list')">long-list-top</button>
+  <button data-s="tasks-long-list-mid" onclick="showState('tasks-long-list-mid')">long-list-mid</button>
+  <button data-s="tasks-long-list-bottom" onclick="showState('tasks-long-list-bottom')">long-list-bottom</button>
+  <button data-s="tasks-typing" onclick="showState('tasks-typing')">typing</button>
   <button data-s="search-open" onclick="showState('search-open')">search-open</button>
   <button data-s="search-filtering" onclick="showState('search-filtering')">search-filtering</button>
   <button data-s="search-no-results" onclick="showState('search-no-results')">search-no-results</button>
@@ -1876,7 +1940,81 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           </div>
           <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
         </div>
-        <!-- Inline new-task row — below the fold on a standard-height viewport -->
+        <div class="group"><h3>Later</h3></div>
+        <div class="row">
+          <div class="row-time">—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Renew the apartment lease">
+            <button class="row-open" aria-label="Open Renew the apartment lease"><span class="row-title">Renew the apartment lease</span></button>
+            <span class="row-due">Thu 11:00 AM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <div class="row">
+          <div class="row-time">—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Submit the tax documents">
+            <button class="row-open" aria-label="Open Submit the tax documents"><span class="row-title">Submit the tax documents</span></button>
+            <span class="row-due">Fri 4:00 PM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <div class="row done">
+          <div class="row-time">—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" checked aria-label="Mark not done: Water the plants">
+            <button class="row-open" aria-label="Open Water the plants"><span class="row-title">Water the plants</span></button>
+            <span class="row-due">Sat 8:00 AM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <div class="row">
+          <div class="row-time">—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Buy birthday gift for Mai">
+            <button class="row-open" aria-label="Open Buy birthday gift for Mai"><span class="row-title">Buy birthday gift for Mai</span></button>
+            <span class="row-due">Sun 3:00 PM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <div class="row">
+          <div class="row-time">—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Update the project slides">
+            <button class="row-open" aria-label="Open Update the project slides"><span class="row-title">Update the project slides</span></button>
+            <span class="row-due">Mon 9:00 AM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <div class="row">
+          <div class="row-time">—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Fix the kitchen shelf">
+            <button class="row-open" aria-label="Open Fix the kitchen shelf"><span class="row-title">Fix the kitchen shelf</span></button>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <div class="row">
+          <div class="row-time">—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" aria-label="Complete: Research flight prices to Da Nang">
+            <button class="row-open" aria-label="Open Research flight prices to Da Nang"><span class="row-title">Research flight prices to Da Nang</span></button>
+            <span class="row-due">Tue 6:00 PM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <div class="row done">
+          <div class="row-time">—</div>
+          <div class="row-main">
+            <input class="cbx" type="checkbox" checked aria-label="Mark not done: Book the dentist follow-up">
+            <button class="row-open" aria-label="Open Book the dentist follow-up"><span class="row-title">Book the dentist follow-up</span></button>
+            <span class="row-due">Wed 10:00 AM</span>
+          </div>
+          <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <!-- Inline new-task row — pins to bottom of scrollport via position:sticky
+             when the list is long enough to scroll. Releases when the list bottom
+             comes into view. See T-305/306. -->
         <div class="inline-new" role="button" tabindex="0" aria-label="Add a task">
           <span class="plus"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
           <span class="inline-label">Add a task</span>
@@ -1926,6 +2064,21 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           </div>
         </main>
 
+        <!-- TaskBottomBar — canonical (T-321, owner chose option B 2026-08-23).
+             The mic morphs into a send arrow when the field has text: one button,
+             two accessible names. "Talk" when empty, "Add task" when field has
+             text (AC-37). The morph fires on first character in / last character
+             out, not on focus or blur. Hidden at split+ by CSS. -->
+        <div class="task-bar">
+          <div class="task-bar-in">
+            <input class="tbar-input" id="tbarInput" type="text" placeholder="Add a task" aria-label="Add a task" data-testid="tasks-bar-input">
+            <button class="tbar-action" id="tbarAction" aria-label="Talk" data-testid="tasks-bar-action">
+              <span class="tbar-ico-mic"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></span>
+              <span class="tbar-ico-send" style="display:none"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></span>
+            </button>
+          </div>
+        </div>
+
         <!-- BULK ACTION TOOLBAR (T-225, AC-9/10/11/13) — pinned bottom, selection mode only -->
         <div class="bulk-toolbar" data-testid="tasks-bulk-toolbar">
           <div class="bulk-toolbar-in">
@@ -1939,8 +2092,8 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           </div>
         </div>
 
-        <!-- Floating voice button — below split only -->
-        <button class="voice-fab" data-testid="assistant-voice-fab" aria-label="Talk"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></button>
+        <!-- T-321: voice-fab retired — TaskBottomBar's action button replaces it.
+             The testid `assistant-voice-fab` is retired in components.md. -->
 
         <div class="settings-panel" style="position:absolute; inset:0; background:var(--bg-base); z-index:15">
           <header class="topbar"><div class="bar-in">
@@ -2503,7 +2656,33 @@ var STATES = {
     "row": "normal",
     "surface": "tasks",
     "title": "Upcoming",
-    "count": "<b>12</b> open · <span class=\"late\">2 overdue</span>"
+    "count": "<b>18</b> open · <span class=\"late\">2 overdue</span>",
+    "scrollTo": "top",
+    "frame": "phone"
+  },
+  "tasks-long-list-mid": {
+    "collection": "long",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "title": "Upcoming",
+    "count": "<b>18</b> open · <span class=\"late\">2 overdue</span>",
+    "scrollTo": "mid",
+    "frame": "phone"
+  },
+  "tasks-long-list-bottom": {
+    "collection": "long",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "title": "Upcoming",
+    "count": "<b>18</b> open · <span class=\"late\">2 overdue</span>",
+    "scrollTo": "bottom",
+    "frame": "phone"
   },
   "search-open": {
     "collection": "today",
@@ -2603,9 +2782,19 @@ var STATES = {
     "selection": "some",
     "confirm": "delete",
     "selectCount": 3
+  },
+  "tasks-typing": {
+    "collection": "today",
+    "tasks": "list",
+    "talk": "idle",
+    "mic": "idle",
+    "row": "normal",
+    "surface": "tasks",
+    "frame": "phone",
+    "bar": "typing"
   }
 };
-var KEYS = ["surface","collection","tasks","talk","mic","banner","row","carried","menu","settings","sheet","search","overflow","selection","confirm","sort"];
+var KEYS = ["surface","collection","tasks","talk","mic","banner","row","carried","menu","settings","sheet","search","overflow","selection","confirm","sort","bar"];
 
 function showState(name){
   var cfg = STATES[name]; if(!cfg) return;
@@ -2744,6 +2933,37 @@ function paint(cfg){
   var cd = document.getElementById('confirmDeleteBtn');
   if (ct && sc > 0) ct.textContent = 'Delete ' + sc + ' tasks?';
   if (cd && sc > 0) cd.textContent = 'Delete ' + sc + ' tasks';
+
+  /* ── TaskBottomBar morph (T-311, canonical T-321) ── */
+  var tbarAction = document.getElementById('tbarAction');
+  var tbarInput = document.getElementById('tbarInput');
+  if (tbarAction && tbarInput) {
+    if (cfg.bar === 'typing') {
+      tbarAction.querySelector('.tbar-ico-mic').style.display = 'none';
+      tbarAction.querySelector('.tbar-ico-send').style.display = '';
+      tbarAction.setAttribute('aria-label', 'Add task');
+      tbarAction.classList.add('tbar-active');
+      tbarInput.value = 'Buy flowers for Lan';
+    } else {
+      tbarAction.querySelector('.tbar-ico-mic').style.display = '';
+      tbarAction.querySelector('.tbar-ico-send').style.display = 'none';
+      tbarAction.setAttribute('aria-label', 'Talk');
+      tbarAction.classList.remove('tbar-active');
+      tbarInput.value = '';
+    }
+  }
+
+  /* ── Long list scroll position (T-305/306) ── */
+  var pane = document.querySelector('.pane-tasks');
+  if (pane && cfg.scrollTo) {
+    setTimeout(function(){
+      if (cfg.scrollTo === 'top') pane.scrollTop = 0;
+      else if (cfg.scrollTo === 'mid') pane.scrollTop = Math.round((pane.scrollHeight - pane.clientHeight) / 2);
+      else if (cfg.scrollTo === 'bottom') pane.scrollTop = pane.scrollHeight;
+    }, 50);
+  } else if (pane) {
+    pane.scrollTop = 0;
+  }
 }
 
 function toggleTheme(){

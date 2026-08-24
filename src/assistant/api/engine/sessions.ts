@@ -58,7 +58,7 @@ export function nextSeq(state: StoreState, sessionId: string): number {
  */
 export function newestAppliedTurn(state: StoreState, sessionId: string): TurnRow | undefined {
   return sessionTurns(state, sessionId)
-    .filter((t) => t.status === 'applied' && t.changed_task_ids.length > 0)
+    .filter((t) => t.status === 'applied' && (t.changed_task_ids.length > 0 || t.created_ids.length > 0))
     .at(-1)
 }
 

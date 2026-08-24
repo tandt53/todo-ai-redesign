@@ -295,6 +295,7 @@ function send(res: ServerResponse, status: number, body: unknown): void {
  *   POST /__qa__/set-clock      (F-005 AC-44)
  *   POST /__qa__/seed           (F-005 AC-8, AC-34, AC-15)
  *   POST /__qa__/reopen-store   (F-005 AC-15)
+ *   GET  /__qa__/raw-tasks      (F-006 AC-12, AC-17)
  */
 export function createQaDoors(deps: DoorDeps): (req: IncomingMessage, res: ServerResponse) => boolean {
   const { store, clock, interpreter, defaultAdvanceMs = 0 } = deps
@@ -306,6 +307,25 @@ export function createQaDoors(deps: DoorDeps): (req: IncomingMessage, res: Serve
 
     if (path === '/__qa__/ai-calls' && req.method === 'GET') {
       send(res, 200, { count: interpreter?.count ?? 0 })
+      return true
+    }
+
+    // F-006 AC-12, AC-17: raw-store read — every row for this account, deleted
+    // or not, expired or not, hard-removed excluded (they are gone). The
+    // assertion that expired rows were removed is the account's stored row
+    // count, and this is the only observable that distinguishes "removed" from
+    // "hidden by the predicate".
+    if (path === '/__qa__/raw-tasks' && req.method === 'GET') {
+      const userId = url.searchParams.get('user_id')
+      if (typeof userId !== 'string' || userId === '') {
+        send(res, 400, { error: { code: 'QA_DOOR', message: 'user_id query param required' } })
+        return true
+      }
+      const result = store.read((s) => {
+        const tasks = Object.values(s.tasks).filter((t) => (t as Record<string, unknown>)['user_id'] === userId)
+        return { tasks, count: tasks.length }
+      })
+      send(res, 200, result)
       return true
     }
 

@@ -1,0 +1,544 @@
+{
+ "app-shell/tasks-default": {
+  "web": "app-shell__web__tasks-default.png",
+  "ios": "app-shell__ios__tasks-default.png",
+  "android": "app-shell__android__tasks-default.png"
+ },
+ "app-shell/tasks-rename": {
+  "web": "app-shell__web__tasks-rename.png",
+  "ios": "app-shell__ios__tasks-rename.png",
+  "android": "app-shell__android__tasks-rename.png"
+ },
+ "app-shell/tasks-arrived": {
+  "web": "app-shell__web__tasks-arrived.png",
+  "ios": "app-shell__ios__tasks-arrived.png",
+  "android": "app-shell__android__tasks-arrived.png"
+ },
+ "app-shell/tasks-upcoming": {
+  "web": "app-shell__web__tasks-upcoming.png",
+  "ios": "app-shell__ios__tasks-upcoming.png",
+  "android": "app-shell__android__tasks-upcoming.png"
+ },
+ "app-shell/tasks-inbox": {
+  "web": "app-shell__web__tasks-inbox.png",
+  "ios": "app-shell__ios__tasks-inbox.png",
+  "android": "app-shell__android__tasks-inbox.png"
+ },
+ "app-shell/tasks-done": {
+  "web": "app-shell__web__tasks-done.png",
+  "ios": "app-shell__ios__tasks-done.png",
+  "android": "app-shell__android__tasks-done.png"
+ },
+ "app-shell/tasks-empty-first": {
+  "web": "app-shell__web__tasks-empty-first.png",
+  "ios": "app-shell__ios__tasks-empty-first.png",
+  "android": "app-shell__android__tasks-empty-first.png"
+ },
+ "app-shell/tasks-upcoming-empty": {
+  "web": "app-shell__web__tasks-upcoming-empty.png",
+  "ios": "app-shell__ios__tasks-upcoming-empty.png",
+  "android": "app-shell__android__tasks-upcoming-empty.png"
+ },
+ "app-shell/tasks-empty-done": {
+  "web": "app-shell__web__tasks-empty-done.png",
+  "ios": "app-shell__ios__tasks-empty-done.png",
+  "android": "app-shell__android__tasks-empty-done.png"
+ },
+ "app-shell/tasks-loading": {
+  "web": "app-shell__web__tasks-loading.png",
+  "ios": "app-shell__ios__tasks-loading.png",
+  "android": "app-shell__android__tasks-loading.png"
+ },
+ "app-shell/tasks-refresh-failed": {
+  "web": "app-shell__web__tasks-refresh-failed.png",
+  "ios": "app-shell__ios__tasks-refresh-failed.png",
+  "android": "app-shell__android__tasks-refresh-failed.png"
+ },
+ "app-shell/tasks-offline": {
+  "web": "app-shell__web__tasks-offline.png",
+  "ios": "app-shell__ios__tasks-offline.png",
+  "android": "app-shell__android__tasks-offline.png"
+ },
+ "app-shell/tasks-error": {
+  "web": "app-shell__web__tasks-error.png",
+  "ios": "app-shell__ios__tasks-error.png",
+  "android": "app-shell__android__tasks-error.png"
+ },
+ "app-shell/tasks-saved-notice": {
+  "web": "app-shell__web__tasks-saved-notice.png",
+  "ios": "app-shell__ios__tasks-saved-notice.png",
+  "android": "app-shell__android__tasks-saved-notice.png"
+ },
+ "app-shell/tasks-saved-notice-many": {
+  "web": "app-shell__web__tasks-saved-notice-many.png",
+  "ios": "app-shell__ios__tasks-saved-notice-many.png",
+  "android": "app-shell__android__tasks-saved-notice-many.png"
+ },
+ "app-shell/tasks-saved-offline": {
+  "web": "app-shell__web__tasks-saved-offline.png",
+  "ios": "app-shell__ios__tasks-saved-offline.png",
+  "android": "app-shell__android__tasks-saved-offline.png"
+ },
+ "app-shell/talk-idle": {
+  "web": "app-shell__web__talk-idle.png",
+  "ios": "app-shell__ios__talk-idle.png",
+  "android": "app-shell__android__talk-idle.png"
+ },
+ "app-shell/talk-listening": {
+  "web": "app-shell__web__talk-listening.png",
+  "ios": "app-shell__ios__talk-listening.png",
+  "android": "app-shell__android__talk-listening.png"
+ },
+ "app-shell/talk-landing": {
+  "web": "app-shell__web__talk-landing.png",
+  "ios": "app-shell__ios__talk-landing.png",
+  "android": "app-shell__android__talk-landing.png"
+ },
+ "app-shell/talk-landing-overdue": {
+  "web": "app-shell__web__talk-landing-overdue.png",
+  "ios": "app-shell__ios__talk-landing-overdue.png",
+  "android": "app-shell__android__talk-landing-overdue.png"
+ },
+ "app-shell/talk-landing-overdue-only": {
+  "web": "app-shell__web__talk-landing-overdue-only.png",
+  "ios": "app-shell__ios__talk-landing-overdue-only.png",
+  "android": "app-shell__android__talk-landing-overdue-only.png"
+ },
+ "app-shell/talk-landing-ahead": {
+  "web": "app-shell__web__talk-landing-ahead.png",
+  "ios": "app-shell__ios__talk-landing-ahead.png",
+  "android": "app-shell__android__talk-landing-ahead.png"
+ },
+ "app-shell/talk-landing-clear-today": {
+  "web": "app-shell__web__talk-landing-clear-today.png",
+  "ios": "app-shell__ios__talk-landing-clear-today.png",
+  "android": "app-shell__android__talk-landing-clear-today.png"
+ },
+ "app-shell/talk-landing-clear": {
+  "web": "app-shell__web__talk-landing-clear.png",
+  "ios": "app-shell__ios__talk-landing-clear.png",
+  "android": "app-shell__android__talk-landing-clear.png"
+ },
+ "app-shell/talk-empty": {
+  "web": "app-shell__web__talk-empty.png",
+  "ios": "app-shell__ios__talk-empty.png",
+  "android": "app-shell__android__talk-empty.png"
+ },
+ "app-shell/talk-loading": {
+  "web": "app-shell__web__talk-loading.png",
+  "ios": "app-shell__ios__talk-loading.png",
+  "android": "app-shell__android__talk-loading.png"
+ },
+ "app-shell/talk-failed": {
+  "web": "app-shell__web__talk-failed.png",
+  "ios": "app-shell__ios__talk-failed.png",
+  "android": "app-shell__android__talk-failed.png"
+ },
+ "app-shell/carried-failed": {
+  "web": "app-shell__web__carried-failed.png",
+  "ios": "app-shell__ios__carried-failed.png",
+  "android": "app-shell__android__carried-failed.png"
+ },
+ "app-shell/carried-offline": {
+  "web": "app-shell__web__carried-offline.png",
+  "ios": "app-shell__ios__carried-offline.png",
+  "android": "app-shell__android__carried-offline.png"
+ },
+ "app-shell/carried-undo": {
+  "web": "app-shell__web__carried-undo.png",
+  "ios": "app-shell__ios__carried-undo.png",
+  "android": "app-shell__android__carried-undo.png"
+ },
+ "app-shell/carried-on-talk": {
+  "web": "app-shell__web__carried-on-talk.png",
+  "ios": "app-shell__ios__carried-on-talk.png",
+  "android": "app-shell__android__carried-on-talk.png"
+ },
+ "app-shell/menu-default": {
+  "web": "app-shell__web__menu-default.png",
+  "ios": "app-shell__ios__menu-default.png",
+  "android": "app-shell__android__menu-default.png"
+ },
+ "app-shell/menu-empty": {
+  "web": "app-shell__web__menu-empty.png",
+  "ios": "app-shell__ios__menu-empty.png",
+  "android": "app-shell__android__menu-empty.png"
+ },
+ "app-shell/menu-failed": {
+  "web": "app-shell__web__menu-failed.png",
+  "ios": "app-shell__ios__menu-failed.png",
+  "android": "app-shell__android__menu-failed.png"
+ },
+ "app-shell/settings-default": {
+  "web": "app-shell__web__settings-default.png",
+  "ios": "app-shell__ios__settings-default.png",
+  "android": "app-shell__android__settings-default.png"
+ },
+ "app-shell/settings-save-failed": {
+  "web": "app-shell__web__settings-save-failed.png",
+  "ios": "app-shell__ios__settings-save-failed.png",
+  "android": "app-shell__android__settings-save-failed.png"
+ },
+ "app-shell/list-new": {
+  "web": "app-shell__web__list-new.png",
+  "ios": "app-shell__ios__list-new.png",
+  "android": "app-shell__android__list-new.png"
+ },
+ "app-shell/list-name-taken": {
+  "web": "app-shell__web__list-name-taken.png",
+  "ios": "app-shell__ios__list-name-taken.png",
+  "android": "app-shell__android__list-name-taken.png"
+ },
+ "app-shell/phone-talk": {
+  "web": "app-shell__web__phone-talk.png",
+  "ios": "app-shell__ios__phone-talk.png",
+  "android": "app-shell__android__phone-talk.png"
+ },
+ "app-shell/phone-tasks": {
+  "web": "app-shell__web__phone-tasks.png",
+  "ios": "app-shell__ios__phone-tasks.png",
+  "android": "app-shell__android__phone-tasks.png"
+ },
+ "app-shell/phone-tasks-arrived": {
+  "web": "app-shell__web__phone-tasks-arrived.png",
+  "ios": "app-shell__ios__phone-tasks-arrived.png",
+  "android": "app-shell__android__phone-tasks-arrived.png"
+ },
+ "app-shell/phone-tasks-empty": {
+  "web": "app-shell__web__phone-tasks-empty.png",
+  "ios": "app-shell__ios__phone-tasks-empty.png",
+  "android": "app-shell__android__phone-tasks-empty.png"
+ },
+ "app-shell/wide-tasks": {
+  "web": "app-shell__web__wide-tasks.png",
+  "ios": "app-shell__ios__wide-tasks.png",
+  "android": "app-shell__android__wide-tasks.png"
+ },
+ "app-shell/tasks-long-list": {
+  "web": "app-shell__web__tasks-long-list.png",
+  "ios": "app-shell__ios__tasks-long-list.png",
+  "android": "app-shell__android__tasks-long-list.png"
+ },
+ "app-shell/tasks-long-list-mid": {
+  "web": "app-shell__web__tasks-long-list-mid.png",
+  "ios": "app-shell__ios__tasks-long-list-mid.png",
+  "android": "app-shell__android__tasks-long-list-mid.png"
+ },
+ "app-shell/tasks-long-list-bottom": {
+  "web": "app-shell__web__tasks-long-list-bottom.png",
+  "ios": "app-shell__ios__tasks-long-list-bottom.png",
+  "android": "app-shell__android__tasks-long-list-bottom.png"
+ },
+ "app-shell/tasks-typing": {
+  "web": "app-shell__web__tasks-typing.png",
+  "ios": "app-shell__ios__tasks-typing.png",
+  "android": "app-shell__android__tasks-typing.png"
+ },
+ "app-shell/search-open": {
+  "web": "app-shell__web__search-open.png",
+  "ios": "app-shell__ios__search-open.png",
+  "android": "app-shell__android__search-open.png"
+ },
+ "app-shell/search-filtering": {
+  "web": "app-shell__web__search-filtering.png",
+  "ios": "app-shell__ios__search-filtering.png",
+  "android": "app-shell__android__search-filtering.png"
+ },
+ "app-shell/search-no-results": {
+  "web": "app-shell__web__search-no-results.png",
+  "ios": "app-shell__ios__search-no-results.png",
+  "android": "app-shell__android__search-no-results.png"
+ },
+ "app-shell/overflow-open": {
+  "web": "app-shell__web__overflow-open.png",
+  "ios": "app-shell__ios__overflow-open.png",
+  "android": "app-shell__android__overflow-open.png"
+ },
+ "app-shell/overflow-manual-disabled": {
+  "web": "app-shell__web__overflow-manual-disabled.png",
+  "ios": "app-shell__ios__overflow-manual-disabled.png",
+  "android": "app-shell__android__overflow-manual-disabled.png"
+ },
+ "app-shell/sort-manual": {
+  "web": "app-shell__web__sort-manual.png",
+  "ios": "app-shell__ios__sort-manual.png",
+  "android": "app-shell__android__sort-manual.png"
+ },
+ "app-shell/overflow-hide-on": {
+  "web": "app-shell__web__overflow-hide-on.png",
+  "ios": "app-shell__ios__overflow-hide-on.png",
+  "android": "app-shell__android__overflow-hide-on.png"
+ },
+ "app-shell/select-none": {
+  "web": "app-shell__web__select-none.png",
+  "ios": "app-shell__ios__select-none.png",
+  "android": "app-shell__android__select-none.png"
+ },
+ "app-shell/select-some": {
+  "web": "app-shell__web__select-some.png",
+  "ios": "app-shell__ios__select-some.png",
+  "android": "app-shell__android__select-some.png"
+ },
+ "app-shell/confirm-delete": {
+  "web": "app-shell__web__confirm-delete.png",
+  "ios": "app-shell__ios__confirm-delete.png",
+  "android": "app-shell__android__confirm-delete.png"
+ },
+ "app-shell/phone-tasks-swiped": {
+  "ios": "app-shell__ios__phone-tasks-swiped.png",
+  "android": "app-shell__android__phone-tasks-swiped.png"
+ },
+ "app-shell/tasks-typing-kb-short": {
+  "ios": "app-shell__ios__tasks-typing-kb-short.png",
+  "android": "app-shell__android__tasks-typing-kb-short.png"
+ },
+ "app-shell/tasks-typing-kb-long": {
+  "ios": "app-shell__ios__tasks-typing-kb-long.png",
+  "android": "app-shell__android__tasks-typing-kb-long.png"
+ },
+ "task-detail/detail-default": {
+  "web": "task-detail__web__detail-default.png",
+  "ios": "task-detail__ios__detail-default.png",
+  "android": "task-detail__android__detail-default.png"
+ },
+ "task-detail/detail-blank": {
+  "web": "task-detail__web__detail-blank.png",
+  "ios": "task-detail__ios__detail-blank.png",
+  "android": "task-detail__android__detail-blank.png"
+ },
+ "task-detail/detail-typed-affordance": {
+  "web": "task-detail__web__detail-typed-affordance.png",
+  "ios": "task-detail__ios__detail-typed-affordance.png",
+  "android": "task-detail__android__detail-typed-affordance.png"
+ },
+ "task-detail/detail-overdue": {
+  "web": "task-detail__web__detail-overdue.png",
+  "ios": "task-detail__ios__detail-overdue.png",
+  "android": "task-detail__android__detail-overdue.png"
+ },
+ "task-detail/detail-loading": {
+  "web": "task-detail__web__detail-loading.png",
+  "ios": "task-detail__ios__detail-loading.png",
+  "android": "task-detail__android__detail-loading.png"
+ },
+ "task-detail/detail-field-failed": {
+  "web": "task-detail__web__detail-field-failed.png",
+  "ios": "task-detail__ios__detail-field-failed.png",
+  "android": "task-detail__android__detail-field-failed.png"
+ },
+ "task-detail/detail-offline": {
+  "web": "task-detail__web__detail-offline.png",
+  "ios": "task-detail__ios__detail-offline.png",
+  "android": "task-detail__android__detail-offline.png"
+ },
+ "task-detail/detail-priority-pick": {
+  "web": "task-detail__web__detail-priority-pick.png",
+  "ios": "task-detail__ios__detail-priority-pick.png",
+  "android": "task-detail__android__detail-priority-pick.png"
+ },
+ "task-detail/detail-deadline-pick": {
+  "web": "task-detail__web__detail-deadline-pick.png",
+  "ios": "task-detail__ios__detail-deadline-pick.png",
+  "android": "task-detail__android__detail-deadline-pick.png"
+ },
+ "task-detail/detail-reminder-pick": {
+  "web": "task-detail__web__detail-reminder-pick.png",
+  "ios": "task-detail__ios__detail-reminder-pick.png",
+  "android": "task-detail__android__detail-reminder-pick.png"
+ },
+ "task-detail/detail-repeat": {
+  "web": "task-detail__web__detail-repeat.png",
+  "ios": "task-detail__ios__detail-repeat.png",
+  "android": "task-detail__android__detail-repeat.png"
+ },
+ "task-detail/detail-repeat-until": {
+  "web": "task-detail__web__detail-repeat-until.png",
+  "ios": "task-detail__ios__detail-repeat-until.png",
+  "android": "task-detail__android__detail-repeat-until.png"
+ },
+ "task-detail/detail-repeat-count": {
+  "web": "task-detail__web__detail-repeat-count.png",
+  "ios": "task-detail__ios__detail-repeat-count.png",
+  "android": "task-detail__android__detail-repeat-count.png"
+ },
+ "task-detail/detail-repeat-refused": {
+  "web": "task-detail__web__detail-repeat-refused.png",
+  "ios": "task-detail__ios__detail-repeat-refused.png",
+  "android": "task-detail__android__detail-repeat-refused.png"
+ },
+ "task-detail/detail-repeat-unsupported": {
+  "web": "task-detail__web__detail-repeat-unsupported.png",
+  "ios": "task-detail__ios__detail-repeat-unsupported.png",
+  "android": "task-detail__android__detail-repeat-unsupported.png"
+ },
+ "task-detail/detail-steps-refused": {
+  "web": "task-detail__web__detail-steps-refused.png",
+  "ios": "task-detail__ios__detail-steps-refused.png",
+  "android": "task-detail__android__detail-steps-refused.png"
+ },
+ "task-detail/detail-series": {
+  "web": "task-detail__web__detail-series.png",
+  "ios": "task-detail__ios__detail-series.png",
+  "android": "task-detail__android__detail-series.png"
+ },
+ "task-detail/detail-error": {
+  "web": "task-detail__web__detail-error.png",
+  "ios": "task-detail__ios__detail-error.png",
+  "android": "task-detail__android__detail-error.png"
+ },
+ "task-detail/detail-deleted": {
+  "web": "task-detail__web__detail-deleted.png",
+  "ios": "task-detail__ios__detail-deleted.png",
+  "android": "task-detail__android__detail-deleted.png"
+ },
+ "task-detail/phone-detail": {
+  "web": "task-detail__web__phone-detail.png",
+  "ios": "task-detail__ios__phone-detail.png",
+  "android": "task-detail__android__phone-detail.png"
+ },
+ "task-detail/phone-detail-pick": {
+  "web": "task-detail__web__phone-detail-pick.png",
+  "ios": "task-detail__ios__phone-detail-pick.png",
+  "android": "task-detail__android__phone-detail-pick.png"
+ },
+ "voice-assistant-view/idle-empty": {
+  "web": "voice-assistant-view__web__idle-empty.png",
+  "ios": "voice-assistant-view__ios__idle-empty.png",
+  "android": "voice-assistant-view__android__idle-empty.png"
+ },
+ "voice-assistant-view/idle-tasks": {
+  "web": "voice-assistant-view__web__idle-tasks.png",
+  "ios": "voice-assistant-view__ios__idle-tasks.png",
+  "android": "voice-assistant-view__android__idle-tasks.png"
+ },
+ "voice-assistant-view/listening": {
+  "web": "voice-assistant-view__web__listening.png",
+  "ios": "voice-assistant-view__ios__listening.png",
+  "android": "voice-assistant-view__android__listening.png"
+ },
+ "voice-assistant-view/thinking": {
+  "web": "voice-assistant-view__web__thinking.png",
+  "ios": "voice-assistant-view__ios__thinking.png",
+  "android": "voice-assistant-view__android__thinking.png"
+ },
+ "voice-assistant-view/applied-diff": {
+  "web": "voice-assistant-view__web__applied-diff.png",
+  "ios": "voice-assistant-view__ios__applied-diff.png",
+  "android": "voice-assistant-view__android__applied-diff.png"
+ },
+ "voice-assistant-view/question-confirm": {
+  "web": "voice-assistant-view__web__question-confirm.png",
+  "ios": "voice-assistant-view__ios__question-confirm.png",
+  "android": "voice-assistant-view__android__question-confirm.png"
+ },
+ "voice-assistant-view/question-clarify": {
+  "web": "voice-assistant-view__web__question-clarify.png",
+  "ios": "voice-assistant-view__ios__question-clarify.png",
+  "android": "voice-assistant-view__android__question-clarify.png"
+ },
+ "voice-assistant-view/no-match": {
+  "web": "voice-assistant-view__web__no-match.png",
+  "ios": "voice-assistant-view__ios__no-match.png",
+  "android": "voice-assistant-view__android__no-match.png"
+ },
+ "voice-assistant-view/error": {
+  "web": "voice-assistant-view__web__error.png",
+  "ios": "voice-assistant-view__ios__error.png",
+  "android": "voice-assistant-view__android__error.png"
+ },
+ "voice-assistant-view/offline": {
+  "web": "voice-assistant-view__web__offline.png",
+  "ios": "voice-assistant-view__ios__offline.png",
+  "android": "voice-assistant-view__android__offline.png"
+ },
+ "voice-assistant-view/queued": {
+  "web": "voice-assistant-view__web__queued.png",
+  "ios": "voice-assistant-view__ios__queued.png",
+  "android": "voice-assistant-view__android__queued.png"
+ },
+ "voice-assistant-view/boundary": {
+  "web": "voice-assistant-view__web__boundary.png",
+  "ios": "voice-assistant-view__ios__boundary.png",
+  "android": "voice-assistant-view__android__boundary.png"
+ },
+ "voice-assistant-view/nma-new": {
+  "web": "voice-assistant-view__web__nma-new.png",
+  "ios": "voice-assistant-view__ios__nma-new.png",
+  "android": "voice-assistant-view__android__nma-new.png"
+ },
+ "voice-assistant-view/nma-waiting": {
+  "web": "voice-assistant-view__web__nma-waiting.png",
+  "ios": "voice-assistant-view__ios__nma-waiting.png",
+  "android": "voice-assistant-view__android__nma-waiting.png"
+ },
+ "voice-assistant-view/mic-permission": {
+  "web": "voice-assistant-view__web__mic-permission.png",
+  "ios": "voice-assistant-view__ios__mic-permission.png",
+  "android": "voice-assistant-view__android__mic-permission.png"
+ },
+ "voice-assistant-view/mic-hidden": {
+  "web": "voice-assistant-view__web__mic-hidden.png",
+  "ios": "voice-assistant-view__ios__mic-hidden.png",
+  "android": "voice-assistant-view__android__mic-hidden.png"
+ },
+ "voice-assistant-view/mic-transient": {
+  "web": "voice-assistant-view__web__mic-transient.png",
+  "ios": "voice-assistant-view__ios__mic-transient.png",
+  "android": "voice-assistant-view__android__mic-transient.png"
+ },
+ "voice-assistant-view/reverted": {
+  "web": "voice-assistant-view__web__reverted.png",
+  "ios": "voice-assistant-view__ios__reverted.png",
+  "android": "voice-assistant-view__android__reverted.png"
+ },
+ "voice-assistant-view/nothing-reverted": {
+  "web": "voice-assistant-view__web__nothing-reverted.png",
+  "ios": "voice-assistant-view__ios__nothing-reverted.png",
+  "android": "voice-assistant-view__android__nothing-reverted.png"
+ },
+ "voice-assistant-view/declined-superseded": {
+  "web": "voice-assistant-view__web__declined-superseded.png",
+  "ios": "voice-assistant-view__ios__declined-superseded.png",
+  "android": "voice-assistant-view__android__declined-superseded.png"
+ },
+ "lists/default": {
+  "web": "lists__web__default.png",
+  "ios": "lists__ios__default.png",
+  "android": "lists__android__default.png"
+ },
+ "lists/menu-nonempty": {
+  "web": "lists__web__menu-nonempty.png",
+  "ios": "lists__ios__menu-nonempty.png",
+  "android": "lists__android__menu-nonempty.png"
+ },
+ "lists/menu-empty-list": {
+  "web": "lists__web__menu-empty-list.png",
+  "ios": "lists__ios__menu-empty-list.png",
+  "android": "lists__android__menu-empty-list.png"
+ },
+ "lists/rename": {
+  "web": "lists__web__rename.png",
+  "ios": "lists__ios__rename.png",
+  "android": "lists__android__rename.png"
+ },
+ "lists/rename-taken": {
+  "web": "lists__web__rename-taken.png",
+  "ios": "lists__ios__rename-taken.png",
+  "android": "lists__android__rename-taken.png"
+ },
+ "lists/recolour": {
+  "web": "lists__web__recolour.png",
+  "ios": "lists__ios__recolour.png",
+  "android": "lists__android__recolour.png"
+ },
+ "lists/delete-confirm": {
+  "web": "lists__web__delete-confirm.png",
+  "ios": "lists__ios__delete-confirm.png",
+  "android": "lists__android__delete-confirm.png"
+ },
+ "lists/reorder-done": {
+  "web": "lists__web__reorder-done.png",
+  "ios": "lists__ios__reorder-done.png",
+  "android": "lists__android__reorder-done.png"
+ }
+}

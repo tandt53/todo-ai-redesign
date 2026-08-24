@@ -273,27 +273,46 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
   font-variant-numeric: var(--font-numeric); text-align: center;
 }
 
-/* Voice FAB — floating action button opening Talk, below split only (T-254).
-   Replaces shell-talk-button, which was retired by T-227.
-   Positioned absolutely at bottom-right of the `.app` container (position:relative).
-   Hidden at or above the split where Talk is permanently visible.
-   Hidden when not on the Tasks surface (Talk, Settings, Detail all cover it). */
-.voice-fab {
-  display: grid; position: absolute; z-index: 5; cursor: pointer;
-  width: var(--icon-lg); height: var(--icon-lg);
-  min-width: 44px; min-height: 44px;
-  padding: var(--sp-md);
-  box-sizing: content-box;
-  border-radius: 50%; border: 0;
-  background: var(--accent); color: var(--tx-onaccent);
-  place-items: center;
-  right: var(--sp-lg); bottom: var(--sp-lg);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+/* Voice FAB RETIRED (T-321) — replaced by TaskBottomBar inside .s-tasks.
+   The bar holds a text field and a morphing action button (AC-37). */
+
+/* ── TaskBottomBar — fixed field + morphing mic/send (T-321, AC-37) ──────
+   Below breakpoints.split only. A flex:none child of .s-tasks, outside the
+   scroll container. Hidden at split+ where InlineAdd remains the mechanism. */
+.task-bar {
+  flex: none;
+  background: var(--bg-base);
+  border-top: 1px solid var(--hairline);
 }
-.voice-fab:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.voice-fab svg.ic { width: var(--icon-lg); height: var(--icon-lg); }
-/* Only visible on the Tasks surface below the split */
-.app:not([data-surface="tasks"]) .voice-fab { display: none; }
+.task-bar-in {
+  display: flex; align-items: center; gap: var(--sp-sm);
+  height: 52px;
+  padding: 4px var(--gutter) 4px var(--gutter);
+}
+.tbar-input {
+  flex: 1; min-width: 0;
+  height: 44px;
+  padding: 0 var(--sp-md);
+  font-size: var(--fs-body);
+  color: var(--tx);
+  background: transparent;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+}
+.tbar-input::placeholder { color: var(--tx-muted); }
+.tbar-input:focus { outline: 2px solid var(--focus); outline-offset: -2px; border-color: transparent; }
+.tbar-action {
+  display: grid; place-items: center; cursor: pointer;
+  width: 44px; height: 44px; flex: none;
+  border-radius: var(--r-md); border: 1px solid var(--hairline);
+  background: transparent; color: var(--tx-2);
+}
+.tbar-action:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.tbar-action svg.ic { width: var(--icon-md); height: var(--icon-md); }
+/* Send state: accent fill so the action reads as committal (components.md) */
+.tbar-action-send {
+  background: var(--accent); color: var(--tx-onaccent); border-color: transparent;
+}
 
 /* ============ S2 · Tasks — the second path, as a surface ============ */
 .tasks-body { flex: 1; min-height: 0; overflow-y: auto; }
@@ -319,9 +338,13 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
   padding: 0 var(--sp-md); border-radius: var(--r-sm);
   background: var(--accent); color: var(--tx-onaccent); font-weight: var(--font-weight-emphasis); font-size: var(--fs-meta);
 }
-/* ── Inline new-task row — visible at all widths, at the end of the list ── */
+/* ── Inline new-task row — at the end of the list ──
+   T-321: hidden below split (TaskBottomBar replaces it). Shown at split+
+   where the bar is hidden and the inline row in the list body is reachable.
+   Below split, display:none also removes it from the tab order, so a keyboard
+   user cannot tab into an invisible control (AC-37 a11y note). */
 .inline-new {
-  display: flex; align-items: center; gap: var(--sp-md);
+  display: none; align-items: center; gap: var(--sp-md);
   min-height: 52px; padding: var(--sp-xs) 0;
   color: var(--tx-muted); cursor: pointer;
 }
@@ -841,9 +864,13 @@ html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); 
      will not resolve, and should not (components.md § AppFrame). The fallback
      guarantee PathSwitch carried is met MORE strongly here — the second path
      is never left. `shell-talk-button` is retired; the VoiceFab is its
-     replacement below split, also hidden here for the same reason. */
+     replacement below split, also hidden here for the same reason.
+     Voice FAB retired T-321; TaskBottomBar replaces it below split. */
   .path { display: none; }
-  .voice-fab { display: none; }
+  /* TaskBottomBar: hidden at split+ where InlineAdd is the add mechanism */
+  .task-bar { display: none; }
+  /* InlineAdd: restored at split+ — the add mechanism in the list body */
+  .inline-new { display: flex; }
 
   .s-talk .wordmark { display: none; }
   .s-talk .panel-title { display: inline; }

@@ -415,6 +415,23 @@ export function turnOutcomeMessages(turn: TurnWire, ctx: MessageContext, isLast:
     // to prevent (a message that names a task and cannot say what happened to it).
     case 'refused':
       return { messages: [refusedMessage(outcome.reason, outcome.field, at)], marks: null }
+    // F-006 AC-14 — trash_read is informational, no mutation, no marks
+    case 'trash_read': {
+      const head = outcome.query === 'task_in_trash'
+        ? `${outcome.task_title ?? 'That task'} is in the trash`
+        : outcome.entry_count === 0
+          ? 'The trash is empty'
+          : `${outcome.entry_count} ${outcome.entry_count === 1 ? 'entry' : 'entries'} in the trash`
+      return {
+        messages: [{
+          kind: 'outcome' as const,
+          head,
+          body: [],
+          at,
+        }],
+        marks: null,
+      }
+    }
   }
 }
 
