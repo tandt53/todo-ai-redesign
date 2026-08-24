@@ -29,6 +29,13 @@ import { toInterpretation } from './bridge.ts'
 import { runLoop, type LoopOptions } from './loop.ts'
 import { buildSystemPrompt, buildUserMessage } from './prompt.ts'
 import { createModelClient, type ProviderConfig } from './provider.ts'
+import {
+  checkCap,
+  withRetry,
+  type CapOptions,
+  type FallbackConfig,
+  type RetryOptions,
+} from './resilience.ts'
 import { RESPOND_TOOL, checkReplyFacts, checkReplyShape, describeProblem, type ReplyText } from './reply.ts'
 import { TOOL_SCHEMAS, type ToolContext } from './tools.ts'
 import { outcomeLabel, type ModelUsage } from './usage.ts'
@@ -58,6 +65,14 @@ export interface ModelInterpreterDeps {
   onTurn?: (userId: string, telemetry: TurnTelemetry) => void
   loop?: LoopOptions
   fetchImpl?: typeof fetch
+  /** transient failures are retried; a 4xx that is an answer is not */
+  retry?: RetryOptions
+  /** a second model to try when the first will not answer at all */
+  fallback?: FallbackConfig | null
+  /** stop spending past this, per account per day */
+  cap?: CapOptions
+  /** what the cap reads. Defaults to the store's own ledger. */
+  prices?: unknown
 }
 
 /**
@@ -130,26 +145,31 @@ export function createModelInterpreter(deps: ModelInterpreterDeps): Interpreter 
         clock: deps.clock,
         zone: ctx.timezone,
       }
+      let used: { provider: string; model: string } = deps.config
       const report = (
         interpretation: Interpretation,
         t: Omit<TurnTelemetry, 'provider' | 'model'>,
       ): Interpretation => {
-        deps.onTurn?.(ctx.user_id, { provider: deps.config.provider, model: deps.config.model, ...t })
+        // `used`, not `deps.config`: after a fallback the bill belongs to the
+        // model that answered, and a ledger naming the wrong one is worse than
+        // no ledger.
+        deps.onTurn?.(ctx.user_id, { provider: used.provider, model: used.model, ...t })
         return interpretation
       }
 
+      const userMessage = buildUserMessage({
+        transcript: ctx.transcript,
+        source: ctx.source,
+        timezone: ctx.timezone,
+        tasks: ctx.tasks,
+        lists: ctx.lists,
+        recentTurns: ctx.recent_turns,
+        question: ctx.question,
+      })
       const client = createModelClient({
         config: deps.config,
         system: SYSTEM_PROMPT,
-        firstUserMessage: buildUserMessage({
-          transcript: ctx.transcript,
-          source: ctx.source,
-          timezone: ctx.timezone,
-          tasks: ctx.tasks,
-          lists: ctx.lists,
-          recentTurns: ctx.recent_turns,
-          question: ctx.question,
-        }),
+        firstUserMessage: userMessage,
         tools: TOOL_SCHEMAS,
         respondTool: RESPOND_TOOL,
         ...(deps.fetchImpl === undefined ? {} : { fetchImpl: deps.fetchImpl }),
@@ -157,9 +177,41 @@ export function createModelInterpreter(deps: ModelInterpreterDeps): Interpreter 
 
       const zeroUsage = { input_tokens: 0, cached_input_tokens: 0, output_tokens: 0 }
 
+      // ---- the cap, before anything is spent ------------------------------
+      if (deps.cap?.perUserDailyUsd !== undefined) {
+        const rows = deps.store.read((st) =>
+          Object.values(st.ai_usage ?? {}).filter((r) => r.user_id === ctx.user_id))
+        const verdict = checkCap(rows, new Date(deps.clock.now()).toISOString(), deps.cap)
+        if (!verdict.allowed) {
+          return report({ kind: 'no_match' }, {
+            usage: zeroUsage, rounds: 0, toolCalls: 0, outcome: 'capped',
+            reply: null,
+            refusal: `daily cap reached: $${verdict.spentUsd.toFixed(4)} of $${verdict.limitUsd}` +
+              (verdict.unpricedCalls > 0 ? ` (${verdict.unpricedCalls} unpriced calls not counted)` : ''),
+          })
+        }
+      }
+
       let out
       try {
-        out = await runLoop(client, toolCtx, deps.loop ?? {})
+        // Retry the same model for a transient failure; only then try a second
+        // one. A fallback that fires on a 429 spends the cheaper model's quota
+        // on a problem that would have cleared by itself.
+        try {
+          out = await withRetry(() => runLoop(client, toolCtx, deps.loop ?? {}), deps.retry ?? {})
+        } catch (first) {
+          if (deps.fallback === undefined || deps.fallback === null) throw first
+          used = deps.fallback
+          const second = createModelClient({
+            config: deps.fallback,
+            system: SYSTEM_PROMPT,
+            firstUserMessage: userMessage,
+            tools: TOOL_SCHEMAS,
+            respondTool: RESPOND_TOOL,
+            ...(deps.fetchImpl === undefined ? {} : { fetchImpl: deps.fetchImpl }),
+          })
+          out = await withRetry(() => runLoop(second, toolCtx, deps.loop ?? {}), deps.retry ?? {})
+        }
       } catch (e) {
         // A provider that is down, rate-limited or misconfigured. The turn ends
         // as an honest "I did not understand", and the reason is recorded rather

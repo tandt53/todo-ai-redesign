@@ -9,7 +9,8 @@
 import { createServer } from 'node:http'
 import { createApp } from './app.ts'
 import { createModelInterpreter } from './ai/interpreter.ts'
-import { providerConfigFromEnv } from './ai/provider.ts'
+import { assertUsable, providerConfigFromEnv } from './ai/provider.ts'
+import { capFromEnv, fallbackFromEnv } from './ai/resilience.ts'
 import './ai/providers/index.ts'
 import { FixtureInterpreter } from './ports/fixture-interpreter.ts'
 import { FIXTURE_TABLE } from './ports/fixture-table.ts'
@@ -41,14 +42,23 @@ function buildInterpreter(): { interpreter: Interpreter; describe: string } {
   // the fixture here would start a server that looks like it has AI and does
   // not - the failure would be discovered by a user, not by a log line.
   const config = providerConfigFromEnv()
+  assertUsable(config)
+  const fallback = fallbackFromEnv()
+  if (fallback !== null) assertUsable(fallback)
+  const cap = capFromEnv()
   return {
     interpreter: createModelInterpreter({
       config,
       store,
       clock: systemClock,
+      fallback,
+      cap,
       onTurn: (userId, telemetry) => sink?.(userId, telemetry),
     }),
-    describe: `${config.provider}/${config.model}`,
+    describe:
+      `${config.provider}/${config.model}` +
+      (fallback === null ? '' : ` (fallback ${fallback.provider}/${fallback.model})`) +
+      (cap.perUserDailyUsd === undefined ? '' : ` (cap $${cap.perUserDailyUsd}/user/day)`),
   }
 }
 

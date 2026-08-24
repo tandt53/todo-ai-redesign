@@ -102,6 +102,24 @@ export function createModelClient(req: ClientRequest): ModelClient {
 }
 
 /**
+ * Fail now, at startup, on anything that would fail on the first user's turn.
+ *
+ * The registry lookup happens per turn, so an unknown provider name otherwise
+ * starts a server that says `hal9000/x` in its log and answers every request
+ * with "I did not understand". Measured: it did exactly that until this
+ * function existed.
+ */
+export function assertUsable(config: ProviderConfig): void {
+  const cap = capabilitiesOf(config.provider)
+  if (!cap.toolCalling) {
+    throw new Error(
+      `provider '${config.provider}' does not support tool calling, which this assistant requires`,
+    )
+  }
+  if (config.model.trim() === '') throw new Error('AI_MODEL is empty')
+}
+
+/**
  * Read the configuration out of the environment.
  *
  * `AI_PROVIDER` and `AI_MODEL` are required and have no defaults. The key is
