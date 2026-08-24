@@ -311,6 +311,16 @@ export interface TurnRow {
   undo_snapshot: TaskRow[] | null
   question: Question | null
   undo_result: UndoResultRec | null
+  /**
+   * F-007 - what the model wrote for this turn: `message` for the screen,
+   * `speech` for text-to-speech. Null on every turn a model did not author,
+   * which is every turn the fixture interpreter handled and every turn the
+   * model's answer was refused.
+   *
+   * Two strings and not one because the channels differ: the screen can carry
+   * five task names, a sentence heard while walking cannot.
+   */
+  reply: { message: string; speech: string } | null
   created_at: string
   resolved_at: string | null
   // ---- internal fields (stripped by serialize.ts) ----

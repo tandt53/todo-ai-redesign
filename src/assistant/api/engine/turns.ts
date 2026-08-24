@@ -347,7 +347,8 @@ export async function processTurn(
         post_apply: null,
         created_ids: [],
         pending_op: null,
-        caused_resolutions: [],
+        reply: null,
+      caused_resolutions: [],
       }
       s.turns[turn.id] = turn
     }
@@ -442,6 +443,8 @@ export async function processTurn(
       boundQuestionTurnId === null ? null : s.turns[boundQuestionTurnId]?.question ?? null
 
     const ctx: InterpreterContext = {
+      user_id: userId,
+      handles: handleMap,
       transcript: req.transcript,
       source: req.source,
       timezone: req.timezone,

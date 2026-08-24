@@ -105,6 +105,8 @@ export interface TurnWire {
   undo_snapshot: TaskWire[] | null
   question: QuestionWire | null
   undo_result: UndoResultRec | null
+  /** F-007 - the model's own two sentences; null when no model authored this turn */
+  reply: { message: string; speech: string } | null
   created_at: string
   resolved_at: string | null
 }
@@ -224,6 +226,7 @@ export function serializeTurn(t: TurnRow, view: TaskView): TurnWire {
       t.undo_snapshot === null ? null : t.undo_snapshot.map((row) => serializeTask(row, view)),
     question: t.question === null ? null : serializeQuestion(t.question, view),
     undo_result: t.undo_result === null ? null : structuredClone(t.undo_result),
+    reply: t.reply ?? null,
     created_at: t.created_at,
     resolved_at: t.resolved_at,
   }

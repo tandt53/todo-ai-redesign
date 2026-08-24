@@ -96,7 +96,19 @@ export interface AppDeps {
    * the environment. A model absent from the table records tokens with a null
    * cost rather than a guessed one.
    */
-  prices?: Record<string, { input: number; output: number; cached_input?: number }>
+  prices?: Record<string, { input?: number; output?: number; cached_input?: number; per_minute?: number; per_million_chars?: number }>
+  /**
+   * Handed the app's AI-turn sink at construction, so a model-backed interpreter
+   * built OUTSIDE the app can report into it. The app cannot build the
+   * interpreter itself: the interpreter needs the store, and the store is one of
+   * the app's own dependencies.
+   */
+  onAiTurn?: (sink: (userId: string, telemetry: {
+    provider: string; model: string
+    usage: { input_tokens: number; cached_input_tokens: number; output_tokens: number }
+    rounds: number; toolCalls: number; outcome: string
+    reply: { message: string; speech: string } | null
+  }) => void) => void
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -267,6 +279,41 @@ export function createApp(deps: AppDeps): RequestListener {
   const uuid = deps.uuid ?? (() => randomUUID())
   const allowHeaderIdentity = deps.allowHeaderIdentity ?? true
   const prices = deps.prices ?? priceTableFromEnv()
+
+  /**
+   * What the model said and what it cost, for the turn currently being handled.
+   *
+   * The `Interpreter` port returns an `Interpretation` and nothing else, and
+   * widening that port would touch the fixture stub and every test that builds
+   * one. Instead the model interpreter reports through a callback, which lands
+   * here, and the turn handler picks it up. One turn at a time per account is
+   * already guaranteed by the FIFO queue (AC-10), so a single slot is safe.
+   */
+  const lastTurn = new Map<string, { message: string; speech: string } | null>()
+
+  /**
+   * The AI interpreter's report for the turn just handled: record what it cost,
+   * and hold its two sentences for the turn handler to attach.
+   *
+   * A single slot per account is safe because the FIFO queue already runs one
+   * turn at a time per account (AC-10) - the same guarantee the turn engine
+   * relies on for dedupe.
+   */
+  const onAiTurn = (aiUserId: string, t: {
+    provider: string; model: string
+    usage: { input_tokens: number; cached_input_tokens: number; output_tokens: number }
+    rounds: number; toolCalls: number; outcome: string
+    reply: { message: string; speech: string } | null
+  }): void => {
+    recordAiUsage({
+      userId: aiUserId, provider: t.provider, model: t.model,
+      usage: t.usage, rounds: t.rounds, toolCalls: t.toolCalls, outcome: t.outcome,
+    })
+    // Only a reply that survived every check is offered to the client; a refused
+    // turn's sentence describes something that did not happen.
+    lastTurn.set(aiUserId, t.outcome === 'final' ? t.reply : null)
+  }
+  deps.onAiTurn?.(onAiTurn)
   const queue = new AccountQueue()
 
   const turnDeps = { store, interpreter, clock, idleCloseMs, uuid }
@@ -398,6 +445,20 @@ export function createApp(deps: AppDeps): RequestListener {
       }
       preflightInFlight(store, userId, turnReq)
       const out = await queue.run(userId, () => processTurn(turnDeps, userId, turnReq))
+      // The model's two sentences arrive by callback, not through the
+      // `Interpreter` port, so they are attached here: onto the stored row, so a
+      // session read replays them, and onto the response, so this turn carries
+      // them without a second request.
+      const reply = lastTurn.get(userId) ?? null
+      lastTurn.delete(userId)
+      if (reply !== null && out.turn !== null) {
+        const turnId = out.turn.id
+        store.transact((st) => {
+          const row = st.turns[turnId]
+          if (row !== undefined) row.reply = reply
+        })
+        out.turn.reply = reply
+      }
       return json(res, 200, out)
     }
 

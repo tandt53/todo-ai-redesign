@@ -79,6 +79,19 @@ export interface InterpreterContext {
   recent_turns: { transcript: string; outcome_kind: string | null }[]
   /** the pending question this turn is bound to, if any (answer classification) */
   question: QuestionContext | null
+  /**
+   * F-007. The fixture stub ignores both; a model-backed interpreter needs them,
+   * because it reads the store through tools and resolves what the model names
+   * back to real rows.
+   *
+   * They live on the CONTEXT rather than on the interpreter's construction
+   * because an interpreter is built once per process and a handle table is built
+   * once per turn. Holding a turn's table on a process-lifetime object is how one
+   * account ends up acting on another's rows.
+   */
+  user_id: string
+  /** this turn's handle -> task id table (ADR-002) */
+  handles: Record<string, string>
 }
 
 export type AnswerClass =

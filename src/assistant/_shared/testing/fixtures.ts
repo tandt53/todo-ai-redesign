@@ -148,6 +148,8 @@ export function turn(over: Partial<TurnWire> = {}): TurnWire {
     undo_snapshot: null,
     question: null,
     undo_result: null,
+    // F-007 — no model authored this fixture turn.
+    reply: null,
     created_at: T0,
     resolved_at: T0,
     ...over,
