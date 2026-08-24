@@ -11,6 +11,7 @@
 
 import { runTool, type ToolCall, type ToolContext } from './tools.ts'
 import type { ReplyText } from './reply.ts'
+import { addUsage, emptyUsage, type ModelUsage } from './usage.ts'
 
 /** Default bound: six rounds, twenty seconds. Both overridable per call. */
 export const DEFAULT_MAX_ROUNDS = 6
@@ -23,8 +24,8 @@ export const DEFAULT_WALL_CLOCK_MS = 20_000
  * so every rule below is testable without a network.
  */
 export type ModelStep =
-  | { kind: 'tool_use'; calls: ToolCall[] }
-  | { kind: 'final'; payload: unknown; reply: ReplyText }
+  | { kind: 'tool_use'; calls: ToolCall[]; usage?: ModelUsage }
+  | { kind: 'final'; payload: unknown; reply: ReplyText; usage?: ModelUsage }
 
 export interface ModelClient {
   /**
@@ -37,9 +38,9 @@ export interface ModelClient {
 }
 
 export type LoopOutcome =
-  | { kind: 'final'; payload: unknown; reply: ReplyText; rounds: number; toolCalls: number }
+  | { kind: 'final'; payload: unknown; reply: ReplyText; rounds: number; toolCalls: number; usage: ModelUsage }
   /** The bound was hit. `reason` names which one, so the client can say which. */
-  | { kind: 'exhausted'; reason: 'max_rounds' | 'wall_clock'; rounds: number; toolCalls: number }
+  | { kind: 'exhausted'; reason: 'max_rounds' | 'wall_clock'; rounds: number; toolCalls: number; usage: ModelUsage }
 
 export interface LoopOptions {
   maxRounds?: number
@@ -62,12 +63,16 @@ export async function runLoop(
 
   let results: { call: ToolCall; result: unknown; is_error: boolean }[] = []
   let toolCalls = 0
+  // Accumulated across every round, because that is what the turn cost. A per-
+  // round figure would under-report by however many rounds the question needed.
+  let usage = emptyUsage()
 
   for (let round = 1; round <= maxRounds; round++) {
     const step = await model.next(results)
+    if (step.usage !== undefined) usage = addUsage(usage, step.usage)
 
     if (step.kind === 'final') {
-      return { kind: 'final', payload: step.payload, reply: step.reply, rounds: round, toolCalls }
+      return { kind: 'final', payload: step.payload, reply: step.reply, rounds: round, toolCalls, usage }
     }
 
     // A model that asks for no tools and is not finished would loop forever
@@ -85,9 +90,9 @@ export async function runLoop(
     // one, and so a loop that finishes exactly at the limit still returns its
     // answer rather than throwing it away.
     if (now() - startedAt >= wallClockMs) {
-      return { kind: 'exhausted', reason: 'wall_clock', rounds: round, toolCalls }
+      return { kind: 'exhausted', reason: 'wall_clock', rounds: round, toolCalls, usage }
     }
   }
 
-  return { kind: 'exhausted', reason: 'max_rounds', rounds: maxRounds, toolCalls }
+  return { kind: 'exhausted', reason: 'max_rounds', rounds: maxRounds, toolCalls, usage }
 }

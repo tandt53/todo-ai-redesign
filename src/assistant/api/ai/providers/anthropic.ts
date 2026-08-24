@@ -8,9 +8,23 @@ import type { ClientRequest, ProviderFactory } from '../provider.ts'
 import type { ModelClient } from '../loop.ts'
 import type { ToolCall } from '../tools.ts'
 import type { ReplyText } from '../reply.ts'
+import type { ModelUsage } from '../usage.ts'
 
 const API_VERSION = '2023-06-01'
 const DEFAULT_BASE = 'https://api.anthropic.com'
+
+/** Anthropic reports cache reads separately from ordinary input, so the two are
+ *  summed into `input_tokens` and the cached half is also carried on its own. */
+function usageOf(u: Record<string, unknown> | undefined): ModelUsage | undefined {
+  if (u === undefined) return undefined
+  const n = (k: string): number => (typeof u[k] === 'number' ? (u[k] as number) : 0)
+  const cached = n('cache_read_input_tokens')
+  return {
+    input_tokens: n('input_tokens') + cached + n('cache_creation_input_tokens'),
+    cached_input_tokens: cached,
+    output_tokens: n('output_tokens'),
+  }
+}
 
 interface Block {
   type: string
@@ -70,8 +84,9 @@ export const anthropicProvider: ProviderFactory = (req: ClientRequest): ModelCli
         const body = await res.text().catch(() => '')
         throw new Error(`anthropic ${res.status}: ${body.slice(0, 400)}`)
       }
-      const json = (await res.json()) as { content?: Block[] }
+      const json = (await res.json()) as { content?: Block[]; usage?: Record<string, unknown> }
       const blocks = json.content ?? []
+      const usage = usageOf(json.usage)
       messages.push({ role: 'assistant', content: blocks })
 
       const uses = blocks.filter((b) => b.type === 'tool_use')
@@ -82,7 +97,7 @@ export const anthropicProvider: ProviderFactory = (req: ClientRequest): ModelCli
           message: typeof input.message === 'string' ? input.message : '',
           speech: typeof input.speech === 'string' ? input.speech : '',
         }
-        return { kind: 'final', payload: input.action ?? { kind: 'no_match' }, reply }
+        return { kind: 'final', payload: input.action ?? { kind: 'no_match' }, reply, ...(usage === undefined ? {} : { usage }) }
       }
 
       pendingIds = uses.map((b) => b.id ?? '')
@@ -96,9 +111,10 @@ export const anthropicProvider: ProviderFactory = (req: ClientRequest): ModelCli
             message: said === '' ? 'Mình chưa hiểu ý bạn.' : said,
             speech: 'Mình chưa hiểu ý bạn.',
           },
+          ...(usage === undefined ? {} : { usage }),
         }
       }
-      return { kind: 'tool_use', calls }
+      return { kind: 'tool_use', calls, ...(usage === undefined ? {} : { usage }) }
     },
   }
 }

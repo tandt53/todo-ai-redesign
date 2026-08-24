@@ -14,6 +14,7 @@ import type { ClientRequest, ProviderFactory } from '../provider.ts'
 import type { ModelClient } from '../loop.ts'
 import type { ToolCall } from '../tools.ts'
 import type { ReplyText } from '../reply.ts'
+import type { ModelUsage } from '../usage.ts'
 
 const DEFAULT_BASE = 'https://api.openai.com'
 
@@ -27,6 +28,23 @@ interface WireMessage {
   role?: string
   content?: string | null
   tool_calls?: WireToolCall[]
+}
+
+/** OpenAI's `prompt_tokens` ALREADY includes the cached half, unlike Anthropic's
+ *  `input_tokens` - so this one adds nothing and only pulls the cached count out. */
+function usageOf(u: Record<string, unknown> | undefined): ModelUsage | undefined {
+  if (u === undefined) return undefined
+  const n = (k: string): number => (typeof u[k] === 'number' ? (u[k] as number) : 0)
+  const details = u['prompt_tokens_details']
+  const cached =
+    typeof details === 'object' && details !== null && typeof (details as Record<string, unknown>)['cached_tokens'] === 'number'
+      ? ((details as Record<string, unknown>)['cached_tokens'] as number)
+      : 0
+  return {
+    input_tokens: n('prompt_tokens'),
+    cached_input_tokens: cached,
+    output_tokens: n('completion_tokens'),
+  }
 }
 
 function parseArgs(raw: string | undefined): Record<string, unknown> {
@@ -88,8 +106,12 @@ export const openAiCompatibleProvider: ProviderFactory = (req: ClientRequest): M
         const body = await res.text().catch(() => '')
         throw new Error(`${req.config.provider} ${res.status}: ${body.slice(0, 400)}`)
       }
-      const json = (await res.json()) as { choices?: { message?: WireMessage }[] }
+      const json = (await res.json()) as {
+        choices?: { message?: WireMessage }[]
+        usage?: Record<string, unknown>
+      }
       const msg = json.choices?.[0]?.message ?? {}
+      const usage = usageOf(json.usage)
       messages.push({
         role: 'assistant',
         content: msg.content ?? null,
@@ -104,7 +126,7 @@ export const openAiCompatibleProvider: ProviderFactory = (req: ClientRequest): M
           message: typeof input.message === 'string' ? input.message : '',
           speech: typeof input.speech === 'string' ? input.speech : '',
         }
-        return { kind: 'final', payload: input.action ?? { kind: 'no_match' }, reply }
+        return { kind: 'final', payload: input.action ?? { kind: 'no_match' }, reply, ...(usage === undefined ? {} : { usage }) }
       }
 
       pendingIds = wireCalls.map((c) => c.id ?? '')
@@ -121,9 +143,10 @@ export const openAiCompatibleProvider: ProviderFactory = (req: ClientRequest): M
             message: said === '' ? 'Mình chưa hiểu ý bạn.' : said,
             speech: 'Mình chưa hiểu ý bạn.',
           },
+          ...(usage === undefined ? {} : { usage }),
         }
       }
-      return { kind: 'tool_use', calls }
+      return { kind: 'tool_use', calls, ...(usage === undefined ? {} : { usage }) }
     },
   }
 }

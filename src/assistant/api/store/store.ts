@@ -3,6 +3,7 @@
 // clone and commits by swapping — a mid-mutation throw discards the clone, so
 // partial writes can never land (AC-1, AC-6).
 
+import type { AiUsageRow } from '../ai/usage.ts'
 import type {
   AccountRow,
   AuthTokenRow,
@@ -57,6 +58,12 @@ export interface StoreState {
   users?: Record<string, UserRow>
   /** UC-22 — live sign-ins, keyed by the token's SHA-256 (never the token). */
   auth_tokens?: Record<string, AuthTokenRow>
+  /**
+   * F-007 - one row per model-backed turn, keyed by its own id. This is an
+   * append-only ledger: nothing rewrites a row, because what a call cost is a
+   * fact about the day it ran.
+   */
+  ai_usage?: Record<string, AiUsageRow>
 }
 
 export const emptyState = (): StoreState => ({
@@ -68,6 +75,7 @@ export const emptyState = (): StoreState => ({
   lists: {},
   users: {},
   auth_tokens: {},
+  ai_usage: {},
 })
 
 export interface Store {

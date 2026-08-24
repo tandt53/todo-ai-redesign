@@ -15,6 +15,14 @@ import type { IncomingMessage, RequestListener, ServerResponse } from 'node:http
 import { randomUUID } from 'node:crypto'
 import { ApiError, conflict, notFound, unauthenticated, validation } from './errors.ts'
 import {
+  aggregate,
+  buildUsageRow,
+  priceTableFromEnv,
+  type AiUsageRow,
+  type Bucket,
+  type ModelUsage,
+} from './ai/usage.ts'
+import {
   hashPassword,
   hashToken,
   isPlausibleEmail,
@@ -83,6 +91,12 @@ export interface AppDeps {
    * the day a client can sign in, and the header door closes for good.
    */
   allowHeaderIdentity?: boolean
+  /**
+   * USD per million tokens, keyed `provider/model`. Defaults to `AI_PRICES` in
+   * the environment. A model absent from the table records tokens with a null
+   * cost rather than a guessed one.
+   */
+  prices?: Record<string, { input: number; output: number; cached_input?: number }>
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -252,6 +266,7 @@ export function createApp(deps: AppDeps): RequestListener {
   const idleCloseMs = deps.idleCloseMs ?? DEFAULT_IDLE_CLOSE_MS
   const uuid = deps.uuid ?? (() => randomUUID())
   const allowHeaderIdentity = deps.allowHeaderIdentity ?? true
+  const prices = deps.prices ?? priceTableFromEnv()
   const queue = new AccountQueue()
 
   const turnDeps = { store, interpreter, clock, idleCloseMs, uuid }
@@ -304,6 +319,38 @@ export function createApp(deps: AppDeps): RequestListener {
     if (path === '/auth/me' && method === 'GET') {
       return json(res, 200, { user: publicUser(userId) })
     }
+    if (path === '/usage' && method === 'GET') {
+      const bucketRaw = url.searchParams.get('bucket') ?? 'day'
+      if (!['day', 'week', 'month', 'total'].includes(bucketRaw)) {
+        throw validation('bucket must be day, week, month or total', 'bucket')
+      }
+      const byRaw = url.searchParams.get('by') ?? 'none'
+      if (!['model', 'provider', 'user', 'none'].includes(byRaw)) {
+        throw validation('by must be model, provider, user or none', 'by')
+      }
+      const from = url.searchParams.get('from') ?? undefined
+      const to = url.searchParams.get('to') ?? undefined
+      for (const [name, value] of [['from', from], ['to', to]] as const) {
+        if (value !== undefined && Number.isNaN(Date.parse(value))) {
+          throw validation(`${name} must be an ISO 8601 instant`, name)
+        }
+      }
+      // An account reads its OWN usage. `by=user` groups that one account's rows
+      // and is there for the day this serves more than one person; it is not a
+      // door onto anybody else's spend.
+      const mine = store.read((st) =>
+        Object.values(st.ai_usage ?? {}).filter((r) => r.user_id === userId),
+      )
+      return json(res, 200, {
+        groups: aggregate(mine, {
+          bucket: bucketRaw as Bucket,
+          by: byRaw as 'model' | 'provider' | 'user' | 'none',
+          ...(from === undefined ? {} : { from }),
+          ...(to === undefined ? {} : { to }),
+        }),
+      })
+    }
+
     if (path === '/auth/logout' && method === 'POST') {
       const presented = bearer(header)
       if (presented !== null) store.transact((st) => { delete st.auth_tokens?.[hashToken(presented)] })
@@ -846,6 +893,30 @@ export function createApp(deps: AppDeps): RequestListener {
   }
 
   // -------------------------------------------------------------------------
+  /**
+   * Append one row to the usage ledger (F-007). Called once per model-backed
+   * turn, with what the provider reported - never with an estimate.
+   *
+   * Cost is resolved HERE, at call time, and stored. Resolving it at query time
+   * would silently rewrite history every time a price changed.
+   */
+  function recordAiUsage(input: {
+    userId: string
+    provider: string
+    model: string
+    usage: ModelUsage
+    rounds: number
+    toolCalls: number
+    outcome: string
+  }): AiUsageRow {
+    const row = buildUsageRow({ ...input, id: uuid(), at: nowIso(clock), prices })
+    store.transact((st) => {
+      st.ai_usage ??= {}
+      st.ai_usage[row.id] = row
+    })
+    return row
+  }
+
   // ---- UC-22: registration, sign-in, and who the request is ----------------
 
   const bearer = (header: (n: string) => string | undefined): string | null => {
