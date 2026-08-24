@@ -62,6 +62,34 @@ export interface AiUsageRow {
   /** how many exchanges with the model this turn took (reasoning only) */
   rounds: number
   tool_calls: number
+  /**
+   * Wall clock for the whole call, including retries and any fallback.
+   *
+   * Recorded because naturalness is mostly LATENCY, and nothing else here
+   * measures it: a turn that costs a tenth of a cent and takes nine seconds is
+   * a bad turn, and every other column on this row calls it a good one.
+   */
+  latency_ms: number
+  /** attempts beyond the first. 0 on a call that worked the first time. */
+  retries: number
+  /** true when the configured model would not answer and the fallback did */
+  fell_back: boolean
+  /**
+   * Which tools the model called, in order, with repeats.
+   * `tool_calls: 2` says it used two; this says which two — the difference
+   * between "it looked the date up" and "it guessed".
+   */
+  tools_used: string[]
+  /**
+   * Why the turn was refused, verbatim from the interpreter. Null on a turn
+   * that went through.
+   *
+   * `outcome` says a turn was refused; this says HOW the model was wrong, which
+   * is the only one of the two that tells you what to change in the prompt.
+   */
+  refusal_reason: string | null
+  /** length of what the user said. Not the text — see the note below. */
+  transcript_chars: number
   /** `final`, or `exhausted:max_rounds` / `exhausted:wall_clock` */
   outcome: string
   /** null when no price is configured for this provider+model - never guessed */
@@ -221,6 +249,12 @@ export function buildUsageRow(input: {
   toolCalls: number
   outcome: string
   prices: PriceTable
+  latencyMs?: number
+  retries?: number
+  fellBack?: boolean
+  toolsUsed?: readonly string[]
+  refusalReason?: string | null
+  transcriptChars?: number
 }): AiUsageRow {
   return {
     id: input.id,
@@ -236,6 +270,12 @@ export function buildUsageRow(input: {
     characters: 0,
     rounds: input.rounds,
     tool_calls: input.toolCalls,
+    latency_ms: input.latencyMs ?? 0,
+    retries: input.retries ?? 0,
+    fell_back: input.fellBack ?? false,
+    tools_used: [...(input.toolsUsed ?? [])],
+    refusal_reason: input.refusalReason ?? null,
+    transcript_chars: input.transcriptChars ?? 0,
     outcome: input.outcome,
     cost_usd: costOf(input.usage, input.provider, input.model, input.prices),
   }
@@ -251,6 +291,7 @@ export function buildSttUsageRow(input: {
   seconds: number
   outcome: string
   prices: PriceTable
+  latencyMs?: number
 }): AiUsageRow {
   return {
     id: input.id,
@@ -266,6 +307,12 @@ export function buildSttUsageRow(input: {
     characters: 0,
     rounds: 0,
     tool_calls: 0,
+    latency_ms: input.latencyMs ?? 0,
+    retries: 0,
+    fell_back: false,
+    tools_used: [],
+    refusal_reason: null,
+    transcript_chars: 0,
     outcome: input.outcome,
     cost_usd: costOfAudio(input.seconds, input.provider, input.model, input.prices),
   }
@@ -281,6 +328,7 @@ export function buildTtsUsageRow(input: {
   characters: number
   outcome: string
   prices: PriceTable
+  latencyMs?: number
 }): AiUsageRow {
   return {
     id: input.id,
@@ -296,6 +344,12 @@ export function buildTtsUsageRow(input: {
     characters: input.characters,
     rounds: 0,
     tool_calls: 0,
+    latency_ms: input.latencyMs ?? 0,
+    retries: 0,
+    fell_back: false,
+    tools_used: [],
+    refusal_reason: null,
+    transcript_chars: 0,
     outcome: input.outcome,
     cost_usd: costOfCharacters(input.characters, input.provider, input.model, input.prices),
   }
@@ -343,6 +397,27 @@ export interface UsageTotals {
   cost_usd: number
   /** calls whose model had no configured price - cost_usd excludes them */
   unpriced_calls: number
+  /**
+   * Latency as PERCENTILES, never a mean.
+   *
+   * A mean over a bucket that holds one nine-second turn and forty fast ones
+   * reports a healthy number and hides the turn a person actually noticed. p95
+   * is the one that describes the experience; p50 says whether the typical case
+   * is fine. Both are null when the bucket holds no timed call.
+   */
+  latency_p50_ms: number | null
+  latency_p95_ms: number | null
+  latency_max_ms: number | null
+  /** attempts beyond the first, summed */
+  retries: number
+  /** calls the configured model would not answer and the fallback did */
+  fell_back_calls: number
+  /** how often each tool was called in this bucket, most-used first */
+  tools_used: Record<string, number>
+  /** how often each refusal reason occurred - what to fix, in frequency order */
+  refusal_reasons: Record<string, number>
+  /** total length of what users said, so an average is derivable per call */
+  transcript_chars: number
 }
 
 export interface UsageGroup extends UsageTotals {
@@ -356,9 +431,34 @@ const zero = (): UsageTotals => ({
   input_tokens: 0, cached_input_tokens: 0, output_tokens: 0,
   audio_seconds: 0, characters: 0,
   cost_usd: 0, unpriced_calls: 0,
+  latency_p50_ms: null, latency_p95_ms: null, latency_max_ms: null,
+  retries: 0, fell_back_calls: 0,
+  tools_used: {}, refusal_reasons: {}, transcript_chars: 0,
 })
 
-function fold(t: UsageTotals, r: AiUsageRow): void {
+/**
+ * Nearest-rank percentile on a sorted array — the definition that always returns
+ * an OBSERVED value rather than an interpolation between two.
+ *
+ * That matters for a latency figure a person will act on: an interpolated p95 of
+ * 4.2s over a bucket where nothing took 4.2s invites a search for a turn that
+ * does not exist.
+ */
+export function percentile(sorted: readonly number[], p: number): number | null {
+  if (sorted.length === 0) return null
+  const rank = Math.ceil((p / 100) * sorted.length)
+  return sorted[Math.min(Math.max(rank, 1), sorted.length) - 1]!
+}
+
+const bump = (map: Record<string, number>, key: string): void => {
+  map[key] = (map[key] ?? 0) + 1
+}
+
+/** Frequency maps read most-used first; insertion order is what JSON preserves. */
+const sortByCount = (map: Record<string, number>): Record<string, number> =>
+  Object.fromEntries(Object.entries(map).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])))
+
+function fold(t: UsageTotals, r: AiUsageRow, latencies: number[]): void {
   t.calls += 1
   t.rounds += r.rounds
   t.tool_calls += r.tool_calls
@@ -367,6 +467,18 @@ function fold(t: UsageTotals, r: AiUsageRow): void {
   t.output_tokens += r.output_tokens
   t.audio_seconds += r.audio_seconds ?? 0
   t.characters += r.characters ?? 0
+  t.retries += r.retries ?? 0
+  if (r.fell_back === true) t.fell_back_calls += 1
+  t.transcript_chars += r.transcript_chars ?? 0
+  for (const tool of r.tools_used ?? []) bump(t.tools_used, tool)
+  if (r.refusal_reason !== null && r.refusal_reason !== undefined) {
+    bump(t.refusal_reasons, r.refusal_reason)
+  }
+  // A zero here means "not timed" - rows written before this column existed, and
+  // the cap path, which refuses before any clock starts. Counting those as 0 ms
+  // would drag every percentile toward a latency nothing achieved.
+  const ms = r.latency_ms ?? 0
+  if (ms > 0) latencies.push(ms)
   if (r.cost_usd === null) t.unpriced_calls += 1
   else t.cost_usd += r.cost_usd
 }
@@ -384,6 +496,7 @@ export function aggregate(rows: readonly AiUsageRow[], opts: AggregateOptions = 
   const bucket = opts.bucket ?? 'day'
   const by = opts.by ?? 'none'
   const groups = new Map<string, UsageGroup>()
+  const samples = new Map<string, number[]>()
 
   for (const r of rows) {
     if (opts.from !== undefined && r.at < opts.from) continue
@@ -400,8 +513,18 @@ export function aggregate(rows: readonly AiUsageRow[], opts: AggregateOptions = 
     if (g === undefined) {
       g = { bucket: b, ...(key === undefined ? {} : { key }), ...zero() }
       groups.set(id, g)
+      samples.set(id, [])
     }
-    fold(g, r)
+    fold(g, r, samples.get(id)!)
+  }
+
+  for (const [id, g] of groups) {
+    const sorted = samples.get(id)!.sort((a, b) => a - b)
+    g.latency_p50_ms = percentile(sorted, 50)
+    g.latency_p95_ms = percentile(sorted, 95)
+    g.latency_max_ms = sorted.length === 0 ? null : sorted[sorted.length - 1]!
+    g.tools_used = sortByCount(g.tools_used)
+    g.refusal_reasons = sortByCount(g.refusal_reasons)
   }
 
   return [...groups.values()].sort(

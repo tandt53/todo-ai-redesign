@@ -108,6 +108,9 @@ export interface AppDeps {
     usage: { input_tokens: number; cached_input_tokens: number; output_tokens: number }
     rounds: number; toolCalls: number; outcome: string
     reply: { message: string; speech: string } | null
+    refusal?: string | null
+    latencyMs?: number; retries?: number; fellBack?: boolean
+    toolsUsed?: string[]; transcriptChars?: number
   }) => void) => void
 }
 
@@ -304,10 +307,16 @@ export function createApp(deps: AppDeps): RequestListener {
     usage: { input_tokens: number; cached_input_tokens: number; output_tokens: number }
     rounds: number; toolCalls: number; outcome: string
     reply: { message: string; speech: string } | null
+    refusal?: string | null
+    latencyMs?: number; retries?: number; fellBack?: boolean
+    toolsUsed?: string[]; transcriptChars?: number
   }): void => {
     recordAiUsage({
       userId: aiUserId, provider: t.provider, model: t.model,
       usage: t.usage, rounds: t.rounds, toolCalls: t.toolCalls, outcome: t.outcome,
+      latencyMs: t.latencyMs, retries: t.retries, fellBack: t.fellBack,
+      toolsUsed: t.toolsUsed, refusalReason: t.refusal ?? null,
+      transcriptChars: t.transcriptChars,
     })
     // Only a reply that survived every check is offered to the client; a refused
     // turn's sentence describes something that did not happen.
@@ -969,6 +978,12 @@ export function createApp(deps: AppDeps): RequestListener {
     rounds: number
     toolCalls: number
     outcome: string
+    latencyMs?: number
+    retries?: number
+    fellBack?: boolean
+    toolsUsed?: readonly string[]
+    refusalReason?: string | null
+    transcriptChars?: number
   }): AiUsageRow {
     const row = buildUsageRow({ ...input, id: uuid(), at: nowIso(clock), prices })
     store.transact((st) => {

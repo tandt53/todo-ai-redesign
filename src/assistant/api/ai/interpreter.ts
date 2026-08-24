@@ -52,6 +52,16 @@ export interface TurnTelemetry {
   reply: ReplyText | null
   /** why the turn fell back to no_match, when it did */
   refusal: string | null
+  /** wall clock for the whole turn, retries and fallback included */
+  latencyMs: number
+  /** attempts beyond the first */
+  retries: number
+  /** the configured model would not answer and the fallback did */
+  fellBack: boolean
+  /** which tools were called, in order, with repeats */
+  toolsUsed: string[]
+  /** length of what the user said - the length, never the text */
+  transcriptChars: number
 }
 
 export interface ModelInterpreterDeps {
@@ -146,14 +156,29 @@ export function createModelInterpreter(deps: ModelInterpreterDeps): Interpreter 
         zone: ctx.timezone,
       }
       let used: { provider: string; model: string } = deps.config
+      let attempts = 0
+      let fellBack = false
+      const trace: { call: { name: string } }[] = []
+      const startedAt = deps.clock.now()
       const report = (
         interpretation: Interpretation,
-        t: Omit<TurnTelemetry, 'provider' | 'model'>,
+        t: Omit<TurnTelemetry, 'provider' | 'model' | 'latencyMs' | 'retries' | 'fellBack' | 'toolsUsed' | 'transcriptChars'>,
       ): Interpretation => {
         // `used`, not `deps.config`: after a fallback the bill belongs to the
         // model that answered, and a ledger naming the wrong one is worse than
         // no ledger.
-        deps.onTurn?.(ctx.user_id, { provider: used.provider, model: used.model, ...t })
+        deps.onTurn?.(ctx.user_id, {
+          provider: used.provider,
+          model: used.model,
+          latencyMs: Math.max(0, deps.clock.now() - startedAt),
+          // Attempts BEYOND the first. A call that worked first time made one
+          // attempt and retried nothing.
+          retries: Math.max(0, attempts - 1),
+          fellBack,
+          toolsUsed: trace.map((e) => e.call.name),
+          transcriptChars: [...ctx.transcript].length,
+          ...t,
+        })
         return interpretation
       }
 
@@ -197,11 +222,16 @@ export function createModelInterpreter(deps: ModelInterpreterDeps): Interpreter 
         // Retry the same model for a transient failure; only then try a second
         // one. A fallback that fires on a 429 spends the cheaper model's quota
         // on a problem that would have cleared by itself.
+        const loopOpts = { ...(deps.loop ?? {}), trace: trace as never }
         try {
-          out = await withRetry(() => runLoop(client, toolCtx, deps.loop ?? {}), deps.retry ?? {})
+          out = await withRetry(() => { attempts++; return runLoop(client, toolCtx, loopOpts) }, deps.retry ?? {})
         } catch (first) {
           if (deps.fallback === undefined || deps.fallback === null) throw first
           used = deps.fallback
+          fellBack = true
+          // The fallback starts its own count: `retries` means attempts beyond
+          // the first ON THE MODEL THAT ANSWERED, which is the one being billed.
+          attempts = 0
           const second = createModelClient({
             config: deps.fallback,
             system: SYSTEM_PROMPT,
@@ -210,7 +240,7 @@ export function createModelInterpreter(deps: ModelInterpreterDeps): Interpreter 
             respondTool: RESPOND_TOOL,
             ...(deps.fetchImpl === undefined ? {} : { fetchImpl: deps.fetchImpl }),
           })
-          out = await withRetry(() => runLoop(second, toolCtx, deps.loop ?? {}), deps.retry ?? {})
+          out = await withRetry(() => { attempts++; return runLoop(second, toolCtx, loopOpts) }, deps.retry ?? {})
         }
       } catch (e) {
         // A provider that is down, rate-limited or misconfigured. The turn ends
