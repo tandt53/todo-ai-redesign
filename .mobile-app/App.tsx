@@ -109,6 +109,38 @@ async function play(s: any, scenario: string, userId: string) {
       await seed(userId, SHOPPING)
       await s.foreground()
       return
+
+    // ── Tasks surface, opened directly ───────────────────────────────────────
+    //
+    // Reaching this surface by tapping does not hold. The control is present and
+    // enabled and the tap lands nowhere often enough that a capture run comes
+    // back with the Talk surface under a caption that says "the task list" — and
+    // when the tap does work, the seeded rows carry no date, so they file into
+    // Inbox while the surface opens on Today and the photograph shows "Nothing in
+    // Today". Both failures look like the app and are the harness.
+    //
+    // So the surface is switched here, through the same dispatch the path control
+    // uses, and the collection is chosen to be the one the rows are actually in.
+    case 'tasks-empty':
+      await s.foreground()
+      s.controller.shellDispatch({ type: 'go', surface: 'tasks' })
+      return
+    case 'tasks-list':
+      await seed(userId, SHOPPING)
+      await s.foreground()
+      s.controller.shellDispatch({ type: 'go', surface: 'tasks' })
+      s.controller.shellDispatch({ type: 'select-collection', collection: 'inbox' })
+      return
+    case 'tasks-drawer':
+      await seed(userId, SHOPPING)
+      await s.foreground()
+      s.controller.shellDispatch({ type: 'go', surface: 'tasks' })
+      // The surface has to mount before the drawer opens over it; dispatching
+      // both in the same tick leaves the app with no identifiable element and
+      // the capture reads that as "the app never came up".
+      await sleep(400)
+      s.controller.shellDispatch({ type: 'open-menu' })
+      return
     case 'question-confirm':
       await seed(userId, SHOPPING)
       await s.foreground()

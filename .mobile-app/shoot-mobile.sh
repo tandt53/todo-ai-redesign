@@ -16,6 +16,7 @@
 # surfaces, and read the accessibility tree to confirm the switch happened
 # before the shutter. No typing anywhere.
 set -u
+SELF_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$(dirname "$0")/.."
 OUT="${OUT:-output/app-shots/mobile}"
 IOS_UDID="${IOS_UDID:-$(xcrun simctl list devices 2>/dev/null | grep -m1 Booted | grep -oE '[0-9A-F-]{36}')}"
@@ -23,8 +24,10 @@ WANT="${1:-both}"
 
 TALK=(idle-empty listening thinking applied-diff idle-tasks question-confirm \
       applied-delete reverted question-clarify no-match error offline mic-permission)
-# Tasks-surface states are reached from these seeds, then one tap.
-TASKS=(idle-empty idle-tasks applied-delete)
+# Tasks-surface states now have deep links of their own (App.tsx). Before they
+# existed this list held seeds that were tapped into place, and a run came back
+# with the Talk surface captioned as the task list.
+TASKS=(tasks-empty tasks-list tasks-drawer)
 
 mkdir -p "$OUT"
 
@@ -38,13 +41,16 @@ if adb devices 2>/dev/null | grep -q 'device$'; then
 fi
 
 ready() {  # $1 platform — block until the app has painted something we can identify
+  # `menu-` is in the list because the drawer states paint nothing else: the
+  # drawer covers the surface, so waiting only for `shell-` or `tasks-bar` sees
+  # a brief flash of the list underneath and returns before the drawer arrives.
   local n=0
   while [ $n -lt 40 ]; do
     if [ "$1" = ios ]; then
-      idb ui describe-all --udid "$IOS_UDID" 2>/dev/null | grep -q 'shell-\|tasks-bar\|assistant-' && return 0
+      idb ui describe-all --udid "$IOS_UDID" 2>/dev/null | grep -q 'shell-\|tasks-bar\|assistant-\|menu-' && return 0
     else
       adb shell uiautomator dump /sdcard/w.xml >/dev/null 2>&1 &&
-        adb shell cat /sdcard/w.xml 2>/dev/null | grep -q 'shell-\|tasks-bar\|assistant-' && return 0
+        adb shell cat /sdcard/w.xml 2>/dev/null | grep -q 'shell-\|tasks-bar\|assistant-\|menu-' && return 0
     fi
     sleep 1; n=$((n+1))
   done
@@ -95,6 +101,43 @@ tap() {  # $1 platform  $2 testid → 0 if it was there and was tapped
   sleep 2; return 0
 }
 
+goto_collection() {  # $1 platform  $2 label — tap a row in the open drawer
+  local p
+  if [ "$1" = ios ]; then
+    p="$(idb ui describe-all --udid "$IOS_UDID" 2>/dev/null |
+      python3 "$SELF_DIR/pick.py" ios "$2")"
+  else
+    adb shell uiautomator dump /sdcard/w.xml >/dev/null 2>&1
+    p="$(adb shell cat /sdcard/w.xml 2>/dev/null |
+      python3 "$SELF_DIR/pick.py" android "$2")"
+  fi
+  [ -z "$p" ] && return 1
+  if [ "$1" = ios ]; then idb ui tap --udid "$IOS_UDID" $p >/dev/null 2>&1
+  else adb shell input tap $p >/dev/null 2>&1; fi
+  sleep 2; return 0
+}
+
+has_present() {  # $1 platform  $2 testid
+  if [ "$1" = ios ]; then
+    idb ui describe-all --udid "$IOS_UDID" 2>/dev/null | grep -q "$2"
+  else
+    adb shell uiautomator dump /sdcard/w.xml >/dev/null 2>&1
+    adb shell cat /sdcard/w.xml 2>/dev/null | grep -q "$2"
+  fi
+}
+
+has_rows() {  # $1 platform — is there at least one task row on screen?
+  # Match the checkbox, not the row: iOS collapses the row into its children in
+  # the accessibility tree, so `assistant-task-row` never appears there even
+  # when six tasks are plainly on screen.
+  if [ "$1" = ios ]; then
+    idb ui describe-all --udid "$IOS_UDID" 2>/dev/null | grep -qE 'assistant-task-checkbox|assistant-task-row'
+  else
+    adb shell uiautomator dump /sdcard/w.xml >/dev/null 2>&1
+    adb shell cat /sdcard/w.xml 2>/dev/null | grep -qE 'assistant-task-checkbox|assistant-task-row'
+  fi
+}
+
 shot() {  # $1 platform  $2 name
   sleep 1
   if [ "$1" = ios ]; then xcrun simctl io "$IOS_UDID" screenshot "$OUT/$1-$2.png" >/dev/null 2>&1
@@ -110,17 +153,23 @@ run_platform() {  # $1 = ios | android
     shot "$p" "talk-$s"
   done
   for s in "${TASKS[@]}"; do
-    open_scenario "$p" "$s" || continue
-    if tap "$p" shell-tasks-button; then
-      # confirm the surface really changed before photographing it
-      if [ -n "$(centre_of "$p" tasks-bar-input)" ]; then
-        shot "$p" "tasks-$s"
-        tap "$p" shell-lists-menu-button && shot "$p" "drawer-$s"
-      else
-        echo "  --  $p-tasks-$s (không chuyển được surface)"
-      fi
+    open_scenario "$p" "$s" || { echo "  --  $p-$s (app không lên)"; continue; }
+    # A row must be on screen before the shutter for the states that promise
+    # one. Confirming the surface changed says nothing about whether it has
+    # any content, which is how an empty list got captioned as the task list.
+    # Each state promises something different, so each asserts on its own
+    # evidence. Asserting rows everywhere marks the drawer state as broken —
+    # the drawer covers the list, so no checkbox is in the tree while it is open.
+    sleep 1   # let the last dispatch settle before asking what is on screen
+    case "$s" in
+      tasks-empty)  ok=yes ;;
+      tasks-drawer) has_present "$p" menu-collection-row && ok=yes || ok=no ;;
+      *)            has_rows "$p" && ok=yes || ok=no ;;
+    esac
+    if [ "$ok" = yes ]; then
+      shot "$p" "$s"
     else
-      echo "  --  $p-tasks-$s (không thấy nút Tasks)"
+      echo "  --  $p-$s (không thấy thứ trạng thái này hứa)"
     fi
   done
 }
@@ -130,3 +179,24 @@ run_platform() {  # $1 = ios | android
 
 echo
 echo "$(ls "$OUT"/*.png 2>/dev/null | wc -l | tr -d ' ') ảnh trong $OUT"
+
+# Identical frames under different captions are the worst failure this script
+# can produce: a reviewer ticks "pass" on a step they never saw. It happened —
+# question-confirm, applied-delete and reverted all came back as the same iOS
+# frame, because the chip tap and the undo tap never fired and every state
+# stopped at the confirm question. Nothing in the capture could tell.
+python3 - "$OUT" <<'DUP'
+import hashlib, os, sys, collections
+out = sys.argv[1]
+seen = collections.defaultdict(list)
+for f in sorted(os.listdir(out)):
+    if not f.endswith('.png'):
+        continue
+    seen[hashlib.md5(open(os.path.join(out, f), 'rb').read()).hexdigest()].append(f)
+dups = [v for v in seen.values() if len(v) > 1]
+if dups:
+    print()
+    print('CẢNH BÁO — các ảnh giống hệt nhau, tức có bước không thực sự xảy ra:')
+    for group in dups:
+        print('  ' + ' = '.join(group))
+DUP
