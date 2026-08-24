@@ -325,8 +325,8 @@ export function createApp(deps: AppDeps): RequestListener {
         throw validation('bucket must be day, week, month or total', 'bucket')
       }
       const byRaw = url.searchParams.get('by') ?? 'none'
-      if (!['model', 'provider', 'user', 'none'].includes(byRaw)) {
-        throw validation('by must be model, provider, user or none', 'by')
+      if (!['model', 'provider', 'user', 'role', 'none'].includes(byRaw)) {
+        throw validation('by must be model, provider, user, role or none', 'by')
       }
       const from = url.searchParams.get('from') ?? undefined
       const to = url.searchParams.get('to') ?? undefined
@@ -344,7 +344,7 @@ export function createApp(deps: AppDeps): RequestListener {
       return json(res, 200, {
         groups: aggregate(mine, {
           bucket: bucketRaw as Bucket,
-          by: byRaw as 'model' | 'provider' | 'user' | 'none',
+          by: byRaw as 'model' | 'provider' | 'user' | 'role' | 'none',
           ...(from === undefined ? {} : { from }),
           ...(to === undefined ? {} : { to }),
         }),

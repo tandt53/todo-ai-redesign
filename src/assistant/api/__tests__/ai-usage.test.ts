@@ -8,8 +8,12 @@ import {
   addUsage,
   aggregate,
   bucketOf,
+  buildSttUsageRow,
+  buildTtsUsageRow,
   buildUsageRow,
   costOf,
+  costOfAudio,
+  costOfCharacters,
   emptyUsage,
   outcomeLabel,
   priceTableFromEnv,
@@ -91,8 +95,83 @@ describe('F-007 the price table is configuration', () => {
   it('refuses malformed configuration rather than reading as free', () => {
     expect(() => priceTableFromEnv({ AI_PRICES: 'not json' })).toThrow(/valid JSON/)
     expect(() => priceTableFromEnv({ AI_PRICES: '[]' })).toThrow(/JSON object/)
-    expect(() => priceTableFromEnv({ AI_PRICES: '{"a/b": {"output": 1}}' })).toThrow(/missing input/)
+    expect(() => priceTableFromEnv({ AI_PRICES: '{"a/b": {"output": 1}}' })).toThrow(/both input and output/)
+    expect(() => priceTableFromEnv({ AI_PRICES: '{"a/b": {"input": 1}}' })).toThrow(/both input and output/)
+    expect(() => priceTableFromEnv({ AI_PRICES: '{"a/b": {}}' })).toThrow(/prices nothing/)
+    // …but a row that prices ONLY audio, or ONLY characters, is complete.
+    expect(priceTableFromEnv({ AI_PRICES: '{"deepgram/nova-3": {"per_minute": 0.0043}}' }))
+      .toEqual({ 'deepgram/nova-3': { per_minute: 0.0043 } })
     expect(() => priceTableFromEnv({ AI_PRICES: '{"a/b": {"input": -1, "output": 1}}' })).toThrow(/non-negative/)
+  })
+})
+
+describe('F-007 the other two roles are billed in their own units', () => {
+  const PRICES3: PriceTable = {
+    'deepgram/nova-3': { per_minute: 0.0043 },
+    'elevenlabs/eleven_flash_v2_5': { per_million_chars: 100 },
+  }
+
+  it('prices hearing by the minute, from seconds', () => {
+    // 300 s = 5 min at $0.0043/min
+    expect(costOfAudio(300, 'deepgram', 'nova-3', PRICES3)).toBeCloseTo(0.0215, 8)
+  })
+
+  it('prices speaking per million characters', () => {
+    expect(costOfCharacters(42_000, 'elevenlabs', 'eleven_flash_v2_5', PRICES3)).toBeCloseTo(4.2, 8)
+  })
+
+  it('refuses to price one role with another role\'s rate', () => {
+    // A token price says nothing about a minute of audio, and vice versa.
+    expect(costOfAudio(60, 'anthropic', 'claude-opus-5', PRICES)).toBeNull()
+    expect(costOfCharacters(1000, 'deepgram', 'nova-3', PRICES3)).toBeNull()
+    expect(costOf({ input_tokens: 1000, cached_input_tokens: 0, output_tokens: 10 },
+      'deepgram', 'nova-3', PRICES3)).toBeNull()
+  })
+
+  it('records each role with its own row shape', () => {
+    const stt = buildSttUsageRow({
+      id: 's', at: '2026-08-24T10:00:00.000Z', userId: 'me@x.com',
+      provider: 'deepgram', model: 'nova-3', seconds: 5, outcome: 'final', prices: PRICES3,
+    })
+    expect(stt).toMatchObject({ role: 'stt', audio_seconds: 5, characters: 0, input_tokens: 0, rounds: 0 })
+    expect(stt.cost_usd).toBeCloseTo(0.0043 * 5 / 60, 10)
+
+    const tts = buildTtsUsageRow({
+      id: 't', at: '2026-08-24T10:00:00.000Z', userId: 'me@x.com',
+      provider: 'elevenlabs', model: 'eleven_flash_v2_5', characters: 70, outcome: 'final', prices: PRICES3,
+    })
+    expect(tts).toMatchObject({ role: 'tts', characters: 70, audio_seconds: 0, output_tokens: 0 })
+    expect(tts.cost_usd).toBeCloseTo(70 / 1e6 * 100, 10)
+  })
+
+  it('adds all three roles into one bill, grouped by role', () => {
+    const rows = [
+      buildUsageRow({
+        id: 'r', at: '2026-08-24T10:00:00.000Z', userId: 'me@x.com',
+        provider: 'anthropic', model: 'claude-opus-5',
+        usage: { input_tokens: 2_000, cached_input_tokens: 0, output_tokens: 200 },
+        rounds: 3, toolCalls: 2, outcome: 'final', prices: PRICES,
+      }),
+      buildSttUsageRow({
+        id: 's', at: '2026-08-24T10:00:00.000Z', userId: 'me@x.com',
+        provider: 'deepgram', model: 'nova-3', seconds: 5, outcome: 'final', prices: PRICES3,
+      }),
+      buildTtsUsageRow({
+        id: 't', at: '2026-08-24T10:00:00.000Z', userId: 'me@x.com',
+        provider: 'elevenlabs', model: 'eleven_flash_v2_5', characters: 70, outcome: 'final', prices: PRICES3,
+      }),
+    ]
+    const byRole = aggregate(rows, { bucket: 'total', by: 'role' })
+    expect(byRole.map((g) => g.key)).toEqual(['reasoning', 'stt', 'tts'])
+    expect(byRole.find((g) => g.key === 'stt')!.audio_seconds).toBe(5)
+    expect(byRole.find((g) => g.key === 'tts')!.characters).toBe(70)
+
+    const all = aggregate(rows, { bucket: 'total' })[0]!
+    expect(all.calls).toBe(3)
+    expect(all.unpriced_calls).toBe(0)
+    // One bill, three units, no double counting.
+    expect(all.cost_usd).toBeCloseTo(
+      rows[0]!.cost_usd! + rows[1]!.cost_usd! + rows[2]!.cost_usd!, 10)
   })
 })
 
