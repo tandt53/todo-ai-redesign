@@ -124,7 +124,7 @@ describe('UC-22 the token is the identity', () => {
     const created = await h.agent
       .post('/tasks')
       .set('Authorization', `Bearer ${mine.token}`)
-      .send({ title: 'Mua sữa' })
+      .send({ title: 'Buy milk' })
     expect(created.status).toBe(201)
 
     const myList = await h.agent.get('/tasks').set('Authorization', `Bearer ${mine.token}`)
@@ -157,7 +157,7 @@ describe('UC-22 the token is the identity', () => {
   it('beats the header when both are sent', async () => {
     const h = await buildHarness()
     const out = await registered(h)
-    await h.agent.post('/tasks').set('Authorization', `Bearer ${out.token}`).send({ title: 'Của tôi' })
+    await h.agent.post('/tasks').set('Authorization', `Bearer ${out.token}`).send({ title: 'Mine' })
 
     const res = await h.agent
       .get('/tasks')

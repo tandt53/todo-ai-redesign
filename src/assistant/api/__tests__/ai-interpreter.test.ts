@@ -26,8 +26,8 @@ const HANDLES = { t1: 'id-1', t2: 'id-2' }
 describe('F-007 the bridge refuses rather than approximates', () => {
   it('accepts every action kind the engine implements', () => {
     const good: unknown[] = [
-      { kind: 'create', tasks: [{ title: 'Mua sữa' }] },
-      { kind: 'edit', edits: [{ handle: 't1', changes: { title: 'Đổi tên' } }] },
+      { kind: 'create', tasks: [{ title: 'Buy milk' }] },
+      { kind: 'edit', edits: [{ handle: 't1', changes: { title: 'Rename me' } }] },
       { kind: 'delete', handles: ['t1'] },
       { kind: 'clarify', handles: ['t1', 't2'], pending_op: { op: 'delete' } },
       { kind: 'clarify', handles: ['t1'], pending_op: { op: 'edit', changes: { priority: 'high' } } },
@@ -35,7 +35,7 @@ describe('F-007 the bridge refuses rather than approximates', () => {
       { kind: 'answer', answer: { type: 'selection', handle: 't2' } },
       { kind: 'query' },
       { kind: 'no_match' },
-      { kind: 'list_create', name: 'Việc nhà' },
+      { kind: 'list_create', name: 'Home' },
       { kind: 'list_move', handle: 't1', list_name: null },
       { kind: 'list_refuse' },
       { kind: 'trash_read', query: 'trash_contents' },
@@ -78,7 +78,7 @@ describe('F-007 the bridge refuses rather than approximates', () => {
 
   it('refuses a date that is not a date', () => {
     const r = toInterpretation(
-      { kind: 'edit', edits: [{ handle: 't1', changes: { due_at: 'ngày mai' } }] }, HANDLES)
+      { kind: 'edit', edits: [{ handle: 't1', changes: { due_at: 'tomorrow' } }] }, HANDLES)
     expect(r.ok).toBe(false)
     if (!r.ok) expect(r.reason).toContain('ISO 8601')
   })
@@ -130,20 +130,20 @@ describe('F-007 the system prompt', () => {
 
   it('puts the turn\'s own facts in the user message instead', () => {
     const msg = buildUserMessage({
-      transcript: 'xoá việc mua sữa',
+      transcript: 'delete the buy milk task',
       source: 'voice',
       timezone: 'Asia/Ho_Chi_Minh',
-      tasks: [{ handle: 't1', title: 'Mua sữa', status: 'inbox', due_at: null, priority: 'high', note: 'loại ít đường', list_id: null }],
-      lists: [{ name: 'Việc nhà' }],
-      recentTurns: [{ transcript: 'thêm việc mua sữa', outcome_kind: 'applied' }],
+      tasks: [{ handle: 't1', title: 'Buy milk', status: 'inbox', due_at: null, priority: 'high', note: 'the low-sugar kind', list_id: null }],
+      lists: [{ name: 'Home' }],
+      recentTurns: [{ transcript: 'add a task to buy milk', outcome_kind: 'applied' }],
       question: null,
     })
-    expect(msg).toContain('t1 "Mua sữa"')
+    expect(msg).toContain('t1 "Buy milk"')
     expect(msg).toContain('high')
-    expect(msg).toContain('loại ít đường')
-    expect(msg).toContain('Việc nhà')
+    expect(msg).toContain('the low-sugar kind')
+    expect(msg).toContain('Home')
     expect(msg).toContain('Asia/Ho_Chi_Minh')
-    expect(msg).toContain('They said: "xoá việc mua sữa"')
+    expect(msg).toContain('They said: "delete the buy milk task"')
   })
 
   it('says plainly when there is no timezone, rather than implying UTC', () => {
@@ -161,7 +161,7 @@ function fixture() {
   const store = new MemoryStore()
   const clock = new FakeClock()
   store.transact((s) => {
-    for (const [id, title] of [['id-1', 'Mua sữa'], ['id-2', 'Gọi cho mẹ']] as const) {
+    for (const [id, title] of [['id-1', 'Buy milk'], ['id-2', 'Call mom']] as const) {
       s.tasks[id] = {
         id, user_id: USER, title, note: null, due_at: null, due_all_day: null,
         reminder_at: null, reminder_shown_at: null, priority: null, status: 'inbox',
@@ -181,12 +181,12 @@ function fixture() {
 const CTX: InterpreterContext = {
   user_id: USER,
   handles: HANDLES,
-  transcript: 'xoá việc mua sữa',
+  transcript: 'delete the buy milk task',
   source: 'voice',
   timezone: 'Asia/Ho_Chi_Minh',
   tasks: [
-    { handle: 't1', title: 'Mua sữa', status: 'inbox', note: null, due_at: null, reminder_at: null, priority: null, list_id: null },
-    { handle: 't2', title: 'Gọi cho mẹ', status: 'inbox', note: null, due_at: null, reminder_at: null, priority: null, list_id: null },
+    { handle: 't1', title: 'Buy milk', status: 'inbox', note: null, due_at: null, reminder_at: null, priority: null, list_id: null },
+    { handle: 't2', title: 'Call mom', status: 'inbox', note: null, due_at: null, reminder_at: null, priority: null, list_id: null },
   ],
   deleted_tasks: [],
   lists: [],
@@ -211,7 +211,7 @@ function withModel(steps: unknown[]) {
   return { interp, seen }
 }
 
-const REPLY = { message: 'Đã xoá "Mua sữa".', speech: 'Đã xoá Mua sữa.' }
+const REPLY = { message: 'Deleted "Buy milk".', speech: 'Deleted Buy milk.' }
 
 describe('F-007 one turn, end to end', () => {
   it('reads the account and the handle table from the TURN, not from itself', async () => {
@@ -240,7 +240,7 @@ describe('F-007 one turn, end to end', () => {
 
   it('lets the model use tools first, and counts what it used', async () => {
     const { interp, seen } = withModel([
-      { kind: 'tool_use', calls: [{ name: 'search_tasks', input: { query: 'sữa' } }] },
+      { kind: 'tool_use', calls: [{ name: 'search_tasks', input: { query: 'milk' } }] },
       { kind: 'tool_use', calls: [{ name: 'now', input: {} }] },
       { kind: 'final', payload: { kind: 'delete', handles: ['t1'] }, reply: REPLY },
     ])
@@ -258,11 +258,11 @@ describe('F-007 one turn, end to end', () => {
   })
 
   it('falls back when the sentence names a task that is not being touched', async () => {
-    // The action deletes "Mua sữa"; the sentence says it deleted the other one.
+    // The action deletes "Buy milk"; the sentence says it deleted the other one.
     // Consent runs on the sentence, so neither survives.
     const { interp, seen } = withModel([
       { kind: 'final', payload: { kind: 'delete', handles: ['t1'] },
-        reply: { message: 'Đã xoá "Gọi cho mẹ".', speech: 'Đã xoá.' } },
+        reply: { message: 'Deleted "Call mom".', speech: 'Deleted.' } },
     ])
     expect(await interp.interpret(CTX)).toEqual({ kind: 'no_match' })
     expect(seen[0]!.outcome).toBe('bad_reply')
@@ -272,7 +272,7 @@ describe('F-007 one turn, end to end', () => {
   it('falls back when the spoken half carries markup', async () => {
     const { interp, seen } = withModel([
       { kind: 'final', payload: { kind: 'delete', handles: ['t1'] },
-        reply: { message: 'ok', speech: '- Đã xoá\n- xong' } },
+        reply: { message: 'ok', speech: '- Deleted\n- done' } },
     ])
     expect(await interp.interpret(CTX)).toEqual({ kind: 'no_match' })
     expect(seen[0]!.outcome).toBe('bad_reply')
@@ -280,8 +280,8 @@ describe('F-007 one turn, end to end', () => {
 
   it('accepts a rename that names its own new title', async () => {
     const { interp, seen } = withModel([
-      { kind: 'final', payload: { kind: 'edit', edits: [{ handle: 't1', changes: { title: 'Mua sữa tươi' } }] },
-        reply: { message: 'Đổi "Mua sữa" thành "Mua sữa tươi".', speech: 'Đã đổi tên.' } },
+      { kind: 'final', payload: { kind: 'edit', edits: [{ handle: 't1', changes: { title: 'Buy fresh milk' } }] },
+        reply: { message: 'Renamed "Buy milk" to "Buy fresh milk".', speech: 'Renamed it.' } },
     ])
     const out = await interp.interpret(CTX)
     expect(out.kind).toBe('edit')
@@ -293,7 +293,7 @@ describe('F-007 one turn, end to end', () => {
     // disagree with, and flagging it would refuse correct answers.
     const { interp, seen } = withModel([
       { kind: 'final', payload: { kind: 'query' },
-        reply: { message: 'Hôm nay bạn có "Mua sữa" và "Gọi cho mẹ".', speech: 'Hôm nay bạn có hai việc.' } },
+        reply: { message: 'Today you have "Buy milk" and "Call mom".', speech: 'You have two tasks today.' } },
     ])
     expect(await interp.interpret(CTX)).toEqual({ kind: 'query' })
     expect(seen[0]!.refusal).toBeNull()

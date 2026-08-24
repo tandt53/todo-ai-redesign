@@ -135,14 +135,18 @@ export const openAiCompatibleProvider: ProviderFactory = (req: ClientRequest): M
         input: parseArgs(c.function?.arguments),
       }))
       if (calls.length === 0) {
+        // The model wrote prose and called nothing, so there is no authored
+        // reply for this turn. Its prose becomes the written half and the spoken
+        // half stays empty: composing a sentence here would be a template, and a
+        // template is the one thing the owner's 2026-08-21 decision removed. An
+        // empty `speech` fails `checkReplyShape`, the turn resolves as no_match,
+        // and the client says so in its own words - which is where product copy
+        // belongs, in the product language.
         const said = (msg.content ?? '').trim()
         return {
           kind: 'final',
           payload: { kind: 'unclassifiable' },
-          reply: {
-            message: said === '' ? 'Mình chưa hiểu ý bạn.' : said,
-            speech: 'Mình chưa hiểu ý bạn.',
-          },
+          reply: { message: said, speech: '' },
           ...(usage === undefined ? {} : { usage }),
         }
       }

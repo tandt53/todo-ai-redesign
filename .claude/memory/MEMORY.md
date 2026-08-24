@@ -225,3 +225,47 @@ for. Two things follow: **brief agents to measure their own tier and treat the f
 as informational**, and **verify every "pre-existing" in a return by stashing the other
 in-flight tree** before recording it. A warning in prose has now failed once; the check
 has worked twice.
+
+---
+
+## The product language is English, and the assistant writes its own sentences
+
+**Recorded 2026-08-24, after the owner corrected the same thing for the second time.**
+Both halves were already decided and written down before this session started; both were
+contradicted anyway, by code written that day.
+
+**English is the product language** — `docs/reports/owner-decision-2026-08-17-english-first.md`
+and `ADR-008`. The user speaks English, the assistant replies in English, all shipped copy
+is English, and **test fixture data is English too**
+(`docs/reports/owner-decision-2026-08-23-fixtures-are-english.md`, which is the earlier of
+the two corrections). There is no plan for another language. Vietnamese appears in this
+repo in exactly two legitimate places: the owner's own words quoted inside decision
+records, and two deliberate tripwire rows in `fixture-table.ts` that carry their own
+rationale. Anywhere else it is a defect.
+
+**What was shipped in contradiction of it:** `ai/prompt.ts` told the model *"Vietnamese in,
+Vietnamese out"*; both provider adapters carried a Vietnamese fallback sentence a user
+would actually have read; and seven new test files were written with Vietnamese fixtures.
+
+**The trap, and it is a specific one.** The orchestrator speaks Vietnamese *to the owner*.
+That is correct and unrelated. It leaks into the artifact the moment sample data, a
+prompt or a user-facing string is written in the language of the conversation instead of
+the language of the product. **The conversation's language is never the product's
+language.**
+
+**The assistant AUTHORS its reply** — `docs/reports/owner-decision-2026-08-21-the-model-authors-the-reply.md`.
+There is no predefined answer set, and a hardcoded user-facing sentence is a template
+even when it is only a fallback: both adapters had one for "the model called no tool",
+which is exactly the case where inventing a sentence puts words in the model's mouth. The
+correct shape is to carry whatever the model wrote and leave the spoken half empty, so
+`checkReplyShape` fails it, the turn resolves `no_match`, and the CLIENT supplies the
+copy.
+
+**`_shared/model/messages.ts` is a stand-in, not the design.** Its 548 lines of outcome →
+string mapping exist because the backend did not author replies yet. It is testing
+scaffolding on the way out, not a feature to preserve — and the 518 exact-string
+assertions that pin it are the known cost of removing it.
+
+**Check before writing any user-facing string or fixture:**
+`grep -rn "[the language you are speaking]" src/ tests/` — if the conversation's language
+is in the artifact, it is wrong.

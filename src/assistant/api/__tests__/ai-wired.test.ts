@@ -63,7 +63,7 @@ async function wired(steps: unknown[]) {
   return { agent, store, clock, provider: name }
 }
 
-const REPLY = { message: 'Đã thêm "Mua sữa".', speech: 'Đã thêm Mua sữa.' }
+const REPLY = { message: 'Added "Buy milk".', speech: 'Added Buy milk.' }
 
 const sendTurn = (agent: InstanceType<typeof TestAgent>, user: string, transcript: string) =>
   agent.post('/assistant/turn').set('X-User-Id', user).send({
@@ -74,31 +74,31 @@ describe('F-007 the model actually drives a turn', () => {
   it('creates the task the model asked for, and says so in both channels', async () => {
     const { agent } = await wired([
       { kind: 'final',
-        payload: { kind: 'create', tasks: [{ title: 'Mua sữa' }] },
+        payload: { kind: 'create', tasks: [{ title: 'Buy milk' }] },
         reply: REPLY,
         usage: { input_tokens: 1500, cached_input_tokens: 1100, output_tokens: 90 } },
     ])
     const user = `u${seq}@x.com`
 
-    const res = await sendTurn(agent, user, 'thêm việc mua sữa')
+    const res = await sendTurn(agent, user, 'add a task to buy milk')
     expect(res.status).toBe(200)
     expect(res.body.turn.outcome.kind).toBe('applied')
     // The two sentences ride back on the turn - no second request.
     expect(res.body.turn.reply).toEqual(REPLY)
 
     const tasks = await agent.get('/tasks').set('X-User-Id', user)
-    expect(tasks.body.tasks.map((t: { title: string }) => t.title)).toContain('Mua sữa')
+    expect(tasks.body.tasks.map((t: { title: string }) => t.title)).toContain('Buy milk')
   })
 
   it('records what the turn cost, per user, in the ledger', async () => {
     const { agent, provider } = await wired([
       { kind: 'final',
-        payload: { kind: 'create', tasks: [{ title: 'Mua sữa' }] },
+        payload: { kind: 'create', tasks: [{ title: 'Buy milk' }] },
         reply: REPLY,
         usage: { input_tokens: 1500, cached_input_tokens: 1100, output_tokens: 90 } },
     ])
     const user = `u${seq}@x.com`
-    await sendTurn(agent, user, 'thêm việc mua sữa')
+    await sendTurn(agent, user, 'add a task to buy milk')
 
     const usage = await agent.get('/usage?bucket=total&by=model').set('X-User-Id', user)
     expect(usage.status).toBe(200)
@@ -117,10 +117,10 @@ describe('F-007 the model actually drives a turn', () => {
 
   it('a session read replays the sentences, so history is not lost', async () => {
     const { agent } = await wired([
-      { kind: 'final', payload: { kind: 'create', tasks: [{ title: 'Mua sữa' }] }, reply: REPLY },
+      { kind: 'final', payload: { kind: 'create', tasks: [{ title: 'Buy milk' }] }, reply: REPLY },
     ])
     const user = `u${seq}@x.com`
-    await sendTurn(agent, user, 'thêm việc mua sữa')
+    await sendTurn(agent, user, 'add a task to buy milk')
 
     const session = await agent.get('/assistant/session').set('X-User-Id', user)
     const turns = session.body.session.messages as { reply: unknown }[]
@@ -130,11 +130,11 @@ describe('F-007 the model actually drives a turn', () => {
   it('lets the model look things up before deciding', async () => {
     const { agent } = await wired([
       { kind: 'tool_use', calls: [{ name: 'now', input: {} }] },
-      { kind: 'final', payload: { kind: 'create', tasks: [{ title: 'Đổ rác' }] }, reply: {
-        message: 'Đã thêm "Đổ rác".', speech: 'Đã thêm Đổ rác.' } },
+      { kind: 'final', payload: { kind: 'create', tasks: [{ title: 'Take the bins out' }] }, reply: {
+        message: 'Added "Take the bins out".', speech: 'Added Take the bins out.' } },
     ])
     const user = `u${seq}@x.com`
-    await sendTurn(agent, user, 'nhắc tôi đổ rác tối nay')
+    await sendTurn(agent, user, 'remind me to take the bins out tonight')
 
     const usage = await agent.get('/usage?bucket=total').set('X-User-Id', user)
     expect(usage.body.groups[0]).toMatchObject({ rounds: 2, tool_calls: 1 })
@@ -146,7 +146,7 @@ describe('F-007 the model actually drives a turn', () => {
         usage: { input_tokens: 800, cached_input_tokens: 0, output_tokens: 30 } },
     ])
     const user = `u${seq}@x.com`
-    const res = await sendTurn(agent, user, 'xoá hết đi')
+    const res = await sendTurn(agent, user, 'delete everything')
 
     expect(res.status).toBe(200)
     expect(res.body.turn.outcome.kind).toBe('no_match')
@@ -163,11 +163,11 @@ describe('F-007 the model actually drives a turn', () => {
 
   it('withholds a sentence that names a task it is not touching', async () => {
     const { agent } = await wired([
-      { kind: 'final', payload: { kind: 'create', tasks: [{ title: 'Mua sữa' }] },
-        reply: { message: 'Đã xoá "Gọi cho mẹ".', speech: 'Xong.' } },
+      { kind: 'final', payload: { kind: 'create', tasks: [{ title: 'Buy milk' }] },
+        reply: { message: 'Deleted "Call mom".', speech: 'Done.' } },
     ])
     const user = `u${seq}@x.com`
-    const res = await sendTurn(agent, user, 'thêm việc mua sữa')
+    const res = await sendTurn(agent, user, 'add a task to buy milk')
     expect(res.body.turn.outcome.kind).toBe('no_match')
     expect(res.body.turn.reply).toBeNull()
   })
@@ -196,7 +196,7 @@ describe('F-007 the model actually drives a turn', () => {
       .set('X-Timezone', 'UTC') as unknown as InstanceType<typeof TestAgent>
     const user = `u${seq}@x.com`
 
-    const res = await sendTurn(agent, user, 'thêm việc gì đó')
+    const res = await sendTurn(agent, user, 'add something')
     // Not a 500: the user gets a turn that says it did not understand.
     expect(res.status).toBe(200)
     expect(res.body.turn.outcome.kind).toBe('no_match')
@@ -208,14 +208,14 @@ describe('F-007 the model actually drives a turn', () => {
 
   it('keeps one account\'s turns off another account\'s ledger', async () => {
     const { agent } = await wired([
-      { kind: 'final', payload: { kind: 'create', tasks: [{ title: 'Mua sữa' }] }, reply: REPLY,
+      { kind: 'final', payload: { kind: 'create', tasks: [{ title: 'Buy milk' }] }, reply: REPLY,
         usage: { input_tokens: 100, cached_input_tokens: 0, output_tokens: 10 } },
     ])
     const a = `a${seq}@x.com`
     const b = `b${seq}@x.com`
-    await sendTurn(agent, a, 'thêm việc')
-    await sendTurn(agent, a, 'thêm việc nữa')
-    await sendTurn(agent, b, 'thêm việc')
+    await sendTurn(agent, a, 'add a task')
+    await sendTurn(agent, a, 'add another task')
+    await sendTurn(agent, b, 'add a task')
 
     const forA = await agent.get('/usage?bucket=total').set('X-User-Id', a)
     const forB = await agent.get('/usage?bucket=total').set('X-User-Id', b)

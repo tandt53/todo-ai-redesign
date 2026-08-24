@@ -19,9 +19,9 @@ function fixture() {
   const handleMap: Record<string, string> = {}
   store.transact((s) => {
     const rows = [
-      { id: 'a', title: 'Mua sữa cho bé', note: null, status: 'inbox' },
-      { id: 'b', title: 'Nộp báo cáo quý', note: 'gửi cho chị Lan', status: 'inbox' },
-      { id: 'c', title: 'Đã xong từ lâu', note: null, status: 'done' },
+      { id: 'a', title: 'Buy milk for the baby', note: null, status: 'inbox' },
+      { id: 'b', title: 'File the quarterly report', note: 'send it to Lan', status: 'inbox' },
+      { id: 'c', title: 'Finished long ago', note: null, status: 'done' },
     ]
     for (const r of rows) {
       s.tasks[r.id] = {
@@ -38,10 +38,10 @@ function fixture() {
       }
     }
     s.tasks['b1'] = {
-      ...s.tasks['a']!, id: 'b1', title: 'In hai bản', parent_id: 'b', step_order: 0,
+      ...s.tasks['a']!, id: 'b1', title: 'Print two copies', parent_id: 'b', step_order: 0,
     }
     s.tasks['gone'] = {
-      ...s.tasks['a']!, id: 'gone', title: 'Việc đã xoá', deleted_at: '2026-08-10T00:00:00.000Z',
+      ...s.tasks['a']!, id: 'gone', title: 'Deleted task', deleted_at: '2026-08-10T00:00:00.000Z',
     }
   })
   handleMap['t1'] = 'a'; handleMap['t2'] = 'b'; handleMap['t3'] = 'c'
@@ -76,15 +76,15 @@ describe('F-007 the tool catalogue', () => {
 describe('F-007 search_tasks', () => {
   it('matches the title and the note, and hides done tasks by default', () => {
     const { ctx } = fixture()
-    const byTitle = runTool(ctx, { name: 'search_tasks', input: { query: 'sữa' } }).content as { matches: unknown[] }
+    const byTitle = runTool(ctx, { name: 'search_tasks', input: { query: 'milk' } }).content as { matches: unknown[] }
     expect(byTitle.matches).toHaveLength(1)
 
-    const byNote = runTool(ctx, { name: 'search_tasks', input: { query: 'chị Lan' } }).content as { matches: { title: string }[] }
-    expect(byNote.matches[0]!.title).toBe('Nộp báo cáo quý')
+    const byNote = runTool(ctx, { name: 'search_tasks', input: { query: 'Lan' } }).content as { matches: { title: string }[] }
+    expect(byNote.matches[0]!.title).toBe('File the quarterly report')
 
-    const done = runTool(ctx, { name: 'search_tasks', input: { query: 'xong' } }).content as { count: number }
+    const done = runTool(ctx, { name: 'search_tasks', input: { query: 'Finished' } }).content as { count: number }
     expect(done.count).toBe(0)
-    const withDone = runTool(ctx, { name: 'search_tasks', input: { query: 'xong', include_done: true } }).content as { count: number }
+    const withDone = runTool(ctx, { name: 'search_tasks', input: { query: 'Finished', include_done: true } }).content as { count: number }
     expect(withDone.count).toBe(1)
   })
 
@@ -96,7 +96,7 @@ describe('F-007 search_tasks', () => {
 
   it('excludes steps — a task with a step contributes one row, not two', () => {
     const { ctx } = fixture()
-    const out = runTool(ctx, { name: 'search_tasks', input: { query: 'bản' } }).content as { count: number }
+    const out = runTool(ctx, { name: 'search_tasks', input: { query: 'copies' } }).content as { count: number }
     expect(out.count).toBe(0)
   })
 })
@@ -107,7 +107,7 @@ describe('F-007 get_task', () => {
     const out = runTool(ctx, { name: 'get_task', input: { handle: 't2' } }).content as {
       title: string; steps: { handle: string; title: string }[]
     }
-    expect(out.title).toBe('Nộp báo cáo quý')
+    expect(out.title).toBe('File the quarterly report')
     expect(out.steps).toHaveLength(1)
     expect(out.steps[0]!.handle).toBe('t2.s1')
   })
@@ -127,7 +127,7 @@ describe('F-007 list_trash is readable and carries no handle', () => {
       deleted: Record<string, unknown>[]; count: number
     }
     expect(out.count).toBe(1)
-    expect(out.deleted[0]!.title).toBe('Việc đã xoá')
+    expect(out.deleted[0]!.title).toBe('Deleted task')
     expect(Object.keys(out.deleted[0]!)).not.toContain('handle')
   })
 })
@@ -151,19 +151,19 @@ describe('F-007 now', () => {
 })
 
 describe('F-007 the reply carries two channels', () => {
-  const good: ReplyText = { message: 'Đã thêm "Mua sữa cho bé" vào Inbox.', speech: 'Đã thêm Mua sữa cho bé.' }
+  const good: ReplyText = { message: 'Added "Buy milk for the baby" to Inbox.', speech: 'Added Buy milk for the baby.' }
 
   it('accepts a well-formed pair', () => {
     expect(checkReplyShape(good)).toEqual([])
   })
 
   it('refuses markup in the spoken half — it is read aloud', () => {
-    const problems = checkReplyShape({ ...good, speech: 'Đã thêm **Mua sữa**.' })
+    const problems = checkReplyShape({ ...good, speech: 'Added **Buy milk**.' })
     expect(problems.map((p) => p.kind)).toContain('markup_in_speech')
   })
 
   it('refuses a list in the spoken half', () => {
-    const problems = checkReplyShape({ ...good, speech: 'Ba việc:\n- một\n- hai' })
+    const problems = checkReplyShape({ ...good, speech: 'Three tasks:\n- one\n- two' })
     expect(problems.map((p) => p.kind)).toContain('markup_in_speech')
   })
 
@@ -175,28 +175,28 @@ describe('F-007 the reply carries two channels', () => {
 
 describe('F-007 the facts in the reply are checked, the wording is not', () => {
   it('passes a reply that names only the rows being acted on', () => {
-    const reply: ReplyText = { message: 'Xoá "Mua sữa cho bé" nhé?', speech: 'Xoá Mua sữa cho bé nhé?' }
-    expect(checkReplyFacts(reply, ['Mua sữa cho bé'])).toEqual([])
+    const reply: ReplyText = { message: 'Delete "Buy milk for the baby"?', speech: 'Delete Buy milk for the baby?' }
+    expect(checkReplyFacts(reply, ['Buy milk for the baby'])).toEqual([])
   })
 
   it('catches a named task that is not in the target set', () => {
-    const reply: ReplyText = { message: 'Xoá "Nộp báo cáo quý" nhé?', speech: 'Xoá đi nhé?' }
-    const problems = checkReplyFacts(reply, ['Mua sữa cho bé'])
+    const reply: ReplyText = { message: 'Delete "File the quarterly report"?', speech: 'Delete it?' }
+    const problems = checkReplyFacts(reply, ['Buy milk for the baby'])
     expect(problems.map((p) => p.kind)).toContain('unknown_task_named')
   })
 
   it('catches a count that disagrees with the batch', () => {
-    const reply: ReplyText = { message: 'Xoá 3 tasks nhé?', speech: 'Xoá ba việc nhé?' }
+    const reply: ReplyText = { message: 'Delete 3 tasks?', speech: 'Delete three tasks?' }
     const problems = checkReplyFacts(reply, ['a', 'b', 'c', 'd', 'e'])
     expect(problems.map((p) => p.kind)).toContain('count_mismatch')
   })
 
   it('says nothing about wording — two very different sentences both pass', () => {
-    const targets = ['Mua sữa cho bé']
-    const terse: ReplyText = { message: 'Xong.', speech: 'Xong.' }
+    const targets = ['Buy milk for the baby']
+    const terse: ReplyText = { message: 'Done.', speech: 'Done.' }
     const chatty: ReplyText = {
-      message: 'Rồi nhé, mình đã ghi lại việc đó và để trong Inbox cho bạn.',
-      speech: 'Rồi nhé, mình đã ghi lại việc đó.',
+      message: 'Right, I wrote that down and put it in your Inbox.',
+      speech: 'Right, I wrote that down.',
     }
     expect(checkReplyFacts(terse, targets)).toEqual([])
     expect(checkReplyFacts(chatty, targets)).toEqual([])
@@ -225,7 +225,7 @@ describe('F-007 the loop runs as many rounds as the question needs', () => {
     const trace: { call: { name: string }; result: unknown; is_error: boolean }[] = []
     const out = await runLoop(
       scripted([
-        { kind: 'tool_use', calls: [{ name: 'search_tasks', input: { query: 'sữa' } }] },
+        { kind: 'tool_use', calls: [{ name: 'search_tasks', input: { query: 'milk' } }] },
         { kind: 'tool_use', calls: [{ name: 'get_task', input: { handle: 't1' } }] },
         { kind: 'final', payload: { kind: 'delete', handles: ['t1'] }, reply: REPLY },
       ]),

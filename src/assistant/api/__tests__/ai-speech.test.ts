@@ -47,12 +47,12 @@ const cfg = (over: Partial<SpeechConfig>): SpeechConfig => ({
 
 describe('F-007 STT - OpenAI-compatible', () => {
   it('sends multipart with a named file, and asks for verbose json', async () => {
-    const t = transport({ text: 'mua sữa', language: 'vietnamese', duration: 4.2 })
+    const t = transport({ text: 'buy milk', language: 'vietnamese', duration: 4.2 })
     const out = await transcribe({
       audio: AUDIO, mimeType: 'audio/webm', language: 'vi-VN',
       config: cfg({}), fetchImpl: t.fetchImpl,
     })
-    expect(out).toEqual({ text: 'mua sữa', language: 'vietnamese', seconds: 4.2 })
+    expect(out).toEqual({ text: 'buy milk', language: 'vietnamese', seconds: 4.2 })
     expect(t.seen[0]!.url).toBe('https://example.invalid/v1/audio/transcriptions')
     expect(t.seen[0]!.body).toBeInstanceOf(FormData)
     const form = t.seen[0]!.body as FormData
@@ -83,14 +83,14 @@ describe('F-007 STT - OpenAI-compatible', () => {
 describe('F-007 STT - Deepgram', () => {
   it('sends raw audio as the body, params in the query, and a Token scheme', async () => {
     const t = transport({
-      results: { channels: [{ alternatives: [{ transcript: 'gọi cho mẹ' }] }] },
+      results: { channels: [{ alternatives: [{ transcript: 'call mom' }] }] },
       metadata: { duration: 3.1 },
     })
     const out = await transcribe({
       audio: AUDIO, mimeType: 'audio/webm', language: 'vi',
       config: cfg({ provider: 'deepgram', model: 'nova-3' }), fetchImpl: t.fetchImpl,
     })
-    expect(out).toEqual({ text: 'gọi cho mẹ', language: 'vi', seconds: 3.1 })
+    expect(out).toEqual({ text: 'call mom', language: 'vi', seconds: 3.1 })
     // NOT multipart - the audio is the body.
     expect(t.seen[0]!.body).toBe(AUDIO)
     expect(t.seen[0]!.url).toContain('model=nova-3')
@@ -116,21 +116,21 @@ describe('F-007 TTS - OpenAI-compatible', () => {
   it('posts the text and returns audio bytes with a matching mime type', async () => {
     const t = transport(null)
     const out = await speak({
-      text: 'Đã thêm Mua sữa.', voice: 'alloy', format: 'wav',
+      text: 'Added Buy milk.', voice: 'alloy', format: 'wav',
       config: cfg({}), fetchImpl: t.fetchImpl,
     })
     expect(out.audio).toEqual(new Uint8Array([9, 9, 9]))
     expect(out.mimeType).toBe('audio/wav')
     expect(t.seen[0]!.url).toBe('https://example.invalid/v1/audio/speech')
     const body = JSON.parse(t.seen[0]!.body as string) as Record<string, unknown>
-    expect(body).toMatchObject({ model: 'm', input: 'Đã thêm Mua sữa.', voice: 'alloy', response_format: 'wav' })
+    expect(body).toMatchObject({ model: 'm', input: 'Added Buy milk.', voice: 'alloy', response_format: 'wav' })
   })
 
   it('counts characters the way a person would, not the way UTF-16 does', async () => {
     const t = transport(null)
-    // 'Đã' is two code units in UTF-16 but one character each to a biller.
-    const out = await speak({ text: 'Đã xong', config: cfg({}), fetchImpl: t.fetchImpl })
-    expect(out.characters).toBe([...'Đã xong'].length)
+    // 'Done' is two code units in UTF-16 but one character each to a biller.
+    const out = await speak({ text: 'All done', config: cfg({}), fetchImpl: t.fetchImpl })
+    expect(out.characters).toBe([...'All done'].length)
   })
 })
 
@@ -138,11 +138,11 @@ describe('F-007 TTS - Deepgram Aura', () => {
   it('puts the voice in the query and the text in the body', async () => {
     const t = transport(null)
     await speak({
-      text: 'xong rồi', voice: 'aura-2-thalia-en',
+      text: 'all done', voice: 'aura-2-thalia-en',
       config: cfg({ provider: 'deepgram', model: 'aura-2' }), fetchImpl: t.fetchImpl,
     })
     expect(t.seen[0]!.url).toContain('model=aura-2-thalia-en')
-    expect(JSON.parse(t.seen[0]!.body as string)).toEqual({ text: 'xong rồi' })
+    expect(JSON.parse(t.seen[0]!.body as string)).toEqual({ text: 'all done' })
     expect(t.seen[0]!.headers.authorization).toBe('Token k')
   })
 })
@@ -151,11 +151,11 @@ describe('F-007 TTS - ElevenLabs', () => {
   it('puts the voice in the PATH and the model in the body', async () => {
     const t = transport(null)
     await speak({
-      text: 'xin chào', voice: 'voice-123',
+      text: 'hello', voice: 'voice-123',
       config: cfg({ provider: 'elevenlabs', model: 'eleven_flash_v2_5' }), fetchImpl: t.fetchImpl,
     })
     expect(t.seen[0]!.url).toBe('https://example.invalid/v1/text-to-speech/voice-123')
-    expect(JSON.parse(t.seen[0]!.body as string)).toMatchObject({ text: 'xin chào', model_id: 'eleven_flash_v2_5' })
+    expect(JSON.parse(t.seen[0]!.body as string)).toMatchObject({ text: 'hello', model_id: 'eleven_flash_v2_5' })
     // Not an authorization scheme at all.
     expect(t.seen[0]!.headers['xi-api-key']).toBe('k')
   })
@@ -192,10 +192,10 @@ describe('F-007 the speech registry', () => {
   })
 
   it('takes an adapter nobody shipped', async () => {
-    registerStt('my-asr', async () => ({ text: 'từ nhà tôi', language: 'vi', seconds: 1 }),
+    registerStt('my-asr', async () => ({ text: 'from my own house', language: 'vi', seconds: 1 }),
       { streaming: true, billedBy: 'minute' })
     const out = await transcribe({ audio: AUDIO, mimeType: 'audio/webm', config: cfg({ provider: 'my-asr' }) })
-    expect(out.text).toBe('từ nhà tôi')
+    expect(out.text).toBe('from my own house')
     expect(sttCapabilities('my-asr').streaming).toBe(true)
   })
 

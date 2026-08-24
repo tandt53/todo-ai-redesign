@@ -15,7 +15,11 @@
 <!-- Confirmed by the owner 2026-08-23. -->
 
 - **Is** — a todo app where saying one sentence does what filling in several
-  fields would; typing does everything too, and always has.
+  fields would; typing does everything too, and always has. **It is in English**
+  — the user speaks English, the assistant replies in English, shipped copy and
+  test fixture data are English. No other language is planned
+  (`owner-decision-2026-08-17-english-first.md`, `-2026-08-23-fixtures-are-english.md`).
+  The language you are speaking to the owner is never the product's language.
 - **For** — one person managing their own tasks, often with their hands busy —
   walking, cooking, in a meeting.
 - **Must** — every basic action works with the AI off, broken, out of quota or
@@ -24,7 +28,12 @@
 - **Is not** — not a tool for teams or projects: no assigning, no handing work to
   another person, no workflow status (`blocked` / `in-progress` were considered
   and declined — a single user has no counterparty to hand to). AI is never the
-  only route to a basic action. No wake word and no always-on mic.
+  only route to a basic action. No wake word and no always-on mic. **Not a
+  product with a fixed set of replies:** the assistant writes its own sentences
+  (`owner-decision-2026-08-21-the-model-authors-the-reply.md`). Predefined
+  answers exist only as test scaffolding for a backend that cannot author yet —
+  `_shared/model/messages.ts` is on its way out, not a feature. A hardcoded
+  user-facing sentence is a template even when it is only a fallback.
 - **Succeeds when** — a task gets created, found or completed in fewer taps and
   keystrokes than typing it out would take. That is the measure every use case in
   `02-use-cases.md` is already judged by.

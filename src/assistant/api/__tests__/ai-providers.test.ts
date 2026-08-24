@@ -32,7 +32,7 @@ function harness(provider: string, bodies: unknown[], apiKey = 'test-key') {
   const req: ClientRequest = {
     config: { provider, model: 'some-model-v1', apiKey, baseUrl: 'https://example.invalid' },
     system: 'you are a todo assistant',
-    firstUserMessage: 'xoá việc mua sữa',
+    firstUserMessage: 'delete the buy milk task',
     tools: TOOL_SCHEMAS,
     respondTool: RESPOND_TOOL,
     fetchImpl,
@@ -43,31 +43,31 @@ function harness(provider: string, bodies: unknown[], apiKey = 'test-key') {
 /** The same conversation, told in each provider's own wire shape. */
 const SCRIPTS = {
   anthropic: {
-    toolRound: { content: [{ type: 'tool_use', id: 'call_1', name: 'search_tasks', input: { query: 'sữa' } }] },
+    toolRound: { content: [{ type: 'tool_use', id: 'call_1', name: 'search_tasks', input: { query: 'milk' } }] },
     finalRound: {
       content: [{
         type: 'tool_use', id: 'call_2', name: RESPOND_TOOL.name,
-        input: { action: { kind: 'delete', handles: ['t1'] }, message: 'Xoá "Mua sữa" nhé?', speech: 'Xoá Mua sữa nhé?' },
+        input: { action: { kind: 'delete', handles: ['t1'] }, message: 'Delete "Buy milk"?', speech: 'Delete Buy milk?' },
       }],
     },
-    proseOnly: { content: [{ type: 'text', text: 'Bạn muốn xoá việc nào?' }] },
+    proseOnly: { content: [{ type: 'text', text: 'Which task do you want deleted?' }] },
     toolsOf: (b: Record<string, unknown>) => (b.tools as { name: string }[]).map((t) => t.name),
   },
   openai: {
     toolRound: {
       choices: [{ message: { role: 'assistant', content: null, tool_calls: [
-        { id: 'call_1', type: 'function', function: { name: 'search_tasks', arguments: '{"query":"sữa"}' } },
+        { id: 'call_1', type: 'function', function: { name: 'search_tasks', arguments: '{"query":"milk"}' } },
       ] } }],
     },
     finalRound: {
       choices: [{ message: { role: 'assistant', content: null, tool_calls: [
         { id: 'call_2', type: 'function', function: {
           name: RESPOND_TOOL.name,
-          arguments: JSON.stringify({ action: { kind: 'delete', handles: ['t1'] }, message: 'Xoá "Mua sữa" nhé?', speech: 'Xoá Mua sữa nhé?' }),
+          arguments: JSON.stringify({ action: { kind: 'delete', handles: ['t1'] }, message: 'Delete "Buy milk"?', speech: 'Delete Buy milk?' }),
         } },
       ] } }],
     },
-    proseOnly: { choices: [{ message: { role: 'assistant', content: 'Bạn muốn xoá việc nào?' } }] },
+    proseOnly: { choices: [{ message: { role: 'assistant', content: 'Which task do you want deleted?' } }] },
     toolsOf: (b: Record<string, unknown>) =>
       (b.tools as { function: { name: string } }[]).map((t) => t.function.name),
   },
@@ -110,7 +110,7 @@ for (const provider of ['anthropic', 'openai'] as const) {
       expect(step.kind).toBe('tool_use')
       if (step.kind === 'tool_use') {
         expect(step.calls[0]!.name).toBe('search_tasks')
-        expect(step.calls[0]!.input).toEqual({ query: 'sữa' })
+        expect(step.calls[0]!.input).toEqual({ query: 'milk' })
       }
     })
 
@@ -127,7 +127,7 @@ for (const provider of ['anthropic', 'openai'] as const) {
       expect(step.kind).toBe('final')
       if (step.kind === 'final') {
         expect(step.payload).toEqual({ kind: 'delete', handles: ['t1'] })
-        expect(step.reply.message).toContain('Mua sữa')
+        expect(step.reply.message).toContain('Buy milk')
         expect(step.reply.speech).not.toContain('"')
       }
     })

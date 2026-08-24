@@ -192,12 +192,12 @@ describe('F-007 a misconfiguration fails at startup, not on a user\'s turn', () 
 
 const CTX: InterpreterContext = {
   user_id: USER, handles: HANDLES,
-  transcript: 'thêm việc mua sữa', source: 'voice', timezone: 'UTC',
-  tasks: [{ handle: 't1', title: 'Mua sữa', status: 'inbox', note: null, due_at: null, reminder_at: null, priority: null, list_id: null }],
+  transcript: 'add a task to buy milk', source: 'voice', timezone: 'UTC',
+  tasks: [{ handle: 't1', title: 'Buy milk', status: 'inbox', note: null, due_at: null, reminder_at: null, priority: null, list_id: null }],
   deleted_tasks: [], lists: [], recent_turns: [], question: null,
 }
 
-const REPLY = { message: 'Đã thêm "Mua sữa".', speech: 'Đã thêm Mua sữa.' }
+const REPLY = { message: 'Added "Buy milk".', speech: 'Added Buy milk.' }
 let seq = 0
 
 /** A provider that fails `failures` times, then answers. */
