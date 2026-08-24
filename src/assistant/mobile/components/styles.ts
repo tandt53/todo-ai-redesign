@@ -336,13 +336,25 @@ export function makeStyles(c: Palette, platform: 'ios' | 'android' = 'ios') {
       textTransform: 'uppercase',
       color: c.text.muted,
     },
-    chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.sm },
+    chips: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      marginTop: spacing.sm,
+      // NOT `flexWrap: 'wrap'`. Android measures a wrapped row as one line
+      // tall, so the bubble sizes itself for the first row and every chip
+      // after it renders outside the bubble, over the timestamp. iOS lays
+      // these side by side; this makes both clients do that and lets the
+      // chips shrink to share the width instead of wrapping.
+      alignSelf: 'stretch',
+    },
     chip: {
       paddingVertical: spacing.xs,
       paddingHorizontal: spacing.lg,
       borderRadius: radius.pill,
       borderWidth: 1,
       borderColor: c.accent,
+      flexShrink: 1,
+      minWidth: 0,
     },
     chipDanger: { borderColor: c.danger },
     chipDisabled: { borderColor: c.bg.hairline },

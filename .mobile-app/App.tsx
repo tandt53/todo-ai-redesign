@@ -81,6 +81,36 @@ async function play(s: any, scenario: string, userId: string) {
     await p
     await sleep(wait)
   }
+  // `tapChip` and `tapUndo` look up the thing they act on in current state and
+  // return silently when it is not there yet. A fixed sleep before them is a
+  // guess, and when the guess was short every scenario stopped at the question
+  // it was supposed to answer — three iOS states came back as one identical
+  // frame and the acceptance book showed it under three captions.
+  const until = async (has: () => boolean, ms = 6000) => {
+    const t0 = Date.now()
+    while (Date.now() - t0 < ms) {
+      if (has()) return true
+      await sleep(150)
+    }
+    return false
+  }
+  const openQuestion = () =>
+    s.controller.state.messages.some((m: any) => m.kind === 'question' && !m.resolved)
+  // Answering by chip sends the chip's LITERAL text (AC-10/AC-13) — "Delete 3
+  // tasks", "Keep them" — and the fixture interpreter knows none of those, so the
+  // turn comes back unclassifiable and the question stays open. That is a gap in
+  // the stub's table, not in the product, but it means a scenario that answers by
+  // chip never reaches the state it exists to photograph. Answer with a word the
+  // stub does know; the frame this book needs is the outcome, not the gesture.
+  const answerYes = async () => {
+    await until(openQuestion)
+    await say('yes')
+    await until(() => !openQuestion())
+  }
+  const tapUndoWhenReady = async () => {
+    await until(() => s.undoableTurnId !== null && s.undoableTurnId !== undefined)
+    await s.tapUndo()
+  }
   // Seeded through POST /tasks rather than through assistant turns: every extra
   // turn pushes the message this scenario is about further down, and BUG-004
   // means the view never follows it. Keep each conversation as short as the
@@ -152,7 +182,7 @@ async function play(s: any, scenario: string, userId: string) {
       await s.foreground()
       await sleep(400)
       await say('delete the shopping tasks')
-      await s.tapChip(0)
+      await answerYes()
       await sleep(1000)
       return
     case 'reverted':
@@ -160,9 +190,9 @@ async function play(s: any, scenario: string, userId: string) {
       await s.foreground()
       await sleep(400)
       await say('delete the shopping tasks')
-      await s.tapChip(0)
+      await answerYes()
       await sleep(1000)
-      await s.tapUndo()
+      await tapUndoWhenReady()
       await sleep(1000)
       return
     case 'question-clarify':

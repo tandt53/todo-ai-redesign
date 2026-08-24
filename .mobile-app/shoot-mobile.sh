@@ -22,7 +22,10 @@ OUT="${OUT:-output/app-shots/mobile}"
 IOS_UDID="${IOS_UDID:-$(xcrun simctl list devices 2>/dev/null | grep -m1 Booted | grep -oE '[0-9A-F-]{36}')}"
 WANT="${1:-both}"
 
-TALK=(idle-empty listening thinking applied-diff idle-tasks question-confirm \
+# `idle-tasks` is not here: seeding tasks changes nothing the Talk surface
+# renders, so it produced a frame identical to `idle-empty` under a different
+# caption. The Tasks-surface states below cover "with tasks".
+TALK=(idle-empty listening thinking applied-diff question-confirm \
       applied-delete reverted question-clarify no-match error offline mic-permission)
 # Tasks-surface states now have deep links of their own (App.tsx). Before they
 # existed this list held seeds that were tapped into place, and a run came back
@@ -138,8 +141,33 @@ has_rows() {  # $1 platform — is there at least one task row on screen?
   fi
 }
 
+tree_hash() {  # $1 platform — a cheap fingerprint of what is on screen
+  if [ "$1" = ios ]; then
+    idb ui describe-all --udid "$IOS_UDID" 2>/dev/null | md5
+  else
+    adb shell uiautomator dump /sdcard/w.xml >/dev/null 2>&1
+    adb shell cat /sdcard/w.xml 2>/dev/null | md5
+  fi
+}
+
+settle() {  # $1 platform — wait until the screen stops changing
+  # `ready` returns the moment the app paints anything, but a scenario keeps
+  # playing after that: it answers a question, waits for the reply, taps undo.
+  # Photographing at `ready` caught three states mid-flight and produced one
+  # identical frame for all of them.
+  local a b n=0
+  a="$(tree_hash "$1")"
+  while [ $n -lt 15 ]; do
+    sleep 1
+    b="$(tree_hash "$1")"
+    [ "$a" = "$b" ] && [ -n "$a" ] && return 0
+    a="$b"; n=$((n+1))
+  done
+  return 0
+}
+
 shot() {  # $1 platform  $2 name
-  sleep 1
+  settle "$1"
   if [ "$1" = ios ]; then xcrun simctl io "$IOS_UDID" screenshot "$OUT/$1-$2.png" >/dev/null 2>&1
   else adb exec-out screencap -p > "$OUT/$1-$2.png" 2>/dev/null; fi
   [ -s "$OUT/$1-$2.png" ] && echo "  ok  $1-$2" || echo "  --  $1-$2 (trống)"
@@ -160,7 +188,10 @@ run_platform() {  # $1 = ios | android
     # Each state promises something different, so each asserts on its own
     # evidence. Asserting rows everywhere marks the drawer state as broken —
     # the drawer covers the list, so no checkbox is in the tree while it is open.
-    sleep 1   # let the last dispatch settle before asking what is on screen
+    # Settle BEFORE asserting, not only before shooting: a scenario is still
+    # playing when `ready` returns, so a check that runs at `ready` can miss a
+    # drawer that opens a beat later and mark a working state as broken.
+    settle "$p"
     case "$s" in
       tasks-empty)  ok=yes ;;
       tasks-drawer) has_present "$p" menu-collection-row && ok=yes || ok=no ;;

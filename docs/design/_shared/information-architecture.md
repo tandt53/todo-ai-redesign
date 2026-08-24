@@ -219,6 +219,83 @@ width-independent.
 
 ## 4. Navigation — the whole map
 
+**Revised 2026-08-24 by owner decision: Talk is an overlay, not a peer.** What changed is where the
+user stands, and everything below follows from it rather than being chosen control by control.
+
+### The model, in three sentences
+
+**The task list is the home, at every width.** It is what the app opens on and what a user returns
+to by dismissing anything.
+
+**Talk is summoned over it.** Wide, it sits in a panel beside the list; narrow, it covers the list.
+Same relationship, two drawings — not two models selected by a width.
+
+**A collection is a state of the list, not a place.** Moving from Today to Inbox changes the title
+and the rows; the user has not gone anywhere, and back does not return them to Today.
+
+### Why this, and what it reverses
+
+`owner-decision-2026-08-17-desktop-list-is-primary.md` already made the list primary **on desktop**
+and said, in its own words, that this reverses the product's thesis. It left the phone alone, so the
+app carried **two opposite models**: wide, the list was home; narrow, Talk was. This finishes that
+decision rather than starting a new one.
+
+**Two consequences the owner answered when deciding** (2026-08-24): the conversation's history,
+session boundaries and carried notices are **unchanged** — only the presentation moves. And the Talk
+landing copy that taught a first-time user they could speak is not owed a new home, because there
+are no users yet.
+
+### What is a surface, what is a state, what is a sheet
+
+The old table listed every destination on one level, which is why control placement had no rule to
+follow — a filter, a create action and a settings screen all looked like the same kind of thing.
+
+| Kind | Members | Reached by | Dismissed by |
+|---|---|---|---|
+| **Home** | Tasks | the app opening | — |
+| **Summoned over home** | Talk | the mic | close / back; the list is behind it |
+| **State of home** | Today · Upcoming · Done · Inbox · each personal list | the collection picker | picking another; back does **not** unwind these |
+| **Stacked surface** | Settings · Task detail | a control that names it | its own back, one level |
+| **Sheet** | New list | `New list` in the picker | Create or Cancel |
+
+### Where a control goes now follows from its kind
+
+- **Left of the top bar** — what changes *where you are*: the collection picker, since the collection
+  is what the title names.
+- **Right of the top bar** — what acts on *what you are looking at*: search, the overflow menu.
+- **Bottom** — what adds to it: the input, with the mic that summons Talk.
+- **Stacked surfaces own their own back control** and never borrow the top bar's.
+
+**The rule to check any future control against: does it change where I am, act on what I see, or add
+to it?** A control whose answer is "none of those" is the signal that a surface is doing two jobs.
+
+### Every edge
+
+| From | To | Control | Taps |
+|---|---|---|---|
+| Tasks | Talk | the mic | 1 |
+| Talk | Tasks | close, or system back | 1 |
+| Talk | Tasks, at a named task | tap a task title inside a message | 1 |
+| Tasks | another collection | the picker, then the row | 2 |
+| the picker | New list | `New list` row | 1 |
+| the picker | Settings | `Settings` row | 1 |
+| Settings | back | its own back control | 1 |
+| Tasks | Task detail | activating a task row | 1 |
+| Task detail | Tasks | the detail's close | 1 |
+
+**What this table no longer contains, and deliberately: a `Talk` button in the Tasks top bar.** The
+way to the assistant is the act of speaking to it, which is the mic. Two controls for one
+relationship is what made the old pair asymmetric — a text button one way, a floating mic the other.
+
+**Still true from before, and unchanged by this revision:** leaving the list closes an open task
+detail, and returning goes to the list rather than to a detail the user had forgotten
+(`F-005 AC-45`).
+
+---
+
+## 4a. The previous map, superseded 2026-08-24
+
+
 Every edge, with its control and its cost. Nothing reaches a surface except through an edge on
 this list.
 
