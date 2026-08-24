@@ -93,6 +93,18 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/capture-events.sh",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   }
 }

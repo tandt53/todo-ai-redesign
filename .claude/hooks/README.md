@@ -54,6 +54,33 @@ survives a corrupted state file, and gives dashboards a data source that costs n
 agent prompt budget. An agent can neither forge nor forget an entry here, because
 it never writes one.
 
+### capture-events.sh — also measures the orchestrator
+
+**Trigger:** additionally `UserPromptSubmit`
+
+A request opens an **episode**; `Stop` closes it with one summary line: how many
+agents that single ask consumed, how many artifacts came back, how many returns
+claimed done while writing nothing, and whether any task was dispatched twice.
+
+Every other hook here measures a dispatched agent. This is the only one that
+measures the thing choosing what to dispatch — which is where the expensive
+mistakes are. Dispatches were always logged; they were never grouped by the
+request they served, so a question answered with three agent runs left no trace
+any query could find.
+
+Read it with:
+
+```bash
+bash .claude/eval/orchestrator-report.sh
+```
+
+The prompt **text** is not stored, only its length. The log is a project file
+that may be committed. Set `ORCHESTRATOR_METRICS_PROMPT=1` when diagnosing which
+kinds of request go wrong.
+
+Nothing here is self-reported, for the same reason agent metrics are not: asked
+to grade itself, the answer is always fine.
+
 ### validate-state.sh
 **Trigger:** Stop — also safe to run by hand: `bash .claude/hooks/validate-state.sh`
 

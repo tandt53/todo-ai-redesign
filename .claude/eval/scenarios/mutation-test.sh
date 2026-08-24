@@ -565,6 +565,60 @@ run_case R20 "the sign-off row stops pointing at the review" \
 run_case R20 "the shell block loses a done and stops parsing" \
   "perl -0777 -i -pe 's/  \\[ \"\\\$\\(tasks_get \"\\\$r\" Status\\)\" = \"BLOCKED\" \\] \\|\\| continue/  if true; then/' .claude/ORCHESTRATION.md"
 
+# R21 — the episode boundary disappears. Dispatches keep logging and the
+# orchestrator goes back to being unmeasured, which reads exactly like no waste.
+run_case R21 "UserPromptSubmit stops opening an episode" \
+  "perl -0777 -i -pe 's/UserPromptSubmit/UserPromptSubmitted/g' .claude/settings.json .claude/hooks/capture-events.cjs"
+
+# R21 — the summary stops counting empty returns. A metric that always reports
+# zero waste is the same failure as a check that always passes.
+run_case R21 "empty returns stop being counted" \
+  "perl -0777 -i -pe \"s/zero_artifact_returns: returns\\.filter\\(.*?\\)\\.length/zero_artifact_returns: 0/s\" .claude/hooks/capture-events.cjs"
+
+# R22 — the briefing check stops verifying that read paths exist. This is the
+# single most expensive defect class in the recorded session: five of six were
+# caught only by the agent, after the dispatch was paid for.
+run_case R22 "briefing check stops verifying read paths" \
+  "sed -i.bak 's|-e \"\$ROOT/\$p\"|-n \"x\"|' .claude/tools/briefing-check/check-briefing.sh"
+
+# R22 — the staging check stops reading the in-flight table, so a directory-wide
+# add sweeps a running agent's work again. The data was always there; not
+# reading it is exactly how this failed the first two times.
+run_case R22 "staging check stops reading In-Flight" \
+  "perl -0777 -i -pe 's/\\/\\^## In-Flight\\//\\/^## NeverMatches\\//' .claude/tools/staging-check/check-staged.sh"
+
+# R23 — a zero from an unproven predicate reports clean again. Six sweeps
+# returned nothing and all six were wrong; without the canary rule that is
+# indistinguishable from six clean results.
+run_case R23 "a sweep with no canary reports clean" \
+  "sed -i.bak \"s|verdict: 'inconclusive', hits: 0, candidates: candidates.length,|verdict: 'clean', hits: 0, candidates: candidates.length,|\" .claude/lib/probe.mjs"
+
+# R23 — hidden elements come back into measurements. This retracted a correct
+# finding once, on a number that looked entirely reasonable.
+run_case R23 "the visibility filter stops excluding display:none" \
+  "sed -i.bak \"s|if (cs.display === 'none') return 'display:none';||\" .claude/lib/probe.mjs"
+
+# R24 — a fifth hand-rolled TASKS.md parser lands in the tree. The fourth
+# compared a Title column against a set of ids and reported every row as a leaf.
+run_case R24 "a hand-rolled TASKS.md parser is committed" \
+  "printf '#!/usr/bin/env bash\nawk -F%s|%s \"{ print \\\$9 }\" .claude/state/TASKS.md\n' \"'\" \"'\" > .claude/hooks/rogue-parser.sh"
+
+# R24 — the reader loses its command line, so hand-rolling one is cheaper again.
+# This is the half of the remedy a grep cannot supply.
+run_case R24 "the shared reader stops answering from the command line" \
+  "perl -0777 -i -pe 's/    max-id\)/    max-id-disabled)/' .claude/lib/tasks.sh"
+
+# R25 — the sibling sweep stops checking its origin, so a pattern blind to the
+# defect it was written for reports a clean tree. Six wrong predicates once did
+# exactly that, six times.
+run_case R25 "the sibling sweep drops its canary" \
+  "perl -0777 -i -pe 's/if ! grep -qE/if false \&\& ! grep -qE/' .claude/tools/sibling-sweep/find-siblings.sh"
+
+# R25 — archival truncates the destination instead of appending. The archive is
+# the only copy of everything moved before it.
+run_case R25 "archival overwrites the archive instead of appending" \
+  "perl -0777 -i -pe 's/>> \"\\\$archive\"/> \"\\\$archive\"/' .claude/lib/tasks.sh"
+
 echo
 echo "─── ${PROVEN} proven fallible, ${UNPROVEN} unproven ───"
 if [ "$UNPROVEN" -gt 0 ]; then

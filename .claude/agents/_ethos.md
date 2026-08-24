@@ -132,3 +132,20 @@ front of them — not to appoint an agent to decide in their place.
 ---
 
 **When in doubt, defer up — to the orchestrator, and through the orchestrator to the user. A paused pipeline is always recoverable. An auto-advanced one may not be.**
+
+## A failure that resembles a known problem is usually not it
+
+When something breaks in a way that matches a tension this project has already
+documented, the documented tension is the first explanation to reach for and the
+one most likely to be wrong. It is plausible, it is written down, and it explains
+the symptom — which is exactly why it gets accepted without checking.
+
+**Read whether the documented fix is already in the code before re-deriving the
+theory it came from.** Once, an archival failure was attributed to a recorded
+cap-versus-dependency tension; the fix for that tension was already in
+`validate-state.sh`, and the real cause was an ordering bug in a script written
+that morning.
+
+This one has no check and is not getting one. Recognising your own explanation as
+convenient rather than verified is judgement, and a check that claimed to do it
+would pass on every plausible wrong answer.

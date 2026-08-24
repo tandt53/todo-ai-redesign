@@ -271,6 +271,53 @@ ones) are listed in the agent's own `## Required reads` section and do not count
 against the budget — never drop a task input to make room for them, and never
 omit them from the agent's file on the grounds that the briefing is short.
 
+#### Before you write the task row, find the siblings
+
+```bash
+bash .claude/tools/sibling-sweep/find-siblings.sh \
+  --pattern '<the shape of the defect>' --found-in <the file you found it in>
+```
+
+A task scoped to the file you happened to look at leaves the twin behind. One
+mobile test was fixed while the web twin carried the identical defect and went
+red the same day; one task scoped to colour left five motion literals for a
+later check to find. Both were one grep from complete before the row existed.
+
+Non-zero means siblings exist — name the full set in the row. Exit 2 means the
+pattern does not match the file the defect was found in, so the pattern is
+wrong: a zero from it would have read as a clean tree.
+
+#### Verify the briefing before you dispatch
+
+```bash
+bash .claude/tools/briefing-check/check-briefing.sh BRIEFING.md
+```
+
+**Non-zero means do not dispatch.** Fix the briefing and re-run.
+
+It checks what can be checked without understanding the task: every path the
+agent is told to read exists, every `file:line` citation points into a file long
+enough to hold that line, nothing is both in scope and declared off-limits, and
+the read budget holds.
+
+This exists because of what it costs when those are wrong. In one session six
+briefings sent an agent after something that was not there — a spec path off by
+two directories, a CSS rule present in no file in the repo, a class that had
+never appeared in the files named, an endpoint declared in scope while the file
+holding it was declared off-limits. Five were caught by the agent, which means
+after the dispatch was paid for. Each was one `test -e` from being caught before.
+
+**What it cannot check is the part that matters most: whether the cause you
+briefed is the real cause.** A briefing saying "search fails because this CSS
+rule hides the row" passes every check here while the rule exists nowhere. So:
+**brief the measurement, not the mechanism.** "Query 'bill', 4 rows visible, 1
+contains 'bill'" is a fact the agent can start from. Naming the cause narrows its
+search to your guess, and when the guess is wrong the agent spends the dispatch
+proving it.
+
+A claim you took from a review lens is not a measurement. Mark it unverified in
+the briefing so the agent knows which half to trust.
+
 #### Step 3a: QA Workspace task creation (optional, runs once per dispatch)
 
 If a `qa_task_create` tool is reachable in your tool surface (the user has wired the `qa-task-manager` MCP server in `.claude/mcp.json`), create the task row before writing BRIEFING:

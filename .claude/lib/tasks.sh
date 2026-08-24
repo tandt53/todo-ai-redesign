@@ -166,3 +166,108 @@ tasks_count_status() {
   tasks_rows | awk -F'|' -v s="$si" -v want="$1" '
     { st = $s; gsub(/^ +| +$/, "", st); if (st == want) c++ } END { print c + 0 }'
 }
+
+# tasks_archive <ID>... — move rows to TASKS-archive.md in the safe order.
+#
+# Append to the destination, read it back, and only then remove from the source.
+# One script did it the other way and truncated the archive in the same run that
+# removed 38 rows from the queue, crashing between the two writes. The rows then
+# existed nowhere, and 3 validator violations became 31.
+#
+# That was an ordering bug, not a selection bug — which is why the ordering is
+# here and the policy (what to archive, and when) stays with the caller.
+tasks_archive() {
+  local archive="${TASKS_ARCHIVE:-$(dirname "$TASKS_FILE")/TASKS-archive.md}"
+  local ids=("$@")
+  [ "${#ids[@]}" -eq 0 ] && { echo "tasks_archive: no ids given" >&2; return 2; }
+
+  local rows="" id row
+  for id in "${ids[@]}"; do
+    row="$(tasks_rows | grep -m1 "^| *$id *|" || true)"
+    if [ -z "$row" ]; then
+      echo "tasks_archive: $id is not in $TASKS_FILE — nothing moved" >&2
+      return 1
+    fi
+    rows="${rows}${row}
+"
+  done
+
+  # 1. Append. Never truncate: the archive is the only copy of everything
+  #    already moved, and a rewrite that fails halfway takes all of it.
+  [ -f "$archive" ] || printf '# Archived tasks
+
+' > "$archive"
+  printf '%s' "$rows" >> "$archive" || { echo "tasks_archive: append failed — source untouched" >&2; return 1; }
+
+  # 2. Read it back. An append that reported success and wrote nothing is the
+  #    case this ordering exists to survive.
+  for id in "${ids[@]}"; do
+    if ! grep -q "^| *$id *|" "$archive"; then
+      echo "tasks_archive: $id is not in $archive after the append — source untouched" >&2
+      return 1
+    fi
+  done
+
+  # 3. Only now remove from the source, via a temp file so a failed write
+  #    cannot leave the queue truncated either.
+  local tmp="$TASKS_FILE.archiving.$$"
+  local pattern=""
+  for id in "${ids[@]}"; do pattern="${pattern}${pattern:+|}^\| *$id *\|"; done
+  grep -vE "$pattern" "$TASKS_FILE" > "$tmp" || { rm -f "$tmp"; echo "tasks_archive: rewrite failed — nothing removed" >&2; return 1; }
+  mv "$tmp" "$TASKS_FILE"
+
+  echo "tasks_archive: moved ${#ids[@]} row(s) to $archive"
+}
+
+# ── Command line ───────────────────────────────────────────────────────────
+# Sourcing this file gives the functions above. Running it gives the same
+# answers in one line, which exists for a specific reason: a hand-rolled parser
+# gets written when using the shared one is more effort than typing awk.
+#
+# It has happened four times. The fourth compared a Title column against a set
+# of task ids — `split('|')` puts ID at [1] and Title at [2], a regex match
+# after `| T-xxx |` puts Title at [0], and both offsets were used within ten
+# minutes. Every row then looked like a leaf, and the script printed `leaves: 88`
+# with complete confidence.
+#
+#   bash .claude/lib/tasks.sh next            the row `next` would select
+#   bash .claude/lib/tasks.sh ids             every task id
+#   bash .claude/lib/tasks.sh max-id          the highest id in use
+#   bash .claude/lib/tasks.sh count DONE      rows with that status
+#   bash .claude/lib/tasks.sh get T-042 Status
+#
+# max-id reads the file rather than your memory. After a merge every remembered
+# number is wrong: one session filed up to T-303 while another incremented from
+# T-287 and collided.
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+  _cli_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+  _cli_file="${TASKS_MD:-$_cli_root/.claude/state/TASKS.md}"
+
+  tasks_init "$_cli_file" || {
+    echo "tasks: no '| ID |' header row in $_cli_file" >&2
+    exit 1
+  }
+
+  case "${1:-}" in
+    next)   tasks_select_next ;;
+    ids)    tasks_rows | while IFS= read -r r; do [ -n "$r" ] && tasks_get "$r" ID; done ;;
+    max-id)
+      # Archived rows count: an id is never reused, so the ceiling is across both.
+      { tasks_rows | while IFS= read -r r; do [ -n "$r" ] && tasks_get "$r" ID; done
+        arch="$_cli_root/.claude/state/TASKS-archive.md"
+        [ -f "$arch" ] && grep -oE '^\| *T-[0-9]+' "$arch" | tr -d '| '
+      } | grep -oE '[0-9]+' | sort -n | tail -1 ;;
+    archive) shift; tasks_archive "$@" ;;
+    count)  tasks_count_status "${2:?usage: tasks.sh count <STATUS>}" ;;
+    get)
+      _want="${2:?usage: tasks.sh get <TASK-ID> <Column>}"
+      _col="${3:?usage: tasks.sh get <TASK-ID> <Column>}"
+      tasks_rows | while IFS= read -r r; do
+        [ -z "$r" ] && continue
+        [ "$(tasks_get "$r" ID)" = "$_want" ] && tasks_get "$r" "$_col"
+      done ;;
+    *)
+      echo "usage: tasks.sh next|ids|max-id|count <STATUS>|get <TASK-ID> <Column>|archive <ID>..." >&2
+      exit 2 ;;
+  esac
+fi

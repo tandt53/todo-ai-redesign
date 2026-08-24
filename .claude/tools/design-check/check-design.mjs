@@ -27,6 +27,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { installProbe } from '../../lib/probe.mjs';
 
 const args = process.argv.slice(2);
 const opt = (name, fallback = null) => {
@@ -317,6 +318,10 @@ try {
     const states = [...new Set([...html.matchAll(/showState\(\s*['"]([^'"]+)['"]\s*\)/g)].map(m => m[1]))];
 
     const page = await browser.newPage();
+    // One definition of "visible", shared with every other probe in the project.
+    // A hidden element measured as if it were on screen retracted a correct
+    // finding once; the fix is not to re-type the filter carefully each time.
+    await installProbe(page);
     const consoleErrors = [];
     page.on('pageerror', e => consoleErrors.push(String(e.message)));
     page.on('console', m => m.type() === 'error' && consoleErrors.push(m.text()));
@@ -391,10 +396,7 @@ try {
           if (s) await page.evaluate(st => typeof window.showState === 'function' && window.showState(st), s);
           const vis = await page.evaluate(testid => {
             const el = document.querySelector(`[data-testid="${testid}"]`);
-            if (!el) return false;
-            const r = el.getBoundingClientRect();
-            const cs = getComputedStyle(el);
-            return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none';
+            return !!el && window.__probe.visible(el);
           }, id);
           if (vis) { visibleSomewhere = true; break; }
         }
