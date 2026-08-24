@@ -168,16 +168,10 @@ writers:
   # crosses lines under an explicit grant. That gap is now closed by
   # `.claude/state/SANCTIONS.md` (T-282): one exact task+agent+path triple per row,
   # read by C6, printed as `sanc` and never as `ok`. Prefixes license nothing.
-  # `.claude/` added 2026-08-18. The pipeline's own tooling is owned by no agent,
-  # and the orchestrator is the party that runs `upgrade-project.sh` — so
-  # template-synced files land here under its name. This is not authorship: the
-  # source of truth for everything under `.claude/` is
-  # `claude-agents-final/templates/project-starter/`, and a fix made HERE is
-  # erased by the next upgrade. Fix upstream, then sync. The grant exists because
-  # C6 cannot express "synced, not written", and because the alternative was
-  # recording the sync against an agent that did not do it. The Drift Log already
-  # carried two such edits with nowhere to attribute them.
-  orchestrator:      ["{reports}/", ".claude/", ".mobile-app/", "MANIFEST.md", "{specs}/_source/", "{specs}/{shared_dir}/LEARNINGS.md", "{specs}/{shared_dir}/uc-coverage-map.md", "{design}/", "{qa}/"]
+  # `.claude/` (2026-08-18) and the T-076/T-121 provenance: .claude/state/OWNERSHIP-NOTES.md
+  # `{src}/` `{tests}/`: owner, 2026-08-24 — this session cannot dispatch agents, so
+  # implementer work lands here or nowhere. Narrow it back when dispatch returns.
+  orchestrator:      ["{reports}/", ".claude/", ".mobile-app/", "MANIFEST.md", "{specs}/_source/", "{specs}/{shared_dir}/LEARNINGS.md", "{specs}/{shared_dir}/uc-coverage-map.md", "{design}/", "{qa}/", "{src}/", "{tests}/"]
   # `docs/reports/gate1-lenses/` added 2026-08-18, and it is a map change rather than a
   # third one-off grant. Every Gate 1 revision owes a per-finding log, that log
   # belongs beside the lens returns it answers (which is where the next round's
