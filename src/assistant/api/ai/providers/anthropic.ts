@@ -42,6 +42,24 @@ export const anthropicProvider: ProviderFactory = (req: ClientRequest): ModelCli
     description: t.description,
     input_schema: t.schema,
   }))
+  // ---- the cache breakpoint, and why it sits exactly here --------------------
+  //
+  // Anthropic caches a PREFIX, and the request renders `tools` -> `system` ->
+  // `messages`. One breakpoint at the end of `system` therefore covers the tool
+  // schemas AND the system prompt - the two things that are byte-identical on
+  // every round of every turn - while leaving the conversation, which grows each
+  // round, outside it.
+  //
+  // Without this the provider caches NOTHING. There is no default and no
+  // warning: the request succeeds, the answer is right, and every round is
+  // billed at the full input rate. That is the failure this file had until the
+  // owner asked whether caching was handled.
+  //
+  // `system` must be the block-array form to carry the marker; a bare string
+  // takes no `cache_control`.
+  const system: unknown = [
+    { type: 'text', text: req.system, cache_control: { type: 'ephemeral' } },
+  ]
   const messages: { role: 'user' | 'assistant'; content: unknown }[] = [
     { role: 'user', content: req.firstUserMessage },
   ]
@@ -74,7 +92,7 @@ export const anthropicProvider: ProviderFactory = (req: ClientRequest): ModelCli
         body: JSON.stringify({
           model: req.config.model,
           max_tokens: req.config.maxTokens ?? 1024,
-          system: req.system,
+          system,
           tools,
           messages,
           ...(req.config.extra ?? {}),

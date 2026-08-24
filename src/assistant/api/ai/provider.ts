@@ -39,10 +39,51 @@ export interface ClientRequest {
 
 export type ProviderFactory = (req: ClientRequest) => ModelClient
 
-const registry = new Map<string, ProviderFactory>()
+/**
+ * What a provider does differently, declared rather than assumed.
+ *
+ * This exists because the three shapes below are NOT interchangeable and the
+ * difference is invisible until the bill arrives:
+ *
+ * - `explicit-breakpoints` - nothing is cached unless the request marks where
+ *   the stable prefix ends (Anthropic). Send no marker and you pay full price
+ *   on every round while believing caching is on.
+ * - `automatic` - the server caches a long-enough prefix by itself and takes no
+ *   parameter (OpenAI, DeepSeek). There is nothing to send.
+ * - `none` - no prompt caching at all (most local servers).
+ */
+export interface ProviderCapabilities {
+  cache: 'explicit-breakpoints' | 'automatic' | 'none'
+  /** shortest prefix that caches at all, when the provider publishes one */
+  cacheMinTokens?: number
+  /** false means the loop cannot run against it - the whole design needs tools */
+  toolCalling: boolean
+}
 
-export function registerProvider(name: string, factory: ProviderFactory): void {
-  registry.set(name.toLowerCase(), factory)
+interface Entry {
+  factory: ProviderFactory
+  capabilities: ProviderCapabilities
+}
+
+const registry = new Map<string, Entry>()
+
+export function registerProvider(
+  name: string,
+  factory: ProviderFactory,
+  capabilities: ProviderCapabilities,
+): void {
+  registry.set(name.toLowerCase(), { factory, capabilities })
+}
+
+/** What the named provider does differently. Throws for an unknown name. */
+export function capabilitiesOf(name: string): ProviderCapabilities {
+  const entry = registry.get(name.trim().toLowerCase())
+  if (entry === undefined) {
+    throw new Error(
+      `unknown AI provider '${name}' - registered: ${knownProviders().join(', ') || 'none'}`,
+    )
+  }
+  return entry.capabilities
 }
 
 export function knownProviders(): string[] {
@@ -51,13 +92,13 @@ export function knownProviders(): string[] {
 
 export function createModelClient(req: ClientRequest): ModelClient {
   const key = req.config.provider.trim().toLowerCase()
-  const factory = registry.get(key)
-  if (factory === undefined) {
+  const entry = registry.get(key)
+  if (entry === undefined) {
     throw new Error(
       `unknown AI provider '${req.config.provider}' — registered: ${knownProviders().join(', ') || 'none'}`,
     )
   }
-  return factory(req)
+  return entry.factory(req)
 }
 
 /**

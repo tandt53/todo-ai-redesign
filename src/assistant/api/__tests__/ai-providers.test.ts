@@ -6,6 +6,7 @@
 
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
+  capabilitiesOf,
   createModelClient,
   knownProviders,
   providerConfigFromEnv,
@@ -151,6 +152,40 @@ for (const provider of ['anthropic', 'openai'] as const) {
   })
 }
 
+describe('F-007 caching is handled per provider, not assumed', () => {
+  it('anthropic marks where the stable prefix ends, or nothing caches at all', async () => {
+    const { client, sent } = harness('anthropic', [SCRIPTS.anthropic.proseOnly])
+    await client.next([])
+    const system = sent[0]!.body.system as { type: string; cache_control?: unknown }[]
+    // Block-array form, not a bare string: a string carries no marker.
+    expect(Array.isArray(system)).toBe(true)
+    expect(system[0]!.cache_control).toEqual({ type: 'ephemeral' })
+    // The breakpoint sits at the END of system, so it covers tools + system —
+    // the request renders tools, then system, then messages.
+    expect(sent[0]!.body.tools).toBeDefined()
+  })
+
+  it('an openai-compatible request carries no cache parameter, because there is none', async () => {
+    const { client, sent } = harness('openai', [SCRIPTS.openai.proseOnly])
+    await client.next([])
+    expect(JSON.stringify(sent[0]!.body)).not.toContain('cache_control')
+  })
+
+  it('every registered provider declares what it does about caching', () => {
+    for (const name of knownProviders()) {
+      const cap = capabilitiesOf(name)
+      expect(['explicit-breakpoints', 'automatic', 'none'], name).toContain(cap.cache)
+      // The loop cannot run without tool calling, so a provider that lacks it
+      // must say so rather than be discovered at runtime.
+      expect(cap.toolCalling, name).toBe(true)
+    }
+  })
+
+  it('names what is registered when asked about a provider that is not', () => {
+    expect(() => capabilitiesOf('nope')).toThrow(/unknown AI provider 'nope'/)
+  })
+})
+
 describe('F-007 an OpenAI-compatible server needs no code', () => {
   it('is reachable by name, and points wherever configuration says', async () => {
     expect(knownProviders()).toContain('openai-compatible')
@@ -233,9 +268,13 @@ describe('F-007 configuration, with no compiled-in default', () => {
   })
 
   it('takes a provider nobody shipped', async () => {
-    registerProvider('my-gateway', () => ({
-      next: async () => ({ kind: 'final', payload: { kind: 'query' }, reply: { message: 'm', speech: 's' } }),
-    }))
+    registerProvider(
+      'my-gateway',
+      () => ({
+        next: async () => ({ kind: 'final', payload: { kind: 'query' }, reply: { message: 'm', speech: 's' } }),
+      }),
+      { cache: 'none', toolCalling: true },
+    )
     const client = createModelClient({
       config: { provider: 'my-gateway', model: 'whatever', apiKey: '' },
       system: 's', firstUserMessage: 'u', tools: TOOL_SCHEMAS, respondTool: RESPOND_TOOL,
