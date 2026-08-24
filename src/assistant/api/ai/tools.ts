@@ -42,16 +42,24 @@ export interface ToolResult {
 }
 
 /**
- * The catalogue, in the shape the Anthropic Messages API takes. It is data, so
- * the same value defines what the model may call and what `runTool` accepts —
- * a schema and an executor that disagree is a whole class of bug this avoids.
+ * The catalogue, provider-neutral. `schema` is plain JSON Schema; each adapter
+ * renames it to whatever its wire expects (Anthropic `input_schema`, OpenAI
+ * `parameters`). It is data, so the same value defines what the model may call
+ * and what `runTool` accepts — a schema and an executor that disagree is a
+ * whole class of bug this avoids.
  */
-export const TOOL_SCHEMAS = [
+export interface ToolSpec {
+  name: string
+  description: string
+  schema: { type: 'object'; properties: Record<string, unknown>; required: string[] }
+}
+
+export const TOOL_SCHEMAS: readonly ToolSpec[] = [
   {
     name: 'search_tasks',
     description:
       'Find the user\'s tasks by words in the title or note. Use this when the user names a task you cannot already see in the context, or when they describe one loosely. Returns handles you can then act on.',
-    input_schema: {
+    schema: {
       type: 'object' as const,
       properties: {
         query: { type: 'string', description: 'words to look for, case-insensitive' },
@@ -65,7 +73,7 @@ export const TOOL_SCHEMAS = [
     name: 'get_task',
     description:
       'Read one task in full, including its steps, its repeat rule and which list it is filed in. Use this before answering a question about a specific task, and before editing a field you have not seen.',
-    input_schema: {
+    schema: {
       type: 'object' as const,
       properties: {
         handle: { type: 'string', description: 'a task handle such as t3' },
@@ -76,21 +84,21 @@ export const TOOL_SCHEMAS = [
   {
     name: 'list_lists',
     description: 'The user\'s personal lists, with how many live tasks each holds.',
-    input_schema: { type: 'object' as const, properties: {}, required: [] },
+    schema: { type: 'object' as const, properties: {}, required: [] },
   },
   {
     name: 'list_trash',
     description:
       'Tasks the user deleted in the last 30 days. Read-only: you may tell the user what is in the trash, but you may never target one of these for a change.',
-    input_schema: { type: 'object' as const, properties: {}, required: [] },
+    schema: { type: 'object' as const, properties: {}, required: [] },
   },
   {
     name: 'now',
     description:
       'The current date and time in the user\'s own timezone. Call this before resolving any relative date — "tomorrow", "next Friday", "tonight" — rather than assuming one.',
-    input_schema: { type: 'object' as const, properties: {}, required: [] },
+    schema: { type: 'object' as const, properties: {}, required: [] },
   },
-] as const
+]
 
 export const TOOL_NAMES: readonly string[] = TOOL_SCHEMAS.map((t) => t.name)
 

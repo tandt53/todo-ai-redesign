@@ -39,6 +39,7 @@ roots:
   sim_harness: .mobile-app/
   # Tooling root: the gate deciding which tests run. `npm test` ran the api slice
   build_config: package.json   # only, so 16 unloadable files looked green (T-207)
+  env_example: .env.example    # the config surface, documented where a human looks for it
 
 shared_dir: _shared       # folder name for cross-cutting artifacts inside each root
 modules: [assistant]               # business domains in this project (e.g. auth, payments). Grows as features are specced.
@@ -171,7 +172,7 @@ writers:
   # `.claude/` (2026-08-18) and the T-076/T-121 provenance: .claude/state/OWNERSHIP-NOTES.md
   # `{src}/` `{tests}/`: owner, 2026-08-24 — this session cannot dispatch agents, so
   # implementer work lands here or nowhere. Narrow it back when dispatch returns.
-  orchestrator:      ["{reports}/", ".claude/", ".mobile-app/", "MANIFEST.md", "{specs}/_source/", "{specs}/{shared_dir}/LEARNINGS.md", "{specs}/{shared_dir}/uc-coverage-map.md", "{design}/", "{qa}/", "{src}/", "{tests}/"]
+  orchestrator:      ["{reports}/", ".claude/", ".mobile-app/", "MANIFEST.md", "{specs}/_source/", "{specs}/{shared_dir}/LEARNINGS.md", "{specs}/{shared_dir}/uc-coverage-map.md", "{design}/", "{qa}/", "{src}/", "{tests}/", ".env.example"]
   # `docs/reports/gate1-lenses/` added 2026-08-18, and it is a map change rather than a
   # third one-off grant. Every Gate 1 revision owes a per-finding log, that log
   # belongs beside the lens returns it answers (which is where the next round's

@@ -67,8 +67,8 @@ describe('F-007 the tool catalogue', () => {
 
   it('every schema declares its required fields', () => {
     for (const t of TOOL_SCHEMAS) {
-      expect(t.input_schema.type, t.name).toBe('object')
-      expect(Array.isArray(t.input_schema.required), t.name).toBe(true)
+      expect(t.schema.type, t.name).toBe('object')
+      expect(Array.isArray(t.schema.required), t.name).toBe(true)
     }
   })
 })

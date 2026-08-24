@@ -13,6 +13,42 @@
 // other — stripping markdown out of the chat text, say — produces a sentence
 // nobody wrote and nobody would have approved.
 
+/**
+ * The tool a model calls to finish a turn, in provider-neutral form.
+ *
+ * The turn ends with a tool call rather than with prose we then parse, for two
+ * reasons. The provider validates the call against this schema, so a malformed
+ * answer is retried by the model instead of by us. And it puts the action, the
+ * targets and BOTH sentences in one structure — which is the whole point of the
+ * shape the owner chose on 2026-08-21.
+ */
+export const RESPOND_TOOL = {
+  name: 'respond',
+  description:
+    'Finish the turn. Call this exactly once, when you know what should happen and what to say. Everything you decided goes in one call: the action, the tasks it targets, and both sentences.',
+  schema: {
+    type: 'object' as const,
+    properties: {
+      action: {
+        type: 'object',
+        description:
+          'What should happen, in the engine\'s vocabulary: {kind: "create"|"edit"|"delete"|"clarify"|"query"|"no_match"|"answer"|"list_create"|"list_move"|"list_refuse"|"trash_read", ...}. Address tasks by handle, never by id.',
+      },
+      message: {
+        type: 'string',
+        description:
+          'What the user reads in the chat. Your own words. Name the tasks you are acting on, in quotes, exactly as their titles read.',
+      },
+      speech: {
+        type: 'string',
+        description:
+          'What is read aloud. ONE plain sentence — no markdown, no bullet list, no line breaks, no parentheses. It is heard by someone whose eyes and hands are elsewhere, so it carries the point and drops the detail.',
+      },
+    },
+    required: ['action', 'message', 'speech'],
+  },
+}
+
 /** The model's own words for one turn. */
 export interface ReplyText {
   /** For the chat bubble. May name several tasks and may run to a few sentences. */
