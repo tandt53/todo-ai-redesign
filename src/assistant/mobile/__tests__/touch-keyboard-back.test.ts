@@ -180,7 +180,7 @@ describe('AC-9 — every interactive element reaches the platform minimum as HIT
     const h = await mobileHarness({ platform: 'ios' })
     h.server.always('POST /assistant/turn', 200, turnResponse({ turn: appliedTurn() }))
     await h.controller.init()
-    h.controller.composerChange('dời họp')
+    h.controller.composerChange('move the meeting')
     await h.controller.send('typed')
     await settle()
 
@@ -200,7 +200,7 @@ describe('AC-10 — the software keyboard is a layout fact, not a conversation e
     const h = await mobileHarness({ platform: 'android' })
     h.server.always('POST /assistant/turn', 200, turnResponse())
     await h.controller.init()
-    h.controller.composerChange('mai họp team lúc 2 giờ')
+    h.controller.composerChange('team meeting tomorrow at 2')
     const before = h.controller.state
     h.server.calls.length = 0
 
@@ -218,15 +218,15 @@ describe('AC-10 — the software keyboard is a layout fact, not a conversation e
   it('composer text survives keyboard toggles and a rotation', async () => {
     const h = await mobileHarness({ platform: 'ios' })
     await h.controller.init()
-    h.controller.composerChange('mai họp team lúc 2 giờ')
+    h.controller.composerChange('team meeting tomorrow at 2')
     await settle(h.store)
 
     h.lifecycle.keyboard(true)
     h.lifecycle.keyboard(false)
     // rotation re-mounts the view; the text lives in the model and on the
     // device, never in a component's local state
-    expect(h.controller.state.composer).toBe('mai họp team lúc 2 giờ')
-    expect(JSON.stringify(h.backend.snapshot())).toContain('mai họp team lúc 2 giờ')
+    expect(h.controller.state.composer).toBe('team meeting tomorrow at 2')
+    expect(JSON.stringify(h.backend.snapshot())).toContain('team meeting tomorrow at 2')
   })
 
   it('the keyboard’s own send action and the send button produce the same request', async () => {
@@ -235,10 +235,10 @@ describe('AC-10 — the software keyboard is a layout fact, not a conversation e
     await h.controller.init()
 
     // keyboard action
-    h.controller.composerChange('thêm mua sữa')
+    h.controller.composerChange('add buy milk')
     await h.controller.send('typed')
     // send button
-    h.controller.composerChange('thêm mua sữa')
+    h.controller.composerChange('add buy milk')
     await h.controller.send('typed')
     await settle()
 
@@ -255,14 +255,14 @@ describe('AC-11 — system back is never destructive', () => {
   it('with the keyboard open, back dismisses the keyboard and leaves the view standing', async () => {
     const h = await mobileHarness({ platform: 'android' })
     await h.controller.init()
-    h.controller.composerChange('nửa câu')
+    h.controller.composerChange('half a sentence')
     h.lifecycle.keyboard(true)
 
     const consumed = h.lifecycle.pressBack()
 
     expect(consumed).toBe(true) // handled: the view stays
     expect(h.controller.keyboardIsVisible()).toBe(false)
-    expect(h.controller.state.composer).toBe('nửa câu')
+    expect(h.controller.state.composer).toBe('half a sentence')
     expect(backAction({ keyboardVisible: true })).toBe('dismiss-keyboard')
   })
 
@@ -270,7 +270,7 @@ describe('AC-11 — system back is never destructive', () => {
     const h = await mobileHarness({ platform: 'android' })
     h.server.always('POST /assistant/turn', 200, turnResponse())
     await h.controller.init()
-    h.controller.composerChange('dời họp sang 4 giờ')
+    h.controller.composerChange('move the meeting to 4')
 
     const inFlight = h.controller.send('typed') // thinking
     expect(h.controller.state.surface).toBe('thinking')
@@ -297,22 +297,22 @@ describe('AC-11 — system back is never destructive', () => {
     await h.controller.init()
     h.controller.tapMic()
     await settle()
-    h.speech.feed(['gọi cho ngân hàng'])
+    h.speech.feed(['call the bank'])
 
     h.lifecycle.pressBack()
     await settle(h.store)
 
     expect(h.controller.state.surface).toBe('idle')
-    expect(h.controller.state.composer).toBe('gọi cho ngân hàng')
+    expect(h.controller.state.composer).toBe('call the bank')
     expect(h.server.turnBodies()).toHaveLength(0)
-    expect(JSON.stringify(h.backend.snapshot())).toContain('gọi cho ngân hàng')
+    expect(JSON.stringify(h.backend.snapshot())).toContain('call the bank')
   })
 
   it('an in-flight turn survives leaving the view and still renders on return', async () => {
     const h = await mobileHarness({ platform: 'ios' })
     h.server.always('POST /assistant/turn', 200, turnResponse({ turn: appliedTurn() }))
     await h.controller.init()
-    h.controller.composerChange('dời họp sang 4 giờ')
+    h.controller.composerChange('move the meeting to 4')
 
     const inFlight = h.controller.send('typed')
     h.lifecycle.pressBack() // user leaves mid-turn

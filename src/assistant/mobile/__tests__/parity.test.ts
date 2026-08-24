@@ -60,7 +60,7 @@ describe('F-001 AC-1 / AC-4 — applied changes land in the list, attributed, sa
       tasks: [task({ due_at: '2026-08-16T16:00:00.000Z' })],
     })
 
-    h.controller.composerChange('dời duyệt ngân sách sang 4 giờ chiều')
+    h.controller.composerChange('move the budget review to 4pm')
     await h.controller.send('typed')
     await settle()
 
@@ -76,11 +76,11 @@ describe('F-001 AC-1 / AC-4 — applied changes land in the list, attributed, sa
       'POST /assistant/turn',
       200,
       turnResponse({
-        turn: askedTurn('bulk_delete', ['Đi chợ', 'Gọi mẹ', 'Đặt bánh'], ['Xóa 3 việc', 'Giữ lại']),
+        turn: askedTurn('bulk_delete', ['Groceries', 'Call mom', 'Order the cake'], ['Delete 3 tasks', 'Keep them']),
       }),
     )
 
-    h.controller.composerChange('xóa mấy việc mua sắm')
+    h.controller.composerChange('delete the shopping tasks')
     await h.controller.send('typed')
     await settle()
 
@@ -93,7 +93,7 @@ describe('F-001 AC-1 / AC-4 — applied changes land in the list, attributed, sa
   it('never renders a raw uuid or an internal draft-ref token', async () => {
     const h = await ready()
     h.server.always('POST /assistant/turn', 200, turnResponse({ turn: appliedTurn() }))
-    h.controller.composerChange('dời họp')
+    h.controller.composerChange('move the meeting')
     await h.controller.send('typed')
     await settle()
 
@@ -108,8 +108,8 @@ describe('F-001 AC-2 / AC-29 — live transcript, four states, nothing else', ()
     const h = await ready()
     h.controller.tapMic()
     await settle()
-    h.speech.feed(['mai', 'mai họp', 'mai họp team'])
-    expect(h.controller.state.composer).toBe('mai họp team')
+    h.speech.feed(['mai', 'meeting tomorrow', 'team meeting tomorrow'])
+    expect(h.controller.state.composer).toBe('team meeting tomorrow')
     expect(h.controller.state.surface).toBe('listening')
   })
 
@@ -131,7 +131,7 @@ describe('F-001 AC-2 / AC-29 — live transcript, four states, nothing else', ()
     h.controller.tapMic()
     await settle()
     seen.add(h.controller.state.surface)
-    h.speech.feed(['dời họp'])
+    h.speech.feed(['move the meeting'])
     h.speech.end('speech-end')
     seen.add(h.controller.state.surface)
     await settle()
@@ -146,7 +146,7 @@ describe('F-001 AC-5..AC-8 — the undo contract, unchanged on mobile', () => {
   it('one gesture undoes the newest applied turn and names what came back', async () => {
     const h = await ready()
     h.server.always('POST /assistant/turn', 200, turnResponse({ turn: appliedTurn() }))
-    h.controller.composerChange('dời họp')
+    h.controller.composerChange('move the meeting')
     await h.controller.send('typed')
     await settle()
 
@@ -165,7 +165,7 @@ describe('F-001 AC-5..AC-8 — the undo contract, unchanged on mobile', () => {
   it('a skipped task is named, and an all-skipped undo never reads as success (AC-7)', async () => {
     const h = await ready()
     h.server.always('POST /assistant/turn', 200, turnResponse({ turn: appliedTurn() }))
-    h.controller.composerChange('dời họp')
+    h.controller.composerChange('move the meeting')
     await h.controller.send('typed')
     await settle()
 
@@ -175,7 +175,7 @@ describe('F-001 AC-5..AC-8 — the undo contract, unchanged on mobile', () => {
       undoOutcome({
         reverted: [],
         skipped: [
-          { task_id: 'task-1', title: 'Duyệt ngân sách Q3', reason: 'modified_since_apply' },
+          { task_id: 'task-1', title: 'Budget review Q3', reason: 'modified_since_apply' },
         ],
         nothing_reverted: true,
       }),
@@ -185,13 +185,13 @@ describe('F-001 AC-5..AC-8 — the undo contract, unchanged on mobile', () => {
 
     const reverted = h.controller.state.messages.find((m) => m.kind === 'reverted')
     expect(reverted?.kind === 'reverted' && reverted.head).toBe('Nothing was undone')
-    expect(reverted?.kind === 'reverted' && reverted.body.join(' ')).toContain('Duyệt ngân sách Q3')
+    expect(reverted?.kind === 'reverted' && reverted.body.join(' ')).toContain('Budget review Q3')
   })
 
   it('a non-mutating turn neither holds nor ends the undo window (AC-8)', async () => {
     const h = await ready()
     h.server.once('POST /assistant/turn', 200, turnResponse({ turn: appliedTurn() }))
-    h.controller.composerChange('dời họp')
+    h.controller.composerChange('move the meeting')
     await h.controller.send('typed')
     await settle()
     expect(h.controller.undoable()).toBe('turn-1')
@@ -205,11 +205,11 @@ describe('F-001 AC-5..AC-8 — the undo contract, unchanged on mobile', () => {
           id: 'turn-2',
           client_turn_id: 'cid-2',
           status: 'applied',
-          outcome: { kind: 'no_match', heard_transcript: 'gạch trận cầu lông' },
+          outcome: { kind: 'no_match', heard_transcript: 'drop the badminton match' },
         }),
       }),
     )
-    h.controller.composerChange('gạch trận cầu lông')
+    h.controller.composerChange('drop the badminton match')
     await h.controller.send('typed')
     await settle()
 
@@ -225,22 +225,22 @@ describe('F-001 AC-9..AC-13 — questions, resolutions and clarification', () =>
       'POST /assistant/turn',
       200,
       turnResponse({
-        turn: askedTurn('clarify', ['Họp nhanh đầu ngày', '1:1 với Hà'], [
-          'Họp nhanh đầu ngày — 9:30',
-          '1:1 với Hà — 16:30',
+        turn: askedTurn('clarify', ['Morning standup', '1:1 with Ha'], [
+          'Morning standup — 9:30',
+          '1:1 with Ha — 16:30',
         ]),
       }),
     )
-    h.controller.composerChange('hủy cuộc họp')
+    h.controller.composerChange('cancel the meeting')
     await h.controller.send('typed')
     await settle()
 
     h.server.once('POST /assistant/turn', 200, turnResponse())
-    await h.controller.chipTap('turn-1', 'Họp nhanh đầu ngày — 9:30')
+    await h.controller.chipTap('turn-1', 'Morning standup — 9:30')
     await settle()
 
     const last = h.server.turnBodies().at(-1)
-    expect(last?.['transcript']).toBe('Họp nhanh đầu ngày — 9:30') // literal
+    expect(last?.['transcript']).toBe('Morning standup — 9:30') // literal
     expect(last?.['answer_to_turn_id']).toBe('turn-1') // explicit binding
     expect(last?.['source']).toBe('tap')
   })
@@ -251,10 +251,10 @@ describe('F-001 AC-9..AC-13 — questions, resolutions and clarification', () =>
       'POST /assistant/turn',
       200,
       turnResponse({
-        turn: askedTurn('bulk_delete', ['Đi chợ', 'Gọi mẹ'], ['Xóa 2 việc', 'Giữ lại']),
+        turn: askedTurn('bulk_delete', ['Groceries', 'Call mom'], ['Delete 2 tasks', 'Keep them']),
       }),
     )
-    h.controller.composerChange('xóa mấy việc mua sắm')
+    h.controller.composerChange('delete the shopping tasks')
     await h.controller.send('typed')
     await settle()
 
@@ -266,7 +266,7 @@ describe('F-001 AC-9..AC-13 — questions, resolutions and clarification', () =>
         resolutions: [{ question_turn_id: 'turn-1', result: 'declined_superseded' }],
       }),
     )
-    h.controller.composerChange('thêm gọi ngân hàng ngày mai lúc 9 giờ')
+    h.controller.composerChange('add call the bank tomorrow at 9')
     await h.controller.send('typed')
     await settle()
 
@@ -288,16 +288,16 @@ describe('F-001 AC-14 / AC-15 — honesty on no-match and unsupported queries', 
       turnResponse({
         turn: turn({
           status: 'applied',
-          outcome: { kind: 'no_match', heard_transcript: 'gạch trận cầu lông' },
+          outcome: { kind: 'no_match', heard_transcript: 'drop the badminton match' },
         }),
       }),
     )
-    h.controller.composerChange('gạch trận cầu lông')
+    h.controller.composerChange('drop the badminton match')
     await h.controller.send('typed')
     await settle()
 
     const m = h.controller.state.messages.find((x) => x.kind === 'no-match')
-    expect(m?.kind === 'no-match' && m.heard).toBe('gạch trận cầu lông')
+    expect(m?.kind === 'no-match' && m.heard).toBe('drop the badminton match')
   })
 
   it('an unsupported list question names the working alternative', async () => {
@@ -308,16 +308,16 @@ describe('F-001 AC-14 / AC-15 — honesty on no-match and unsupported queries', 
       turnResponse({
         turn: turn({
           status: 'applied',
-          outcome: { kind: 'unsupported_query', alternative: 'bộ lọc trên danh sách' },
+          outcome: { kind: 'unsupported_query', alternative: 'filters on the list' },
         }),
       }),
     )
-    h.controller.composerChange('chủ nhật có việc gì?')
+    h.controller.composerChange('anything on Sunday?')
     await h.controller.send('typed')
     await settle()
 
     const m = h.controller.state.messages.find((x) => x.kind === 'unsupported')
-    expect(m?.kind === 'unsupported' && m.alternative).toBe('bộ lọc trên danh sách')
+    expect(m?.kind === 'unsupported' && m.alternative).toBe('filters on the list')
   })
 })
 
@@ -327,12 +327,12 @@ describe('F-001 AC-16 / AC-23 / AC-24 — failure paths keep the user’s words'
     h.server.once('POST /assistant/turn', 502, {
       error: { code: 'AI_ERROR', message: 'interpreter unavailable' },
     })
-    h.controller.composerChange('dời buổi tập gym sang thứ hai lúc 7 giờ')
+    h.controller.composerChange('move the gym session to Monday at 7')
     await h.controller.send('typed')
     await settle()
 
     expect(h.controller.state.surface).toBe('error')
-    expect(h.controller.state.composer).toBe('dời buổi tập gym sang thứ hai lúc 7 giờ')
+    expect(h.controller.state.composer).toBe('move the gym session to Monday at 7')
     const err = h.controller.state.messages.find((m) => m.kind === 'error')
     const retryId = err?.kind === 'error' ? err.retryTurnId : null
     expect(retryId).not.toBe(null)
@@ -351,10 +351,10 @@ describe('F-001 AC-17 / AC-18 / AC-20 — typed parity, manual path, text-only p
     const h = await ready()
     h.server.always('POST /assistant/turn', 200, turnResponse())
 
-    h.controller.composerChange('thêm mua sữa')
+    h.controller.composerChange('add buy milk')
     await h.controller.send('typed')
     await settle()
-    await speak(h, 'thêm mua sữa')
+    await speak(h, 'add buy milk')
     await settle()
 
     const [typed, voice] = h.server.turnBodies()
@@ -375,7 +375,7 @@ describe('F-001 AC-17 / AC-18 / AC-20 — typed parity, manual path, text-only p
   it('the turn payload carries exactly the contract’s six fields — never audio', async () => {
     const h = await ready()
     h.server.always('POST /assistant/turn', 200, turnResponse())
-    h.controller.composerChange('thêm mua sữa')
+    h.controller.composerChange('add buy milk')
     await h.controller.send('typed')
     await settle()
 
@@ -392,14 +392,14 @@ describe('F-001 AC-17 / AC-18 / AC-20 — typed parity, manual path, text-only p
   it('the manual list path makes ZERO assistant calls', async () => {
     const h = await ready()
     h.server.always('GET /tasks', 200, { tasks: [task()] })
-    h.server.always('POST /tasks', 200, { task: task({ id: 'task-2', title: 'gọi mẹ' }) })
+    h.server.always('POST /tasks', 200, { task: task({ id: 'task-2', title: 'call mom' }) })
     h.server.always('PATCH /tasks/:id', 200, { task: task({ status: 'done' }) })
     h.server.always('DELETE /tasks/:id', 200, { task: task() })
 
-    await h.controller.addTask('gọi mẹ')
+    await h.controller.addTask('call mom')
     await h.controller.refreshTasks()
     await h.controller.toggleTask('task-1')
-    await h.controller.editTask('task-1', 'Duyệt ngân sách Q4')
+    await h.controller.editTask('task-1', 'Budget review Q4')
     await h.controller.removeTask('task-1')
     await settle()
 
@@ -420,7 +420,7 @@ describe('F-001 AC-22 / AC-25 — transient failure and the offline handover, on
   it('a turn in flight when the connection drops queues visibly and replays under the same id', async () => {
     const h = await ready()
     h.server.failOnce('POST /assistant/turn')
-    h.controller.composerChange('đánh dấu tiền điện đã xong')
+    h.controller.composerChange('mark the electricity bill done')
     await h.controller.send('typed')
     await settle()
 
@@ -447,7 +447,7 @@ describe('F-001 AC-28 — session resume is visible on a phone too', () => {
     h.server.always('GET /assistant/session', 200, {
       session: session({
         messages: [
-          turn({ id: 'turn-1', seq: 1, transcript_raw: 'thêm mua sữa', outcome: null }),
+          turn({ id: 'turn-1', seq: 1, transcript_raw: 'add buy milk', outcome: null }),
           appliedTurn({ id: 'turn-2', seq: 2, client_turn_id: 'cid-2' }),
         ],
       }),

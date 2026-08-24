@@ -128,7 +128,10 @@ export function checkReplyFacts(reply: ReplyText, targets: readonly string[]): R
       const said = Number(m[1])
       // Only a count that plausibly refers to the batch. A year, a clock time or
       // a quantity inside a task's own title is not a claim about this set.
-      if (said > 0 && said <= 200 && said !== targets.length && /\b\d{1,3}\s+(tasks?|việc|items?)\b/i.test(reply.message)) {
+      // English only: the product language is English and no other is planned
+      // (`CLAUDE.md ## Project`). A Vietnamese alternation here was a leak from
+      // the language this repo's conversation happens in.
+      if (said > 0 && said <= 200 && said !== targets.length && /\b\d{1,3}\s+(tasks?|items?)\b/i.test(reply.message)) {
         problems.push({ kind: 'count_mismatch', said, actual: targets.length })
         break
       }

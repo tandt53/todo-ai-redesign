@@ -519,12 +519,12 @@ describe('AC-2 / AC-3 — typing is fully unaffected in every permission combina
       h.server.always('POST /assistant/turn', 200, turnResponse())
       await h.controller.init()
 
-      h.controller.composerChange('mua sữa')
+      h.controller.composerChange('buy milk')
       await h.controller.send('typed')
       await settle()
 
       expect(h.server.turnBodies()).toHaveLength(1)
-      expect(h.server.turnBodies()[0]?.['transcript']).toBe('mua sữa')
+      expect(h.server.turnBodies()[0]?.['transcript']).toBe('buy milk')
     })
   }
 })
@@ -548,8 +548,8 @@ describe('AC-4 + F-001 AC-20/AC-22 — capability, not connectivity, decides the
 
     h.controller.tapMic()
     await settle()
-    h.speech.feed(['mua sữa'])
-    expect(h.controller.state.composer).toBe('mua sữa') // never discarded
+    h.speech.feed(['buy milk'])
+    expect(h.controller.state.composer).toBe('buy milk') // never discarded
     h.speech.end('speech-end')
     await settle()
 
@@ -561,7 +561,7 @@ describe('AC-4 + F-001 AC-20/AC-22 — capability, not connectivity, decides the
     )
     expect(mutatingAssistantCalls).toHaveLength(0)
     expect(h.server.turnBodies()).toHaveLength(0)
-    expect(h.controller.state.tasks.map((t) => t.title)).toEqual(['mua sữa'])
+    expect(h.controller.state.tasks.map((t) => t.title)).toEqual(['buy milk'])
     expect(h.controller.state.tasks[0]?.local).toBe(true)
   })
 

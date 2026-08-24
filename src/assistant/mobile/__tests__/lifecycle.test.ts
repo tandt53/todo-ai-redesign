@@ -59,7 +59,7 @@ describe('AC-5 — backgrounding or kill while listening loses no words', () => 
 
     h.controller.tapMic()
     await settle()
-    h.speech.feed(['mai họp team lúc 2'])
+    h.speech.feed(['team meeting tomorrow at 2'])
 
     // the OS takes the app away mid-sentence
     h.lifecycle.background()
@@ -69,12 +69,12 @@ describe('AC-5 — backgrounding or kill while listening loses no words', () => 
     expect(h.controller.state.surface).toBe('idle')
     expect(h.server.turnBodies()).toHaveLength(0)
     const onDevice = JSON.stringify(h.backend.snapshot())
-    expect(onDevice).toContain('mai họp team lúc 2')
+    expect(onDevice).toContain('team meeting tomorrow at 2')
 
     // …and the app is killed. A fresh model over the same device:
     const reopened = await h.relaunch()
     await reopened.controller.init()
-    expect(reopened.controller.state.composer).toBe('mai họp team lúc 2')
+    expect(reopened.controller.state.composer).toBe('team meeting tomorrow at 2')
   })
 
   it('backgrounding while listening sends ZERO turns — it is a cancel, not a submit', async () => {
@@ -82,13 +82,13 @@ describe('AC-5 — backgrounding or kill while listening loses no words', () => 
     await h.controller.init()
     h.controller.tapMic()
     await settle()
-    h.speech.feed(['xóa hết mọi thứ'])
+    h.speech.feed(['delete everything'])
 
     h.lifecycle.background()
     await settle()
 
     expect(h.server.turnBodies()).toHaveLength(0)
-    expect(h.controller.state.composer).toBe('xóa hết mọi thứ')
+    expect(h.controller.state.composer).toBe('delete everything')
     expect(h.speech.listening()).toBe(false)
   })
 })
@@ -98,12 +98,12 @@ describe('AC-6 — the outgoing turn survives until the server acks its client_t
     const h = await mobileHarness({ platform: 'ios' })
     h.server.always('POST /assistant/turn', 200, turnResponse())
     await h.controller.init()
-    h.controller.composerChange('dời họp sang 4 giờ')
+    h.controller.composerChange('move the meeting to 4')
 
     const inFlight = h.controller.send('typed') // deliberately not awaited
     expect(h.controller.state.surface).toBe('thinking')
     const held = h.stores.outgoingTurn()
-    expect(held?.body.transcript).toBe('dời họp sang 4 giờ')
+    expect(held?.body.transcript).toBe('move the meeting to 4')
     expect(held?.body.client_turn_id).toBe(h.ids[h.ids.length - 1])
     await inFlight
   })
@@ -111,7 +111,7 @@ describe('AC-6 — the outgoing turn survives until the server acks its client_t
   it('a kill mid-flight replays under the SAME client_turn_id and applies exactly once', async () => {
     const h = await mobileHarness({ platform: 'ios' })
     await h.controller.init()
-    h.controller.composerChange('dời họp sang 4 giờ')
+    h.controller.composerChange('move the meeting to 4')
 
     // The request left the device; the response never came back (killed).
     h.server.failOnce('POST /assistant/turn')
@@ -153,7 +153,7 @@ describe('AC-6 — the outgoing turn survives until the server acks its client_t
   it('when the session read already contains the turn, that read IS the ack — no second send', async () => {
     const h = await mobileHarness({ platform: 'android' })
     await h.controller.init()
-    h.controller.composerChange('thêm mua sữa')
+    h.controller.composerChange('add buy milk')
     h.server.failOnce('POST /assistant/turn')
     await h.controller.send('typed')
     await settle(h.store)
@@ -181,7 +181,7 @@ describe('AC-6 — the outgoing turn survives until the server acks its client_t
       session: session({
         messages: [
           appliedTurn({ id: 'turn-1', client_turn_id: 'cid-a', seq: 1 }),
-          askedTurn('bulk_delete', ['Đi chợ', 'Gọi mẹ'], ['Xóa 2 việc', 'Giữ lại'], {
+          askedTurn('bulk_delete', ['Groceries', 'Call mom'], ['Delete 2 tasks', 'Keep them'], {
             id: 'turn-2',
             client_turn_id: 'cid-b',
             seq: 2,
@@ -208,14 +208,14 @@ describe('AC-7 — audio interruption is cancel-while-listening', () => {
       await h.controller.init()
       h.controller.tapMic()
       await settle()
-      h.speech.feed(['gọi cho ngân hàng'])
+      h.speech.feed(['call the bank'])
 
       const releasesBefore = h.speech.log.audioSessionReleases
       h.lifecycle.interrupt(reason)
       await settle()
 
       expect(h.controller.state.surface).toBe('idle') // visibly back to idle
-      expect(h.controller.state.composer).toBe('gọi cho ngân hàng') // preserved (AC-5)
+      expect(h.controller.state.composer).toBe('call the bank') // preserved (AC-5)
       expect(h.server.turnBodies()).toHaveLength(0) // NO turn sent
       expect(h.speech.log.audioSessionReleases).toBe(releasesBefore + 1)
       expect(h.controller.counters.audioInterruptions).toBe(1)
@@ -250,7 +250,7 @@ describe('AC-8 — every foreground transition re-reads the session before accep
 
     h.lifecycle.foreground()
     // input arrives immediately, before the read could have finished
-    h.controller.composerChange('thêm mua sữa')
+    h.controller.composerChange('add buy milk')
     const sending = h.controller.send('typed')
     expect(h.controller.acceptingInput()).toBe(false)
     await sending
@@ -273,7 +273,7 @@ describe('AC-8 — every foreground transition re-reads the session before accep
 
     const h = await mobileHarness({ platform: 'ios' })
     await h.controller.init()
-    h.controller.composerChange('dời họp sang 4 giờ')
+    h.controller.composerChange('move the meeting to 4')
     h.server.failOnce('POST /assistant/turn')
     await h.controller.send('typed')
     await settle(h.store)
@@ -297,7 +297,7 @@ describe('AC-8 — every foreground transition re-reads the session before accep
     const h = await mobileHarness({ platform: 'ios' })
     h.server.always('GET /assistant/session', 200, {
       session: session({
-        messages: [turn({ id: 'turn-1', transcript_raw: 'thêm mua sữa', outcome: null })],
+        messages: [turn({ id: 'turn-1', transcript_raw: 'add buy milk', outcome: null })],
       }),
       boundary: null,
     })
@@ -324,7 +324,7 @@ describe('AC-8 — every foreground transition re-reads the session before accep
   it('local stores reconcile against the read — they never override the server history', async () => {
     const h = await mobileHarness({ platform: 'ios' })
     await h.controller.init()
-    h.controller.composerChange('nửa câu chưa gửi')
+    h.controller.composerChange('half a sentence unsent')
     await settle(h.store)
 
     // the server says: that session is over
@@ -336,7 +336,7 @@ describe('AC-8 — every foreground transition re-reads the session before accep
     expect(h.controller.state.messages.map((m) => m.kind)).toEqual(['boundary'])
     // …while the local survivor comes back where it belongs: the composer,
     // never as a conversation message.
-    expect(h.controller.state.composer).toBe('nửa câu chưa gửi')
+    expect(h.controller.state.composer).toBe('half a sentence unsent')
   })
 })
 
@@ -374,7 +374,7 @@ describe('AC-8 — a cold open is a foreground transition too (BUG-002 regressio
     )
 
     const opening = h.controller.init()
-    h.controller.composerChange('thêm mua sữa')
+    h.controller.composerChange('add buy milk')
     const sending = h.controller.send('typed')
     await Promise.all([opening, sending])
     await settle(h.store)
@@ -396,7 +396,7 @@ describe('AC-8 — a cold open is a foreground transition too (BUG-002 regressio
     h.server.always('POST /assistant/turn', 200, turnResponse({ session_id: 'sess-7' }))
 
     const opening = h.controller.init()
-    h.controller.composerChange('dời họp sang 4 giờ')
+    h.controller.composerChange('move the meeting to 4')
     const sending = h.controller.send('typed')
     await Promise.all([opening, sending])
     await settle(h.store)
@@ -412,7 +412,7 @@ describe('AC-8 — a cold open is a foreground transition too (BUG-002 regressio
       session: null,
       boundary: boundary({
         declined_questions: [
-          { turn_id: 'turn-2', kind: 'bulk_delete', task_titles: ['Đi chợ', 'Gọi mẹ'] },
+          { turn_id: 'turn-2', kind: 'bulk_delete', task_titles: ['Groceries', 'Call mom'] },
         ],
       }),
     })
@@ -423,7 +423,7 @@ describe('AC-8 — a cold open is a foreground transition too (BUG-002 regressio
     )
 
     const opening = h.controller.init()
-    h.controller.composerChange('thêm mua sữa')
+    h.controller.composerChange('add buy milk')
     const sending = h.controller.send('typed')
     await Promise.all([opening, sending])
     await settle(h.store)
@@ -436,7 +436,7 @@ describe('AC-8 — a cold open is a foreground transition too (BUG-002 regressio
     expect(kinds).toContain('user')
     // and the boundary still carries its content, not just its marker
     const marker = h.controller.state.messages.find((m) => m.kind === 'boundary')
-    expect(JSON.stringify(marker)).toContain('Đi chợ')
+    expect(JSON.stringify(marker)).toContain('Groceries')
   })
 
   it('a foreground IS a reconnect: offline creates made before a background reach the server even when the OS never reported the transition (BUG-001)', async () => {
@@ -447,7 +447,7 @@ describe('AC-8 — a cold open is a foreground transition too (BUG-002 regressio
     // The signal drops, and the create takes F-001 AC-25's local no-AI path.
     net.set(false)
     await settle(h.store)
-    h.controller.composerChange('thêm mua sữa')
+    h.controller.composerChange('add buy milk')
     await h.controller.send('typed')
     await settle(h.store)
 
@@ -462,7 +462,7 @@ describe('AC-8 — a cold open is a foreground transition too (BUG-002 regressio
     h.lifecycle.background()
     await settle(h.store)
     net.cameBackSilently()
-    const synced = { ...task({ id: taskId, title: 'thêm mua sữa' }) }
+    const synced = { ...task({ id: taskId, title: 'add buy milk' }) }
     h.server.always('POST /tasks', 201, { task: synced })
     h.server.always('GET /tasks', 200, { tasks: [synced] })
 
@@ -474,10 +474,10 @@ describe('AC-8 — a cold open is a foreground transition too (BUG-002 regressio
     expect(creates).toHaveLength(1)
     const created = creates[0]?.body as Record<string, unknown> | undefined
     expect(created?.['id']).toBe(taskId)
-    expect(created?.['title']).toBe('thêm mua sữa')
+    expect(created?.['title']).toBe('add buy milk')
     // …and the task is no longer device-local, in state and durably.
     expect(h.controller.state.tasks.some((t) => t.local === true)).toBe(false)
-    expect(h.controller.state.tasks.map((t) => t.title)).toContain('thêm mua sữa')
+    expect(h.controller.state.tasks.map((t) => t.title)).toContain('add buy milk')
     expect(h.stores.localTasks()).toHaveLength(0)
   })
 
@@ -488,7 +488,7 @@ describe('AC-8 — a cold open is a foreground transition too (BUG-002 regressio
 
     net.set(false)
     await settle(h.store)
-    h.controller.composerChange('thêm mua sữa')
+    h.controller.composerChange('add buy milk')
     await h.controller.send('typed')
     await settle(h.store)
     const taskId = h.ids[h.ids.length - 1] as string
@@ -497,13 +497,13 @@ describe('AC-8 — a cold open is a foreground transition too (BUG-002 regressio
     await settle(h.store)
     net.cameBackSilently()
     h.server.calls.length = 0
-    h.server.always('POST /tasks', 201, { task: task({ id: taskId, title: 'thêm mua sữa' }) })
+    h.server.always('POST /tasks', 201, { task: task({ id: taskId, title: 'add buy milk' }) })
     h.server.always('POST /assistant/turn', 200, turnResponse())
 
     const resuming = h.controller.onForeground() // deliberately not awaited
     // AC-8's gate covers the whole reconciliation, replay included.
     expect(h.controller.acceptingInput()).toBe(false)
-    h.controller.composerChange('dời họp sang 4 giờ')
+    h.controller.composerChange('move the meeting to 4')
     const sending = h.controller.send('typed')
     await Promise.all([resuming, sending])
     await settle(h.store)
@@ -520,7 +520,7 @@ describe('AC-8 — a cold open is a foreground transition too (BUG-002 regressio
     const cold = await mobileHarness({ platform: 'ios' })
     cold.server.always('POST /assistant/turn', 200, turnResponse())
     const opening = cold.controller.init()
-    cold.controller.composerChange('thêm mua sữa')
+    cold.controller.composerChange('add buy milk')
     await Promise.all([opening, cold.controller.send('typed')])
     await settle(cold.store)
 
@@ -529,7 +529,7 @@ describe('AC-8 — a cold open is a foreground transition too (BUG-002 regressio
     await resumed.controller.init()
     resumed.server.calls.length = 0
     resumed.lifecycle.foreground()
-    resumed.controller.composerChange('thêm mua sữa')
+    resumed.controller.composerChange('add buy milk')
     await resumed.controller.send('typed')
     await settle(resumed.store)
 

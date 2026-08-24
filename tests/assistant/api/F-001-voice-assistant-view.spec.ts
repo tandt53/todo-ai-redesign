@@ -127,10 +127,10 @@ class QaFixtureInterpreter implements Interpreter {
             : { type: 'unclassifiable' },
       };
     }
-    if (['yes', 'ok', 'ừ', 'đúng vậy, xoá đi'].includes(norm)) {
+    if (['yes', 'ok', 'yeah', 'yes, delete it'].includes(norm)) {
       return { kind: 'answer', answer: { type: 'affirmative' } };
     }
-    if (['no', 'không'].includes(norm)) {
+    if (['no', 'nope'].includes(norm)) {
       return { kind: 'answer', answer: { type: 'negative' } };
     }
     return null;

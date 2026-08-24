@@ -95,11 +95,11 @@ describe('AC-12 — one catalogue, three attribute spellings', () => {
     expect(identityAttribute('ios')).toBe('accessibilityIdentifier')
     expect(identityAttribute('android')).toBe('resource-id')
 
-    const props = a11yProps(A11Y_IDS.micButton, { label: 'Nhấn để nói', role: 'button' })
+    const props = a11yProps(A11Y_IDS.micButton, { label: 'Tap to speak', role: 'button' })
     expect(props.testID).toBe('assistant-mic-button')
     // WCAG 2.5.3 label-in-name (F-001 AC-19, held in force by the parity
     // table): the *human* label is what a screen reader announces.
-    expect(props.accessibilityLabel).toBe('Nhấn để nói')
+    expect(props.accessibilityLabel).toBe('Tap to speak')
   })
 })
 
@@ -149,11 +149,11 @@ const STATES: { name: string; state: AppState; ctx: SurfaceContext }[] =
           msg<Extract<Message, { kind: 'applied' }>>({
             kind: 'applied',
             turnId: 'turn-1',
-            head: 'Đã sửa 1 việc',
+            head: 'Edited 1 task',
             lines: [
               {
                 taskId: 'task-1',
-                title: 'Duyệt ngân sách Q3',
+                title: 'Budget review Q3',
                 label: 'edit',
                 chips: [{ field: 'due_at', old: '14:00', new: '16:00' }],
               },
@@ -171,7 +171,7 @@ const STATES: { name: string; state: AppState; ctx: SurfaceContext }[] =
             byTask: {
               'task-1': {
                 taskId: 'task-1',
-                title: 'Duyệt ngân sách Q3',
+                title: 'Budget review Q3',
                 label: 'edit',
                 chips: [{ field: 'due_at', old: '14:00', new: '16:00' }],
               },
@@ -188,10 +188,10 @@ const STATES: { name: string; state: AppState; ctx: SurfaceContext }[] =
           kind: 'question',
           turnId: 'turn-2',
           qkind: 'bulk_delete',
-          head: 'Xóa 3 việc?',
-          body: 'Sẽ xóa: Đi chợ, Đặt bánh, Lấy đồ.',
-          options: ['Xóa 3 việc', 'Giữ lại'],
-          taskTitles: ['Đi chợ', 'Đặt bánh', 'Lấy đồ'],
+          head: 'Delete 3 tasks?',
+          body: 'Will delete: Groceries, Order the cake, Pick up parcel.',
+          options: ['Delete 3 tasks', 'Keep them'],
+          taskTitles: ['Groceries', 'Order the cake', 'Pick up parcel'],
           resolved: false,
           at: AT,
         }),
@@ -205,10 +205,10 @@ const STATES: { name: string; state: AppState; ctx: SurfaceContext }[] =
           kind: 'question',
           turnId: 'turn-3',
           qkind: 'clarify',
-          head: '“Cuộc họp” khớp với hai việc — việc nào?',
+          head: '“Standup” matches two tasks — which one?',
           body: null,
-          options: ['Họp nhanh đầu ngày — 9:30', '1:1 với Hà — 16:30'],
-          taskTitles: ['Họp nhanh đầu ngày', '1:1 với Hà'],
+          options: ['Morning standup — 9:30', '1:1 with Ha — 16:30'],
+          taskTitles: ['Morning standup', '1:1 with Ha'],
           resolved: false,
           at: AT,
         }),
@@ -221,8 +221,8 @@ const STATES: { name: string; state: AppState; ctx: SurfaceContext }[] =
         [
           msg<Extract<Message, { kind: 'error' }>>({
             kind: 'error',
-            head: 'Chưa gửi được',
-            body: ['Trợ lý chưa xử lý được lời bạn vừa gửi.'],
+            head: 'Not sent yet',
+            body: ['The assistant could not handle what you just sent.'],
             retryTurnId: 'cid-1',
             at: AT,
           }),
@@ -237,7 +237,7 @@ const STATES: { name: string; state: AppState; ctx: SurfaceContext }[] =
         [
           msg<Extract<Message, { kind: 'user' }>>({
             kind: 'user',
-            text: 'đánh dấu tiền điện đã xong',
+            text: 'mark the electricity bill done',
             via: 'voice',
             at: AT,
             queued: true,
@@ -254,8 +254,8 @@ const STATES: { name: string; state: AppState; ctx: SurfaceContext }[] =
         [
           msg<Extract<Message, { kind: 'boundary' }>>({
             kind: 'boundary',
-            head: 'Phiên đã kết thúc — để lâu không dùng',
-            lines: ['Đóng phiên nên bỏ qua: “Xóa 3 việc?”'],
+            head: 'Session ended — idle too long',
+            lines: ['Closing skipped: “Delete 3 tasks?”'],
             at: AT,
           }),
         ],
@@ -269,8 +269,8 @@ const STATES: { name: string; state: AppState; ctx: SurfaceContext }[] =
         [
           msg<Extract<Message, { kind: 'info' }>>({
             kind: 'info',
-            head: 'Micro cần quyền truy cập',
-            body: ['Quyền Micro đang tắt.'],
+            head: 'Microphone needs permission',
+            body: ['Microphone permission is off.'],
             cta: 'permission',
             at: AT,
           }),
@@ -472,7 +472,7 @@ describe('AC-12 — every catalogue id is reachable, and the surface invents non
         {
           kind: 'applied',
           turnId: 'turn-9',
-          head: 'Đã thêm 1 việc',
+          head: 'Added 1 task',
           lines: [],
           deletedTitles: [],
           mutated: true,
@@ -577,8 +577,8 @@ describe('AC-12 — announcements carry the content, not the state word', () => 
     const applied = STATES.find((s) => s.name === 'applied-with-diff-and-undo')!.state
       .messages[0] as Message
     const a = announcementFor(applied, { undoAvailable: true })
-    expect(a?.text).toContain('Đã sửa 1 việc')
-    expect(a?.text).toContain('Duyệt ngân sách Q3')
+    expect(a?.text).toContain('Edited 1 task')
+    expect(a?.text).toContain('Budget review Q3')
     expect(a?.text).toContain('14:00')
     expect(a?.text).toContain('16:00')
     expect(a?.text).toContain('Undo')
@@ -595,9 +595,9 @@ describe('AC-12 — announcements carry the content, not the state word', () => 
   it('a question announces its count, its titles and its options', () => {
     const q = STATES.find((s) => s.name === 'question-confirm')!.state.messages[0] as Message
     const a = announcementFor(q, { undoAvailable: false })
-    expect(a?.text).toContain('Xóa 3 việc?')
-    expect(a?.text).toContain('Đi chợ')
-    expect(a?.text).toContain('Giữ lại')
+    expect(a?.text).toContain('Delete 3 tasks?')
+    expect(a?.text).toContain('Groceries')
+    expect(a?.text).toContain('Keep them')
   })
 
   it('errors are assertive and are announced ahead of politely-queued output', () => {
@@ -605,7 +605,7 @@ describe('AC-12 — announcements carry the content, not the state word', () => 
     const info = STATES.find((s) => s.name === 'mic-permission')!.state.messages[0] as Message
     const out = announcementsFor([info, err], null)
     expect(out[0]?.assertive).toBe(true)
-    expect(out[0]?.text).toContain('Chưa gửi được')
+    expect(out[0]?.text).toContain('Not sent yet')
     expect(out[1]?.assertive).toBe(false)
   })
 
@@ -643,7 +643,7 @@ describe('AC-12 — the controller announces as messages arrive', () => {
     await h.controller.init()
     h.announcer.clear()
 
-    h.controller.composerChange('dời họp sang 4 giờ')
+    h.controller.composerChange('move the meeting to 4')
     await h.controller.send('typed')
     await settle()
 
@@ -665,7 +665,7 @@ describe('AC-12 — the controller announces as messages arrive', () => {
     await h.controller.init()
     h.announcer.clear()
 
-    h.controller.composerChange('dời buổi tập gym')
+    h.controller.composerChange('move the gym session')
     await h.controller.send('typed')
     await settle()
 

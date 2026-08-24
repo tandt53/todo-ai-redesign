@@ -910,7 +910,7 @@ describe('B. permissions — the platform split (AC-2, AC-3)', () => {
   })
 
   it('TC-015 / TC-020 · the CTA label matches the mockup copy on each platform', () => {
-    // The labels were retyped here (as "Mở Cài đặt" / "Mở cài đặt ứng dụng")
+    // The labels were retyped here (as "Open Settings" / "Open app settings")
     // until ADR-008 made them English, at which point the test was asserting
     // copy the product could no longer produce. A retyped label turns a contract
     // check into a self-agreement check (L-008) and goes stale the moment design
@@ -1001,20 +1001,20 @@ describe('B. kill survival — TC-024, TC-026 (AC-5, AC-6)', () => {
     const backend = new MemoryAsyncBackend()
     const live = new HydratedDurableStore(backend)
 
-    live.set('client.pending_input', { text: 'mua sữa cho ngày mai', updated_at: 1 })
+    live.set('client.pending_input', { text: 'buy milk for tomorrow', updated_at: 1 })
     await live.flush()
 
     // The kill: the model instance is gone; only the backend survives. A store
     // hydrated from that backend is what the next cold open sees.
     const revived = await (HydratedDurableStore as any).open(backend)
-    expect(revived.get('client.pending_input')).toEqual({ text: 'mua sữa cho ngày mai', updated_at: 1 })
+    expect(revived.get('client.pending_input')).toEqual({ text: 'buy milk for tomorrow', updated_at: 1 })
   })
 
   it('the outgoing turn survives with its ORIGINAL client_turn_id (AC-6)', async () => {
     const backend = new MemoryAsyncBackend()
     const live = new HydratedDurableStore(backend)
     const outgoing = {
-      payload: { client_turn_id: 'qamob-turn-0001', transcript: 'thêm mua sữa', source: 'voice' },
+      payload: { client_turn_id: 'qamob-turn-0001', transcript: 'add buy milk', source: 'voice' },
       sent_at: 1,
       attempts: 1,
     }
@@ -1031,7 +1031,7 @@ describe('B. kill survival — TC-024, TC-026 (AC-5, AC-6)', () => {
   it('a write that never flushed is reported, not silently lost (AC-6, device-lab flush concern)', async () => {
     const backend = new MemoryAsyncBackend()
     const live = new HydratedDurableStore(backend)
-    live.set('client.pending_input', { text: 'chưa kịp ghi', updated_at: 2 })
+    live.set('client.pending_input', { text: 'not written down yet', updated_at: 2 })
     // Deliberately no flush — a real kill can land here. The store must be able
     // to say so rather than report success; on a device this is the gap between
     // "kept the words" and "lost the words".
@@ -1133,8 +1133,8 @@ class QaMobileInterpreter implements Interpreter {
         answer: target !== undefined ? { type: 'selection', handle: target.handle } : { type: 'unclassifiable' },
       }
     }
-    if (['yes', 'ok', 'ừ', 'đúng vậy, xoá đi'].includes(n)) return { kind: 'answer', answer: { type: 'affirmative' } }
-    if (['no', 'không'].includes(n)) return { kind: 'answer', answer: { type: 'negative' } }
+    if (['yes', 'ok', 'yeah', 'yes, delete it'].includes(n)) return { kind: 'answer', answer: { type: 'affirmative' } }
+    if (['no', 'nope'].includes(n)) return { kind: 'answer', answer: { type: 'negative' } }
     // UT-ANS-AMBIG-1 / -2: neither affirmative nor negative nor a command.
     if (['hmm maybe', 'what do you mean'].includes(n)) return { kind: 'answer', answer: { type: 'unclassifiable' } }
     return null
@@ -1449,7 +1449,7 @@ describe('C. TC-002 — exactly four states; no transition outside the flowchart
 
     await s.start(); record()
     s.tapMic(); await until(() => s.state === 'listening', 'listening'); record()
-    s.hearWords('mua', 'mua sữa'); record()
+    s.hearWords('mua', 'buy milk'); record()
     s.endSpeech('speech-end'); await until(() => s.state === 'idle', 'idle after speech'); record()
 
     await say(s, 'add a task qamob-tc002-a'); record()
@@ -1531,7 +1531,7 @@ describe('C. TC-003 — live transcript; nothing recognized sends no turn (AC-1,
     s.tapMic()
     await until(() => s.state === 'listening', 'listening')
 
-    const partials = ['dời', 'dời duyệt ngân sách', 'dời duyệt ngân sách sang bốn giờ']
+    const partials = ['move', 'move the budget review', 'move the budget review to four']
     for (let i = 0; i < partials.length; i += 1) {
       s.hearWords(...partials.slice(0, i + 1))
       // The rendered transcript equals the LATEST partial exactly — no lag by
@@ -1673,7 +1673,7 @@ describe('C. TC-005 — undo names every skipped task; all-skipped never reads a
     // The success head this outcome must NOT wear, OBSERVED rather than typed:
     // a clean create-then-undo on a throwaway user, whose head is by definition
     // the one a real revert produces. The assertion used to name the head as a
-    // literal ("Đã hoàn tác"), which ADR-008 turned into a string the product
+    // literal ("Undone"), which ADR-008 turned into a string the product
     // can no longer emit — so `not.toBe` was satisfied by every possible head
     // and the case stopped protecting anything. Observing it also catches the
     // harmonising edit in either direction, which naming one literal never did.
@@ -1951,7 +1951,7 @@ describe('C. TC-009 — no-match quotes what was heard; a list question names th
     const u = newUser()
     const s = surfaceFor(u)
     await s.start()
-    const heard = 'gạch trận cầu lông'
+    const heard = 'drop the badminton match'
     await say(s, heard)
     expect(newest(s).kind).toBe('no-match')
     expect(newest(s).heard).toBe(heard)
@@ -2171,8 +2171,8 @@ describe('C. TC-021 — offline never dims the mic; recognized text takes the lo
     const aiBefore = H.ai.calls
     s.tapMic()
     await until(() => s.state === 'listening', 'listening while offline')
-    s.hearWords('mua', 'mua sữa cho ngày mai')
-    expect(s.composerText, 'recognized text was discarded offline').toBe('mua sữa cho ngày mai')
+    s.hearWords('mua', 'buy milk for tomorrow')
+    expect(s.composerText, 'recognized text was discarded offline').toBe('buy milk for tomorrow')
     s.endSpeech('speech-end')
     await until(() => s.tasks.length === 1, 'the local no-AI create')
 
@@ -2528,7 +2528,7 @@ describe('C. TC-025 — background while listening: capture stops, words kept, n
 
       s.tapMic()
       await until(() => s.state === 'listening', `listening before ${trigger}`)
-      s.hearWords('mua', 'mua sữa')
+      s.hearWords('mua', 'buy milk')
 
       if (trigger === 'system-back') await s.pressBack()
       s.background()
@@ -2536,12 +2536,12 @@ describe('C. TC-025 — background while listening: capture stops, words kept, n
 
       expect(turnPosts(), `${trigger} put a turn on the wire`).toHaveLength(0)
       const pending = JSON.parse(String(s.store.get(`assistant.${u}.pending_input`)))
-      expect(pending.text, `${trigger} lost the recognized text`).toBe('mua sữa')
+      expect(pending.text, `${trigger} lost the recognized text`).toBe('buy milk')
 
       await s.foreground()
       // Capture is NOT silently resumed on foreground.
       expect(s.state, `${trigger} resumed capture on foreground`).toBe('idle')
-      expect(s.composerText).toBe('mua sữa')
+      expect(s.composerText).toBe('buy milk')
       expect(turnPosts()).toHaveLength(0)
     }
   })
@@ -2790,7 +2790,7 @@ describe('C. TC-030 — every foreground transition reads the session before acc
     await until(() => s.tasks.length === 1, 'the real turn')
 
     // Carry the store across the kill, and plant a pending input in it.
-    s.store.set(`assistant.${u}.pending_input`, JSON.stringify({ text: 'chưa gửi', updated_at: Date.now() }))
+    s.store.set(`assistant.${u}.pending_input`, JSON.stringify({ text: 'unsent', updated_at: Date.now() }))
 
     const revived = surfaceFor(u, { store: s.store })
     await revived.start()
@@ -2800,7 +2800,7 @@ describe('C. TC-030 — every foreground transition reads the session before acc
     // applied outcome, nothing merged on top.
     expect(revived.messages.filter((m: any) => m.kind === 'applied')).toHaveLength(1)
     // …and the local survivor is still restored.
-    expect(revived.composerText).toBe('chưa gửi')
+    expect(revived.composerText).toBe('unsent')
   })
 
   it('two rapid foregrounds produce two reads and one consistent render', async () => {
@@ -3030,13 +3030,13 @@ describe('C. TC-029 — audio interruption is cancel-while-listening; the sessio
 
       s.tapMic()
       await until(() => s.state === 'listening', `listening before ${reason}`)
-      s.hearWords('mua', 'mua sữa')
+      s.hearWords('mua', 'buy milk')
 
       s.interrupt(reason)
       await until(() => s.state === 'idle', `idle after ${reason}`)
 
       expect(turnPosts(), `${reason} sent a turn`).toHaveLength(0)
-      expect(s.composerText, `${reason} lost the recognized text`).toBe('mua sữa')
+      expect(s.composerText, `${reason} lost the recognized text`).toBe('buy milk')
       expect(source.log.audioSessionReleases, `${reason} kept the audio session`).toBeGreaterThanOrEqual(1)
       expect(s.counters.audioInterruptions).toBeGreaterThanOrEqual(1)
 
@@ -3066,12 +3066,12 @@ describe('C. TC-036 — system back is never destructive; keyboard-first on Andr
     const u = newUser()
     const s = surfaceFor(u, { platform: 'android' })
     await s.start()
-    s.setComposerText('mua sữa cho ngày mai')
+    s.setComposerText('buy milk for tomorrow')
     s.keyboard(true)
 
     // First press: consumed by the keyboard.
     expect(await s.pressBack(), 'the first back did not dismiss the keyboard').toBe(true)
-    expect(s.composerText, 'dismissing the keyboard discarded the text').toBe('mua sữa cho ngày mai')
+    expect(s.composerText, 'dismissing the keyboard discarded the text').toBe('buy milk for tomorrow')
 
     // Second press: leaves the view — a background transition, not a close.
     expect(await s.pressBack(), 'the second back was consumed instead of leaving the view').toBe(false)
@@ -3144,7 +3144,7 @@ describe('C. TC-036 — system back is never destructive; keyboard-first on Andr
 
     s.tapMic()
     await until(() => s.state === 'listening', 'listening')
-    s.hearWords('mua', 'mua sữa')
+    s.hearWords('mua', 'buy milk')
 
     await s.pressBack()
     s.background()
@@ -3152,11 +3152,11 @@ describe('C. TC-036 — system back is never destructive; keyboard-first on Andr
 
     expect(turnPosts(), 'back turned an unfinished recognition into a turn').toHaveLength(0)
     const pending = JSON.parse(String(s.store.get(`assistant.${u}.pending_input`)))
-    expect(pending.text).toBe('mua sữa')
+    expect(pending.text).toBe('buy milk')
 
     await s.foreground()
     expect(s.state, 'back resumed capture on return').toBe('idle')
-    expect(s.composerText).toBe('mua sữa')
+    expect(s.composerText).toBe('buy milk')
   })
 })
 
