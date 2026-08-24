@@ -115,6 +115,32 @@ export interface CreateFields extends TaskChanges {
   id?: string
 }
 
+
+/**
+ * The next free position in a filing cell — Inbox (`listId === null`) or one
+ * personal list. Sparse by 1024 so a drag between two neighbours can take the
+ * midpoint without rewriting the rows around it (F-009 AC-5/AC-6).
+ *
+ * Deleted rows are counted: a restore must not land on top of a live row, and
+ * the trash keeps them addressable for 30 days (F-006).
+ */
+export function nextSortOrder(
+  state: StoreState,
+  userId: string,
+  listId: string | null,
+): number {
+  let max: number | null = null
+  for (const t of Object.values(state.tasks)) {
+    if (t.user_id !== userId) continue
+    if ((t.parent_id ?? null) !== null) continue
+    if ((t.list_id ?? null) !== listId) continue
+    const at = t.sort_order
+    if (typeof at !== 'number') continue
+    if (max === null || at > max) max = at
+  }
+  return max === null ? 0 : max + 1024
+}
+
 export function planCreate(ctx: PlanContext, fields: CreateFields, origin: Origin = 'target'): PlanResult {
   const { state, userId } = ctx
   const rules = enforceFieldRules(fields, { target: null, zone: ctx.zone, nowMs: ctx.nowMs })
@@ -159,6 +185,16 @@ export function planCreate(ctx: PlanContext, fields: CreateFields, origin: Origi
     series_ended_at: null,
     delete_gesture_id: null,
     list_id: null,
+    // F-009 AC-5. A create that supplies its own position keeps it — that is the
+    // offline replay case, where the client already decided where the row sits.
+    // Otherwise the row is appended: the cell's maximum plus a 1024 gap, or 0
+    // when the cell is empty. A step has no position of its own; its order under
+    // its parent is `step_order`, and giving it both would be two answers to one
+    // question.
+    sort_order:
+      parentId !== null
+        ? null
+        : (changes.sort_order ?? nextSortOrder(state, userId, null)),
     created_at: ctx.at,
     updated_at: ctx.at,
     deleted_at: null,

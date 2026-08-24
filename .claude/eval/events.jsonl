@@ -531,3 +531,8 @@
 {"ts":"2026-08-24T12:13:19.280Z","event":"request","session":"96714da3-5f4d-4c4d-98b8-72def06d7ea0","prompt_chars":14,"prompt":null}
 {"ts":"2026-08-24T12:13:31.406Z","event":"request","session":"96714da3-5f4d-4c4d-98b8-72def06d7ea0","prompt_chars":738,"prompt":null}
 {"ts":"2026-08-24T12:13:59.503Z","event":"request","session":"96714da3-5f4d-4c4d-98b8-72def06d7ea0","prompt_chars":8,"prompt":null}
+{"ts":"2026-08-24T12:25:53.952Z","event":"episode","session":"13c8ac6a-9732-551e-9855-9e5aed987be6","duration_seconds":714,"prompt_chars":8,"dispatches":0,"agents":[],"artifacts":0,"zero_artifact_returns":0,"blocked_returns":0,"unknown_returns":0,"repeated_tasks":[]}
+{"ts":"2026-08-24T12:25:53.952Z","event":"session_stop","session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}
+{"ts":"2026-08-24T12:42:00.347Z","event":"request","session":"13c8ac6a-9732-551e-9855-9e5aed987be6","prompt_chars":134,"prompt":null}
+{"ts":"2026-08-24T12:59:37.703Z","event":"episode","session":"13c8ac6a-9732-551e-9855-9e5aed987be6","duration_seconds":1057,"prompt_chars":134,"dispatches":0,"agents":[],"artifacts":0,"zero_artifact_returns":0,"blocked_returns":0,"unknown_returns":0,"repeated_tasks":[]}
+{"ts":"2026-08-24T12:59:37.703Z","event":"session_stop","session":"13c8ac6a-9732-551e-9855-9e5aed987be6"}

@@ -60,6 +60,8 @@ export interface TaskWire {
   series_live: boolean
   /** F-008 AC-10 — uuid of a personal list, or null (Inbox) */
   list_id: string | null
+  /** F-009 AC-5 — manual position; null on a step and on any row written before F-009 */
+  sort_order: number | null
   created_at: string
   updated_at: string
   deleted_at: string | null
@@ -186,6 +188,7 @@ export function serializeTask(t: TaskRow, view: TaskView): TaskWire {
     series_id: t.series_id ?? null,
     series_live: seriesLive(t, view.state, view.nowMs, view.zone),
     list_id: t.list_id ?? null,
+    sort_order: t.sort_order ?? null,
     created_at: t.created_at,
     updated_at: t.updated_at,
     deleted_at: t.deleted_at,

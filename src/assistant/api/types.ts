@@ -75,6 +75,15 @@ export interface TaskRow {
   delete_gesture_id?: string | null
   /** F-008 AC-10 — uuid of a personal list, or null (Inbox). A step may not carry a list_id. */
   list_id?: string | null
+  /**
+   * F-009 AC-5 — position under manual sort, within the task's filing cell
+   * (Inbox, or one personal list). Sparse with gaps of 1024, the same scheme
+   * `list.position` uses, so a drag rewrites one row rather than cascading.
+   *
+   * Optional because every row written before F-009 has no such field; a reader
+   * that assumes one sorts those rows by `undefined`.
+   */
+  sort_order?: number | null
 }
 
 /** list (new entity — F-008). A personal named container on the filing axis. */
@@ -254,6 +263,8 @@ export interface TaskChanges {
   repeat_count?: number | null
   /** F-008 AC-10 — uuid of a personal list, or null (Inbox) */
   list_id?: string | null
+  /** F-009 AC-5 — manual position within the filing cell; sparse, gaps of 1024 */
+  sort_order?: number | null
 }
 
 export interface Question {

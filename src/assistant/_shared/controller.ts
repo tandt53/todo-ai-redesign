@@ -1728,6 +1728,9 @@ export class AssistantController {
       due_all_day: due === null ? null : true,
       status: 'inbox',
       list_id: null,
+      // F-009 AC-5 — a locally created row has no server-assigned position yet;
+      // the create response replaces this row and carries the real one.
+      sort_order: null,
       created_at: at,
       updated_at: at,
       deleted_at: null,

@@ -227,6 +227,7 @@ describe('the wire shape itself', () => {
         'repeat_weekdays',
         'series_id',
         'series_live',
+        'sort_order',
         'status',
         'step_order',
         'title',

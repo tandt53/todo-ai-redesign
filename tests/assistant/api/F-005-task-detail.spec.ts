@@ -412,6 +412,10 @@ const WIRE_FIELDS = [
   'repeat_frequency', 'repeat_interval', 'repeat_weekdays', 'repeat_month_days',
   'repeat_until', 'repeat_count', 'series_id', 'series_live',
   'list_id',
+  // F-009 AC-5, now serialized (T-335). The comment above says what to do when
+  // a declared field starts being emitted: if it is in api-contracts.md it
+  // belongs here — sort_order is declared around :549.
+  'sort_order',
   'created_at', 'updated_at', 'deleted_at',
 ].sort();
 

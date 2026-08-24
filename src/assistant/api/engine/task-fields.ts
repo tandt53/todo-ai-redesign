@@ -214,6 +214,17 @@ export function enforceFieldRules(changes: TaskChanges, ctx: FieldRulesContext):
     out.list_id = raw
   }
 
+  // ---- sort_order (F-009 AC-5/AC-6): an integer. Where it lands is plan.ts's
+  // business, the same split list_id uses — this layer only says what shape a
+  // caller may send.
+  if (changes.sort_order !== undefined) {
+    const raw = changes.sort_order
+    if (raw !== null && (typeof raw !== 'number' || !Number.isInteger(raw))) {
+      return bad('note_not_text', 'sort_order', 'sort_order must be an integer')
+    }
+    out.sort_order = raw
+  }
+
   // ---- recurrence (AC-21, AC-25, ADR-011)
   //
   // Shape violations carry `structural_field_not_settable`, and that reason is

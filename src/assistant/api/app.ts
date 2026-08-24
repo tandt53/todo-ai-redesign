@@ -187,6 +187,7 @@ const TASK_CREATE_FIELDS = [
   'status',
   'parent_id',
   'step_order',
+  'sort_order',
   ...RECURRENCE_MEMBERS,
 ] as const
 
@@ -212,6 +213,7 @@ const TASK_PATCH_FIELDS = [
   'status',
   'step_order',
   'list_id',
+  'sort_order',
   ...RECURRENCE_MEMBERS,
 ] as const
 
