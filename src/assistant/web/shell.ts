@@ -1,23 +1,28 @@
 // The app shell — which surface is showing, which collection the list renders,
 // whether the Lists menu is open, and AC-31's door from a message to a row.
 //
+// THE MODEL (information-architecture.md §4, revised 2026-08-24): the task list
+// is home at every width. Talk is summoned over it — as an overlay below the
+// split, as a panel beside it at or above. A collection is a state of the list,
+// not a destination: picking Inbox then pressing back does NOT return to Today.
+//
 // THE LAYOUT BRANCH IS NOT IN HERE, AND THAT IS THE POINT. There is exactly one
 // branch — `tokens.json breakpoints.split` — and it is a CONTAINER QUERY on the
 // app root in styles.css, never a width read in JavaScript. Two consequences,
 // both deliberate:
 //
-//   1. Every surface is mounted at every width. Below the split CSS shows one;
-//      at or above it, Tasks holds the centre and Talk holds the right panel and
-//      both are permanently on screen (components.md § AppFrame). No behaviour
-//      here selects on viewport, so nothing in this file can grow the
-//      width-selected second mechanism `owner-decision-2026-08-17-desktop-list-
-//      is-primary.md` constraint 2 forbids.
+//   1. Every surface is mounted at every width. Below the split, Tasks is
+//      always visible and Talk overlays it; at or above it, Tasks holds the
+//      centre and Talk holds the right panel (components.md § AppFrame). No
+//      behaviour here selects on viewport, so nothing in this file can grow
+//      the width-selected second mechanism `owner-decision-2026-08-17-desktop-
+//      list-is-primary.md` constraint 2 forbids.
 //   2. `revealTask` below is ONE routine with two entry points, not two
 //      implementations of one postcondition (AC-31, and the discipline AC-30(h)
-//      already imposes on (f)/(h) — L-005). Below the split it navigates first;
-//      at or above it the navigation is a no-op because the centre is already
-//      the list. Same call, same postcondition: the row is on screen and has
-//      flashed exactly once.
+//      already imposes on (f)/(h) — L-005). Below the split it dismisses the
+//      Talk overlay first; at or above it the navigation is a no-op because the
+//      centre is already the list. Same call, same postcondition: the row is on
+//      screen and has flashed exactly once.
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { RefObject } from 'react'
@@ -151,11 +156,12 @@ export interface ShellHandle {
 }
 
 export function useShell(state: AppState): ShellHandle {
-  // Below the split the app opens on Talk — what it does today, what the three
-  // mockups draw, and what design proposes (IA §12). It is F-001 Open Question
-  // 9 and the OWNER has the call; nothing else in this file assumes it, because
-  // every other behaviour here is a postcondition rather than an entry point.
-  const [surface, setSurface] = useState<ShellSurface>('talk')
+  // The task list is home at every width (information-architecture.md §4,
+  // F-001 Open Question 9 CLOSED 2026-08-24). Talk is summoned over it — as an
+  // overlay below the split, as a panel beside it at or above. The capture
+  // affordance the old §12 predicted is AC-37's TaskBottomBar: mic icon when
+  // the field is empty, one tap to Talk.
+  const [surface, setSurface] = useState<ShellSurface>('tasks')
   const [collection, setCollection] = useState<Collection>(DEFAULT_COLLECTION)
   const [menuOpen, setMenuOpen] = useState(false)
   const [flash, setFlash] = useState<{ taskId: string; phase: 'a' | 'b' } | null>(null)
@@ -288,6 +294,21 @@ export function useShell(state: AppState): ShellHandle {
       behavior: prefersReducedMotion() ? 'auto' : 'smooth',
     })
   })
+
+  // ── Escape dismisses the Talk overlay (IA §4: "close or Escape dismisses
+  // it"). At or above the split this is inert — the user is looking at the
+  // panel, not an overlay — and that is fine: the keydown handler runs the
+  // same `go('tasks')` either way, which at or above the split only clears
+  // `data-surface` from `'talk'` to `'tasks'` and the CSS shows both
+  // regardless. One handler, both widths.
+  useEffect(() => {
+    if (surface !== 'talk') return
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') go('tasks')
+    }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [surface, go])
 
   // "Flashed ONCE" is the acceptance, so the cue has to end. Clearing it also
   // makes a second activation observable as a second flash rather than as a

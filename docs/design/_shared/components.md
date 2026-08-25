@@ -88,6 +88,11 @@ Text field + MicControl + send. Bottom-docked on `bg.base`, separated by a 1px `
 boundary that carries meaning, so it is `rule` and not `hairline`. Its content sits in the
 conversation's own content column, so the input's left edge lines up with the bubbles above it.
 
+**Field shape (T-352, 2026-08-25).** The text field (`.cinput`) takes `radius.pill` — it is the
+sole input on a dedicated bar (the Composer), so `radius.assign.pill` applies. Bordered: 1px
+`bg.rule`, `bg.base` fill, `field.padding_x` inset. Previous: `border:0; background:transparent`
+(no visible container at all — the pill was a code invention the owner adopted).
+
 States: empty (placeholder "Say or type what needs doing.") · with-text (send activates) · focused · listening (**the input and send give way to the interim transcript**, at `font.size.lead`, with the words not yet committed in `text.muted`; a text field squeezed to a stub beside a transcript at 390px offers a control the user is not using) · restored (preserved words from cancel/interruption/background reappear here — AC-3, AC-26) · offline (input still works — local no-AI path, AC-25) · disabled: **never** (the composer is never locked; pending questions block nothing, AC-11).
 
 ## Message bubbles (conversation surface)
@@ -496,9 +501,9 @@ rule checkable rather than merely stated: **the title's text equals the active m
 blocked on `lists` + `tasks.list_id` (IA §7, § ListsMenu LM-LIST), so the title has four possible
 values today and no fallback case to design.
 
-## InlineAdd — the add-task row at the list bottom (T-305/306) — RETIRED below split (T-321)
+## InlineAdd — RETIRED at every width (T-356, owner decision 2026-08-25)
 
-**Retired below `breakpoints.split` by T-321 (2026-08-23).** The owner chose option B: the TaskBottomBar replaces both InlineAdd and the floating voice FAB below split. **At or above split, InlineAdd remains the add-task mechanism** — the TaskBottomBar is hidden there and the inline row in the list body is reachable. The testid `tasks-inline-add` stays on the element and is valid at split+.
+**Retired at every width by T-356.** The owner reversed their T-321 decision that kept InlineAdd at split+. TaskBottomBar (§ below) is now the sole add-task mechanism at every width. The testid `tasks-inline-add` is removed from all mockups and from the testid catalogue. All `.inline-new` CSS and HTML are removed from the six screen files.
 
 Purpose: a tappable row at the end of every `.list` that creates a new task with the typed title. `data-testid="tasks-inline-add"`. Accessible name: **"Add a task"**. `role=button`.
 
@@ -539,9 +544,12 @@ States: default (idle, plus icon + "Add a task" in `text.muted`) · hover (label
 
 Purpose: the canonical add-task and Talk-navigation control below `breakpoints.split` (owner chose option B, 2026-08-23). One fixed bottom row holding a text field and a single action button that morphs between two identities depending on whether the field has text. Replaces both InlineAdd and the floating voice FAB below split.
 
-**Placement:** bottom of `.col-main`, outside the scroll container. Not position:absolute; not overlapping content. The bar is a flex:none child of the column, so the scrollable pane (`.pane-tasks`) fills the remaining vertical space above it. **Below `breakpoints.split` only** — at split and above, the Talk panel is permanent and the inline-new row in the list body is reachable.
+**Placement:** bottom of `.col-main`, outside the scroll container. Not position:absolute; not overlapping content. The bar is a flex:none child of the column, so the scrollable pane (`.pane-tasks`) fills the remaining vertical space above it. **At every width (T-356, owner decision 2026-08-25)** — InlineAdd is retired outright and this bar is the sole add-task mechanism.
 
-**Bar height: h-lg (52px).** Built: s1 (4px) top pad + h-md (44px) content + s1 (4px) bottom pad. This matches InlineAdd's min-height exactly and matches Microsoft To Do's "Add a Task" bar at 6.2% of the viewport. The painted field and button are both 44px; the platform hit-area floor (web 40, iOS 44, Android 48) is met by a transparent `::before` pseudo on the button, never by painting a larger control.
+**Bar height: 68px.** Built: s3 (12px) top pad + h-md (44px) content + s3 (12px) bottom pad. This matches the Talk Composer's padding exactly (T-353) so the field sits at the same height on both surfaces — the owner saw the field jump when switching between Talk and Tasks, and it was a defect. The painted field and button are both 44px; the platform hit-area floor (web 40, iOS 44, Android 48) is met by a transparent `::before` pseudo on the button, never by painting a larger control. **Previous text here said "s1 (4px) top + s1 (4px) = 52px" — the drawn CSS was actually 4/8 = 56px, so the sentence was already wrong before this change.**
+
+**Field shape (T-352, 2026-08-25).** The text field (`.tbar-input`) takes `radius.pill` — it is the
+sole input on a dedicated bar, so `radius.assign.pill` applies. Previous: `radius.sm`.
 
 **The morph — one button, two identities:**
 
@@ -1175,8 +1183,10 @@ surface title in the Tasks header — not a separate layer, not a modal, not a n
 expands from `shell-search-button`, takes focus, and narrows the list with every keystroke
 (case-insensitive substring on `task.title` only — notes, steps and other fields are not searched).
 
-**Anatomy:** the surface title hides; in its place, a standard field (`field.height` 44, `radius.sm`,
+**Anatomy:** the surface title hides; in its place, a pill field (`field.height` 44, `radius.pill`,
 1px `bg.rule` border, `font.size.body`, `field.padding_x` inset) spans the available header width.
+**Field shape (T-352):** `radius.pill` — it is the sole input occupying the header slot, so
+`radius.assign.pill` applies. Previous: `radius.sm`.
 A close control (Lucide `x` at `icon.size.md`, `text.secondary`) sits at the field's trailing edge.
 Placeholder: *"Search tasks"* in `text.muted`. **The close control and Escape both exit search** — the
 field clears, the surface title returns, the full list is restored. T-227 already drew the field's CSS
@@ -1459,7 +1469,7 @@ Genuinely new controls, and only those, take new ids:
 
 | Testid | Control |
 |---|---|
-| `shell-tasks-button` | PS-TASKS (below split only) |
+| `talk-close-button` | dismisses the Talk overlay, below split only (IA §4, T-333) |
 | `shell-lists-menu-button` | the hamburger on Tasks |
 | `shell-search-button` | Search icon button in the Tasks header (drawn T-227, published T-244) |
 | `shell-overflow-button` | Overflow (⋯) icon button in the Tasks header (drawn T-227, published T-244) |
@@ -1478,8 +1488,8 @@ Genuinely new controls, and only those, take new ids:
 | `list-editor-cancel-button` | Cancel |
 | `list-editor-color-swatch` | § ListEditorSheet colour swatch exemplar (one per colour option; `role="radio"`, accessible name is the colour name e.g. "Grey", "Blue") |
 | `assistant-voice-fab` | **RETIRED (T-321, 2026-08-23).** Was: Voice FAB — navigated to Talk (below split only). **Replaced by** `tasks-bar-action` in § TaskBottomBar, which serves the same "Talk" navigation when the field is empty (AC-37). The testid is removed from all three shell mockups. The MicControl orb on the Talk surface (`talk-mic-button`) is a different control and is unaffected. |
-| `tasks-bar-input` | § TaskBottomBar text field. Accessible name: **"Add a task"**. Below `breakpoints.split` only. **(Restored T-321)** |
-| `tasks-bar-action` | § TaskBottomBar morphing action button. Accessible name: **"Talk"** when field empty, **"Add task"** when field has text (AC-37). Below `breakpoints.split` only. **(Restored T-321)** |
+| `tasks-bar-input` | § TaskBottomBar text field. Accessible name: **"Add a task"**. At every width (T-356). **(Restored T-321)** |
+| `tasks-bar-action` | § TaskBottomBar morphing action button. Accessible name: **"Talk"** when field empty, **"Add task"** when field has text (AC-37). At every width (T-356). **(Restored T-321)** |
 | `talk-session-retry-button` | SE-SESSION Retry |
 | `talk-task-link` | MessageTaskLink exemplar |
 | `tasks-list-retry-button` | InlineRetryBanner / SE-TASKS Retry |
@@ -1620,10 +1630,16 @@ A control that switches to what is already visible is a dead control. § PathSwi
 second path is not one tap away, it is never left. `talk-failed` is the state to look at, and it
 is the state that most justifies the split: the assistant is broken in the panel and the whole
 todo is untouched and usable in the centre.
-**Consequence for the id catalogue:** `shell-tasks-button` is a **below-split-only control**. A
-desktop selector for it will not resolve, and should not. (`shell-talk-button` was retired by T-227 —
-the Talk path is now the voice FAB below split and the permanent panel at split and above; see
-§ Testid catalogue.)
+**Consequence for the id catalogue, revised 2026-08-24 (T-333).** Both path-switch ids are now
+retired. `shell-talk-button` went with T-227; **`shell-tasks-button` goes here**, because there is no
+surface to switch to: the list is home at every width and Talk is summoned over it
+(`information-architecture.md §4`).
+
+**What replaces it is not a second path-switch but a dismissal.** `talk-close-button` closes the
+overlay and is **below-split only** — above the split Talk is a permanent column with nothing to
+dismiss, so a desktop selector for it will not resolve, and should not. **Two controls for one
+relationship — a text button going one way and a floating mic coming back — is what made the old
+pair asymmetric and gave placement no rule to follow.**
 
 **A container query, not a viewport media query.** The branch reads `.app`'s own width. It is
 equivalent to a media query whenever the app fills the window and stays correct when it does not

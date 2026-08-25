@@ -16,3 +16,8 @@ test-results/
 # design-shots and mobile-preview moved here on 2026-08-19; 57 of their files
 # had been tracked, which is 4.2 MB of regenerable renders sitting in history.
 output/
+
+# Render output from design-check / visual-check. Regenerated on every run,
+# read back by nothing — no baseline comparison exists. 234 MB and 2268 files
+# of churn per run, which is what jammed a stash restore on 2026-08-25.
+docs/design/_shots/

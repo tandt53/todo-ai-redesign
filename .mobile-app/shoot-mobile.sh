@@ -30,7 +30,7 @@ TALK=(idle-empty listening thinking applied-diff question-confirm \
 # Tasks-surface states now have deep links of their own (App.tsx). Before they
 # existed this list held seeds that were tapped into place, and a run came back
 # with the Talk surface captioned as the task list.
-TASKS=(tasks-empty tasks-list tasks-drawer)
+TASKS=(tasks-empty tasks-list tasks-dated tasks-drawer)
 
 mkdir -p "$OUT"
 

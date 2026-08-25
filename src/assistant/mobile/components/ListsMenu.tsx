@@ -135,8 +135,8 @@ export function ListsMenu({
                   <Text style={[styles.menuRowText, active ? styles.menuRowTextActive : null]}>
                     {collectionName(c)}
                   </Text>
-                  {/* counts are omitted at zero, for the same reason PS-TASKS
-                      omits its badge */}
+                  {/* counts are omitted at zero — "a badge reading 0 is a
+                      number pretending to be news" */}
                   {count > 0 && <Text style={styles.menuCount}>{count}</Text>}
                 </Pressable>
               )

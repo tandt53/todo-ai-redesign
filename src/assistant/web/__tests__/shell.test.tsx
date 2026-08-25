@@ -134,7 +134,10 @@ function rowFor(container: HTMLElement, taskId: string): HTMLElement | null {
 describe('AC-31 — a message is a door to the row', () => {
   it('activating a named task brings its row into view and flashes it once', () => {
     const { container } = mount(seed({ tasks: TASKS }, [appliedNaming(['task-1', 'task-2'])]))
-    expect(surfaceOf(container)).toBe('talk')
+    // The app opens on Tasks (home). Talk is mounted but not showing (overlay
+    // model). In jsdom no CSS applies, so the Talk surface's links are in the
+    // DOM and clickable regardless.
+    expect(surfaceOf(container)).toBe('tasks')
 
     const links = screen.getAllByTestId('talk-task-link')
     act(() => {
@@ -279,9 +282,14 @@ describe('AC-31 — a message is a door to the row', () => {
   })
 
   it('ONE routine, two entry points — the postcondition is identical from either', () => {
-    // Entry 1: the Tasks surface is NOT showing (below the split, the click
-    // that reveals is also the click that navigates).
+    // Entry 1: the Talk overlay is showing (below the split, the click that
+    // reveals also dismisses the overlay). Navigate to Talk first.
     const { container } = mount(seed({ tasks: TASKS }, [appliedNaming(['task-1', 'task-2'])]))
+    act(() => {
+      // summon Talk overlay
+      fireEvent.click(screen.getByTestId('tasks-bar-action'))
+    })
+    expect(surfaceOf(container)).toBe('talk')
     act(() => {
       fireEvent.click(screen.getAllByTestId('talk-task-link')[0] as HTMLElement)
     })
@@ -292,14 +300,10 @@ describe('AC-31 — a message is a door to the row', () => {
     }
     cleanup()
 
-    // Entry 2: the Tasks surface is ALREADY showing (which is what the wide
-    // frame is, permanently). The Talk panel is mounted either way, so the same
-    // link is there to click.
+    // Entry 2: already on Tasks (which is what the wide frame is, permanently).
+    // The Talk panel is mounted either way, so the same link is there to click.
     scrolled.length = 0
     const { container: c2 } = mount(seed({ tasks: TASKS }, [appliedNaming(['task-1', 'task-2'])]))
-    act(() => {
-      fireEvent.click(screen.getByTestId('shell-tasks-button'))
-    })
     expect(surfaceOf(c2)).toBe('tasks')
     act(() => {
       fireEvent.click(screen.getAllByTestId('talk-task-link')[0] as HTMLElement)
@@ -347,10 +351,7 @@ describe('AC-32 — the rendered list is not stale after a turn', () => {
     })
     const { container } = render(<App controller={h.controller} />)
 
-    // Put the list on screen first — this is the "already rendered" half.
-    act(() => {
-      fireEvent.click(screen.getByTestId('shell-tasks-button'))
-    })
+    // The list is already on screen — Tasks is home.
     expect(container.querySelectorAll('.task-row')).toHaveLength(1)
 
     await act(async () => {
@@ -386,13 +387,17 @@ describe('AC-32 — the rendered list is not stale after a turn', () => {
     })
     const { container } = render(<App controller={h.controller} />)
 
-    // The turn happens while the user is on Talk…
+    // Summon Talk overlay, then send — the turn happens while the user is on
+    // Talk (the overlay model: Tasks is behind it, not gone).
+    act(() => {
+      fireEvent.click(screen.getByTestId('tasks-bar-action'))
+    })
     await act(async () => {
       await h.controller.send('typed', 'add pay the electricity bill')
     })
-    // …and the list they then open is current.
+    // Dismiss Talk — the list underneath is current.
     act(() => {
-      fireEvent.click(screen.getByTestId('shell-tasks-button'))
+      fireEvent.click(screen.getByTestId('talk-close-button'))
     })
     expect(container.querySelectorAll('.task-row')).toHaveLength(2)
   })
@@ -414,8 +419,8 @@ describe('AC-32 — the rendered list is not stale after a turn', () => {
 })
 
 // ---------------------------------------------------------------------------
-// The frame: two peers, one branch, and a Settings surface that never
-// dismisses the assistant
+// The frame: the list is home, Talk is summoned over it, and a Settings
+// surface that never dismisses the assistant
 // ---------------------------------------------------------------------------
 
 describe('the shell', () => {
@@ -439,53 +444,47 @@ describe('the shell', () => {
     expect(src).not.toMatch(/innerWidth|clientWidth|matchMedia\(\s*['"`]\(min-width/)
   })
 
-  it('the PathSwitch moves between the two peers', () => {
+  it('the app opens on Tasks (home) and Talk is summoned by the mic', () => {
     const { container } = mount(seed({ tasks: TASKS }))
-    expect(surfaceOf(container)).toBe('talk')
-    act(() => {
-      fireEvent.click(screen.getByTestId('shell-tasks-button'))
-    })
     expect(surfaceOf(container)).toBe('tasks')
-    // shell-talk-button retired (T-254); VoiceFab retired (T-321).
     // TaskBottomBar's action button navigates to Talk when the field is empty.
     act(() => {
       fireEvent.click(screen.getByTestId('tasks-bar-action'))
     })
     expect(surfaceOf(container)).toBe('talk')
+    // Close dismisses Talk and returns to the list.
+    act(() => {
+      fireEvent.click(screen.getByTestId('talk-close-button'))
+    })
+    expect(surfaceOf(container)).toBe('tasks')
   })
 
-  it('the badge counts open tasks due today, names what it counts, and vanishes at zero', () => {
-    const now = new Date()
-    // Three rows, and each of the two that are NOT counted is excluded for its
-    // own reason: one is dateless (in Inbox, never in Today — ADR-009's whole
-    // point), one is dated today but ticked. A set where both were excluded by
-    // the same rule would leave the other rule unguarded (L-005).
-    const counted = todayTask({ id: 'task-4', title: 'Call Mum' })
-    const dateless = task({ id: 'task-5', title: 'Someday', status: 'inbox', due_at: null })
-    const ticked = todayTask({ id: 'task-6', title: 'Morning stand-up', status: 'done' })
-    const all = [counted, dateless, ticked]
-    mount(seed({ tasks: all }))
-    const sw = screen.getByTestId('shell-tasks-button')
-    expect(collectionCount(all, 'today', now)).toBe(1)
-    expect(sw.querySelector('.path-badge')?.textContent).toBe('1')
-    // the badge is never the whole accessible name
-    expect(sw.getAttribute('aria-label')).toBe('Tasks, 1 left today')
-    cleanup()
-
-    // Zero renders NO badge — "a number pretending to be news". The list is not
-    // empty; it is empty OF TODAY, which is the case the old fixture could not
-    // express while a dateless row counted as Today.
-    mount(seed({ tasks: [dateless, ticked] }))
-    const zero = screen.getByTestId('shell-tasks-button')
-    expect(zero.querySelector('.path-badge')).toBeNull()
-    expect(zero.getAttribute('aria-label')).toBe('Tasks')
+  it('Escape dismisses the Talk overlay', () => {
+    const { container } = mount(seed({ tasks: TASKS }))
+    // summon Talk
+    act(() => {
+      fireEvent.click(screen.getByTestId('tasks-bar-action'))
+    })
+    expect(surfaceOf(container)).toBe('talk')
+    act(() => {
+      fireEvent.keyDown(globalThis.document, { key: 'Escape' })
+    })
+    expect(surfaceOf(container)).toBe('tasks')
   })
 
-  it('AC-24 — the by-hand list is one action away from EVERY conversation failure state', () => {
-    // Written as the AC writes it: a bound, not a named control. The three
-    // failure states the AC enumerates are checked as three structurally
-    // different cases, because an AC whose subject is "every X" is exactly the
-    // shape where one door goes unguarded (L-005).
+  it('shell-tasks-button is RETIRED — no PathSwitch in the DOM', () => {
+    mount(seed({ tasks: TASKS }))
+    expect(screen.queryByTestId('shell-tasks-button')).toBeNull()
+  })
+
+  it('AC-24 — the by-hand list is reachable from EVERY conversation failure state', () => {
+    // Under the overlay model the list is HOME: the user is already there
+    // unless they summoned Talk. AC-24's bound — at most one action — is met
+    // by dismissing Talk (close button / Escape) when Talk is showing, and by
+    // zero actions when it is not.
+    //
+    // Three failure states, each from the Talk overlay (the worst case: the
+    // user is on Talk when the failure happens, and needs to reach Tasks).
     const failures: [string, AppState][] = [
       [
         'a failed turn',
@@ -498,12 +497,18 @@ describe('the shell', () => {
     ]
     for (const [name, state] of failures) {
       const { container } = mount(state)
-      const sw = screen.getByTestId('shell-tasks-button')
-      expect(sw.hasAttribute('disabled'), name).toBe(false)
-      expect(sw.getAttribute('aria-disabled'), name).toBeNull()
-      // one action, and it really lands on the list
+      // summon Talk overlay
       act(() => {
-        fireEvent.click(sw)
+        fireEvent.click(screen.getByTestId('tasks-bar-action'))
+      })
+      expect(surfaceOf(container), name).toBe('talk')
+      // The close button is visible and not disabled
+      const close = screen.getByTestId('talk-close-button')
+      expect(close.hasAttribute('disabled'), name).toBe(false)
+      expect(close.getAttribute('aria-disabled'), name).toBeNull()
+      // one action: dismiss Talk, and the list is underneath
+      act(() => {
+        fireEvent.click(close)
       })
       expect(surfaceOf(container), name).toBe('tasks')
       expect(container.querySelectorAll('.task-row').length, name).toBeGreaterThan(0)
@@ -540,11 +545,12 @@ describe('the shell', () => {
     cleanup()
 
     // …and only when there is genuinely nothing to show does it take the
-    // surface — with `Add task` still live, because the local no-AI path works.
+    // surface — with the bar still live, because the local no-AI path works.
+    // InlineAdd retired (T-359): TaskBottomBar is the sole add mechanism.
     mount(seed({ tasks: [], tasksLoad: 'failed' }))
     expect(screen.getByText("Couldn't load your tasks")).toBeTruthy()
-    const add = screen.getByRole('button', { name: /Add task/ })
-    expect(add.hasAttribute('disabled')).toBe(false)
+    const barInput = screen.getByTestId('tasks-bar-input')
+    expect(barInput.hasAttribute('disabled')).toBe(false)
   })
 
   it('Settings never dismisses the assistant, and Back means up one level', () => {
@@ -770,7 +776,8 @@ describe('numbers this code does not own', () => {
     expect(css.match(/@container/g) ?? []).toHaveLength(2)
     // The two rules jsdom cannot exercise, asserted as the text they are.
     expect(css).toMatch(/\.app\[data-surface="settings"\]\s*\.s-tasks\s*\{\s*display:\s*none/)
-    expect(css).toMatch(/\.path\s*\{\s*display:\s*none/)
+    // PathSwitch retired (T-333); Talk close button hidden at split+.
+    expect(css).toMatch(/\.talk-close\s*\{\s*display:\s*none/)
   })
 
   it('the About row publishes the version package.json declares', () => {

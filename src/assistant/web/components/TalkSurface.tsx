@@ -1,5 +1,10 @@
 // S1 · TALK — "say it, see what changed".
 //
+// THE MODEL (information-architecture.md §4, revised 2026-08-24): Talk is
+// summoned over the task list. Below the split it is an overlay — the mic opens
+// it, close or Escape dismisses it. At or above the split it is a panel beside
+// the list, permanently on screen. Same relationship, two drawings.
+//
 // THE CONSTRAINT THAT GOVERNS THIS FILE: the applied message carries its FULL
 // per-field diff at every width — in a 360–420px panel exactly as at 375px.
 // Nothing in here reads a viewport, so there is no place for a second mechanism
@@ -19,11 +24,10 @@ import type { AssistantController } from '../../_shared/controller.ts'
 import type { AppState } from '../../_shared/model/reducer.ts'
 import type { FollowHandle } from '../follow.ts'
 import type { ShellHandle } from '../shell.ts'
-import { openTodayCount } from '../../_shared/model/tasks.ts'
 import { Composer } from './Composer.tsx'
 import { ConversationPane } from './ConversationPane.tsx'
 import { NewMessageAffordance } from './NewMessageAffordance.tsx'
-import { PathSwitch } from './Chrome.tsx'
+import { CloseIcon } from './icons.tsx'
 import { VoiceSurface } from './VoiceSurface.tsx'
 
 export function TalkSurface({
@@ -47,10 +51,18 @@ export function TalkSurface({
             and the wordmark stands for it. One string, shown or not by CSS. */}
         <span className="panel-title">Talk</span>
         <span className="spacer" />
-        <PathSwitch
-          count={openTodayCount(state.tasks)}
-          onGo={() => shell.go('tasks')}
-        />
+        {/* Close control — dismisses the Talk overlay (IA §4). Below the split
+            this is the visible affordance beside Escape; at or above it Talk is
+            a permanent panel and CSS hides this button. AC-24's reachability
+            bound is met by the list being home — dismissing Talk lands on it. */}
+        <button
+          className="talk-close icon-btn"
+          data-testid="talk-close-button"
+          aria-label="Close"
+          onClick={() => shell.go('tasks')}
+        >
+          <CloseIcon />
+        </button>
       </header>
 
       <ConversationPane

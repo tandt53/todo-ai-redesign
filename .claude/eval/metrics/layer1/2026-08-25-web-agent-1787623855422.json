@@ -1,0 +1,31 @@
+{
+  "layer": 1,
+  "agent": "web-agent",
+  "task_id": "T-354",
+  "task_description": "T-354 — pill on web",
+  "feature_id": "F-003",
+  "timestamp": "2026-08-25T02:10:55Z",
+  "status": "unknown",
+  "duration_seconds": 0,
+  "files_created": [],
+  "files_created_count": 0,
+  "project_stats": {
+    "spec_files": 0,
+    "source_files": 170,
+    "test_files": 49,
+    "qa_files": 0,
+    "total_loc": 54607
+  },
+  "confidence": "unknown",
+  "tests": {
+    "passing": 0,
+    "failing": 0,
+    "total": 0
+  },
+  "acs_covered": "none",
+  "blockers": "none",
+  "bugs_filed": [],
+  "summary": "No summary available",
+  "capture_method": "hook:PostToolUse",
+  "project": "todo-ai-redesign"
+}

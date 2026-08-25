@@ -402,12 +402,13 @@ button,input,textarea{font:inherit; color:inherit}
    FRAME — layout.wide_rule, drawn. Three tiers, one branch each.
    ══════════════════════════════════════════════════════════════════════════ */
 .app{display:flex; flex-direction:column; height:820px; overflow:hidden; background:var(--bg-sunken)}
-.frame{display:flex; flex:1 1 auto; min-height:0; max-width:var(--frame-max); width:100%; margin:0 auto}
+.frame{position:relative; display:flex; flex:1 1 auto; min-height:0; max-width:var(--frame-max); width:100%; margin:0 auto}
 .col-rail{display:none; flex-direction:column; min-width:0; background:var(--bg-base)}
 .col-main{display:flex; flex-direction:column; flex:1 1 auto; min-width:0; background:var(--bg-base)}
 .col-panel{display:none; flex-direction:column; min-width:0; background:var(--bg-base)}
-.app[data-surface="talk"] .col-main{display:none}
-.app[data-surface="talk"] .col-panel{display:flex; flex:1 1 auto}
+/* The list is HOME (information-architecture.md §4, owner 2026-08-24): Talk
+   is summoned OVER it, never in place of it. */
+.app[data-surface="talk"] .col-panel{display:flex; position:absolute; inset:0; z-index:2}
 
 /* tokens.json breakpoints.split — the one branch. A container query, not a
    viewport query: the app reads its own width, so a stage narrower than the
@@ -516,7 +517,9 @@ button,input,textarea{font:inherit; color:inherit}
 .t-num{font-family:var(--font-num)}
 
 /* ══════════════════════════════════════════════════════════════════════════
-   SURFACE HEAD — the collection, its count, and the one rule under them
+   SURFACE HEAD — used by Settings slide-over. The Tasks content-column
+   header (colTitle/colCount) was removed in T-353: the app never rendered
+   it and the bar-surface-title now carries the heading role.
    ══════════════════════════════════════════════════════════════════════════ */
 .head{padding:var(--s6) 0 var(--s5); margin-bottom:var(--s2)}
 .head h1{
@@ -524,9 +527,6 @@ button,input,textarea{font:inherit; color:inherit}
   font-weight:var(--w-bold);
 }
 .plat-ios .head h1{letter-spacing:var(--ls-display)}
-.head .count{margin:var(--s3) 0 0; font-size:var(--fs-meta); color:var(--text-secondary); font-family:var(--font-num)}
-.head .count b{color:var(--text-primary); font-weight:var(--w-semibold)}
-.head .count .late{color:var(--danger); font-weight:var(--w-semibold)}
 
 /* ══════════════════════════════════════════════════════════════════════════
    TIME RAIL + TASK ROW  (§ TimeRail, § TaskRow)
@@ -754,11 +754,12 @@ button,input,textarea{font:inherit; color:inherit}
 .transcript .pend{color:var(--text-muted)}
 .cinput{
   flex:1 1 auto; min-width:0; height:var(--field-h); min-height:var(--min-target);
-  border:0; background:transparent;
-  font-size:var(--fs-body); color:var(--text-primary); padding:0;
+  border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-pill);
+  background:var(--bg-base); padding:0 var(--field-px);
+  font-size:var(--fs-body); color:var(--text-primary);
 }
 .cinput::placeholder{color:var(--text-muted)}
-.cinput:focus{outline:0}
+.cinput:focus{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px; border-color:var(--accent)}
 .mic{
   width:var(--h-md); height:var(--h-md); min-width:var(--min-target); min-height:var(--min-target);
   border-radius:var(--r-circle); border:0; background:var(--accent); color:var(--text-on-accent);
@@ -1096,8 +1097,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   .row-trail{display:none}
   /* T-321: FAB clearance pseudo removed — the voice FAB is retired */
   .pane-tasks{padding-bottom:0}
-  /* T-321: inline-new hidden below split — the TaskBottomBar replaces it */
-  .inline-new{display:none !important}
+  /* T-356: inline-new retired at every width — TaskBottomBar is sole add mechanism */
   /* Header: hide Talk and Add buttons below split */
   .bar-talk-btn{display:none}
   .bar-add-btn{display:none}
@@ -1124,46 +1124,24 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .row.row-swiped .row-inner{transform:translateX(-80px); padding-left:80px}
 .row.row-swiped .swipe-action{transform:translateX(0)}
 
-/* ── Inline new-task row — visible at all widths ── */
-/* T-305/306: position:sticky pins the row to the scrollport bottom when
-   scrolled out of view. Short lists: no effect.
-   T-318: restructured to column layout so the system indicator (homebar /
-   gesturebar) sits below the content row, same treatment as § TaskBottomBar. */
-.inline-new{
-  display:flex; flex-direction:column;
-  position:sticky; bottom:0; z-index:5; background:var(--bg-base);
-  cursor:pointer; color:var(--text-muted);
-}
-.inline-new-in{
-  display:flex; align-items:center; gap:var(--s3);
-  min-height:var(--h-lg); padding:var(--s1) var(--gutter);
-}
-.inline-new .plus{
-  width:calc(var(--icon-size-md) * 1px); height:calc(var(--icon-size-md) * 1px); flex:none;
-  display:grid; place-items:center;
-}
-.inline-new span.inline-label{font-size:var(--fs-body); color:var(--text-muted)}
-.inline-new:hover .inline-label{color:var(--text-secondary)}
-.inline-new:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
-/* T-321: voice-fab CSS removed — the FAB is retired from the Tasks surface.
-   The TaskBottomBar's morphing action button replaces both the FAB and the
-   inline-new row below split. Option A typing state and keyboard CSS removed
-   (option A retired). */
+/* T-356: InlineAdd retired at every width. TaskBottomBar is the sole add-task
+   mechanism. All .inline-new CSS and HTML removed. */
 
 /* ══════════════════════════════════════════════════════════════════════════
    TASKBOTTOMBAR — fixed field + morphing mic/send (T-311, canonical T-321)
-   Owner chose option B 2026-08-23. Height: s1 + h-md + s2 + homebar (25px)
-   = 4+44+8+25 = 81px total. Hidden at split+ (Talk panel is permanent).
+   SOLE ADD-TASK MECHANISM at every width (T-356, owner decision 2026-08-25).
+   Height: s3 (12px) + h-md (44px) + s3 (12px) + homebar (25px)
+   = 12+44+12+25 = 93px total.
    ══════════════════════════════════════════════════════════════════════════ */
 .task-bar{flex:none; background:var(--bg-base)}
 .task-bar-in{
   display:flex; align-items:center; gap:var(--s3);
-  padding:var(--s1) var(--gutter) var(--s2);
+  padding:var(--s3) var(--gutter);
   max-width:var(--list-max); margin:0 auto; width:100%;
 }
 .tbar-input{
   flex:1 1 auto; min-width:0; height:var(--field-h); min-height:var(--min-target);
-  border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-sm);
+  border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-pill);
   background:var(--bg-base); padding:0 var(--field-px);
   font-size:var(--fs-body); color:var(--text-primary);
 }
@@ -1182,10 +1160,6 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .tbar-action:hover{color:var(--text-primary); border-color:var(--text-primary)}
 .tbar-action.tbar-active{background:var(--accent); color:var(--text-on-accent); border-color:transparent}
 .tbar-action:focus-visible{outline:var(--b-focus) solid var(--focus-ring); outline-offset:2px}
-@container (min-width:1024px){
-  .task-bar{display:none !important}
-}
-
 /* ── Keyboard mock — iOS (T-314) ─────────────────────────────────────────
    38% of 820px = 312px, derived from the owner's Microsoft To Do screenshot.
    When the keyboard is up the home indicator is behind it, so the task bar's
@@ -1213,7 +1187,8 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   .row.row-swiped .row-inner{transform:none}
 }
 
-/* ── Surface title in header ── */
+/* ── Surface title in header — carries role="heading" aria-level="1"
+   (T-353) as the only h1-level heading inside the Tasks surface. ── */
 .bar-surface-title{display:none}
 @container (max-width:1023px){
   .bar-surface-title{display:inline; font-weight:var(--w-semibold); font-size:var(--fs-body)}
@@ -1222,7 +1197,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 /* ── Search field (inline, expands from icon) — added T-225 ── */
 .search-field{
   display:none; flex:1 1 auto; min-width:0; height:var(--field-h); min-height:var(--min-target);
-  border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-sm);
+  border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-pill);
   padding:0 var(--field-px); font:inherit; font-size:var(--fs-body); color:var(--text-primary);
   background:var(--bg-base);
 }
@@ -1230,7 +1205,6 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .search-field:focus{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px; border-color:var(--accent)}
 .app[data-search="open"] .search-field{display:block}
 .app[data-search="open"] .bar-surface-title{display:none}
-.app[data-search="open"] .head{display:none}
 /* Search close button */
 .search-close{
   appearance:none; border:0; background:transparent; cursor:pointer; color:var(--text-secondary);
@@ -1250,11 +1224,10 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .app[data-search="no-results"] .search-field{display:block}
 .app[data-search="no-results"] .search-close{display:grid}
 .app[data-search="no-results"] .bar-surface-title{display:none}
-.app[data-search="no-results"] .head{display:none}
 .app[data-search="no-results"] .overflow-anchor{display:none}
 .app[data-search="no-results"] .btn-search{display:none}
 .app[data-search="no-results"] .list{display:none}
-/* T-321: inline-new hidden below split; no extra search/selection hide needed */
+/* T-356: inline-new retired at every width. */
 /* When search is filtering, JS hides rows whose title does not contain the
    query (AC-2: live filtering by title). The CSS below shows the search UI
    chrome; the actual row visibility is set by showState's searchQuery handler.
@@ -1262,7 +1235,6 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .app[data-search="filtering"] .search-field{display:block}
 .app[data-search="filtering"] .search-close{display:grid}
 .app[data-search="filtering"] .bar-surface-title{display:none}
-.app[data-search="filtering"] .head{display:none}
 .app[data-search="filtering"] .overflow-anchor{display:none}
 .app[data-search="filtering"] .btn-search{display:none}
 
@@ -1325,7 +1297,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 .app[data-selection] .row-open{pointer-events:none}
 .app[data-selection] .row-trail{display:none!important}
 .app[data-selection] .row-due{display:none}
-/* T-321: inline-new hidden by phone layout; voice-fab retired */
+/* T-356: inline-new retired at every width; voice-fab retired T-321 */
 /* Selected row ground — painted on ::before, same pseudo as .row:hover.
    Inset vertically by space.1 (4px) so adjacent selected rows show an 8px
    gap between their painted grounds. No padding override — cbLeft and titleLeft
@@ -1456,7 +1428,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   <p class="dev-note">Every state below is a real state of the app. “frame: phone / wide” forces the below-split and the ≥1536 frame so all three tiers are reviewable in one window; at a real width the frame follows the window. Light / dark toggles the theme.</p>
 </div>
 
-<div class="stagewrap"><div class="stage" id="stage">
+<div class="stagewrap"><div class="stage" id="stage" data-frame="phone">
 
 <div class="app" id="app" data-surface="tasks" data-collection="today" data-tasks="list" data-talk="idle" data-mic="idle" data-banner="none" data-row="normal">
 
@@ -1516,7 +1488,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
         <!-- HEADER (T-227): hamburger (below wide) · title · spacer · Search · overflow -->
         <header class="topbar"><div class="bar-in">
           <button class="iconbtn hide-wide" data-testid="shell-lists-menu-button" accessibilityIdentifier="shell-lists-menu-button" aria-label="Lists"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
-          <span class="bar-surface-title" id="barTitle">Today</span>
+          <span class="bar-surface-title" id="barTitle" role="heading" aria-level="1">Today</span>
           <span class="spacer"></span>
           <input class="search-field" data-testid="tasks-search-input" accessibilityIdentifier="tasks-search-input" type="text" placeholder="Search tasks" aria-label="Search tasks" value="">
           <button class="search-close" data-testid="tasks-search-close" accessibilityIdentifier="tasks-search-close" aria-label="Close search"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
@@ -1543,10 +1515,6 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 
         <main class="pane pane-tasks">
           <div class="content-col">
-            <div class="head">
-              <h1 id="colTitle">Today</h1>
-              <p class="count" id="colCount"><b>4</b> open · <span class="late">2 overdue</span></p>
-            </div>
 
           <div class="v v-flex v-banner-offline banner attention"  data-testid="assistant-offline-banner" accessibilityIdentifier="assistant-offline-banner">
             <span class="ico"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="m2 2 20 20"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M2 8.8a15.9 15.9 0 0 1 4.6-2.9"/><path d="M10.7 5c4 -.4 8.1 .9 11.3 3.8"/><path d="M5 12.9a10 10 0 0 1 3-1.8"/><path d="M12 20h.01"/></svg></span>
@@ -1644,14 +1612,6 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
         <!-- Inline new-task row — visible on phone only. T-318: restructured
              to reserve the system indicator (homebar). T-319: inline-input
              for the typing state. -->
-        <div class="inline-new" role="button" tabindex="0" data-testid="tasks-inline-add" accessibilityIdentifier="tasks-inline-add" aria-label="Add a task">
-          <div class="inline-new-in">
-            <span class="plus"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
-            <span class="inline-label">Add a task</span>
-            <input class="inline-input" type="text" placeholder="Add a task" aria-label="New task title">
-          </div>
-          <div class="homebar"></div>
-        </div>
       </div></div>
             <div class="v v-collection-upcoming">
       <div class="list">
@@ -1689,15 +1649,6 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           </div>
           <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
           <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
-        </div>
-        <!-- Inline new-task row -->
-        <div class="inline-new" role="button" tabindex="0" aria-label="Add a task">
-          <div class="inline-new-in">
-            <span class="plus"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
-            <span class="inline-label">Add a task</span>
-            <input class="inline-input" type="text" placeholder="Add a task" aria-label="New task title">
-          </div>
-          <div class="homebar"></div>
         </div>
       </div></div>
             <div class="v v-collection-inbox">
@@ -1771,15 +1722,6 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           </div>
           <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
           <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
-        </div>
-        <!-- Inline new-task row -->
-        <div class="inline-new" role="button" tabindex="0" aria-label="Add a task">
-          <div class="inline-new-in">
-            <span class="plus"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
-            <span class="inline-label">Add a task</span>
-            <input class="inline-input" type="text" placeholder="Add a task" aria-label="New task title">
-          </div>
-          <div class="homebar"></div>
         </div>
       </div></div>
             <div class="v v-collection-done">
@@ -2039,14 +1981,6 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           <div class="row-trail"><button class="row-del" aria-label="Delete task"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
           <div class="swipe-action" aria-hidden="true"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
         </div>
-        <div class="inline-new" role="button" tabindex="0" aria-label="Add a task">
-          <div class="inline-new-in">
-            <span class="plus"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
-            <span class="inline-label">Add a task</span>
-            <input class="inline-input" type="text" placeholder="Add a task" aria-label="New task title">
-          </div>
-          <div class="homebar"></div>
-        </div>
       </div></div>
 
             <div class="v v-tasks-loading">
@@ -2234,7 +2168,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
           
           <span class="talk-title">Talk</span>
           <span class="spacer"></span>
-          <button class="path" data-testid="shell-tasks-button" accessibilityIdentifier="shell-tasks-button" aria-label="Tasks, 4 left today"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>Tasks <span class="count" aria-hidden="true">4</span></button>
+          <button class="iconbtn" data-testid="talk-close-button" accessibilityIdentifier="talk-close-button" aria-label="Close Talk"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
         </header>
         <div class="talk-scroll">
           <div class="conv">
@@ -2880,28 +2814,19 @@ function showState(name){
   }
   app.setAttribute('data-state', name);
   var stage = document.getElementById('stage');
-  if (cfg.frame) stage.setAttribute('data-frame', cfg.frame); else stage.removeAttribute('data-frame');
+  if ('frame' in cfg) { if (cfg.frame) stage.setAttribute('data-frame', cfg.frame); else stage.removeAttribute('data-frame'); }
   var b = document.querySelectorAll('.dev button[data-s]');
   for (var j=0;j<b.length;j++) b[j].classList.toggle('on', b[j].getAttribute('data-s')===name);
   paint(cfg);
 }
 
-/* One number, one place. The head's count and the PathSwitch badge are the same
-   open-today figure; a state cannot show a summary that disagrees with the bar. */
+/* The bar title and the PathSwitch badge are the two places a collection name
+   appears; a state cannot show a summary that disagrees with the badge. */
 function paint(cfg){
   var TITLE = {today:'Today', upcoming:'Upcoming', inbox:'Inbox', done:'Done'};
-  var COUNT = {
-    today:'<b>4</b> open · <span class="late">2 overdue</span>',
-    upcoming:'<b>3</b> coming up',
-    inbox:'<b>16</b> filed here',
-    done:'<b>4</b> completed'
-  };
-  var t = document.getElementById('colTitle');
-  var c = document.getElementById('colCount');
+  var bt = document.getElementById('barTitle');
   var name = cfg.title || TITLE[cfg.collection] || 'Today';
-  if (t) t.textContent = name;
-  if (c) c.innerHTML = cfg.count !== undefined ? cfg.count : (COUNT[cfg.collection] || '');
-  if (c) c.style.display = (cfg.count === '' ) ? 'none' : '';
+  if (bt) bt.textContent = name;
   var si = document.getElementById('stateInd'); if (si && cfg.ind) si.textContent = cfg.ind;
   var et = document.getElementById('emptyTitle'); if (et && cfg.emptyTitle) et.textContent = cfg.emptyTitle;
   var eb = document.getElementById('emptyBody'); if (eb && cfg.emptyBody) eb.textContent = cfg.emptyBody;

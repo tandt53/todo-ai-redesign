@@ -4,14 +4,14 @@
 // this holds the arrangement — and so the shape below reads as what it is: a
 // total function of `ShellState`, with no width test and no default branch.
 //
-// `information-architecture.md § 4`: S3 and S4 STACK over the peer (they
-// "replace the surface" on a phone), S1 ⇄ S2 is a switch between peers.
+// `information-architecture.md § 4` (2026-08-24): Tasks is home; Talk is
+// summoned over it; S3 and S4 stack over the surface beneath.
 
 import { View } from 'react-native'
 import type { AppState } from '../../_shared/model/reducer.ts'
 import type { MobileAssistantController } from '../controller.ts'
 import type { MobilePlatform } from '../model/permissions.ts'
-import type { PathSwitchView, ShellState } from '../model/shell.ts'
+import type { ShellState } from '../model/shell.ts'
 import type { Collection } from '../model/tasks-view.ts'
 import { ListsMenu } from './ListsMenu.tsx'
 import { SettingsSurface } from './SettingsSurface.tsx'
@@ -25,7 +25,6 @@ export function AssistantSurfaceHost({
   controller,
   platform,
   shell,
-  pathView,
   theme,
   onThemeChange,
   onOpenTask,
@@ -35,7 +34,6 @@ export function AssistantSurfaceHost({
   controller: MobileAssistantController
   platform: MobilePlatform
   shell: ShellState
-  pathView: PathSwitchView
   theme: ThemeChoice
   onThemeChange: (t: ThemeChoice) => void
   onOpenTask: (taskId: string) => void
@@ -60,8 +58,7 @@ export function AssistantSurfaceHost({
         state={state}
         controller={controller}
         platform={platform}
-        pathView={pathView}
-        onGoTasks={() => controller.shellDispatch({ type: 'go', surface: 'tasks' })}
+        onClose={() => controller.shellDispatch({ type: 'go', surface: 'tasks' })}
         onOpenTask={onOpenTask}
         canOpenTask={canOpenTask}
       />

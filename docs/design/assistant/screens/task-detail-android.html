@@ -697,11 +697,12 @@ button,input,textarea{font:inherit; color:inherit}
 .transcript .pend{color:var(--text-muted)}
 .cinput{
   flex:1 1 auto; min-width:0; height:var(--field-h); min-height:var(--min-target);
-  border:0; background:transparent;
-  font-size:var(--fs-body); color:var(--text-primary); padding:0;
+  border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-pill);
+  background:var(--bg-base); padding:0 var(--field-px);
+  font-size:var(--fs-body); color:var(--text-primary);
 }
 .cinput::placeholder{color:var(--text-muted)}
-.cinput:focus{outline:0}
+.cinput:focus{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px; border-color:var(--accent)}
 .mic{
   width:var(--h-md); height:var(--h-md); min-width:var(--min-target); min-height:var(--min-target);
   border-radius:var(--r-circle); border:0; background:var(--accent); color:var(--text-on-accent);
@@ -1236,7 +1237,7 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   <p class="dev-note">The detail is a PROPERTY SHEET: a row shows its current value and tapping it opens the picker. Twelve boxes became none. The name and the note show a GROUND when the value is empty, or you hover, or you are typing; the only boundary left on either is the focus ring, which is the one thing a ground cannot carry. “detail-typed-affordance” forces that ground on so it can be reviewed without a pointer, and carries a half-typed step so the commit button beside it has something to commit.</p>
 </div>
 
-<div class="stagewrap"><div class="stage" id="stage">
+<div class="stagewrap"><div class="stage" id="stage" data-frame="phone">
 
 <div class="app" id="app" data-surface="detail" data-body="fields" data-pick="none" data-repeat="summary" data-rend="never" data-steps="list" data-fail="none" data-series="single" data-typed="off">
   <div class="frame">
@@ -1846,7 +1847,7 @@ function showState(name){
   }
   app.setAttribute('data-state', name);
   var stage = document.getElementById('stage');
-  if (cfg.frame) stage.setAttribute('data-frame', cfg.frame); else stage.removeAttribute('data-frame');
+  if ('frame' in cfg) { if (cfg.frame) stage.setAttribute('data-frame', cfg.frame); else stage.removeAttribute('data-frame'); }
   var b = document.querySelectorAll('.dev button[data-s]');
   for (var j=0;j<b.length;j++) b[j].classList.toggle('on', b[j].getAttribute('data-s')===name);
   paint(cfg);

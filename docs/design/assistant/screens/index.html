@@ -667,11 +667,12 @@ button,input,textarea{font:inherit; color:inherit}
 .transcript .pend{color:var(--text-muted)}
 .cinput{
   flex:1 1 auto; min-width:0; height:var(--field-h); min-height:var(--min-target);
-  border:0; background:transparent;
-  font-size:var(--fs-body); color:var(--text-primary); padding:0;
+  border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-pill);
+  background:var(--bg-base); padding:0 var(--field-px);
+  font-size:var(--fs-body); color:var(--text-primary);
 }
 .cinput::placeholder{color:var(--text-muted)}
-.cinput:focus{outline:0}
+.cinput:focus{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px; border-color:var(--accent)}
 .mic{
   width:var(--h-md); height:var(--h-md); min-width:var(--min-target); min-height:var(--min-target);
   border-radius:var(--r-circle); border:0; background:var(--accent); color:var(--text-on-accent);

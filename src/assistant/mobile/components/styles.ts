@@ -39,9 +39,12 @@ const sendBox = paintedBox(A11Y_IDS.composerSend)
 // truncate the very question it exists to show.
 
 // App-shell boxes, read from `PAINTED` on the same terms as the five above.
-const pathBox = paintedBox(SHELL_A11Y_IDS.pathTasks)
+const closeBox = paintedBox(SHELL_A11Y_IDS.talkCloseButton)
 const barActionBox = paintedBox(SHELL_A11Y_IDS.tasksBarAction)
-const rowDeleteBox = paintedBox(SHELL_A11Y_IDS.tasksDeleteButton)
+// T-343: rowDeleteBox removed — the delete control is swipe-to-reveal now,
+// and its painted box is the full revealed strip, not a fixed 44×44 icon.
+// The PAINTED entry and SHELL_INTERACTIVE_IDS entry in touch.ts still exist
+// for the hit-area assertion on the revealed button.
 const menuRowBox = paintedBox(SHELL_A11Y_IDS.menuCollectionRow)
 const segmentBox = paintedBox(SHELL_A11Y_IDS.settingsThemeControl)
 /** `.btn-primary` / `.btn-ghost` / `.back-btn` all declare `min-height: 44px`
@@ -71,7 +74,7 @@ export function makeStyles(c: Palette, platform: 'ios' | 'android' = 'ios') {
     topBar: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: spacing.md,
+      gap: spacing.sm,
       paddingHorizontal: spacing.gutter_mobile - tokens.space['3'],
       paddingVertical: spacing.sm,
       backgroundColor: c.bg.raised,
@@ -512,10 +515,13 @@ export function makeStyles(c: Palette, platform: 'ios' | 'android' = 'ios') {
     composer: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: spacing.sm,
+      gap: tokens.space['3'],                   // 12 — mockup .composer-in gap:var(--s3)
       paddingHorizontal: spacing.gutter_mobile,
-      paddingVertical: spacing.sm,
-      backgroundColor: c.bg.raised,
+      paddingVertical: tokens.space['3'],       // 12 — mockup .composer-in padding:var(--s3)
+      backgroundColor: c.bg.base,              // mockup .composer background:var(--bg-base)
+      // T-349's home-indicator clearance, matched to taskBottomBar so the field
+      // sits at the same height on both surfaces (owner decision 2026-08-25).
+      marginBottom: tokens.space['3'],
     },
     composerInput: {
       flex: 1,
@@ -566,46 +572,28 @@ export function makeStyles(c: Palette, platform: 'ios' | 'android' = 'ios') {
     // ---- app shell (components.md § App shell) ----
     surface: { flex: 1, backgroundColor: c.bg.base },
     barSpacer: { flex: 1 },
-    // § PathSwitch — ghost button, right-aligned, `text.primary`
-    pathButton: {
-      flexDirection: 'row',
+    // Talk close button — dismisses Talk to the list (§ 4, T-334)
+    talkCloseButton: {
+      ...closeBox,
+      borderRadius: radius.sm,
       alignItems: 'center',
-      gap: spacing.sm,
-      minHeight: pathBox.height,
-      paddingVertical: spacing.xs,
-      paddingHorizontal: spacing.sm,
-      borderRadius: radius.pill,
+      justifyContent: 'center',
     },
-    pathLabel: {
-      fontFamily: font.family.ui,
-      fontSize: fs.body,
-      fontWeight: String(font.weight.emphasis) as '600',
-      color: c.text.primary,
-    },
-    // the badge is a `radius.pill` accentTint fill with `accent` text
-    pathBadge: {
-      minWidth: spacing.lg,
-      paddingHorizontal: spacing.sm,
-      borderRadius: radius.pill,
-      backgroundColor: c.accentTint,
-      overflow: 'hidden',
-      textAlign: 'center',
-      fontFamily: font.family.numeric,
-      fontSize: fs.meta,
-      fontWeight: String(font.weight.emphasis) as '600',
-      color: c.accent,
-    },
-    // § TaskBottomBar — fixed bottom row: text field + morphing action button
-    // (T-321). Replaces both InlineAdd and the voice FAB below split.
+    // § TaskBottomBar — fixed bottom row: text field + morphing action button.
+    // The sole add mechanism on mobile (T-363).
     // Bar height: h-lg (52) = s1 (4) top pad + h-md (44) content + s1 (4) bottom pad.
     taskBottomBar: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingVertical: spacing.xs,    // s1 = 4
+      paddingVertical: tokens.space['3'],       // 12 — same as composer, both bars at the same height
       paddingHorizontal: spacing.gutter_mobile,
-      gap: spacing.sm,                // 8
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: c.bg.hairline,
+      gap: tokens.space['3'],                   // 12 — mockup .task-bar-in gap:var(--s3)
+      backgroundColor: c.bg.base,              // mockup .task-bar background:var(--bg-base)
+      // T-349: 12pt clearance below the safe-area inset so the field and mic
+      // do not compete with the home-indicator swipe gesture. Added as margin
+      // rather than growing paddingVertical, which would break the bar's
+      // height arithmetic (12 + 44 + 12 = 68).
+      marginBottom: tokens.space['3'],  // 12
     },
     taskBottomBarInput: {
       flex: 1,
@@ -617,7 +605,7 @@ export function makeStyles(c: Palette, platform: 'ios' | 'android' = 'ios') {
       color: c.text.primary,
       borderWidth: 1,
       borderColor: c.bg.hairline,
-      borderRadius: radius.sm,
+      borderRadius: radius.pill,     // radius.assign: sole input on a bar → pill (T-355)
       paddingVertical: 0,
     },
     taskBottomBarAction: {
@@ -820,7 +808,7 @@ export function makeStyles(c: Palette, platform: 'ios' | 'android' = 'ios') {
     // T-303: paddingBottom set to s3 (12). In the mockup the add button lives
     // INSIDE `.empty`, separated from the heading by the body paragraph's own
     // height + its margin-bottom s5 (24). The mobile ET-FIRST drops the body
-    // text, so the heading-to-InlineAdd gap must replace both the h2 margin
+    // text, so the heading-to-bar gap must replace both the h2 margin
     // (s2, 8) and the missing paragraph. s3 (12) is the group-internal step
     // in the spacing scale: larger than s2 (which read as cramped without the
     // body text between them) but smaller than s4 (gutter), so the pair reads
@@ -892,12 +880,71 @@ export function makeStyles(c: Palette, platform: 'ios' | 'android' = 'ios') {
       textDecorationLine: 'underline',
       textDecorationColor: c.text.muted,
     },
-    // the row's trailing delete slot — always visible on touch
-    rowDelete: {
-      ...rowDeleteBox,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: radius.sm,
+    // T-343: the delete slot is now swipe-to-reveal, not always visible.
+    // `swipeRow` wraps the row and the delete button behind it; the row
+    // slides left to reveal the button. The old `rowDelete` style was 44×44
+    // in the trailing slot; the new one fills the revealed strip.
+    swipeRow: {
+      position: 'relative' as const,
+      overflow: 'hidden' as const,
+      borderRadius: radius.taskRow,
+    },
+    swipeDeleteBehind: {
+      position: 'absolute' as const,
+      right: 0,
+      top: 0,
+      bottom: 0,
+      justifyContent: 'center' as const,
+      alignItems: 'center' as const,
+      backgroundColor: c.danger,
+    },
+    swipeDeleteButton: {
+      flex: 1,
+      width: '100%' as unknown as number,
+      justifyContent: 'center' as const,
+      alignItems: 'center' as const,
+    },
+    // The foreground layer that slides over the delete strip. It MUST carry
+    // an opaque background — without it the danger strip shows through at
+    // rest, which is the defect T-343 exists to remove.
+    swipeRowForeground: {
+      backgroundColor: c.bg.base,
+      // No borderRadius here — the outer `swipeRow` carries the radius and
+      // `overflow: 'hidden'`. A radius on the foreground creates rounded
+      // corners through which the danger strip is visible at rest (T-344).
+    },
+    // T-344: in-place undo strip — replaces the deleted row after a full swipe.
+    // Reuses the carried-notice undo mechanism; the strip is the transient,
+    // in-list affordance and CarriedNotices is the persistent fallback.
+    undoStrip: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: spacing.sm,
+      paddingHorizontal: spacing.gutter_mobile,
+      paddingVertical: spacing.sm,
+      backgroundColor: c.bg.raised,
+      borderRadius: radius.taskRow,
+    },
+    undoStripText: {
+      flex: 1,
+      fontFamily: font.family.ui,
+      fontSize: fs.meta,
+      lineHeight: lineHeightFor(fs.meta, 'meta'),
+      color: c.text.muted,
+    },
+    undoStripButton: {
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.md,
+      borderRadius: radius.pill,
+      borderWidth: 1,
+      borderColor: c.bg.hairline,
+      backgroundColor: c.bg.base,
+    },
+    undoStripButtonText: {
+      fontFamily: font.family.ui,
+      fontSize: fs.body,
+      fontWeight: String(font.weight.emphasis) as '600',
+      color: c.text.primary,
     },
     renameInput: {
       flex: 1,
@@ -914,32 +961,9 @@ export function makeStyles(c: Palette, platform: 'ios' | 'android' = 'ios') {
     },
     // AC-31's arrival cue — AC-4's own diff-flash tint, at the moment it informs
     rowArrived: { backgroundColor: c.accentTint },
-    // § InlineAdd — the `+ Add a task` row at the end of the task list (T-285).
-    // Resting state: a plus icon and the label, full-width, tappable.
-    // Editing state: the label is replaced by a text input.
-    inlineAdd: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.sm,
-      paddingVertical: spacing.sm,
-      paddingHorizontal: spacing.gutter_mobile,
-    },
-    // T-298: inline-add editing hairline retired with the row separators —
-    // same reasoning: space separates, not a line.
-    inlineAddEditing: {},
-    inlineAddLabel: {
-      fontFamily: font.family.ui,
-      fontSize: fs.body,
-      color: c.text.muted,
-    },
-    inlineAddInput: {
-      flex: 1,
-      minWidth: 0,
-      fontFamily: font.family.ui,
-      fontSize: fs.body,
-      color: c.text.primary,
-      paddingVertical: 0,
-    },
+    // T-363: inlineAdd, inlineAddEditing, inlineAddLabel, inlineAddInput
+    // removed — InlineAdd retired from mobile; the TaskBottomBar is the sole
+    // add mechanism.
     // The empty-state standalone add field. NOT `renameInput`: that style
     // carries `flex: 1`, which inside a column parent means "take all remaining
     // height" and renders a 500px-tall field. This one uses explicit padding

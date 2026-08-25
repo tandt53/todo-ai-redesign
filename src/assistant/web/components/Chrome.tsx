@@ -1,71 +1,16 @@
-// Shell chrome: the PathSwitch and the offline banner.
+// Shell chrome: the offline banner.
 //
-// OQ-1 IS ANSWERED (F-001 rev 4, Open Questions 1). The assistant does not sit
-// above the list's navigation and does not replace it: the two are PEERS. So
-// the drawer that used to toggle a pane beside the conversation is gone, and
-// with it `assistant-drawer-button` — "retired by this IA … the hamburger stops
-// toggling a pane and becomes navigation to a different surface, which is a
-// different control wearing the same glyph" (components.md § Testid catalogue —
-// app shell). Its replacement is `shell-lists-menu-button` on the Tasks bar.
+// `shell-tasks-button` (PathSwitch) is RETIRED (T-333). The task list is home
+// at every width (information-architecture.md §4, revised 2026-08-24): there is
+// no surface to switch to, so there is no switch. The way to Talk is the mic —
+// AC-37's TaskBottomBar below the split; above it, Talk is always on screen.
+// Dismissing Talk returns to the list (close or Escape).
 //
-// `shell-talk-button` is RETIRED. T-227 removed it from all three mockups.
-// `assistant-voice-fab` (VoiceFab) is RETIRED (T-321). Replaced by the
-// TaskBottomBar's morphing action button (`tasks-bar-action`) inside
-// TasksSurface. The bar navigates to Talk when the field is empty (AC-37).
+// `shell-talk-button` was RETIRED by T-227.
+// `assistant-voice-fab` (VoiceFab) was RETIRED by T-321.
 
 import type { AppState } from '../../_shared/model/reducer.ts'
-import { ListIcon, WifiOffIcon } from './icons.tsx'
-
-/**
- * PS-TASKS — `todo-ai ADR-11`'s second path made reachable in one action from
- * the Talk surface, most of all from a failure.
- *
- * **Below-split-only, and by design.** At or above `tokens.json
- * breakpoints.split` both paths are permanently on screen, so this control
- * would switch to what the user is already looking at; styles.css hides it
- * there and a desktop selector for `shell-tasks-button` will not resolve,
- * which is the documented contract (components.md § AppFrame). The guarantee
- * it carries — visible and enabled in EVERY Talk failure state — is met more
- * strongly at that width, because the second path is never left at all.
- * Nothing here is ever disabled: AC-24's reachability bound requires the
- * affordance to survive the failure it is escaping from.
- *
- * The Talk direction (`shell-talk-button`) was retired by T-227; VoiceFab
- * retired by T-321 — replaced by TaskBottomBar's action button.
- */
-export function PathSwitch({
-  count,
-  onGo,
-}: {
-  /** open tasks due today; zero renders NO badge — "a badge reading 0 is a
-   * number pretending to be news" (components.md § PathSwitch) */
-  count?: number
-  onGo: () => void
-}) {
-  const showBadge = count !== undefined && count > 0
-  // The badge is never the whole accessible name: a screen-reader user must not
-  // have to guess what "3" counts (components.md § PathSwitch, A11y).
-  const name = showBadge ? `Tasks, ${count} left today` : 'Tasks'
-  return (
-    <button
-      className="path"
-      data-testid="shell-tasks-button"
-      aria-label={name}
-      onClick={onGo}
-    >
-      <ListIcon />
-      Tasks{' '}
-      {/* `path-badge`, not `badge`: `.badge` is already the TaskRow's
-          AI-change marker and is `display:none` until `.show` — reusing the
-          name would have made this count invisible for a reason nothing on
-          screen could explain. */}
-      {showBadge && <span className="path-badge num">{count}</span>}
-    </button>
-  )
-}
-
-// VoiceFab RETIRED (T-321) — replaced by TaskBottomBar (tasks-bar-action) in
-// TasksSurface.tsx. The testid `assistant-voice-fab` is removed from all mockups.
+import { WifiOffIcon } from './icons.tsx'
 
 /**
  * AC-25 / ADR-7: no half-running conversation — the surface says so and hands

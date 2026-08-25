@@ -3,16 +3,9 @@
 // happened in `model/shell.ts` and the controller; this file subscribes and
 // arranges.
 //
-// **Two peer surfaces, one at a time.** A phone is always below
-// `tokens.json breakpoints.split`, so there is no two-pane layout here at any
-// width and no viewport branch anywhere below this line — what the wide web
-// frame says with position, a phone says with order, and the reciprocal control
-// (§ PathSwitch) is one tap either way.
-//
-// **Which one opens first is F-001 Open Question 9 and it is open.** It is
-// `LANDING_SURFACE`, one declared value in `model/shell.ts`, read here through
-// `initialShellState()` and decided nowhere else — the owner's answer is a
-// one-line change, not a refactor.
+// **Tasks is home, Talk is summoned over it** (information-architecture.md § 4,
+// 2026-08-24). A phone is always below `tokens.json breakpoints.split`, so
+// there is no two-pane layout here at any width and no viewport branch below.
 //
 // The name and prop shape of this export are load-bearing beyond this module:
 // `.mobile-app/App.tsx` and `.mobile-preview/main.tsx` mount it.
@@ -20,7 +13,6 @@
 import { useCallback, useState, useSyncExternalStore } from 'react'
 import { View } from 'react-native'
 import type { MobileAssistantController } from '../controller.ts'
-import { pathSwitch } from '../model/shell.ts'
 import { taskLinkState } from '../model/task-link.ts'
 import { CarriedNotices } from './CarriedNotices.tsx'
 import { AssistantSurfaceHost } from './ShellHost.tsx'
@@ -107,7 +99,6 @@ function Shell({
         controller={controller}
         platform={platform}
         shell={shell}
-        pathView={pathSwitch(shell.surface, state.tasks)}
         theme={theme}
         onThemeChange={onThemeChange}
         onOpenTask={openTask}

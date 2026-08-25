@@ -1,4 +1,4 @@
-// The app shell. Two peer surfaces plus a stacked one, and ONE layout branch.
+// The app shell. The task list is home; Talk is summoned over it.
 //
 // The root className carries the two orthogonal axes the spec keeps separate:
 //   st-{idle|listening|thinking|error}  — the four surface states (AC-29)
@@ -9,8 +9,8 @@
 //
 // `data-surface` is the third, and it is what the ONE layout branch reads:
 //
-//   below `tokens.json breakpoints.split`  — exactly one surface on screen,
-//       PathSwitch moves between the two peers in one action.
+//   below `tokens.json breakpoints.split`  — Tasks is always visible (home).
+//       Talk overlays it when summoned; close or Escape dismisses it.
 //   at or above it — Tasks holds the centre, Talk holds a 360–420px right
 //       panel, BOTH permanently on screen, and Settings replaces the centre
 //       rather than the panel: the assistant is never dismissed by navigating.

@@ -1,18 +1,11 @@
-// S1 Talk — "where you say what needs doing, and see in the message itself
+// Talk — "where you say what needs doing, and see in the message itself
 // exactly what changed".
 //
-// What changed with the app shell: the task list is gone from this surface
-// entirely (owner decision 2026-08-17), the drawer button with it, and the bar
-// now carries PS-TASKS. What did NOT change is the mechanism F-001 AC-1 is
-// verified against: **the applied message carries its full per-field diff**,
-// here as everywhere, with no viewport condition. There is no second mechanism
-// on this surface to select between.
-//
-// Three of the four drawn views are new (`information-architecture.md § 6`,
-// S1): a loading state for the session read, which the build previously
-// withheld input during while telling the user nothing (BUG-002), and a
-// full-surface failure for the read itself, which had no design at all because
-// there is no thread to put an error bubble in.
+// T-334: Talk is now summoned over the task list and dismissed by the close
+// button or system back (`information-architecture.md § 4`, 2026-08-24). The
+// bar carries a close button instead of PathSwitch. What did NOT change is the
+// mechanism F-001 AC-1 is verified against: **the applied message carries its
+// full per-field diff**, here as everywhere, with no viewport condition.
 
 import { Pressable, ScrollView, Text, View } from 'react-native'
 import type { AppState } from '../../_shared/model/reducer.ts'
@@ -21,13 +14,12 @@ import type { MobileAssistantController } from '../controller.ts'
 import { SHELL_A11Y_IDS, a11yProps } from '../model/a11y.ts'
 import type { MobilePlatform } from '../model/permissions.ts'
 import { SURFACE_ERROR, talkView } from '../model/shell.ts'
-import type { PathSwitchView } from '../model/shell.ts'
 import { touchProps } from '../model/touch.ts'
 import { OfflineBanner } from './Chrome.tsx'
 import { Composer } from './Composer.tsx'
 import { ConversationList } from './ConversationList.tsx'
 import { NewMessageAffordance } from './NewMessageAffordance.tsx'
-import { PathSwitch, ShellBar } from './PathSwitch.tsx'
+import { TalkCloseButton, ShellBar } from './PathSwitch.tsx'
 import { VoiceSurface } from './VoiceSurface.tsx'
 import { useKeyboardInset } from './useKeyboardInset.ts'
 import { useNewMessageFollow } from './useNewMessageFollow.ts'
@@ -51,16 +43,15 @@ export function TalkSurface({
   state,
   controller,
   platform,
-  pathView,
-  onGoTasks,
+  onClose,
   onOpenTask,
   canOpenTask,
 }: {
   state: AppState
   controller: MobileAssistantController
   platform: MobilePlatform
-  pathView: PathSwitchView
-  onGoTasks: () => void
+  /** Dismiss Talk and return to the task list. */
+  onClose: () => void
   /** AC-31 — activating a task named in a message. One routine; this prop is
    * the only way into it from the conversation. */
   onOpenTask: (taskId: string) => void
@@ -77,9 +68,10 @@ export function TalkSurface({
   return (
     <View style={styles.surface}>
       <ShellBar>
-        {/* AC-24's bound: this control is present and enabled in every state
-            below, the two failure states included. */}
-        <PathSwitch view={pathView} platform={platform} onPress={onGoTasks} />
+        {/* AC-24's bound: the close button is present and enabled in every
+            state below, the two failure states included. Dismisses Talk to
+            the task list. */}
+        <TalkCloseButton platform={platform} onPress={onClose} />
       </ShellBar>
 
       {/* KeyboardAvoidingView replaced (T-240): RN 0.86 Fabric + edge-to-edge
@@ -96,9 +88,9 @@ export function TalkSurface({
 
         {view === 'failed' && (
           // SE-SESSION. The thread cannot render at all, so an error *bubble*
-          // is the wrong shape — there is no thread to put it in. PS-TASKS
-          // stays live in the bar above: this is the exact moment ADR-11's
-          // second path is supposed to exist.
+          // is the wrong shape — there is no thread to put it in. The close
+          // button stays live in the bar above: this is the exact moment the
+          // list escape is supposed to exist.
           <View style={styles.surfaceError}>
             <Text style={styles.surfaceErrorTitle} accessibilityRole="header">
               {SURFACE_ERROR['SE-SESSION'].line1}

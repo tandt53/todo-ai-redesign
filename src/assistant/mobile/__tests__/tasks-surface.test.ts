@@ -103,10 +103,12 @@ describe('F-001 AC-18 — every list operation is doable by direct touch, with z
     expect(aiCalls(h)).toBe(0)
   })
 
-  it('delete — D8 CLOSING, not new behaviour', async () => {
-    // The delete control is ALWAYS VISIBLE in the row's trailing slot: a
-    // hover-revealed control does not exist on touch, and hiding it would
-    // publish an id no user can reach.
+  it('delete — swipe-to-reveal (T-343), controller path unchanged', async () => {
+    // The delete control is now swipe-to-reveal (DESIGN.md ## Platform
+    // row-delete table), not always visible. The controller's `removeTask`
+    // path is identical — what changed is the UI trigger. Screen readers
+    // reach delete through a VoiceOver rotor / TalkBack custom action
+    // labelled "Delete task" (F-001 AC-33).
     const h = await withTasks([task({ id: 'task-1', title: 'qamob-shell-doomed' })])
     const t = h.controller.state.tasks.find((x) => x.title === 'qamob-shell-doomed')!
     await h.controller.removeTask(t.id)
@@ -159,7 +161,7 @@ describe('F-001 AC-32 — the task list tells the truth after a turn', () => {
     const view = tasksSurfaceView(h.controller.state, shell.collection)
     expect(view.tasks.map((t) => t.title)).toContain('grown in the turn')
     // nothing navigated: the shell is the object it was before the turn
-    expect(h.controller.shellState().surface).toBe('talk')
+    expect(h.controller.shellState().surface).toBe('tasks')
   })
 
   it('a list OPENED AFTERWARDS opens showing the applied state, and opening it is not a refresh', async () => {

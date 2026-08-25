@@ -1,5 +1,5 @@
-// The app shell — two peer surfaces on a phone, the landing question, back,
-// PathSwitch, and the reachability bound F-001 AC-24 / AC-25 state.
+// The app shell — Tasks is home, Talk overlays it, back behaviour at four
+// levels, and the reachability bound F-001 AC-24 / AC-25 state.
 //
 // Node tier: every assertion below is over `model/shell.ts` and
 // `model/tasks-view.ts`, which is where the decisions live precisely so a
@@ -20,21 +20,18 @@ import {
   actionsToList,
   initialShellState,
   listAffordanceEnabled,
-  pathSwitch,
   reachesListAffordance,
   shellBack,
   shellReducer,
   talkView,
 } from '../model/shell.ts'
-import type { PeerSurface, ShellState } from '../model/shell.ts'
+import type { ShellSurface, ShellState } from '../model/shell.ts'
 import {
   EMPTY_TASKS,
   INLINE_RETRY_BANNER,
   DEFAULT_COLLECTION,
   groupTasks,
   groupsByDay,
-  openTodayCount,
-  tasksHeadline,
   tasksSurfaceView,
 } from '../model/tasks-view.ts'
 import type { LoadState } from '../../_shared/model/reducer.ts'
@@ -61,18 +58,21 @@ function message(over: Partial<Message> = {}): Message {
 }
 
 // ---------------------------------------------------------------------------
-// OQ9 — the landing surface
+// The landing surface — Tasks is home (OQ9, settled 2026-08-24)
 // ---------------------------------------------------------------------------
 
-describe('OQ9 — what a phone lands on is ONE declared value', () => {
+describe('Tasks is home — the landing surface is ONE declared value', () => {
+  it('the app opens on Tasks', () => {
+    expect(LANDING_SURFACE).toBe('tasks')
+    expect(initialShellState().surface).toBe('tasks')
+  })
+
   it('the shell opens on the shared default collection, not a second answer', () => {
     expect(initialShellState().collection).toBe(DEFAULT_COLLECTION)
   })
 
   it('the mount reads the constant rather than restating its value', () => {
-    // Both possible answers, driven through the same function. If the mount
-    // path ever hardcodes one of them this goes red for the other.
-    for (const landing of ['talk', 'tasks'] as PeerSurface[]) {
+    for (const landing of ['talk', 'tasks'] as ShellSurface[]) {
       expect(initialShellState(landing).surface).toBe(landing)
     }
     expect(initialShellState().surface).toBe(LANDING_SURFACE)
@@ -120,19 +120,20 @@ describe('OQ9 — what a phone lands on is ONE declared value', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Two peers, one at a time
+// Tasks is home, Talk is summoned over it
 // ---------------------------------------------------------------------------
 
-describe('two peer surfaces, one at a time', () => {
-  it('the switch is reciprocal and costs one action each way', () => {
-    let s = initialShellState('talk')
-    s = shellReducer(s, { type: 'go', surface: 'tasks' })
+describe('Tasks is home, Talk is summoned over it', () => {
+  it('the mic summons Talk; close dismisses it', () => {
+    let s = initialShellState()
     expect(s.surface).toBe('tasks')
     s = shellReducer(s, { type: 'go', surface: 'talk' })
     expect(s.surface).toBe('talk')
+    s = shellReducer(s, { type: 'go', surface: 'tasks' })
+    expect(s.surface).toBe('tasks')
   })
 
-  it('leaving Tasks closes what was stacked over it', () => {
+  it('going to Talk closes what was stacked on Tasks', () => {
     let s = shellReducer(initialShellState('tasks'), { type: 'open-menu' })
     s = shellReducer(s, { type: 'open-settings' })
     s = shellReducer(s, { type: 'go', surface: 'talk' })
@@ -146,72 +147,50 @@ describe('two peer surfaces, one at a time', () => {
   })
 })
 
-describe('back means UP ONE LEVEL, never "the previous surface"', () => {
-  // Four cases, one per level, written separately rather than parameterised:
-  // the interesting one is the LAST, and a shared setup is what would hide it
-  // (L-005).
-  it('Settings goes back to the Lists menu, not to the surface underneath', () => {
-    const s: ShellState = { ...initialShellState('tasks'), overlay: 'settings' }
-    expect(shellBack(s)).toEqual({ state: { ...s, overlay: 'menu' }, consumed: true })
+describe('back at four levels (F-001 ## Impact §2)', () => {
+  // Written separately rather than parameterised: the interesting one is the
+  // THIRD (collections), and a shared setup is what would hide it (L-005).
+
+  it('from Talk → the list: Talk is dismissed, consumed', () => {
+    const s = initialShellState('talk')
+    const out = shellBack(s)
+    expect(out.state.surface).toBe('tasks')
+    expect(out.consumed).toBe(true)
   })
 
-  it('the Lists menu closes onto its peer', () => {
-    const s: ShellState = { ...initialShellState('tasks'), overlay: 'menu' }
-    expect(shellBack(s)).toEqual({ state: { ...s, overlay: 'none' }, consumed: true })
-  })
-
-  it('back on Tasks is NOT a switch to Talk — the peers are not stacked', () => {
+  it('from the list → exits the app: nothing behind it, NOT consumed', () => {
     const s = initialShellState('tasks')
     const out = shellBack(s)
     expect(out.state.surface).toBe('tasks')
     expect(out.consumed).toBe(false)
   })
 
-  it('back on Talk leaves the app rather than becoming a fourth navigation edge', () => {
-    const s = initialShellState('talk')
-    expect(shellBack(s)).toEqual({ state: s, consumed: false })
+  it('collection then back → does NOT return to the previous collection', () => {
+    // Pick Inbox, press back, and the app exits — it does not return to Today.
+    // A collection is a state of the list, not a destination.
+    let s = initialShellState('tasks')
+    s = shellReducer(s, { type: 'select-collection', collection: 'inbox' })
+    expect(s.collection).toBe('inbox')
+    const out = shellBack(s)
+    // Still on Tasks/Inbox, not consumed — the OS exits the app.
+    expect(out.state.collection).toBe('inbox')
+    expect(out.consumed).toBe(false)
+  })
+
+  it('Settings goes back to the Lists menu', () => {
+    const s: ShellState = { ...initialShellState('tasks'), overlay: 'settings' }
+    expect(shellBack(s)).toEqual({ state: { ...s, overlay: 'menu' }, consumed: true })
+  })
+
+  it('the Lists menu closes onto Tasks', () => {
+    const s: ShellState = { ...initialShellState('tasks'), overlay: 'menu' }
+    expect(shellBack(s)).toEqual({ state: { ...s, overlay: 'none' }, consumed: true })
   })
 })
 
-// ---------------------------------------------------------------------------
-// PathSwitch
-// ---------------------------------------------------------------------------
-
-describe('PathSwitch carries the open count, and the count is not the guarantee', () => {
-  it('PS-TASKS names the count as a sentence, never as a bare number', () => {
-    // All three are dated TODAY (ADR-009: that is the only thing that puts a
-    // row in Today). `c` is dated today AND done, so the badge excluding it is
-    // the done rule doing work — a dateless `done` row would have been excluded
-    // twice over and proved neither.
-    const tasks = [todayTask({ id: 'a' }), todayTask({ id: 'b' }), todayTask({ id: 'c', status: 'done' })]
-    const v = pathSwitch('talk', tasks)
-    expect(v).toMatchObject({ row: 'PS-TASKS', label: 'Tasks', badge: 2 })
-    expect(v.accessibleName).toBe('Tasks, 2 left today')
-  })
-
-  it('zero renders NO badge — a badge reading 0 is a number pretending to be news', () => {
-    const v = pathSwitch('talk', [todayTask({ status: 'done' })])
-    expect(v.badge).toBe(null)
-    expect(v.accessibleName).toBe('Tasks')
-  })
-
-  it('PS-TALK carries no count at all', () => {
-    expect(pathSwitch('tasks', [task()])).toMatchObject({
-      row: 'PS-TALK',
-      label: 'Talk',
-      badge: null,
-      accessibleName: 'Talk',
-    })
-  })
-
-  it('the badge and the Tasks header publish ONE number, not two definitions', () => {
-    // two in Today (dated), one only in Inbox (dateless) — so the number is 2
-    // and not 3, and the two publishers still agree on it
-    const tasks = [todayTask({ id: 'a' }), task({ id: 'b', status: 'inbox' }), todayTask({ id: 'c' })]
-    expect(pathSwitch('talk', tasks).badge).toBe(openTodayCount(tasks))
-    expect(tasksHeadline(openTodayCount(tasks))).toBe('2 tasks left today')
-  })
-})
+// T-344: tasksHeadline test removed — the count line is gone (owner decision).
+// openTodayCount is still used by the badge's accessible name and tested via
+// the shared model tier.
 
 // ---------------------------------------------------------------------------
 // AC-24 / AC-25 — the reachability bound
@@ -270,11 +249,19 @@ describe('AC-24 / AC-25 — the by-hand list is at most ONE action from every co
         expect(listAffordanceEnabled(stateWith({ surface, offline }))).toBe(true)
       }
     }
-    // The control has no disabling path at all: not a `disabled` prop, not an
-    // `accessibilityState.disabled`. Asserted against the rendered props rather
-    // than against the prose that explains them.
+    // The close button has no disabling path at all: not a `disabled` prop,
+    // not an `accessibilityState.disabled`. Asserted against the rendered props.
     const src = readFileSync(resolve(MOBILE_SRC, 'components/PathSwitch.tsx'), 'utf8')
     expect(/disabled\s*[:=]/.test(src)).toBe(false)
+  })
+
+  it('back from Talk always returns to Tasks — the overlay model guarantees it', () => {
+    // shellBack on Talk surface returns consumed: true, meaning the app
+    // handles the press by going to Tasks. It never exits the app from Talk.
+    const s = initialShellState('talk')
+    const out = shellBack(s)
+    expect(out.consumed).toBe(true)
+    expect(out.state.surface).toBe('tasks')
   })
 })
 
@@ -567,5 +554,41 @@ describe('published copy is transcribed from components.md, not composed', () =>
     for (const row of Object.values(SURFACE_ERROR)) {
       expect(shellSrc).toContain(row.line2)
     }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// T-355: the bottom-bar field shape matches the mockup's drawn token
+// ---------------------------------------------------------------------------
+
+describe('taskBottomBarInput uses the same radius token the mockup draws', () => {
+  // The web twin sat at an undeclared value for weeks because nothing compared
+  // the code's token to the mockup's. This test reads BOTH sources and fails if
+  // either side changes alone.
+
+  it('.tbar-input in the iOS mockup and taskBottomBarInput in styles.ts name the same radius token', () => {
+    // 1. Parse the mockup's CSS for .tbar-input border-radius
+    const mockupHtml = readFileSync(
+      resolve(ROOT, 'docs/design/assistant/screens/app-shell-ios.html'),
+      'utf8',
+    )
+    // The CSS rule is `.tbar-input{ ... border-radius:var(--r-pill); ... }`
+    // Extract the border-radius value from the .tbar-input rule block.
+    const tbarRule = /\.tbar-input\{([^}]+)\}/.exec(mockupHtml)
+    expect(tbarRule, '.tbar-input CSS rule not found in the iOS mockup').not.toBeNull()
+    const brMatch = /border-radius:\s*var\(--r-([a-z]+)\)/.exec(tbarRule![1]!)
+    expect(brMatch, 'border-radius with a --r-* variable not found in .tbar-input').not.toBeNull()
+    const mockupToken = brMatch![1]! // e.g. "pill"
+
+    // 2. Parse styles.ts for taskBottomBarInput's borderRadius
+    const stylesSrc = readFileSync(resolve(MOBILE_SRC, 'components/styles.ts'), 'utf8')
+    const inputBlock = /taskBottomBarInput:\s*\{([^}]+)\}/.exec(stylesSrc)
+    expect(inputBlock, 'taskBottomBarInput block not found in styles.ts').not.toBeNull()
+    const codeMatch = /borderRadius:\s*radius\.([a-zA-Z]+)/.exec(inputBlock![1]!)
+    expect(codeMatch, 'borderRadius using radius.* not found in taskBottomBarInput').not.toBeNull()
+    const codeToken = codeMatch![1]! // e.g. "pill"
+
+    // 3. They must name the same token
+    expect(codeToken).toBe(mockupToken)
   })
 })

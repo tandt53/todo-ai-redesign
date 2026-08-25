@@ -119,12 +119,8 @@ const NOT_BUILT: Record<string, string> = {
   // ListEditorSheet color swatch: the list editor is not built (IA §7).
   'list-editor-color-swatch': 'needs `lists` + `tasks.list_id` (IA §7)',
   // Header rework (T-227/T-244): search and overflow BUTTONS now placed in the
-  // bar (T-297). The surfaces behind them — the search field, the overflow menu —
-  // remain not-built. The buttons are inert until those surfaces ship.
-  // Search field (§ SearchField, T-244): drawn, not built.
-  'tasks-search-input': '§ SearchField (T-244) — search not built',
-  'tasks-search-close': '§ SearchField (T-244) — search not built',
-  'tasks-no-results': '§ Empty states / Search (T-244) — search not built',
+  // bar (T-297). Search is BUILT (T-288, F-009 AC-1/AC-2/AC-3/AC-14).
+  // The overflow menu behind `shell-overflow-button` remains not-built.
   // Overflow menu (§ OverflowMenu, T-244): drawn, not built.
   'overflow-menu': '§ OverflowMenu (T-244) — not built',
   'overflow-sort-due': '§ OverflowMenu (T-244) — not built',
@@ -154,6 +150,16 @@ const NOT_BUILT: Record<string, string> = {
   // list has tasks or not.
   'assistant-add-task-button': 'retired T-299 item 4 — inline field is the single add affordance',
   'tasks-empty-add-button': 'retired T-299 item 5 — empty state uses the inline field',
+  // PathSwitch: RETIRED (T-333). The task list is home at every width
+  // (information-architecture.md §4, revised 2026-08-24). There is no surface to
+  // switch to; the way to Talk is the mic (TaskBottomBar below split; Talk panel
+  // above). Dismissing Talk returns to the list (close button / Escape).
+  // Inline rename: RETIRED (T-360, owner decision 2026-08-25). Region (a) of
+  // AC-34 — title tap edits in place — is removed; the title is now part of
+  // region (b) and opens the detail. Renaming lives on the detail surface
+  // (F-005 AC-37). The design catalogue still declares the id; the build no
+  // longer renders it.
+  'tasks-rename-input': 'retired T-360 — inline rename removed; renaming moves to detail (F-005 AC-37)',
 }
 
 /**
@@ -203,8 +209,8 @@ const AHEAD_OF_MOCKUPS: Record<string, string> = {
  * is one edit here and one in the component.
  */
 const PROPOSED_IDS: Record<string, string> = {
-  // AC-1 — activating a row opens its detail; the gesture is distinct from the
-  // inline rename, which keeps `tasks-rename-input`.
+  // AC-1 — activating a row opens its detail. The title is the activation
+  // target (T-360: inline rename retired, title joins region b).
   'tasks-row-open': 'AC-1’s row activation — § TaskRow owes the gesture’s id',
   // AC-33's 4.1.3 region. Not § CarriedNotice's: that one is aria-atomic="false"
   // for N rows, this one announces a status message whole.
@@ -272,6 +278,9 @@ const PROPOSED_IDS: Record<string, string> = {
   // which one is visible), so sharing ids would break getByTestId.
   'rail-collection-row': 'Lists rail — the same collections as the drawer',
   'rail-settings-row': 'Lists rail — settings at the bottom',
+  // Talk close button — dismisses the Talk overlay (IA §4, T-333). Visible
+  // below split; hidden at split+ where Talk is a permanent panel. The mockup
+  // owes this — the overlay model postdates the last shell drawing.
 }
 
 /** The ids this build may render that the mockups do not declare. */
@@ -646,9 +655,10 @@ const STATES: { name: string; state: AppState; drive?: (m: Mounted) => void }[] 
     state: seed({ tasks: TASKS, capability: 'none' }, [userMsg('add pay the electricity bill'), appliedMsg], 'none'),
   },
   // --- app-shell.html's states (docs/design/assistant/screens/app-shell.html) ------
-  // Three of the shell's states are SITUATIONS rather than model snapshots — a
-  // menu that was opened, a row being renamed — so they are driven, exactly as
-  // the two new-message states are.
+  // Two of the shell's states are SITUATIONS rather than model snapshots — a
+  // menu that was opened, a search that is filtering — so they are driven,
+  // exactly as the two new-message states are. (shell-rename was a third; it
+  // is retired by T-360 — inline rename removed.)
   {
     name: 'shell-menu',
     state: seed({ tasks: TASKS }),
@@ -661,12 +671,32 @@ const STATES: { name: string; state: AppState; drive?: (m: Mounted) => void }[] 
     },
   },
   {
-    name: 'shell-rename',
+    // F-009 AC-1/AC-2 — search open with a query that narrows the list.
+    // Drive: click the search button, type a query that matches one task.
+    name: 'shell-search-filtering',
     state: seed({ tasks: TASKS }),
     drive: ({ container }) => {
       act(() => {
-        fireEvent.click(container.querySelector('.row-action') as HTMLElement)
+        fireEvent.click(
+          container.querySelector('[data-testid="shell-search-button"]') as HTMLElement,
+        )
       })
+      const input = container.querySelector('[data-testid="tasks-search-input"]') as HTMLInputElement
+      act(() => { fireEvent.change(input, { target: { value: 'budget' } }) })
+    },
+  },
+  {
+    // F-009 AC-3 — search open, query matches nothing → no-results empty state.
+    name: 'shell-search-no-results',
+    state: seed({ tasks: TASKS }),
+    drive: ({ container }) => {
+      act(() => {
+        fireEvent.click(
+          container.querySelector('[data-testid="shell-search-button"]') as HTMLElement,
+        )
+      })
+      const input = container.querySelector('[data-testid="tasks-search-input"]') as HTMLInputElement
+      act(() => { fireEvent.change(input, { target: { value: 'zzzznotatask' } }) })
     },
   },
   {
@@ -723,8 +753,8 @@ function byName(n: string): AppState {
 // ---------------------------------------------------------------------------
 
 describe('testid contract (design mockup catalogue)', () => {
-  it('renders all 23 mockup states', () => {
-    expect(STATES).toHaveLength(24)
+  it('renders all 22 mockup states', () => {
+    expect(STATES).toHaveLength(25)
     for (const { name, state, drive } of STATES) {
       const { container } = mount(state, drive)
       expect(container.querySelector('.app'), name).not.toBeNull()
@@ -736,9 +766,9 @@ describe('testid contract (design mockup catalogue)', () => {
     // Both size guards are here for L-007's reason: a catalogue that silently
     // came back empty, or an exclusion list that silently excused everything,
     // both yield the same green as a working check.
-    expect(catalogue().size).toBe(77)
+    expect(catalogue().size).toBe(76)
     const expected = builtCatalogue()
-    expect(expected.size).toBe(43)
+    expect(expected.size).toBe(44)
 
     const seen = new Set<string>()
     for (const { state, drive } of STATES) {
@@ -782,7 +812,7 @@ describe('testid contract (design mockup catalogue)', () => {
     // check is against the SOURCE that renders them rather than against a render:
     // a text scan, and it says so, per L-002. The behavioural coverage for these
     // ids is `task-detail.test.tsx`.
-    const src = ['components/TaskDetail.tsx', 'components/CarriedNotices.tsx', 'components/PassedReminders.tsx', 'components/TasksSurface.tsx', 'components/ListsRail.tsx']
+    const src = ['components/TaskDetail.tsx', 'components/CarriedNotices.tsx', 'components/PassedReminders.tsx', 'components/TasksSurface.tsx', 'components/ListsRail.tsx', 'components/TalkSurface.tsx']
       .map((f) => readFileSync(resolve(process.cwd(), 'src/assistant/web', f), 'utf8'))
       .join('\n')
     const orphans = Object.keys(PROPOSED_IDS).filter((id) => !src.includes(`"${id}"`))
@@ -889,10 +919,7 @@ describe('TaskBottomBar morph (AC-37)', () => {
 
   it('navigates to Talk when the button is clicked with an empty field', () => {
     const { container } = mount(byName('idle-tasks'))
-    // Default surface is talk (idle state); switch to tasks first
-    act(() => {
-      fireEvent.click(screen.getByTestId('shell-tasks-button'))
-    })
+    // Default surface is tasks (home). The bar's action button navigates to Talk.
     const surface = () => container.querySelector('.app')?.getAttribute('data-surface')
     expect(surface()).toBe('tasks')
     act(() => {
@@ -1339,17 +1366,14 @@ describe('interactions', () => {
     render(<App controller={h.controller} />)
     const assistantBefore = h.server.assistantCalls().length
 
-    // With nothing on the list the header is not drawn at all — the invitation
-    // is (ET-FIRST), and the inline field is the single add affordance.
+    // InlineAdd retired (T-359). The bar is the sole add-task mechanism at
+    // every width. Type into tasks-bar-input and submit via tasks-bar-action.
+    const input = screen.getByTestId('tasks-bar-input')
     await act(async () => {
-      fireEvent.click(screen.getByTestId('tasks-inline-add'))
-    })
-    const field = screen.getByLabelText('New task name')
-    await act(async () => {
-      fireEvent.change(field, { target: { value: 'Buy milk' } })
+      fireEvent.change(input, { target: { value: 'Buy milk' } })
     })
     await act(async () => {
-      fireEvent.keyDown(field, { key: 'Enter' })
+      fireEvent.click(screen.getByTestId('tasks-bar-action'))
     })
 
     const post = h.server.calls.find((c) => c.method === 'POST' && c.path === '/tasks')
@@ -2084,4 +2108,233 @@ describe('following new messages (AC-30)', () => {
       restore()
     }
   })
+})
+
+// ---------------------------------------------------------------------------
+// Search (F-009 AC-1, AC-2, AC-3, AC-14)
+// ---------------------------------------------------------------------------
+
+describe('search (F-009)', () => {
+  function mountWithTasks() {
+    return mount(seed({ tasks: TASKS }))
+  }
+
+  function openSearch(container: HTMLElement) {
+    act(() => {
+      fireEvent.click(
+        container.querySelector('[data-testid="shell-search-button"]') as HTMLElement,
+      )
+    })
+    return container.querySelector('[data-testid="tasks-search-input"]') as HTMLInputElement
+  }
+
+  it('AC-1: tapping Search reveals the inline text field, hides the surface title, and gives it focus', () => {
+    const { container } = mountWithTasks()
+    // Before: title visible, search field absent
+    expect(container.querySelector('.bar-surface-title')).not.toBeNull()
+    expect(container.querySelector('[data-testid="tasks-search-input"]')).toBeNull()
+
+    const input = openSearch(container)
+    // After: title hidden, search field visible
+    expect(container.querySelector('.bar-surface-title')).toBeNull()
+    expect(input).not.toBeNull()
+    expect(container.querySelector('[data-testid="tasks-search-close"]')).not.toBeNull()
+  })
+
+  it('AC-1: the close control exits search and restores the full list', () => {
+    const { container } = mountWithTasks()
+    const input = openSearch(container)
+    // Type a query that matches only one task
+    act(() => { fireEvent.change(input, { target: { value: 'budget' } }) })
+
+    const rows = container.querySelectorAll('[data-testid="assistant-task-row"]')
+    expect(rows).toHaveLength(1)
+
+    // Click close
+    act(() => {
+      fireEvent.click(
+        container.querySelector('[data-testid="tasks-search-close"]') as HTMLElement,
+      )
+    })
+
+    // Title restored, full list back
+    expect(container.querySelector('.bar-surface-title')).not.toBeNull()
+    expect(container.querySelector('[data-testid="tasks-search-input"]')).toBeNull()
+    const allRows = container.querySelectorAll('[data-testid="assistant-task-row"]')
+    expect(allRows.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('AC-1: Escape closes search and restores the full list', () => {
+    const { container } = mountWithTasks()
+    const input = openSearch(container)
+    act(() => { fireEvent.change(input, { target: { value: 'budget' } }) })
+
+    // Press Escape
+    act(() => { fireEvent.keyDown(input, { key: 'Escape' }) })
+
+    expect(container.querySelector('.bar-surface-title')).not.toBeNull()
+    expect(container.querySelector('[data-testid="tasks-search-input"]')).toBeNull()
+    const allRows = container.querySelectorAll('[data-testid="assistant-task-row"]')
+    expect(allRows.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('AC-2: live filtering by title — every visible row title contains the query', () => {
+    const { container } = mountWithTasks()
+    const input = openSearch(container)
+
+    act(() => { fireEvent.change(input, { target: { value: 'budget' } }) })
+
+    const rows = container.querySelectorAll('[data-testid="assistant-task-row"]')
+    expect(rows.length).toBeGreaterThan(0)
+    for (const row of rows) {
+      const titleEl = row.querySelector('.task-title')
+      expect(titleEl?.textContent?.toLowerCase()).toContain('budget')
+    }
+  })
+
+  it('AC-2: search is case-insensitive', () => {
+    const { container } = mountWithTasks()
+    const input = openSearch(container)
+
+    act(() => { fireEvent.change(input, { target: { value: 'BUDGET' } }) })
+    const rows = container.querySelectorAll('[data-testid="assistant-task-row"]')
+    expect(rows.length).toBeGreaterThan(0)
+    for (const row of rows) {
+      const titleEl = row.querySelector('.task-title')
+      expect(titleEl?.textContent?.toLowerCase()).toContain('budget')
+    }
+  })
+
+  it('AC-2: search filters by title only, not by completion status within the collection', () => {
+    // In the Today collection, only open today-dated tasks appear. Search
+    // narrows by title within that set. A query matching both open tasks
+    // returns both — search does not additionally hide by status.
+    // (Done tasks are in the Done collection, not Today — that is collection
+    // filtering, not search. The "done row IS visible" rule applies when
+    // `hide_completed` is false, which it is, but the collection boundary
+    // comes first.)
+    const { container } = mountWithTasks()
+    const input = openSearch(container)
+
+    // Empty query: all collection tasks visible
+    const allRows = container.querySelectorAll('[data-testid="assistant-task-row"]')
+    expect(allRows.length).toBeGreaterThanOrEqual(2)
+
+    // Query matching one open task
+    act(() => { fireEvent.change(input, { target: { value: 'electricity' } }) })
+    const rows = container.querySelectorAll('[data-testid="assistant-task-row"]')
+    expect(rows.length).toBe(1)
+    expect(rows[0]?.textContent).toContain('Pay electricity bill')
+  })
+
+  it('AC-3: zero matches shows the no-results empty state naming the query', () => {
+    const { container } = mountWithTasks()
+    const input = openSearch(container)
+
+    act(() => { fireEvent.change(input, { target: { value: 'xyznotfound' } }) })
+
+    const noResults = container.querySelector('[data-testid="tasks-no-results"]')
+    expect(noResults).not.toBeNull()
+    // The text should contain the query verbatim
+    expect(noResults?.textContent).toContain('xyznotfound')
+    // No task rows visible
+    expect(container.querySelectorAll('[data-testid="assistant-task-row"]')).toHaveLength(0)
+  })
+
+  it('AC-14: / shortcut opens the search field', () => {
+    const { container } = mountWithTasks()
+    expect(container.querySelector('[data-testid="tasks-search-input"]')).toBeNull()
+
+    act(() => {
+      fireEvent.keyDown(document, { key: '/' })
+    })
+
+    expect(container.querySelector('[data-testid="tasks-search-input"]')).not.toBeNull()
+  })
+
+  it('AC-14: Cmd+F / Ctrl+F opens the search field', () => {
+    const { container } = mountWithTasks()
+    expect(container.querySelector('[data-testid="tasks-search-input"]')).toBeNull()
+
+    act(() => {
+      fireEvent.keyDown(document, { key: 'f', metaKey: true })
+    })
+
+    expect(container.querySelector('[data-testid="tasks-search-input"]')).not.toBeNull()
+  })
+
+  it('open-empty state: search field visible but no query, full list shown', () => {
+    const { container } = mountWithTasks()
+    openSearch(container)
+
+    // All tasks visible (no filtering)
+    const rows = container.querySelectorAll('[data-testid="assistant-task-row"]')
+    expect(rows.length).toBeGreaterThanOrEqual(2)
+    // No no-results state
+    expect(container.querySelector('[data-testid="tasks-no-results"]')).toBeNull()
+  })
+})
+
+// ─── pill-field radius contract ────────────────────────────────────────────
+// The three "sole input on a dedicated bar" fields must carry radius.pill in
+// both the mockup and the code.  .tbar-input sat at r-md for weeks because
+// nothing compared the two sources.  This test reads both and fails if either
+// side is changed alone.
+
+describe('pill-field radius contract (mockup ↔ code)', () => {
+  const MOCKUP = resolve(process.cwd(), 'docs/design/assistant/screens/app-shell.html')
+  const STYLES = resolve(process.cwd(), 'src/assistant/web/styles.css')
+
+  // The three pill fields named in tokens.json radius.assign.pill
+  const PILL_FIELDS = ['.composer-input', '.tbar-input', '.search-field']
+
+  /**
+   * Extract the border-radius token name (e.g. "r-pill") for a given selector
+   * from a CSS source string.  Finds the rule block for the selector and reads
+   * the first border-radius declaration within it.
+   */
+  function radiusToken(css: string, selector: string): string | null {
+    // Match the selector followed by its rule block.  The mockup uses minified
+    // CSS (no spaces around braces) and the code uses formatted CSS, so we
+    // handle both.  We look for the selector at the start of a line or after a
+    // newline, then capture everything up to the matching closing brace.
+    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    // Match: selector (possibly with other selectors comma-separated) { ... }
+    const blockRe = new RegExp(escaped + '\\s*\\{([^}]+)\\}')
+    const blockMatch = css.match(blockRe)
+    if (!blockMatch?.[1]) return null
+    const block = blockMatch[1]
+    // Find border-radius: var(--TOKEN)
+    const brMatch = block.match(/border-radius\s*:\s*var\(--([^)]+)\)/)
+    if (!brMatch?.[1]) return null
+    return brMatch[1]
+  }
+
+  const mockupCss = readFileSync(MOCKUP, 'utf8')
+  const codeCss = readFileSync(STYLES, 'utf8')
+
+  // The mockup uses .cinput for the Talk composer; the code uses .composer-input.
+  // Map code selectors to mockup selectors where they differ.
+  const MOCKUP_SELECTOR: Record<string, string> = {
+    '.composer-input': '.cinput',
+  }
+
+  for (const field of PILL_FIELDS) {
+    const mockupSel = MOCKUP_SELECTOR[field] ?? field
+
+    it(`${field} code matches mockup — both must use r-pill`, () => {
+      const codeToken = radiusToken(codeCss, field)
+      const mockupToken = radiusToken(mockupCss, mockupSel)
+
+      expect(codeToken).not.toBeNull()
+      expect(mockupToken).not.toBeNull()
+
+      // Both must be "r-pill"
+      expect(codeToken).toBe('r-pill')
+      expect(mockupToken).toBe('r-pill')
+
+      // And they must agree with each other
+      expect(codeToken).toBe(mockupToken)
+    })
+  }
 })

@@ -18,18 +18,17 @@
 // retired that reading, and they are date predicates now with the single
 // exception of Done.
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import * as Toggle from '@radix-ui/react-toggle'
 import type { AssistantController } from '../../_shared/controller.ts'
 import type { AppState } from '../../_shared/model/reducer.ts'
 import type { DiffLine, TaskView } from '../../_shared/types.ts'
-import { formatDue, tasksWord } from '../../_shared/model/format.ts'
+import { formatDue } from '../../_shared/model/format.ts'
 import {
   collectionName,
   collectionTasks,
   groupTasks,
   groupsByDay,
-  openTodayCount,
 } from '../../_shared/model/tasks.ts'
 import type { Collection } from '../../_shared/model/tasks.ts'
 import { priorityOf, remainingSteps, rendersClockTime, seriesLive } from '../../_shared/model/task-fields.ts'
@@ -38,12 +37,12 @@ import type { ShellHandle } from '../shell.ts'
 import {
   AlertIcon,
   CheckIcon,
+  CloseIcon,
   ListChecksIcon,
   MenuIcon,
   MicIcon,
   MoreHorizontalIcon,
-  PencilIcon,
-  PlusIcon,
+
   RepeatIcon,
   SearchIcon,
   SendIcon,
@@ -151,8 +150,6 @@ function TaskRow({
   /** AC-1 — activating the row opens its detail in ONE action. */
   onOpen: (taskId: string) => void
 }) {
-  const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState(task.title)
   const done = task.status === 'done'
   const priority = priorityOf(task)
   const meta =
@@ -205,113 +202,76 @@ function TaskRow({
         {done ? <CheckIcon /> : null}
       </Toggle.Root>
       <div className="task-main">
-        {editing ? (
-          <input
-            className="task-edit-input rename-input"
-            data-testid="tasks-rename-input"
-            aria-label="Task name"
-            value={draft}
-            autoFocus
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                void controller.editTask(task.id, draft)
-                setEditing(false)
-              }
-              if (e.key === 'Escape') {
-                setDraft(task.title)
-                setEditing(false)
-              }
-            }}
-            onBlur={() => {
-              void controller.editTask(task.id, draft)
-              setEditing(false)
-            }}
-          />
-        ) : (
-          <>
-            {/* AC-1 — **activating a task row opens that task's detail in ONE
-                action**, and **the activation gesture is distinct from the inline
-                rename**: F-001 AC-18 puts an inline rename on this row, so a
-                title-tap that opened the detail would take a shipped affordance
-                away by collision. The rename keeps the pencil control it already
-                has; the title becomes the activation. Keyboard-operable, with
-                name/role/value, per AC-33's 2.1.1 and 4.1.2. */}
-            <button
-              className="task-title task-open"
-              data-testid="tasks-row-open"
-              aria-label={`Open “${task.title}”`}
-              onClick={() => onOpen(task.id)}
-            >
-              {task.title}
-            </button>
-            {/* TR-URGENCY — the one item in this line that is not muted, which is
-                the "weight" half of *shape, weight, name*. `none` renders NO mark,
-                so the marks stay meaningful. */}
-            {priority !== 'none' && (
-              <span
-                className="task-mark task-priority"
-                data-testid="tasks-row-priority-mark"
-                data-priority={priority}
-                aria-hidden="true"
-              >
-                {PRIORITY_GLYPH[priority]}
-              </span>
-            )}
-            {mark !== null && (
-              <span
-                className={`badge show ${mark.label === 'new' ? 'badge-new' : 'badge-edited'}`}
-                data-testid="assistant-row-badge"
-              >
-                {mark.label === 'new' ? 'NEW' : 'EDITED'}
-              </span>
-            )}
-            {meta !== null && <span className="task-meta">{meta}</span>}
-            {/* TR-REPEAT — AC-39: **a generated successor is never
-                indistinguishable from a task the user created.** Read from
-                `series_live` on the wire, NEVER keyed off `series_id`: that field is
-                assigned when a repeat is first set and never cleared, so a
-                predicate built on it passes the positive case and marks every task
-                that ever repeated as repeating for good — which on the phone is
-                wrong on the only thing that explains the row. */}
-            {repeats && (
-              <span
-                className="task-mark task-repeat"
-                data-testid="tasks-row-repeat-mark"
-                aria-hidden="true"
-              >
-                <RepeatIcon />
-              </span>
-            )}
-            {/* TR-STEPS — AC-17, **web only**. A task with no steps shows nothing;
-                the count is the remaining set and is never `collectionCount`. */}
-            {stepsLeft > 0 && (
-              <span
-                className="task-mark task-steps"
-                data-testid="tasks-row-steps-mark"
-                aria-hidden="true"
-              >
-                <ListChecksIcon />
-                <span className="num">{stepsLeft}</span>
-              </span>
-            )}
-            {mark !== null && mark.label === 'edit' && mark.chips.length > 0 && (
-              <DiffChips line={mark} />
-            )}
-          </>
+        {/* AC-1 — **activating a task row opens that task's detail in ONE
+            action.** The title is part of region (b): it opens the detail,
+            same as clicking anywhere else on the row outside the checkbox.
+            Inline rename is retired (owner decision 2026-08-25, AC-34
+            amendment); renaming lives on the detail surface (F-005 AC-37).
+            Keyboard-operable, with name/role/value, per AC-33's 2.1.1 and
+            4.1.2. */}
+        <button
+          className="task-title task-open"
+          data-testid="tasks-row-open"
+          aria-label={`Open “${task.title}”`}
+          onClick={() => onOpen(task.id)}
+        >
+          {task.title}
+        </button>
+        {/* TR-URGENCY — the one item in this line that is not muted, which is
+            the "weight" half of *shape, weight, name*. `none` renders NO mark,
+            so the marks stay meaningful. */}
+        {priority !== 'none' && (
+          <span
+            className="task-mark task-priority"
+            data-testid="tasks-row-priority-mark"
+            data-priority={priority}
+            aria-hidden="true"
+          >
+            {PRIORITY_GLYPH[priority]}
+          </span>
+        )}
+        {mark !== null && (
+          <span
+            className={`badge show ${mark.label === 'new' ? 'badge-new' : 'badge-edited'}`}
+            data-testid="assistant-row-badge"
+          >
+            {mark.label === 'new' ? 'NEW' : 'EDITED'}
+          </span>
+        )}
+        {meta !== null && <span className="task-meta">{meta}</span>}
+        {/* TR-REPEAT — AC-39: **a generated successor is never
+            indistinguishable from a task the user created.** Read from
+            `series_live` on the wire, NEVER keyed off `series_id`: that field is
+            assigned when a repeat is first set and never cleared, so a
+            predicate built on it passes the positive case and marks every task
+            that ever repeated as repeating for good — which on the phone is
+            wrong on the only thing that explains the row. */}
+        {repeats && (
+          <span
+            className="task-mark task-repeat"
+            data-testid="tasks-row-repeat-mark"
+            aria-hidden="true"
+          >
+            <RepeatIcon />
+          </span>
+        )}
+        {/* TR-STEPS — AC-17, **web only**. A task with no steps shows nothing;
+            the count is the remaining set and is never `collectionCount`. */}
+        {stepsLeft > 0 && (
+          <span
+            className="task-mark task-steps"
+            data-testid="tasks-row-steps-mark"
+            aria-hidden="true"
+          >
+            <ListChecksIcon />
+            <span className="num">{stepsLeft}</span>
+          </span>
+        )}
+        {mark !== null && mark.label === 'edit' && mark.chips.length > 0 && (
+          <DiffChips line={mark} />
         )}
       </div>
       <span className="row-actions">
-        <button
-          className="row-action"
-          aria-label={`Edit “${task.title}”`}
-          onClick={() => {
-            setDraft(task.title)
-            setEditing(true)
-          }}
-        >
-          <PencilIcon />
-        </button>
         <button
           className="row-action row-del"
           data-testid="tasks-delete-button"
@@ -371,15 +331,59 @@ export function TasksSurface({
   controller: AssistantController
   shell: ShellHandle
 }) {
-  const [adding, setAdding] = useState(false)
-  const [draft, setDraft] = useState('')
+  // `adding` / `draft` state REMOVED (T-359): was InlineAdd only. TaskBottomBar
+  // manages its own text state internally.
+  // ── F-009 AC-1, AC-2, AC-3, AC-14 — Search ──
+  // Search replaces the title, it does not add a layer (components.md §
+  // SearchField). The field expands from `shell-search-button`, takes focus,
+  // and narrows the list with every keystroke.
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const searchRef = useRef<HTMLInputElement>(null)
+
+  // AC-14 — `/` or the platform find shortcut (`Cmd+F` / `Ctrl+F`) focuses the
+  // search field from anywhere on the Tasks surface.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Platform find shortcut: Cmd+F (Mac) or Ctrl+F (others)
+      if (e.key === 'f' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        setSearchOpen(true)
+        searchRef.current?.focus()
+        return
+      }
+      // `/` shortcut — ignore when an input/textarea already has focus
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      if (e.key === '/') {
+        e.preventDefault()
+        setSearchOpen(true)
+        searchRef.current?.focus()
+      }
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [])
+
+  const closeSearch = () => {
+    setSearchOpen(false)
+    setSearchQuery('')
+  }
+
   // F-005 AC-44 — **the injected clock, not an inline `new Date()`.** This was one
   // of the five inline sites the AC counts: a component minting its own instant is
   // a clock the harness cannot hold, and a `setClock` that the list ignores is the
   // *"adopted and unusable by the tier that needs it"* failure (L-014).
   const now = controller.nowDate()
   const collection: Collection = shell.collection
-  const tasks = collectionTasks(state.tasks, collection, now)
+  const allTasks = collectionTasks(state.tasks, collection, now)
+  // F-009 AC-2 — live filtering by title only. Case-insensitive substring.
+  // A done row whose title matches IS visible (§ SearchField: "the mockup
+  // filters by `.row-title` text, not by `.done` class"). `hide_completed`
+  // does not exist yet, so the `false` branch applies — all matching rows show.
+  const tasks = searchOpen && searchQuery !== ''
+    ? allTasks.filter((t) => t.title.toLowerCase().includes(searchQuery.toLowerCase()))
+    : allTasks
   // Grouping is per collection: Today gets `Overdue` + `Today · {date}`,
   // Upcoming gets `Tomorrow · {date}` + `Later`, **Inbox can produce all five**
   // — it is a container, so it holds rows from every cell of the date axis —
@@ -388,14 +392,6 @@ export function TasksSurface({
   // rows under the same `Overdue` heading; that is the two axes showing
   // through, not a duplication bug.
   const groups = groupTasks(tasks, collection, now)
-  // components.md's drawn header string — "3 tasks left today" — is TRUE only
-  // of the Today collection, and its zero form ("Nothing left today") likewise.
-  // On another collection the honest options were to compose a new string or to
-  // render none; composing is what L-008 forbids, so the count line is omitted
-  // and `Add task` carries the header alone. On Today it is the same call the
-  // PathSwitch badge makes, which is the identity § PathSwitch asserts.
-  const showCount = collection === 'today'
-  const openToday = openTodayCount(state.tasks, now)
   // ── F-005 AC-35, the web trio: `nothingAnywhere` / `loading` / `failedBlank` ──
   //
   // These are three of the **six readers** AC-35 names — and they *"decide behaviour
@@ -425,15 +421,8 @@ export function TasksSurface({
   const failedBlank = state.tasksLoad === 'failed' && nothingAnywhere
   const failedWithContent = state.tasksLoad === 'failed' && !nothingAnywhere
 
-  const commitAdd = () => {
-    // Add-in-context (ADR-009 §4): the collection on screen is passed through,
-    // and on Today it becomes the row's DATE. Dropping it here is what would
-    // make the default landing collection show an empty list right after the
-    // user added something to it.
-    if (draft.trim() !== '') void controller.addTask(draft, collection)
-    setDraft('')
-    setAdding(false)
-  }
+  // `commitAdd` REMOVED (T-359): was InlineAdd only. TaskBottomBar handles its
+  // own add-in-context (ADR-009 §4) through its onAddTask prop.
 
   const showList = !loading && !failedBlank && tasks.length > 0
 
@@ -449,26 +438,58 @@ export function TasksSurface({
         >
           <MenuIcon />
         </button>
-        <h1 className="bar-surface-title">{collectionName(collection)}</h1>
-        <span className="spacer" />
-        {/* shell-search-button and shell-overflow-button: the controls are placed in
-            the bar per the mockup (T-227); what sits BEHIND them — the search field,
-            the overflow menu — is NOT_BUILT and belongs to a later surface. The buttons
-            are inert until that surface ships. */}
-        <button
-          className="icon-btn"
-          data-testid="shell-search-button"
-          aria-label="Search"
-        >
-          <SearchIcon />
-        </button>
-        <button
-          className="icon-btn"
-          data-testid="shell-overflow-button"
-          aria-label="More"
-        >
-          <MoreHorizontalIcon />
-        </button>
+        {/* F-009 AC-1 — Search replaces the title, not a separate layer. When
+            open the surface title hides; in its place the search field spans
+            the available header width with a close control at its trailing edge
+            (components.md § SearchField). */}
+        {searchOpen ? (
+          <>
+            <input
+              ref={searchRef}
+              className="search-field"
+              data-testid="tasks-search-input"
+              type="text"
+              placeholder="Search tasks"
+              aria-label="Search tasks"
+              autoFocus
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') closeSearch()
+              }}
+            />
+            <button
+              className="icon-btn search-close"
+              data-testid="tasks-search-close"
+              aria-label="Close search"
+              onClick={closeSearch}
+            >
+              <CloseIcon />
+            </button>
+          </>
+        ) : (
+          <>
+            <h1 className="bar-surface-title">{collectionName(collection)}</h1>
+            <span className="spacer" />
+            <button
+              className="icon-btn"
+              data-testid="shell-search-button"
+              aria-label="Search"
+              onClick={() => setSearchOpen(true)}
+            >
+              <SearchIcon />
+            </button>
+            {/* shell-overflow-button: the overflow menu behind it is NOT_BUILT
+                (T-244). The button is inert until that surface ships. */}
+            <button
+              className="icon-btn"
+              data-testid="shell-overflow-button"
+              aria-label="More"
+            >
+              <MoreHorizontalIcon />
+            </button>
+          </>
+        )}
       </header>
 
       {failedWithContent && (
@@ -500,43 +521,31 @@ export function TasksSurface({
               >
                 Retry
               </button>
-              {/* `Add task` stays LIVE: the local no-AI path works offline
-                  (AC-25), and disabling a working control to look consistent is
-                  a lie about what the app can do. */}
-              <button className="btn-ghost" onClick={() => setAdding(true)}>
-                <PlusIcon />
-                Add task
-              </button>
+              {/* `Add task` is the bottom bar (TaskBottomBar), always visible
+                  below this scroll pane — the local no-AI path works offline
+                  (AC-25). InlineAdd retired T-359. */}
             </div>
           )}
 
-          {!loading && !failedBlank && tasks.length === 0 && (
+          {/* F-009 AC-3 — zero matches shows an empty state naming the query.
+              This renders in the list area below the header while the search
+              field remains open above it. No CTA — the close control is already
+              on screen (components.md § Empty states — Search). */}
+          {searchOpen && searchQuery !== '' && tasks.length === 0 && !loading && !failedBlank && (
+            <div className="empty" data-testid="tasks-no-results">
+              <h2>No tasks matching &ldquo;{searchQuery}&rdquo;</h2>
+            </div>
+          )}
+
+          {!loading && !failedBlank && tasks.length === 0 && !(searchOpen && searchQuery !== '') && (
             <TasksEmpty
               collection={collection}
               nothingAnywhere={nothingAnywhere}
-              adding={adding}
-              draft={draft}
-              setDraft={setDraft}
-              onCommit={commitAdd}
-              onCancel={() => { setDraft(''); setAdding(false) }}
-              onActivate={() => setAdding(true)}
             />
           )}
 
           {showList && (
             <>
-              {/* The count line exists to report how many remain; drop it when the
-                  answer is none — "0 tasks left today" says what the empty state
-                  heading already says. The header button is removed: the inline
-                  field at the end of the list is the single add affordance
-                  (briefing item 4). */}
-              {showCount && openToday > 0 && (
-                <div className="tasks-head">
-                  <span className="count num">
-                    {`${openToday} ${tasksWord(openToday)} left today`}
-                  </span>
-                </div>
-              )}
               {groups.map((g) => (
                 <div className="day-group" key={g.label ?? 'flat'}>
                   {/* `null` is the flat collections' instruction, not a missing
@@ -559,19 +568,18 @@ export function TasksSurface({
                   </ul>
                 </div>
               ))}
-              {/* Inline new-task row — at the END of the list. Tapping turns
-                  it into a text field; Enter creates, Escape/empty cancels.
-                  Testid: tasks-inline-add (design mockup catalogue). */}
-              <InlineAdd adding={adding} draft={draft} setDraft={setDraft} onCommit={commitAdd} onCancel={() => { setDraft(''); setAdding(false) }} onActivate={() => setAdding(true)} />
+              {/* InlineAdd RETIRED (T-359, owner decision 2026-08-25).
+                  TaskBottomBar is the sole add-task mechanism at every width. */}
             </>
           )}
         </div>
       </div>
       {/* ── TaskBottomBar — fixed field + morphing action (T-321, AC-37) ──────
-          Below breakpoints.split only (CSS hides it at split+). A flex:none
-          child outside the scroll container, so it never scrolls and the pane
-          fills the remaining height above it. The morph fires on the first
-          character entering / last character leaving, not on focus/blur. */}
+          At every width (T-359: InlineAdd retired; TaskBottomBar is the sole
+          add-task mechanism). A flex:none child outside the scroll container,
+          so it never scrolls and the pane fills the remaining height above it.
+          The morph fires on the first character entering / last character
+          leaving, not on focus/blur. */}
       <TaskBottomBar
         onGoTalk={() => shell.go('talk')}
         onAddTask={(title: string) => {
@@ -590,21 +598,9 @@ export function TasksSurface({
 function TasksEmpty({
   collection,
   nothingAnywhere,
-  adding,
-  draft,
-  setDraft,
-  onCommit,
-  onCancel,
-  onActivate,
 }: {
   collection: Collection
   nothingAnywhere: boolean
-  adding: boolean
-  draft: string
-  setDraft: (v: string) => void
-  onCommit: () => void
-  onCancel: () => void
-  onActivate: () => void
 }) {
   // ET-DONE: no CTA. No action fills this list directly, and inventing one
   // would be a shrug dressed as an invitation.
@@ -620,11 +616,11 @@ function TasksEmpty({
     // assistant needs the hand path too, but speaking must not read as the
     // fallback: this is a voice-first app and the first screen should lead
     // with it (T-297, owner note).
+    // InlineAdd retired (T-359) — TaskBottomBar below is the add mechanism.
     return (
       <div className="empty">
         <h2>No tasks yet</h2>
         <p>Add your first one — or say one, on Talk.</p>
-        <InlineAdd adding={adding} draft={draft} setDraft={setDraft} onCommit={onCommit} onCancel={onCancel} onActivate={onActivate} />
       </div>
     )
   }
@@ -632,96 +628,23 @@ function TasksEmpty({
   // they have none is the lie the generic empty state tells. The paragraph is
   // dropped: the first clause repeats the heading; the second answers a worry
   // a user standing in Today does not have.
+  // InlineAdd retired (T-359) — TaskBottomBar below is the add mechanism.
   return (
     <div className="empty">
       <h2>Nothing in {collectionName(collection)}</h2>
-      <InlineAdd adding={adding} draft={draft} setDraft={setDraft} onCommit={onCommit} onCancel={onCancel} onActivate={onActivate} />
     </div>
   )
 }
 
-/**
- * § InlineAdd — the `+ Add a task` row at the end of the task list.
- *
- * In its resting state it is a clickable row with a plus icon and the label
- * "Add a task". Activating it (click, Enter, Space) replaces the label with a
- * text input. Enter commits (if the title is non-empty after trimming);
- * Escape or blur-with-empty cancels and returns to the resting state.
- *
- * Empty titles are refused: blank, whitespace-only and newline-only all count
- * as empty (F-005 AC-37 applied to creation).
- *
- * Testid: `tasks-inline-add` — from the design mockup catalogue.
- */
-function InlineAdd({
-  adding,
-  draft,
-  setDraft,
-  onCommit,
-  onCancel,
-  onActivate,
-}: {
-  adding: boolean
-  draft: string
-  setDraft: (v: string) => void
-  onCommit: () => void
-  onCancel: () => void
-  onActivate: () => void
-}) {
-  if (adding) {
-    return (
-      <div className="inline-new inline-new-editing" data-testid="tasks-inline-add">
-        <span className="plus">
-          <PlusIcon />
-        </span>
-        <input
-          className="inline-input"
-          aria-label="New task name"
-          placeholder="Task name…"
-          autoFocus
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') onCommit()
-            if (e.key === 'Escape') onCancel()
-          }}
-          onBlur={() => {
-            // Blur with empty text cancels; blur with content commits.
-            if (draft.trim() === '') onCancel()
-            else onCommit()
-          }}
-        />
-      </div>
-    )
-  }
-  return (
-    <div
-      className="inline-new"
-      role="button"
-      tabIndex={0}
-      data-testid="tasks-inline-add"
-      aria-label="Add a task"
-      onClick={onActivate}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          onActivate()
-        }
-      }}
-    >
-      <span className="plus">
-        <PlusIcon />
-      </span>
-      <span className="inline-label">Add a task</span>
-    </div>
-  )
-}
+/* § InlineAdd — RETIRED (T-359, owner decision 2026-08-25).
+ * TaskBottomBar (below) is the sole add-task mechanism at every width.
+ * The testid `tasks-inline-add` is removed from the codebase. */
 
 /**
- * § TaskBottomBar — the canonical add-task and Talk-navigation control below
- * `breakpoints.split` (AC-37). One fixed bottom row holding a text field and a
- * single action button that morphs between two identities depending on whether
- * the field has text.
+ * § TaskBottomBar — the canonical add-task and Talk-navigation control at every
+ * width (T-359: InlineAdd retired; AC-37). One fixed bottom row holding a text
+ * field and a single action button that morphs between two identities depending
+ * on whether the field has text.
  *
  * **When the field is empty:** mic icon, accessible name "Talk", tapping
  * navigates to the Talk surface. Does NOT start capture.

@@ -480,19 +480,6 @@ button,input,textarea{font:inherit; color:inherit}
 .t-num{font-family:var(--font-num)}
 
 /* ══════════════════════════════════════════════════════════════════════════
-   SURFACE HEAD — the collection, its count, and the one rule under them
-   ══════════════════════════════════════════════════════════════════════════ */
-.head{padding:var(--s6) 0 var(--s5); margin-bottom:var(--s2)}
-.head h1{
-  margin:0; font-size:var(--fs-hero); line-height:var(--lh-tight); letter-spacing:var(--ls-hero);
-  font-weight:var(--w-bold);
-}
-.plat-ios .head h1{letter-spacing:var(--ls-display)}
-.head .count{margin:var(--s3) 0 0; font-size:var(--fs-meta); color:var(--text-secondary); font-family:var(--font-num)}
-.head .count b{color:var(--text-primary); font-weight:var(--w-semibold)}
-.head .count .late{color:var(--danger); font-weight:var(--w-semibold)}
-
-/* ══════════════════════════════════════════════════════════════════════════
    TIME RAIL + TASK ROW  (§ TimeRail, § TaskRow)
    ══════════════════════════════════════════════════════════════════════════ */
 .list{position:relative}
@@ -696,11 +683,12 @@ button,input,textarea{font:inherit; color:inherit}
 .transcript .pend{color:var(--text-muted)}
 .cinput{
   flex:1 1 auto; min-width:0; height:var(--field-h); min-height:var(--min-target);
-  border:0; background:transparent;
-  font-size:var(--fs-body); color:var(--text-primary); padding:0;
+  border:var(--b-hairline) solid var(--bg-rule); border-radius:var(--r-pill);
+  background:var(--bg-base); padding:0 var(--field-px);
+  font-size:var(--fs-body); color:var(--text-primary);
 }
 .cinput::placeholder{color:var(--text-muted)}
-.cinput:focus{outline:0}
+.cinput:focus{outline:var(--b-focus) solid var(--focus-ring); outline-offset:-2px; border-color:var(--accent)}
 .mic{
   width:var(--h-md); height:var(--h-md); min-width:var(--min-target); min-height:var(--min-target);
   border-radius:var(--r-circle); border:0; background:var(--accent); color:var(--text-on-accent);
@@ -986,13 +974,13 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
   <p class="dev-note">The conversation states. Above 1024px the task list is on screen beside the panel — that is the app, not a mockup convenience. “frame: phone” forces the one-surface frame.</p>
 </div>
 
-<div class="stagewrap"><div class="stage" id="stage">
+<div class="stagewrap"><div class="stage" id="stage" data-frame="phone">
 
 <div class="app" id="app" data-surface="talk" data-talk="applied" data-mic="idle" data-notice="none">
   <div class="frame">
     <div class="col-main">
       <header class="topbar"><div class="bar-in">
-        <span class="bar-title">Today</span>
+        <span class="bar-title" role="heading" aria-level="1">Today</span>
         <span class="spacer"></span>
         <button class="btn btn-sm btn-primary" data-testid="assistant-add-task-button" resource-id="assistant-add-task-button"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Add task</button>
       </div></header>
@@ -1000,10 +988,6 @@ textarea.field{height:auto; min-height:var(--field-h-multi); padding:var(--field
 
       <main class="pane">
         <div class="content-col">
-          <div class="head">
-            <h1>Today</h1>
-            <p class="count"><b>3</b> open</p>
-          </div>
           <div class="list">
             <div class="group"><h3>Today · Fri, Aug 21</h3></div>
             <div class="row" data-testid="assistant-task-row" resource-id="assistant-task-row">
@@ -1287,28 +1271,15 @@ function showState(name){
   }
   app.setAttribute('data-state', name);
   var stage = document.getElementById('stage');
-  if (cfg.frame) stage.setAttribute('data-frame', cfg.frame); else stage.removeAttribute('data-frame');
+  if ('frame' in cfg) { if (cfg.frame) stage.setAttribute('data-frame', cfg.frame); else stage.removeAttribute('data-frame'); }
   var b = document.querySelectorAll('.dev button[data-s]');
   for (var j=0;j<b.length;j++) b[j].classList.toggle('on', b[j].getAttribute('data-s')===name);
   paint(cfg);
 }
 
-/* One number, one place. The head's count and the PathSwitch badge are the same
-   open-today figure; a state cannot show a summary that disagrees with the bar. */
+/* Paint updates the state indicator and empty-state text. The content-column
+   .head (colTitle/colCount) was removed in T-353 — the app never rendered it. */
 function paint(cfg){
-  var TITLE = {today:'Today', upcoming:'Upcoming', inbox:'Inbox', done:'Done'};
-  var COUNT = {
-    today:'<b>4</b> open · <span class="late">2 overdue</span>',
-    upcoming:'<b>3</b> coming up',
-    inbox:'<b>16</b> filed here',
-    done:'<b>4</b> completed'
-  };
-  var t = document.getElementById('colTitle');
-  var c = document.getElementById('colCount');
-  var name = cfg.title || TITLE[cfg.collection] || 'Today';
-  if (t) t.textContent = name;
-  if (c) c.innerHTML = cfg.count !== undefined ? cfg.count : (COUNT[cfg.collection] || '');
-  if (c) c.style.display = (cfg.count === '' ) ? 'none' : '';
   var si = document.getElementById('stateInd'); if (si && cfg.ind) si.textContent = cfg.ind;
   var et = document.getElementById('emptyTitle'); if (et && cfg.emptyTitle) et.textContent = cfg.emptyTitle;
   var eb = document.getElementById('emptyBody'); if (eb && cfg.emptyBody) eb.textContent = cfg.emptyBody;

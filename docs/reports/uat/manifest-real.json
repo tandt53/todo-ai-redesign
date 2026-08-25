@@ -34,7 +34,6 @@
     }
    ],
    "console": [
-    "Failed to load resource: net::ERR_CONNECTION_RESET",
     "Failed to load resource: the server responded with a status of 404 (Not Found)"
    ],
    "viewports": [
@@ -80,9 +79,7 @@
      }
     }
    ],
-   "console": [
-    "Failed to load resource: net::ERR_CONNECTION_RESET"
-   ],
+   "console": [],
    "viewports": [
     "narrow"
    ]
@@ -117,9 +114,7 @@
      }
     }
    ],
-   "console": [
-    "Failed to load resource: net::ERR_CONNECTION_RESET"
-   ],
+   "console": [],
    "viewports": [
     "wide"
    ]
@@ -148,9 +143,7 @@
      }
     }
    ],
-   "console": [
-    "Failed to load resource: net::ERR_CONNECTION_RESET"
-   ],
+   "console": [],
    "viewports": [
     "wide",
     "narrow"
@@ -198,9 +191,7 @@
      }
     }
    ],
-   "console": [
-    "Failed to load resource: net::ERR_CONNECTION_RESET"
-   ],
+   "console": [],
    "viewports": [
     "wide",
     "narrow"
@@ -239,9 +230,7 @@
      }
     }
    ],
-   "console": [
-    "Failed to load resource: net::ERR_CONNECTION_RESET"
-   ],
+   "console": [],
    "viewports": [
     "wide",
     "narrow"
@@ -289,9 +278,7 @@
      }
     }
    ],
-   "console": [
-    "Failed to load resource: net::ERR_CONNECTION_RESET"
-   ],
+   "console": [],
    "viewports": [
     "wide",
     "narrow"
@@ -330,9 +317,7 @@
      }
     }
    ],
-   "console": [
-    "Failed to load resource: net::ERR_CONNECTION_RESET"
-   ],
+   "console": [],
    "viewports": [
     "wide",
     "narrow"
@@ -371,10 +356,7 @@
      }
     }
    ],
-   "console": [
-    "Failed to load resource: net::ERR_CONNECTION_RESET",
-    "Failed to load resource: the server responded with a status of 404 (Not Found)"
-   ],
+   "console": [],
    "viewports": [
     "wide",
     "narrow"
@@ -413,9 +395,7 @@
      }
     }
    ],
-   "console": [
-    "Failed to load resource: net::ERR_CONNECTION_RESET"
-   ],
+   "console": [],
    "viewports": [
     "wide",
     "narrow"
@@ -446,7 +426,6 @@
     }
    ],
    "console": [
-    "Failed to load resource: net::ERR_CONNECTION_RESET",
     "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
    ],
    "viewports": [
@@ -456,5 +435,5 @@
   }
  ],
  "failures": [],
- "captured_at": "2026-08-23T17:01:02Z"
+ "captured_at": "2026-08-24T14:38:06Z"
 }

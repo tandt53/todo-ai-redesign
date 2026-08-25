@@ -63,12 +63,35 @@ function build(scenario: string, run: string) {
   })
 }
 
-async function seed(userId: string, titles: string[]) {
+async function seed(userId: string, titles: string[], dated = false) {
+  // `dated` exists because a seeded task with no due_at files into Inbox under
+  // ANYTIME, so every list screenshot showed rows with no time at all — the
+  // column the design spends its right edge on was never once photographed.
+  // Anchor to local clock times today and tomorrow, not to `now + N hours`:
+  // `now + 3h` crosses local midnight for most of the evening, so the row the
+  // scenario wanted in Today landed in Upcoming and the screen read empty.
+  const at = (dayOffset: number, hour: number) => {
+    const d = new Date()
+    d.setDate(d.getDate() + dayOffset)
+    d.setHours(hour, 0, 0, 0)
+    return d.toISOString()
+  }
+  const whens = [at(0, 18), at(0, 21), at(1, 9)]
+  let i = 0
   for (const title of titles) {
+    const due = dated ? whens[i % whens.length] : undefined
+    i += 1
     await fetch(`${API}/tasks`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-User-Id': userId },
-      body: JSON.stringify({ title }),
+      // `X-Timezone` is required the moment a due_at is sent — without it the
+      // server answers TIMEZONE_UNKNOWN and the seed fails silently, which is
+      // why every dated scenario came back as an empty Today.
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Id': userId,
+        ...(due ? { 'X-Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone } : {}),
+      },
+      body: JSON.stringify(due ? { title, due_at: due } : { title }),
     })
   }
 }
@@ -117,22 +140,31 @@ async function play(s: any, scenario: string, userId: string) {
   // scenario allows.
   const SHOPPING = ['Buy milk', 'Buy eggs', 'Buy bread', 'Report Q1', 'Report Q2', 'Team meeting']
 
+  // T-334: the app now opens on Tasks. Talk-centric scenarios navigate there
+  // first; Tasks-centric ones start on their home surface.
+  const goTalk = () => s.controller.shellDispatch({ type: 'go', surface: 'talk' })
+
   switch (scenario) {
     case 'idle-empty':
+      goTalk()
       return
     case 'listening':
+      goTalk()
       s.tapMic()
       return
     case 'listening-words':
+      goTalk()
       s.tapMic()
       await sleep(250)
       s.hearWords('họp nhóm ngày mai')
       return
     case 'thinking':
+      goTalk()
       s.setComposerText('qaweb delayed bulk delete')
       void s.submit('typed')
       return
     case 'applied-diff':
+      goTalk()
       await say('add a task to buy milk')
       return
     case 'idle-tasks':
@@ -140,31 +172,28 @@ async function play(s: any, scenario: string, userId: string) {
       await s.foreground()
       return
 
-    // ── Tasks surface, opened directly ───────────────────────────────────────
+    // ── Tasks surface — the app opens here ──────────────────────────────────
     //
-    // Reaching this surface by tapping does not hold. The control is present and
-    // enabled and the tap lands nowhere often enough that a capture run comes
-    // back with the Talk surface under a caption that says "the task list" — and
-    // when the tap does work, the seeded rows carry no date, so they file into
-    // Inbox while the surface opens on Today and the photograph shows "Nothing in
-    // Today". Both failures look like the app and are the harness.
-    //
-    // So the surface is switched here, through the same dispatch the path control
-    // uses, and the collection is chosen to be the one the rows are actually in.
+    // T-334: Tasks is now the landing surface. Seeded rows carry no date, so
+    // they file into Inbox; the collection is chosen to be the one the rows
+    // are actually in.
     case 'tasks-empty':
+      await s.foreground()
+      return
+    case 'tasks-dated':
+      // Today and Upcoming both populated, so the due column has something in it.
+      await seed(userId, ['Call the dentist', 'Pay the electricity bill', 'Send the weekly report'], true)
       await s.foreground()
       s.controller.shellDispatch({ type: 'go', surface: 'tasks' })
       return
     case 'tasks-list':
       await seed(userId, SHOPPING)
       await s.foreground()
-      s.controller.shellDispatch({ type: 'go', surface: 'tasks' })
       s.controller.shellDispatch({ type: 'select-collection', collection: 'inbox' })
       return
     case 'tasks-drawer':
       await seed(userId, SHOPPING)
       await s.foreground()
-      s.controller.shellDispatch({ type: 'go', surface: 'tasks' })
       // The surface has to mount before the drawer opens over it; dispatching
       // both in the same tick leaves the app with no identifiable element and
       // the capture reads that as "the app never came up".
@@ -172,12 +201,14 @@ async function play(s: any, scenario: string, userId: string) {
       s.controller.shellDispatch({ type: 'open-menu' })
       return
     case 'question-confirm':
+      goTalk()
       await seed(userId, SHOPPING)
       await s.foreground()
       await sleep(400)
       await say('delete the shopping tasks')
       return
     case 'applied-delete':
+      goTalk()
       await seed(userId, SHOPPING)
       await s.foreground()
       await sleep(400)
@@ -186,6 +217,7 @@ async function play(s: any, scenario: string, userId: string) {
       await sleep(1000)
       return
     case 'reverted':
+      goTalk()
       await seed(userId, SHOPPING)
       await s.foreground()
       await sleep(400)
@@ -196,24 +228,29 @@ async function play(s: any, scenario: string, userId: string) {
       await sleep(1000)
       return
     case 'question-clarify':
+      goTalk()
       await seed(userId, SHOPPING)
       await s.foreground()
       await sleep(400)
       await say('delete the report task')
       return
     case 'no-match':
+      goTalk()
       await say('cross off the badminton game')
       return
     case 'error':
+      goTalk()
       await say('cause an ai error', 1400)
       return
     case 'offline':
+      goTalk()
       s.connectivity.set(false)
       await sleep(300)
       void say('add a task to buy cheese', 0)
       await sleep(900)
       return
     case 'reconnected':
+      goTalk()
       s.connectivity.set(false)
       await sleep(300)
       void say('add a task to buy cheese', 0)
@@ -224,6 +261,7 @@ async function play(s: any, scenario: string, userId: string) {
     case 'mic-permission':
     case 'mic-transient':
     case 'mic-hidden':
+      goTalk()
       s.tapMic()
       return
   }

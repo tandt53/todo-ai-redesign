@@ -112,11 +112,15 @@ export const ALL_A11Y_IDS: readonly ConversationA11yId[] = Object.values(A11Y_ID
  * chose option B: the TaskBottomBar replaces both InlineAdd and the floating
  * voice FAB below split. The bar's two ids — `tasks-bar-input` and
  * `tasks-bar-action` — supersede it.
+ *
+ * **T-334 retirements.** `shell-tasks-button` (PathSwitch PS-TASKS) was
+ * removed when the overlay model landed: the task list is home and Talk is
+ * summoned over it. The way back to Tasks is close/back, not a navigation
+ * control; the close button carries `talk-close-button`.
  */
 export const SHELL_A11Y_IDS = {
-  // PathSwitch — below-split-only controls (components.md § AppFrame). A phone
-  // is always below the split, so on mobile they are unconditional.
-  pathTasks: 'shell-tasks-button',
+  // Talk close button — dismisses Talk to the list (§ 4, 2026-08-24).
+  talkCloseButton: 'talk-close-button',
   listsMenuButton: 'shell-lists-menu-button',
   // T-321: the TaskBottomBar replaces the voice FAB and InlineAdd below split.
   // The bar's text field and morphing action button.
@@ -149,7 +153,6 @@ export const SHELL_A11Y_IDS = {
   tasksEmptyAddButton: 'tasks-empty-add-button',
   tasksRenameInput: 'tasks-rename-input',
   tasksDeleteButton: 'tasks-delete-button',
-  tasksInlineAdd: 'tasks-inline-add',
   tasksDragHandle: 'tasks-drag-handle',
   // SaveNotice — the receipt for a task that did not stay (components.md
   // § SaveNotice, T-135). Drawn in all three shell mockups; both ids are
@@ -196,6 +199,17 @@ export const SHELL_A11Y_IDS = {
 } as const
 
 /**
+ * Shell ids the implementation introduces **ahead of the design pass**, each
+ * with the task that created the need and what design owes. These are NOT
+ * invented — they are implied by the spec and the owner decision, and design
+ * will draw them at `phase: screens`.
+ */
+export const SHELL_IDS_AHEAD_OF_DESIGN: Record<string, string> = {
+  [SHELL_A11Y_IDS.talkCloseButton]:
+    'T-334 — Talk is now an overlay dismissed by close/back (information-architecture.md §4, 2026-08-24). The close button replaces PathSwitch (shell-tasks-button). The mockups have not been redrawn yet',
+}
+
+/**
  * Shell ids design has **published or acknowledged but not yet drawn with
  * testid attributes into the shell mockups**, each with what is owed.
  *
@@ -217,6 +231,17 @@ export const SHELL_IDS_AWAITING_MOCKUP: Record<string, string> = {
   [SHELL_A11Y_IDS.tasksRowStepsMark]:
     'T-209 — components.md § TaskRow publishes tasks-row-steps-mark (web); same reason as priority-mark above',
 }
+
+/**
+ * Shell ids the MOCKUPS still declare but the client has retired. The mockup
+ * comparison in `a11y.test.ts` accepts these as known rather than failing on
+ * them. They will be removed from the mockups at the next design pass.
+ */
+export const SHELL_IDS_RETIRED_FROM_CLIENT: readonly string[] = [
+  // T-334: the overlay model replaces PathSwitch with the Talk close button.
+  // The mockups still declare shell-tasks-button until redesigned.
+  'shell-tasks-button',
+]
 
 export type ShellA11yId = (typeof SHELL_A11Y_IDS)[keyof typeof SHELL_A11Y_IDS]
 
@@ -454,8 +479,7 @@ export function expectedIds(state: AppState, ctx: SurfaceContext): Set<A11yId> {
  * agree.
  *
  * Nothing here is gated on width: a phone is always below
- * `tokens.json breakpoints.split`, so PathSwitch always exists (components.md
- * § AppFrame).
+ * `tokens.json breakpoints.split`.
  */
 export function expectedShellIds(
   shell: ShellState,
@@ -481,9 +505,9 @@ export function expectedShellIds(
   }
 
   if (shell.surface === 'talk') {
-    // AC-24's reachability bound: present in EVERY Talk state, failures
-    // included, and never disabled.
-    ids.add(SHELL_A11Y_IDS.pathTasks)
+    // The close button dismisses Talk to Tasks. Present in EVERY Talk state,
+    // failures included (AC-24's reachability bound).
+    ids.add(SHELL_A11Y_IDS.talkCloseButton)
     const view = talkView(state)
     if (view === 'failed') ids.add(SHELL_A11Y_IDS.talkSessionRetryButton)
     // AC-31 rev 7: a task title is a control iff **the task still exists**. Not
@@ -513,10 +537,8 @@ export function expectedShellIds(
   if (tasks.banner === 'retry' || tasks.view === 'error') {
     ids.add(SHELL_A11Y_IDS.tasksListRetryButton)
   }
-  // T-321: InlineAdd is retired below split — the TaskBottomBar replaces it.
-  // The bar's ids (tasksBarInput, tasksBarAction) are added unconditionally
-  // above. InlineAdd's `tasksInlineAdd` no longer shows on the Tasks surface
-  // on a phone (always below split).
+  // T-363: InlineAdd is retired at every width — the TaskBottomBar is the
+  // only add mechanism, and its ids are added unconditionally above.
   if (tasks.tasks.length > 0) {
     // touch is not hover: the delete control is ALWAYS visible in the row's
     // trailing slot (components.md § Platform variants)

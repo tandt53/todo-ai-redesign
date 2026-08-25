@@ -6,7 +6,7 @@
 // navigation on the Tasks surface — "a different control wearing the same
 // glyph" (components.md § Testid catalogue — app shell), carrying
 // `shell-lists-menu-button`. The bar each peer draws is `ShellBar` in
-// `PathSwitch.tsx`, so the reciprocal control cannot end up in two places.
+// `PathSwitch.tsx`, so the bar's position is decided in one place.
 
 import { Text, View } from 'react-native'
 import { WifiOff } from 'lucide-react-native'

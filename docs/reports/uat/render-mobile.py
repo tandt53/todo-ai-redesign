@@ -5,7 +5,8 @@ build time. Copying them would let the two drift, and a reviewer comparing the
 halves would start wondering whether a difference they see is the product or the
 paper it is printed on.
 """
-import base64, html, os, re, sys
+import base64, html, io, os, re, sys
+from PIL import Image
 
 SHOTS = sys.argv[1]
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -28,7 +29,8 @@ FLOWS = [
     ('M3', 'Danh sách việc',
      'Việc đã tạo hiện ở đâu, và thanh dưới cùng trông thế nào.',
      [('tasks-empty', 'Danh sách khi chưa có việc nào'),
-      ('tasks-list', 'Danh sách việc'),
+      ('tasks-list', 'Danh sách việc — Inbox, chưa đặt hạn'),
+      ('tasks-dated', 'Danh sách việc — Today, có hạn ở cột phải'),
       ('tasks-drawer', 'Ngăn kéo Lists')]),
     ('M4', 'Khi trợ lý phải hỏi lại',
      'Câu mơ hồ thì hỏi, không đoán bừa.',
@@ -52,11 +54,25 @@ FLOWS = [
 PLATFORMS = [('ios', 'iPhone 16 Pro'), ('android', 'Pixel 9 Pro')]
 
 
+# The book inlines every frame, so its weight is the sum of them. At capture
+# resolution that was 5.7 MB across 32 images of ~1250x2800, and a browser
+# decoding those on scroll leaves each pane blank until it lands — Android
+# worst, because its frames are 15% larger AND second in every pair, so the
+# reader sees exactly that: "the Android ones are white". Downscaling to
+# BOOK_H costs nothing a reviewer can see on a screen and removes the wait.
+BOOK_H = 1200
+
+
 def img(plat, step):
     p = os.path.join(SHOTS, f'{plat}-{step}.png')
     if not os.path.exists(p) or os.path.getsize(p) == 0:
         return None
-    return base64.b64encode(open(p, 'rb').read()).decode()
+    im = Image.open(p)
+    if im.height > BOOK_H:
+        im = im.resize((round(im.width * BOOK_H / im.height), BOOK_H), Image.LANCZOS)
+    buf = io.BytesIO()
+    im.convert('RGB').save(buf, 'JPEG', quality=82, optimize=True)
+    return base64.b64encode(buf.getvalue()).decode()
 
 
 out = [HEAD]
@@ -92,7 +108,7 @@ for fid, title, why, steps in FLOWS:
             if d is None:
                 continue
             panes.append(
-                f'<figure class="pane"><img loading="lazy" src="data:image/png;base64,{d}" '
+                f'<figure class="pane"><img loading="lazy" src="data:image/jpeg;base64,{d}" '
                 f'alt="{html.escape(cap)} — {label}">'
                 f'<figcaption>{label}</figcaption></figure>')
         if not panes:

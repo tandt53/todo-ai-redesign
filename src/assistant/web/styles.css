@@ -225,16 +225,23 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
   background: var(--bg-base);
   container-type: inline-size; container-name: app;
 }
-.surfaces { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.surfaces { flex: 1; min-height: 0; display: flex; flex-direction: column; position: relative; }
 .surface { display: none; flex: 1; min-height: 0; flex-direction: column; }
-.app[data-surface="talk"]     .s-talk     { display: flex; }
-.app[data-surface="tasks"]    .s-tasks    { display: flex; }
+/* Tasks is HOME — always visible below the split (IA §4, revised 2026-08-24).
+   Settings and Detail replace it; Talk overlays it. */
+.s-tasks { display: flex; }
+/* Talk is an OVERLAY — summoned by the mic, dismissed by close or Escape.
+   position: absolute covers Tasks underneath. At or above the split this
+   collapses to the grid panel and `position: static` (see the container query). */
+.app[data-surface="talk"]     .s-talk     { display: flex; position: absolute; inset: 0; z-index: 2; }
 .app[data-surface="settings"] .s-settings { display: flex; }
+.app[data-surface="settings"] .s-tasks    { display: none; }
 /* F-005 AC-45 — the detail is one more value of the same enum, selected by the
    same one rule. Below the split it IS the surface; the branch at the split (far
    below, in the single container-query block) gives it the centre column, as
    `settings` already does. No second mechanism, and no width read in JS. */
 .app[data-surface="detail"]   .s-detail   { display: flex; }
+.app[data-surface="detail"]   .s-tasks    { display: none; }
 
 .topbar {
   flex: none; display: flex; align-items: center; gap: var(--sp-md);
@@ -256,6 +263,25 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 }
 .icon-btn:hover { background: var(--bg-raised); }
 
+/* ── SearchField — inline search on the Tasks surface (F-009 AC-1, AC-2, AC-3, AC-14) ──
+   Replaces the surface title in the topbar when search is open. Sole input on
+   the header bar → radius.pill per tokens.json radius.assign.pill. */
+.search-field {
+  flex: 1; min-width: 0;
+  height: 44px;
+  padding: 0 12px;
+  font-size: var(--fs-body);
+  color: var(--tx);
+  background: transparent;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-pill);
+}
+.search-field::placeholder { color: var(--tx-muted); }
+.search-field:focus { outline: 2px solid var(--focus); outline-offset: -2px; border-color: var(--accent); }
+/* The close control sits at the trailing edge of the search field. Same hit
+   area as icon-btn (40×40), secondary colour (Lucide x at icon.size.md). */
+.search-close { color: var(--tx-2); }
+
 /* PathSwitch — PS-TASKS / PS-TALK. Never disabled: AC-24's reachability bound
    requires the affordance to survive the failure it is escaping from. */
 .path {
@@ -273,12 +299,17 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
   font-variant-numeric: var(--font-numeric); text-align: center;
 }
 
+/* Talk close button — visible below split, hidden at split+ where Talk is a
+   permanent panel. `.icon-btn` provides the 40x40 hit area; this is the
+   semantic layer. */
+.talk-close { /* inherits .icon-btn */ }
+
 /* Voice FAB RETIRED (T-321) — replaced by TaskBottomBar inside .s-tasks.
    The bar holds a text field and a morphing action button (AC-37). */
 
 /* ── TaskBottomBar — fixed field + morphing mic/send (T-321, AC-37) ──────
-   Below breakpoints.split only. A flex:none child of .s-tasks, outside the
-   scroll container. Hidden at split+ where InlineAdd remains the mechanism. */
+   At every width (T-359: InlineAdd retired). A flex:none child of .s-tasks,
+   outside the scroll container. */
 .task-bar {
   flex: none;
   background: var(--bg-base);
@@ -297,7 +328,7 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
   color: var(--tx);
   background: transparent;
   border: 1px solid var(--hairline);
-  border-radius: var(--r-md);
+  border-radius: var(--r-pill);
 }
 .tbar-input::placeholder { color: var(--tx-muted); }
 .tbar-input:focus { outline: 2px solid var(--focus); outline-offset: -2px; border-color: transparent; }
@@ -338,31 +369,9 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
   padding: 0 var(--sp-md); border-radius: var(--r-sm);
   background: var(--accent); color: var(--tx-onaccent); font-weight: var(--font-weight-emphasis); font-size: var(--fs-meta);
 }
-/* ── Inline new-task row — at the end of the list ──
-   T-321: hidden below split (TaskBottomBar replaces it). Shown at split+
-   where the bar is hidden and the inline row in the list body is reachable.
-   Below split, display:none also removes it from the tab order, so a keyboard
-   user cannot tab into an invisible control (AC-37 a11y note). */
-.inline-new {
-  display: none; align-items: center; gap: var(--sp-md);
-  min-height: 52px; padding: var(--sp-xs) 0;
-  color: var(--tx-muted); cursor: pointer;
-}
-.inline-new .plus {
-  width: var(--icon-md); height: var(--icon-md); flex: none;
-  display: grid; place-items: center;
-}
-.inline-new .inline-label { font-size: var(--fs-body); color: var(--tx-muted); }
-.inline-new:hover .inline-label { color: var(--tx-2); }
-.inline-new:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.inline-new-editing { cursor: default; }
-.inline-input {
-  flex: 1; min-width: 0; height: 36px;
-  background: var(--bg-raised); border: 1px solid var(--hairline); border-radius: var(--r-sm);
-  padding: 0 var(--sp-md); color: var(--tx); font-size: var(--fs-body);
-}
-.inline-input::placeholder { color: var(--tx-muted); }
-.inline-input:focus { border-color: var(--accent); outline: none; }
+/* ── Inline new-task row — RETIRED (T-359, owner decision 2026-08-25).
+   TaskBottomBar is the sole add-task mechanism at every width.
+   All .inline-new / .inline-input rules removed. ──*/
 /* SK-ROW's day heading is a BAR, not words (components.md § Skeletons): a
    skeleton cannot know which heading the read will produce, so it mirrors the
    silhouette at the heading's size and position and asserts nothing. */
@@ -396,11 +405,6 @@ svg.ic { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; st
 .task-row.done .task-title { text-decoration: line-through; }
 .task-row.done { opacity: 0.6; }
 .task-meta { font-size: var(--fs-meta); line-height: var(--font-lineHeight-meta); color: var(--tx-muted); font-variant-numeric: var(--font-numeric); white-space: nowrap; flex: none; margin-left: auto; }
-.task-edit-input {
-  flex: 1; min-width: 0; height: 32px;
-  background: var(--bg-raised); border: 1px solid var(--accent); border-radius: var(--r-sm);
-  padding: 0 var(--sp-sm); color: var(--tx); font-size: var(--fs-body);
-}
 .row-actions { flex: none; display: inline-flex; gap: var(--sp-xs); opacity: 0; transition: opacity var(--dur-micro) var(--motion-easing-standard); }
 .task-row:hover .row-actions, .task-row:focus-within .row-actions { opacity: 1; }
 .row-action {
@@ -832,7 +836,10 @@ html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); 
   /* Talk is always mounted at this width — it is a panel, not a destination.
      The border-left is replaced by the panel gap on a sunken canvas (tokens
      layout.panel pattern). */
-  .s-talk { display: flex; grid-column: 2; }
+  /* The overlay positioning from below the split collapses to static here. */
+  .s-talk { display: flex; grid-column: 2; position: static; }
+  /* Talk close button — hidden at split+: Talk is a permanent panel. */
+  .talk-close { display: none; }
   /* PANEL CORNER FIX — topbar and composer cover the panel's border-radius
      unless they carry the matching corners themselves (mockup § PANEL CORNER FIX).
      Every surface with a topbar needs matching top corners; Talk's composer
@@ -867,10 +874,8 @@ html[data-theme="light"] .st-listening .mic { color: var(--color-dark-bg-base); 
      replacement below split, also hidden here for the same reason.
      Voice FAB retired T-321; TaskBottomBar replaces it below split. */
   .path { display: none; }
-  /* TaskBottomBar: hidden at split+ where InlineAdd is the add mechanism */
-  .task-bar { display: none; }
-  /* InlineAdd: restored at split+ — the add mechanism in the list body */
-  .inline-new { display: flex; }
+  /* TaskBottomBar: visible at every width (T-359: InlineAdd retired).
+     InlineAdd and its split+ restore rule removed. */
 
   .s-talk .wordmark { display: none; }
   .s-talk .panel-title { display: inline; }

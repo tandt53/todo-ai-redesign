@@ -181,8 +181,8 @@ export const PAINTED: Record<InteractiveId, Size> = {
   //
   // HEIGHTS are real, read off the mockup CSS rule named on each line.
 
-  // .path { min-height: 44px } — PS-TASKS (PS-TALK is retired by T-227)
-  [SHELL_A11Y_IDS.pathTasks]: { width: MIN_TOUCH_TARGET.android, height: 44 },
+  // Talk close button — same 44px touch target as the old PathSwitch
+  [SHELL_A11Y_IDS.talkCloseButton]: { width: MIN_TOUCH_TARGET.android, height: 44 },
   // T-321: TaskBottomBar — field is full-width (placeholder width), button is
   // 44×44 painted, with transparent hit area extending to 48 on Android.
   // Bar height: h-lg (52) = s1 (4) top pad + h-md (44) content + s1 (4) bottom pad.
@@ -203,8 +203,9 @@ export const PAINTED: Record<InteractiveId, Size> = {
   [SHELL_A11Y_IDS.talkSessionRetryButton]: { width: MIN_TOUCH_TARGET.android, height: 44 },
   [SHELL_A11Y_IDS.tasksListRetryButton]: { width: MIN_TOUCH_TARGET.android, height: 44 },
   [SHELL_A11Y_IDS.tasksEmptyAddButton]: { width: MIN_TOUCH_TARGET.android, height: 44 },
-  // .row-del { width: 44px; height: 44px } — ALWAYS visible on touch, so it is
-  // always a real target rather than one that appears on hover
+  // .row-del { width: 44px; height: 44px } — revealed by swipe-left on touch
+  // (T-343, DESIGN.md ## Platform row-delete table). The painted box measures
+  // the revealed button, not the resting row which shows no delete control.
   [SHELL_A11Y_IDS.tasksDeleteButton]: { width: 44, height: 44 },
   // .tasklink — inline text inside the bubble, no padding of its own: one line
   // box, and everything above the line box is slop. components.md
@@ -220,12 +221,6 @@ export const PAINTED: Record<InteractiveId, Size> = {
   },
   // T-285: the inline add row at the end of the task list. Full-width row
   // with sm vertical padding around body-size text, same height as a task row.
-  // Width placeholder: the platform maximum minimum, same rule as other shell
-  // controls whose content-width floor design has not published.
-  [SHELL_A11Y_IDS.tasksInlineAdd]: {
-    width: MIN_TOUCH_TARGET.android,
-    height: textControlHeight(font.size.body, spacing.sm),
-  },
 }
 
 /** The catalogue ids a finger can activate. The rest of the catalogue is
@@ -265,7 +260,7 @@ export const INTERACTIVE_IDS = [
  * not exist would be a measurement of nothing.
  */
 export const SHELL_INTERACTIVE_IDS = [
-  SHELL_A11Y_IDS.pathTasks,
+  SHELL_A11Y_IDS.talkCloseButton,
   SHELL_A11Y_IDS.tasksBarInput,
   SHELL_A11Y_IDS.tasksBarAction,
   SHELL_A11Y_IDS.listsMenuButton,
@@ -280,7 +275,6 @@ export const SHELL_INTERACTIVE_IDS = [
   SHELL_A11Y_IDS.tasksDeleteButton,
   SHELL_A11Y_IDS.talkTaskLink,
   SHELL_A11Y_IDS.tasksRenameInput,
-  SHELL_A11Y_IDS.tasksInlineAdd,
 ] as const
 
 /** Both halves, for anything that means "every control a finger can hit". */

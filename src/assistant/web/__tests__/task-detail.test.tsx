@@ -71,19 +71,22 @@ function openDetail(taskId: string): void {
   })
 }
 
-/** Go to the Tasks surface first — the app opens on Talk. */
+/** Ensure we are on the Tasks surface. Tasks is home (the app opens on it),
+ * but callers may have navigated to Talk and need to dismiss it. */
 function goToTasks(): void {
-  act(() => {
-    fireEvent.click(screen.getByTestId('shell-tasks-button'))
-  })
+  // If Talk is showing, dismiss it. The close button exists inside .s-talk;
+  // querying it is harmless when Talk is not the active surface.
+  const close = screen.queryByTestId('talk-close-button')
+  if (close) {
+    act(() => {
+      fireEvent.click(close)
+    })
+  }
 }
 
 /** …and to the Inbox collection, where a DATELESS row lives (ADR-009's two axes:
  * `undated` has no surface of its own and Inbox serves it). */
 function goToInbox(): void {
-  act(() => {
-    fireEvent.click(screen.getByTestId('shell-tasks-button'))
-  })
   act(() => {
     fireEvent.click(screen.getByTestId('shell-lists-menu-button'))
   })
@@ -138,19 +141,20 @@ describe('AC-1 — activating a row opens its detail in ONE action', () => {
     expect(screen.getByTestId('detail-repeat-summary').textContent).toBe('Does not repeat')
   })
 
-  it('the activation gesture is DISTINCT from the inline rename — both stay on the row', () => {
-    // F-001 AC-18 puts an inline rename on the web row, so *"activating a task row"*
-    // must name a gesture that is not the rename gesture, **or F-005 takes a shipped
-    // affordance away by collision**.
+  it('the title tap opens the detail — no inline rename input appears on the row (T-360)', () => {
+    // Inline rename is retired (owner decision 2026-08-25, AC-34 amendment).
+    // The title is now part of region (b): clicking it opens the detail.
+    // Renaming lives on the detail surface (F-005 AC-37).
     mount(seed({ tasks: [PLAIN] }))
     goToTasks()
     const row = screen.getAllByTestId('assistant-task-row')[0] as HTMLElement
-    // The rename still has its own control, and using it does NOT open the detail.
+    // Clicking the title opens the detail.
     act(() => {
-      fireEvent.click(within(row).getByLabelText('Edit “Review the Q3 budget”'))
+      fireEvent.click(within(row).getByTestId('tasks-row-open'))
     })
-    expect(screen.getByTestId('tasks-rename-input')).toBeTruthy()
-    expect(screen.queryByTestId('detail-surface')).toBeNull()
+    expect(screen.getByTestId('detail-surface')).toBeTruthy()
+    // No inline rename input exists on the row.
+    expect(screen.queryByTestId('tasks-rename-input')).toBeNull()
   })
 })
 
@@ -198,7 +202,11 @@ describe('AC-45 — where the detail lives, and the close that is always availab
     // look at their own task would be a lie that corrects itself (design D8) and
     // AC-4's terminal state would have no reachable case.
     const loading = mount(seed({ tasks: [], tasksLoad: 'loading' }))
-    loading.controller.state = { ...loading.controller.state, tasks: [PLAIN] }
+    // Inject the row so openDetail can find it — push triggers a re-render.
+    act(() => {
+      loading.controller.state = { ...loading.controller.state, tasks: [PLAIN] }
+      loading.controller.push([])
+    })
     // drive the open, then take the task away with the read still in flight
     goToTasks()
     openDetail('t1')
@@ -1128,6 +1136,13 @@ describe('AC-47 — § CarriedNotice renders at the frame, on every surface', ()
     // every surface is the observable that requirement has, which is why it carries
     // a testid at all.
     const { container } = mount(seed({ tasks: [PLAIN] }))
+    // Tasks is home — the app opens on it.
+    expect(surfaceOf(container)).toBe('tasks')
+    expect(screen.getByTestId('shell-carried-notices')).toBeTruthy()
+    // summon Talk overlay
+    act(() => {
+      fireEvent.click(screen.getByTestId('tasks-bar-action'))
+    })
     expect(surfaceOf(container)).toBe('talk')
     expect(screen.getByTestId('shell-carried-notices')).toBeTruthy()
     goToTasks()

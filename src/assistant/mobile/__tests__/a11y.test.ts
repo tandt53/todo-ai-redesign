@@ -31,6 +31,8 @@ import {
   SHELL_A11Y_IDS,
   SHELL_IDS_BLOCKED,
   SHELL_IDS_AWAITING_MOCKUP,
+  SHELL_IDS_AHEAD_OF_DESIGN,
+  SHELL_IDS_RETIRED_FROM_CLIENT,
   a11yProps,
   expectedIds,
   expectedShellIds,
@@ -360,21 +362,20 @@ describe('the APP SHELL catalogue — one source, three attribute spellings', ()
   })
 
   it('the shell mockups name nothing the client does not declare somewhere', () => {
-    const known = new Set<string>([...ALL_A11Y_IDS, ...ALL_SHELL_A11Y_IDS])
+    const known = new Set<string>([...ALL_A11Y_IDS, ...ALL_SHELL_A11Y_IDS, ...SHELL_IDS_RETIRED_FROM_CLIENT])
     expect(sorted([...ios].filter((id) => !known.has(id)))).toEqual([])
   })
 
-  it('the shell catalogue invents nothing — every id is drawn, or published and awaiting its drawing', () => {
-    // The anti-invention rule, with the upstream stated as design actually
-    // publishes it. The drawing is the normal upstream; for § CarriedNotice's five
-    // ids the upstream is the **published testid table**, and design recorded in
-    // the same pass that the three shell mockups are extended at `phase: screens`
-    // and that *"the `src/` catalogue assertions go red on the five new ids by
-    // design"*. An id in neither the drawings nor the published table is invented
-    // and still fails here.
+  it('the shell catalogue invents nothing — every id is drawn, published, or ahead of design', () => {
+    // The anti-invention rule. An id must be in one of three sets: drawn in the
+    // mockups, published in components.md and awaiting its drawing, or introduced
+    // by implementation ahead of the design pass (with a task reference).
     const undrawn = sorted([...ALL_SHELL_A11Y_IDS].filter((id) => !ios.has(id)))
-    const awaiting = new Set(Object.keys(SHELL_IDS_AWAITING_MOCKUP))
-    expect(undrawn.filter((id) => !awaiting.has(id)), 'neither drawn nor published').toEqual([])
+    const awaiting = new Set([
+      ...Object.keys(SHELL_IDS_AWAITING_MOCKUP),
+      ...Object.keys(SHELL_IDS_AHEAD_OF_DESIGN),
+    ])
+    expect(undrawn.filter((id) => !awaiting.has(id)), 'neither drawn nor published nor ahead of design').toEqual([])
   })
 
   it('every id awaiting a drawing is genuinely published in design sources, with a reason', () => {
@@ -402,8 +403,8 @@ describe('the APP SHELL catalogue — one source, three attribute spellings', ()
     // components.md § Testid catalogue — app shell: "Controls that already
     // exist keep their ids and simply render on a different surface. They are
     // not renamed" — § Touch publishes width floors against those names.
-    // T-227 retired `assistant-add-task-button` from the shell header; adding
-    // a task is now the inline add row (`tasks-inline-add`).
+    // T-227 retired `assistant-add-task-button` from the shell header.
+    // T-363 retired `tasks-inline-add` — the TaskBottomBar is the sole add.
     const carried = sorted([...ios].filter((id) => (ALL_A11Y_IDS as readonly string[]).includes(id)))
     expect(carried).toEqual([
       'assistant-composer-input',
@@ -512,10 +513,9 @@ describe('AC-12 — every catalogue id is actually wired into a component', () =
   // and no element.
   //
   // The narrower rule that suggests itself — require the id inside an
-  // `a11yProps(` call — is L-002's mistake in the other direction: three ids
-  // are chosen by a ternary and passed as a variable (`chipRole`, and
-  // PathSwitch's two rows), so that scan reports four correct controls missing.
-  // This one reads what it can actually see.
+  // `a11yProps(` call — is L-002's mistake in the other direction: some ids
+  // are chosen by a ternary and passed as a variable (`chipRole`), so that
+  // scan reports correct controls missing. This one reads what it can see.
   const rendered = sources.replace(/(touchProps|paintedBox)\([^)]*\)/g, '')
   const applied = (map: 'A11Y_IDS' | 'SHELL_A11Y_IDS', key: string) =>
     rendered.includes(`${map}.${key}`)

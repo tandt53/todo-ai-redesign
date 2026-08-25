@@ -51,12 +51,11 @@ export {
 }
 export type { Collection, DayGroup }
 
-/** The header line above the rows. The mockup's own wording, over the shared
- * count — never a second definition of the number (components.md
- * § PathSwitch). */
-export function tasksHeadline(count: number): string {
-  return count === 1 ? '1 task left today' : `${count} tasks left today`
-}
+// T-344: `tasksHeadline` removed — the count line below the bar title is gone.
+// Owner decision: the list already shows what is in it, and a number in the
+// title brings a tail of cases (zero, singular/plural, live updating) for no
+// new information. The badge's accessible name (`Tasks, 3 left today`) stays —
+// it labels a control, not a surface, and is a different thing.
 
 // ---------------------------------------------------------------------------
 // Which of the five drawn views renders

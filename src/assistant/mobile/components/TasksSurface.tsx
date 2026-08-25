@@ -9,7 +9,7 @@
 // this file's — the same function `expectedShellIds` reads, so the id contract
 // and the rendering are one source.
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect } from 'react'
 import { Pressable, Text, View } from 'react-native'
 import { Menu, MoreHorizontal, Plus, Search, TriangleAlert } from 'lucide-react-native'
 import type { AppState } from '../../_shared/model/reducer.ts'
@@ -21,8 +21,6 @@ import { flashDurationMs } from '../model/task-link.ts'
 import {
   INLINE_RETRY_BANNER,
   collectionName,
-  openTodayCount,
-  tasksHeadline,
   tasksSurfaceView,
 } from '../model/tasks-view.ts'
 import type { Collection } from '../model/tasks-view.ts'
@@ -54,8 +52,6 @@ export function TasksSurface({
   onRevealConsumed: () => void
 }) {
   const { styles, colors } = useStyles()
-  const [draft, setDraft] = useState('')
-  const [adding, setAdding] = useState(false)
   // F-005 AC-44 — one clock for this surface, the controller's. Passed explicitly
   // rather than left to the parameter's default so the surface and the list it
   // renders cannot straddle a day boundary between two reads of the same seam.
@@ -74,24 +70,6 @@ export function TasksSurface({
     const t = setTimeout(onRevealConsumed, flashDurationMs())
     return () => clearTimeout(t)
   }, [revealTaskId, onRevealConsumed])
-
-  // Guard: on Android, pressing Enter fires `onSubmitEditing` and then the
-  // field loses focus, firing `onBlur` — both wired to `commit`. The ref lets
-  // whichever event arrives first commit; the second is a no-op.
-  const addCommitted = useRef(false)
-  useEffect(() => { addCommitted.current = false }, [adding])
-
-  const commit = () => {
-    if (addCommitted.current) return
-    addCommitted.current = true
-    // Add-in-context (ADR-009 §4) — the same call the web surface makes, with
-    // the same collection argument. F-003 AC-1's parity claim is only true if
-    // both clients date the row identically, which is why the instant is fixed
-    // in `dueAtForCollection` rather than chosen here.
-    if (draft.trim() !== '') void controller.addTask(draft, collection)
-    setDraft('')
-    setAdding(false)
-  }
 
   return (
     <View style={styles.surface}>
@@ -168,11 +146,17 @@ export function TasksSurface({
           >
             <Text style={styles.primaryButtonText}>Retry</Text>
           </Pressable>
+          {/* T-363: InlineAdd retired. This button's only job was to open it,
+              so it has no handler. **This is a defect, recorded as its own row**
+              — a control that announces "Add task" and does nothing is worse
+              than an absent one. It cannot simply be deleted: the shell
+              catalogue still expects `assistant-add-task-button` to be applied,
+              and the design still draws it on the Talk surface, so where the id
+              belongs is design's to say. */}
           <Pressable
             {...a11yProps(A11Y_IDS.addTaskButton, { label: 'Add task', role: 'button' })}
             hitSlop={addTouch.hitSlop}
             style={styles.ghostButton}
-            onPress={() => setAdding(true)}
           >
             <Plus size={tokens.icon.size.sm} color={colors.accent} strokeWidth={tokens.icon.stroke} />
             <Text style={styles.ghostButtonText}>Add task</Text>
@@ -180,16 +164,9 @@ export function TasksSurface({
         </View>
       ) : (
         <>
-          {/* T-300 defect 4: drop the count when zero — "0 tasks left today"
-              duplicates the empty heading. Show only when there are open tasks
-              today and only on the Today collection, matching web. */}
-          {collection === 'today' && openTodayCount(state.tasks) > 0 && (
-            <View style={styles.listHead}>
-              <Text style={styles.listCount}>{tasksHeadline(openTodayCount(state.tasks))}</Text>
-            </View>
-          )}
-          {/* T-300 defect 3: the standalone add-form is removed — the empty
-              state now includes InlineAdd directly. */}
+          {/* T-344: count line removed — owner decision. The list already
+              shows what is in it, and a number brings a tail of cases for no
+              new information. The badge's accessible name stays. */}
           <TaskList
             state={state}
             view={view}
@@ -197,19 +174,12 @@ export function TasksSurface({
             controller={controller}
             platform={platform}
             arrivedTaskId={revealTaskId}
-            adding={adding}
-            draft={draft}
-            setDraft={setDraft}
-            onCommit={commit}
-            onCancel={() => { setDraft(''); setAdding(false) }}
-            onActivate={() => setAdding(true)}
-            onAdd={() => setAdding(true)}
           />
         </>
       )}
-      {/* T-321: the TaskBottomBar replaces both the voice FAB and InlineAdd
-          below split. Fixed bottom row: text field + morphing action button
-          (AC-37). Typing commits through controller.addTask (literal path). */}
+      {/* The TaskBottomBar — fixed bottom row: text field + morphing action
+          button (AC-37). Typing commits through controller.addTask (literal
+          path). The sole add mechanism on mobile (T-363). */}
       <TaskBottomBar
         platform={platform}
         onGoTalk={onGoTalk}

@@ -373,10 +373,8 @@ describe('AC-35 — the three mobile readers, which need OPPOSITE inputs', () =>
     )
     // no per-row control is declared, because no row is drawn
     expect(shellIds.has(SHELL_A11Y_IDS.tasksDeleteButton)).toBe(false)
-    // T-321: InlineAdd is retired below split — the TaskBottomBar replaces it.
-    // On mobile (always below split), tasksInlineAdd is no longer declared;
-    // the bar's ids (tasksBarInput, tasksBarAction) are always present instead.
-    expect(shellIds.has(SHELL_A11Y_IDS.tasksInlineAdd)).toBe(false)
+    // T-363: tasksInlineAdd removed from the catalogue entirely — the
+    // TaskBottomBar (tasksBarInput, tasksBarAction) is the sole add mechanism.
     expect(shellIds.has(SHELL_A11Y_IDS.tasksBarInput)).toBe(true)
     expect(shellIds.has(SHELL_A11Y_IDS.tasksBarAction)).toBe(true)
   })
